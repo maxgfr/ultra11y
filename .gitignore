@@ -1,0 +1,7 @@
+node_modules/
+*.tgz
+/tmp/
+audits/
+.DS_Store
+VERIFY.todo.json
+VERIFY.md

@@ -1,0 +1,52 @@
+{
+  "name": "ultra11y",
+  "version": "0.0.0",
+  "description": "Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, or author/review accessible markup (native-HTML-first). A skills.sh agent skill: a zero-dependency static engine plus Claude's judgment, with check/verify gates against hallucinated non-conformities.",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "bin": {
+    "ultra11y": "scripts/ultra11y.mjs"
+  },
+  "files": [
+    "scripts",
+    "src",
+    "skills"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup && node scripts/copy-bundle.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "check:build": "tsup && node scripts/copy-bundle.mjs && git diff --exit-code -- scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs",
+    "fetch:rgaa": "node scripts/fetch-rgaa.mjs",
+    "demo": "node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out /tmp/ultra11y-demo --json > /tmp/ultra11y-demo/audit.json && node scripts/ultra11y.mjs report --in /tmp/ultra11y-demo/audit.json --out /tmp/ultra11y-demo && node scripts/ultra11y.mjs criteria --list",
+    "release": "semantic-release"
+  },
+  "license": "MIT",
+  "author": "maxgfr",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxgfr/ultra11y"
+  },
+  "dependencies": {
+    "htmlparser2": "^10.0.0"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@types/node": "^20.14.0",
+    "semantic-release": "^24.2.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

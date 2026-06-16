@@ -1,0 +1,30 @@
+ultra11y
+Copyright (c) 2026 maxgfr — MIT License (see LICENSE).
+
+================================================================================
+Bundled RGAA dataset
+================================================================================
+
+The files src/data/rgaa.json and src/data/glossary.json are derived from the
+official Référentiel Général d'Amélioration de l'Accessibilité (RGAA), version
+4.1.2, published by the Direction interministérielle du numérique (DINUM /
+DISIC) of the French government.
+
+Source: https://github.com/DISIC/accessibilite.numerique.gouv.fr
+        (RGAA/criteres.json, RGAA/glossaire.json)
+
+The RGAA content is published under the Licence Ouverte / Open License 2.0
+(Etalab): https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+
+ultra11y restructures this content (composing dotted criterion ids, deriving
+plain-text titles, flattening WCAG/technique references, stripping glossary
+HTML) but does not alter its meaning. Attribution: « RGAA 4.1.2 — DINUM ».
+
+================================================================================
+Inspiration
+================================================================================
+
+The audit report format is inspired by the RGAA audit conventions of DINUM and
+the etalab-ia/skills RGAA skill; the native-HTML-first authoring rules are
+adapted from the SocialGouv/skills rgaa-html-css skill. No source code was
+copied from either project; only public conventions and rule lists were adapted.

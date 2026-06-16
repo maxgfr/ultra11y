@@ -3,5 +3,7 @@ node_modules/
 /tmp/
 audits/
 .DS_Store
-VERIFY.todo.json
-VERIFY.md
+# verify worklist output (root only; anchored so it can't shadow
+# skills/.../references/verify.md on case-insensitive filesystems)
+/VERIFY.todo.json
+/VERIFY.md

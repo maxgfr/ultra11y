@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { VERSION, type Lang, type AuditResult } from "./types.js";
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
+import { runCriteria } from "./criteria.js";
 import { auditSummary } from "./output.js";
 import { readStdin, readText } from "./util.js";
 
@@ -125,6 +126,17 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   return 0;
 }
 
+function cmdCriteria(p: ParsedArgs): number {
+  const themeFlag = p.flags["theme"];
+  return runCriteria({
+    id: p.positionals[0],
+    theme: typeof themeFlag === "string" && themeFlag ? Number(themeFlag) : undefined,
+    list: p.flags["list"] === true,
+    json: p.flags["json"] === true,
+    lang: langOf(p.flags),
+  });
+}
+
 async function cmdReport(p: ParsedArgs): Promise<number> {
   const inFlag = p.flags["in"];
   if (typeof inFlag !== "string" || !inFlag) {
@@ -171,6 +183,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdAudit(p);
     case "report":
       return cmdReport(p);
+    case "criteria":
+      return cmdCriteria(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

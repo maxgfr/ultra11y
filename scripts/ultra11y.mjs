@@ -3654,6 +3654,9 @@ function allThemes() {
 function getCriterion(id) {
   return byId.get(id);
 }
+function listTheme(n) {
+  return data.criteria.filter((c) => c.theme === n);
+}
 
 // src/parse/html.ts
 import { parseDocument } from "htmlparser2";
@@ -5037,6 +5040,70 @@ function writeReport(r, opts) {
   return path;
 }
 
+// src/criteria.ts
+var AUTO_LABEL = {
+  static: { fr: "automatisable (moteur)", en: "automatable (engine)" },
+  "needs-rendering": { fr: "n\xE9cessite un rendu", en: "needs rendering" },
+  judgment: { fr: "jugement humain", en: "human judgment" }
+};
+function formatCriterion(c, lang = "fr") {
+  const out = [];
+  out.push(`${c.id} \u2014 ${c.titlePlain}`);
+  const auto = AUTO_LABEL[c.automatability][lang];
+  const theme = allThemes().find((t2) => t2.number === c.theme)?.name ?? "";
+  out.push(`${lang === "fr" ? "Th\xE9matique" : "Theme"} ${c.theme} (${theme}) \xB7 ${lang === "fr" ? "automatisabilit\xE9" : "automatability"} : ${auto}${c.ruleIds.length ? ` \xB7 ${lang === "fr" ? "r\xE8gles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`);
+  if (c.wcag.length) out.push(`WCAG : ${c.wcag.join(" ; ")}`);
+  if (c.techniques.length) out.push(`${lang === "fr" ? "Techniques" : "Techniques"} : ${c.techniques.join(", ")}`);
+  const testKeys = Object.keys(c.tests);
+  if (testKeys.length) {
+    out.push(`${lang === "fr" ? "Tests" : "Tests"} :`);
+    for (const k of testKeys) for (const line of c.tests[k]) out.push(`  ${c.id}.${k} ${line.replace(/\[([^\]]+)\]\(#[^)]*\)/g, "$1")}`);
+  }
+  if (c.technicalNote?.length) out.push(`${lang === "fr" ? "Note technique" : "Technical note"} : ${c.technicalNote.join(" ")}`);
+  if (c.particularCases?.length) out.push(`${lang === "fr" ? "Cas particuliers" : "Particular cases"} : ${c.particularCases.join(" ")}`);
+  return out.join("\n");
+}
+function themeList(lang) {
+  const out = [];
+  out.push(lang === "fr" ? "RGAA 4.1.2 \u2014 13 th\xE9matiques, 106 crit\xE8res" : "RGAA 4.1.2 \u2014 13 themes, 106 criteria");
+  for (const t2 of allThemes()) {
+    const crits = listTheme(t2.number);
+    const stat = crits.filter((c) => c.automatability === "static").length;
+    out.push(`${String(t2.number).padStart(2)}. ${t2.name.padEnd(32).slice(0, 32)} ${String(t2.count).padStart(3)} ${lang === "fr" ? "crit\xE8res" : "criteria"} (${stat} ${lang === "fr" ? "auto" : "auto"})`);
+  }
+  return out.join("\n");
+}
+function queryCriteria(opts) {
+  if (opts.id) {
+    const c = getCriterion(opts.id);
+    return c ? { kind: "one", result: c } : null;
+  }
+  if (typeof opts.theme === "number") {
+    const crits = listTheme(opts.theme);
+    return crits.length ? { kind: "theme", result: crits } : null;
+  }
+  return { kind: "list", result: allThemes() };
+}
+function runCriteria(opts) {
+  const q = queryCriteria(opts);
+  if (!q) {
+    console.error(`ultra11y criteria: unknown ${opts.id ? `criterion "${opts.id}"` : `theme "${opts.theme}"`}.`);
+    return 2;
+  }
+  if (opts.json) {
+    console.log(JSON.stringify(q.result, null, 2));
+    return 0;
+  }
+  if (q.kind === "one") {
+    console.log(formatCriterion(q.result, opts.lang));
+  } else if (q.kind === "theme") {
+    for (const c of q.result) console.log(`${c.id}	[${c.automatability}]	${c.titlePlain}`);
+  } else {
+    console.log(themeList(opts.lang));
+  }
+  return 0;
+}
+
 // src/output.ts
 var STR = {
   fr: {
@@ -5190,6 +5257,16 @@ async function cmdAudit(p) {
   else console.log(auditSummary(result, langOf(p.flags)));
   return 0;
 }
+function cmdCriteria(p) {
+  const themeFlag = p.flags["theme"];
+  return runCriteria({
+    id: p.positionals[0],
+    theme: typeof themeFlag === "string" && themeFlag ? Number(themeFlag) : void 0,
+    list: p.flags["list"] === true,
+    json: p.flags["json"] === true,
+    lang: langOf(p.flags)
+  });
+}
 async function cmdReport(p) {
   const inFlag = p.flags["in"];
   if (typeof inFlag !== "string" || !inFlag) {
@@ -5233,6 +5310,8 @@ async function main(argv) {
       return cmdAudit(p);
     case "report":
       return cmdReport(p);
+    case "criteria":
+      return cmdCriteria(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

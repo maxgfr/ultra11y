@@ -5,6 +5,8 @@ import { VERSION, type Lang, type AuditResult } from "./types.js";
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
 import { runCriteria } from "./criteria.js";
+import { checkReport } from "./check.js";
+import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
 import { auditSummary } from "./output.js";
 import { readStdin, readText } from "./util.js";
 
@@ -161,6 +163,52 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
   return 0;
 }
 
+function cmdCheck(p: ParsedArgs): number {
+  const rep = p.flags["report"];
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y check: --report <md> is required.");
+    return 2;
+  }
+  const res = checkReport(readText(rep));
+  if (p.flags["json"]) {
+    console.log(JSON.stringify(res, null, 2));
+  } else if (!p.flags["quiet"]) {
+    if (res.ok) console.log("✓ Rapport valide : sections, critères cités et justifications NA cohérents.");
+    else for (const i of res.issues) console.error(`✗ ${i}`);
+  }
+  return res.ok ? 0 : 1;
+}
+
+function cmdVerify(p: ParsedArgs): number {
+  const apply = p.flags["apply"];
+  if (typeof apply === "string" && apply) {
+    let items: VerifyItem[];
+    try {
+      items = JSON.parse(readText(apply)) as VerifyItem[];
+    } catch {
+      console.error("ultra11y verify: --apply file is not valid JSON.");
+      return 2;
+    }
+    const r = applyVerdicts(items);
+    if (p.flags["json"]) console.log(JSON.stringify(r, null, 2));
+    else if (r.ok) console.log(`✓ ${r.total} non-conformités vérifiées, toutes étayées.`);
+    else console.error(`✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}).`);
+    return r.ok ? 0 : 1;
+  }
+
+  const rep = p.flags["report"];
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
+    return 2;
+  }
+  const max = typeof p.flags["max-verify"] === "string" ? Number(p.flags["max-verify"]) : VERIFY_MAX;
+  const items = buildWorklist(readText(rep), max);
+  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : ".";
+  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags["semantic"] === true);
+  console.log(`${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}`);
+  return 0;
+}
+
 export async function main(argv: string[]): Promise<number> {
   const first = argv[0];
 
@@ -185,6 +233,10 @@ export async function main(argv: string[]): Promise<number> {
       return cmdReport(p);
     case "criteria":
       return cmdCriteria(p);
+    case "check":
+      return cmdCheck(p);
+    case "verify":
+      return cmdVerify(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

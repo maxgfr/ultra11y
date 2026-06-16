@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync2, mkdirSync as mkdirSync2 } from "fs";
-import { join as join3 } from "path";
+import { realpathSync, writeFileSync as writeFileSync3, mkdirSync as mkdirSync3 } from "fs";
+import { join as join4 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -3654,6 +3654,9 @@ function allThemes() {
 function getCriterion(id) {
   return byId.get(id);
 }
+function hasCriterion(id) {
+  return byId.has(id);
+}
 function listTheme(n) {
   return data.criteria.filter((c) => c.theme === n);
 }
@@ -5104,6 +5107,96 @@ function runCriteria(opts) {
   return 0;
 }
 
+// src/check.ts
+var CRIT_REF = /(\d{1,2}\.\d{1,2})\s*—/g;
+function checkReport(md) {
+  const issues = [];
+  for (let n = 1; n <= 5; n++) {
+    if (!new RegExp(`^##\\s+${n}\\.`, "m").test(md)) issues.push(`Section ${n} manquante dans le rapport.`);
+  }
+  const seen = /* @__PURE__ */ new Set();
+  let m;
+  CRIT_REF.lastIndex = 0;
+  while (m = CRIT_REF.exec(md)) {
+    const id = m[1];
+    if (seen.has(id)) continue;
+    seen.add(id);
+    if (!hasCriterion(id)) issues.push(`Crit\xE8re inexistant cit\xE9 dans le rapport : ${id}.`);
+  }
+  const naSection = sectionBody(md, 4);
+  for (const line of naSection.split("\n")) {
+    const item = /^-\s+(\d{1,2}\.\d{1,2})\s*—/.exec(line);
+    if (item && !line.includes("_")) issues.push(`Crit\xE8re NA sans justification : ${item[1]}.`);
+  }
+  if (!/\d+\s*%/.test(md)) issues.push("Taux de conformit\xE9 absent de l'en-t\xEAte du rapport.");
+  return { ok: issues.length === 0, issues };
+}
+function sectionBody(md, n) {
+  const start = new RegExp(`^##\\s+${n}\\.`, "m").exec(md);
+  if (!start) return "";
+  const from = start.index + start[0].length;
+  const next = /^##\s+/m.exec(md.slice(from));
+  return next ? md.slice(from, from + next.index) : md.slice(from);
+}
+
+// src/verify.ts
+import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
+import { join as join3 } from "path";
+var VERIFY_MAX = 40;
+var NC_HEADER = /^- \*\*(\d{1,2}\.\d{1,2}) — (.*?)\*\* — `([^`]+):(\d+)` \(`([^`]*)`\)/;
+function buildWorklist(reportMd, max = VERIFY_MAX) {
+  const items = [];
+  const lines = reportMd.split("\n");
+  for (let i = 0; i < lines.length && items.length < max; i++) {
+    const h = NC_HEADER.exec(lines[i]);
+    if (!h) continue;
+    let claim = h[2] ?? "";
+    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+      const sub = /^\s+-\s+(.*)$/.exec(lines[j]);
+      if (sub && !sub[1].startsWith("_")) {
+        claim = sub[1];
+        break;
+      }
+    }
+    items.push({ n: items.length + 1, criteriaId: h[1], file: h[3], line: Number(h[4]), selector: h[5], claim, verdict: null, note: "" });
+  }
+  return items;
+}
+function formatWorklist(items, semantic) {
+  const out = [];
+  out.push("# V\xE9rification des non-conformit\xE9s (ultra11y)", "");
+  out.push("Pour CHAQUE entr\xE9e, ouvrez le fichier \xE0 la ligne cit\xE9e et attribuez un verdict dans");
+  out.push("`VERIFY.todo.json` (champ `verdict`), avec une `note` :");
+  out.push("");
+  out.push("- `supported` \u2014 la non-conformit\xE9 est r\xE9elle et correctement rattach\xE9e au crit\xE8re ;");
+  out.push("- `partial` \u2014 r\xE9elle mais le crit\xE8re/la formulation est impr\xE9cis ;");
+  out.push("- `refuted` \u2014 fausse (l'\xE9l\xE9ment cit\xE9 est en r\xE9alit\xE9 conforme) ;");
+  out.push("- `unsupported` \u2014 l'\xE9l\xE9ment cit\xE9 ne permet pas de trancher.");
+  out.push("");
+  if (semantic) out.push("> Mode --semantic : v\xE9rifiez que l'extrait cit\xE9 **\xE9taye** r\xE9ellement la non-conformit\xE9.", "");
+  out.push(`Puis : \`ultra11y verify --apply VERIFY.todo.json\` (\xE9choue si un verdict est refuted/unsupported).`, "");
+  for (const it of items) {
+    out.push(`- [ ] #${it.n} **${it.criteriaId}** @ \`${it.file}:${it.line}\` (\`${it.selector}\`) \u2014 ${it.claim}`);
+  }
+  out.push("");
+  return out.join("\n");
+}
+function applyVerdicts(items) {
+  const refuted = items.filter((i) => i.verdict === "refuted").length;
+  const unsupported = items.filter((i) => i.verdict === "unsupported").length;
+  const unadjudicated = items.filter((i) => i.verdict == null).length;
+  const failures = items.filter((i) => i.verdict == null || i.verdict === "refuted" || i.verdict === "unsupported");
+  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, failures };
+}
+function writeWorklist(items, outDir, semantic) {
+  mkdirSync2(outDir, { recursive: true });
+  const todoPath = join3(outDir, "VERIFY.todo.json");
+  const mdPath = join3(outDir, "VERIFY.md");
+  writeFileSync2(todoPath, JSON.stringify(items, null, 2) + "\n");
+  writeFileSync2(mdPath, formatWorklist(items, semantic));
+  return { todoPath, mdPath, count: items.length };
+}
+
 // src/output.ts
 var STR = {
   fr: {
@@ -5249,8 +5342,8 @@ async function cmdAudit(p) {
   });
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
   try {
-    mkdirSync2(out, { recursive: true });
-    writeFileSync2(join3(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    mkdirSync3(out, { recursive: true });
+    writeFileSync3(join4(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
   } catch {
   }
   if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
@@ -5290,6 +5383,49 @@ async function cmdReport(p) {
   console.log(path);
   return 0;
 }
+function cmdCheck(p) {
+  const rep = p.flags["report"];
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y check: --report <md> is required.");
+    return 2;
+  }
+  const res = checkReport(readText(rep));
+  if (p.flags["json"]) {
+    console.log(JSON.stringify(res, null, 2));
+  } else if (!p.flags["quiet"]) {
+    if (res.ok) console.log("\u2713 Rapport valide : sections, crit\xE8res cit\xE9s et justifications NA coh\xE9rents.");
+    else for (const i of res.issues) console.error(`\u2717 ${i}`);
+  }
+  return res.ok ? 0 : 1;
+}
+function cmdVerify(p) {
+  const apply = p.flags["apply"];
+  if (typeof apply === "string" && apply) {
+    let items2;
+    try {
+      items2 = JSON.parse(readText(apply));
+    } catch {
+      console.error("ultra11y verify: --apply file is not valid JSON.");
+      return 2;
+    }
+    const r = applyVerdicts(items2);
+    if (p.flags["json"]) console.log(JSON.stringify(r, null, 2));
+    else if (r.ok) console.log(`\u2713 ${r.total} non-conformit\xE9s v\xE9rifi\xE9es, toutes \xE9tay\xE9es.`);
+    else console.error(`\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}).`);
+    return r.ok ? 0 : 1;
+  }
+  const rep = p.flags["report"];
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
+    return 2;
+  }
+  const max = typeof p.flags["max-verify"] === "string" ? Number(p.flags["max-verify"]) : VERIFY_MAX;
+  const items = buildWorklist(readText(rep), max);
+  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : ".";
+  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags["semantic"] === true);
+  console.log(`${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}`);
+  return 0;
+}
 async function main(argv) {
   const first = argv[0];
   if (!first || first === "-h" || first === "--help") {
@@ -5312,6 +5448,10 @@ async function main(argv) {
       return cmdReport(p);
     case "criteria":
       return cmdCriteria(p);
+    case "check":
+      return cmdCheck(p);
+    case "verify":
+      return cmdVerify(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

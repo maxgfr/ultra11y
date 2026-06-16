@@ -6,7 +6,7 @@ import { join as join4 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
-var VERSION = "1.0.0";
+var VERSION = "1.0.1";
 var SCHEMA_VERSION = 1;
 
 // src/data/rgaa.json

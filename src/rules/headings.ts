@@ -86,4 +86,40 @@ const h1Multiple: Rule = {
   },
 };
 
-export const headingsRules: Rule[] = [headingOrderSkip, h1Missing, h1Multiple];
+const ALLOWED_IN_LIST = new Set(["li", "script", "template"]);
+
+const listStructure: Rule = {
+  id: "list-structure",
+  criteria: ["9.3"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (el.tag === "ul" || el.tag === "ol") {
+        const bad = el.children.find((c) => c.type === "element" && !ALLOWED_IN_LIST.has(c.tag));
+        if (bad && bad.type === "element") {
+          out.push({
+            criteriaId: "9.3",
+            el: bad,
+            message: `<${bad.tag}> enfant direct de <${el.tag}> — une liste ne doit contenir que des <li>.`,
+            remediation: `Enveloppez le contenu dans des <li>, ou utilisez un autre élément que <${el.tag}>.`,
+          });
+        }
+      } else if (el.tag === "li") {
+        const parent = el.parent;
+        if (parent && !["ul", "ol", "menu"].includes(parent.tag)) {
+          out.push({
+            criteriaId: "9.3",
+            el,
+            message: `<li> hors d'une liste (<${parent.tag}> parent) — structure de liste invalide.`,
+            remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`,
+          });
+        }
+      }
+    }
+    return out;
+  },
+};
+
+export const headingsRules: Rule[] = [headingOrderSkip, h1Missing, h1Multiple, listStructure];

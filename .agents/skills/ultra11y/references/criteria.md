@@ -64,7 +64,7 @@ règles du moteur qui les couvrent. Source : RGAA 4.1.2 © DINUM, Licence Ouvert
 | 5.5 | Pour chaque tableau de données ayant un titre, celui-ci est-il pertinent ? | judgment | 1.3.1 | — |
 | 5.6 | Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ? | static | 1.3.1 | data-table-no-headers |
 | 5.7 | Pour chaque tableau de données, la technique appropriée permettant d’associer chaque cellule avec ses en-têtes est-elle utilisée (hors cas particuliers) ? | static | 1.3.1 | data-table-no-headers |
-| 5.8 | Chaque tableau de mise en forme ne doit pas utiliser d’éléments propres aux  tableaux de données. Cette règle est-elle respectée ? | static | 1.3.1 | layout-table-data-markup |
+| 5.8 | Chaque tableau de mise en forme ne doit pas utiliser d’éléments propres aux  tableaux de données. Cette règle est-elle respectée ? | judgment | 1.3.1 | — |
 
 ## 6. Liens
 
@@ -77,7 +77,7 @@ règles du moteur qui les couvrent. Source : RGAA 4.1.2 © DINUM, Licence Ouvert
 
 | Critère | Intitulé | Automatisabilité | WCAG | Règles |
 |---|---|---|---|---|
-| 7.1 | Chaque script est-il, si nécessaire, compatible avec les technologies d’assistance ? | static | 2.5.3, 4.1.2 | invalid-aria-role, redundant-aria, button-empty-name, clickable-noninteractive, aria-ref-missing-id, icon-only-control-unnamed, aria-required-children, aria-hidden-focusable, nested-interactive |
+| 7.1 | Chaque script est-il, si nécessaire, compatible avec les technologies d’assistance ? | static | 2.5.3, 4.1.2 | invalid-aria-role, redundant-aria, button-empty-name, clickable-noninteractive, aria-ref-missing-id, icon-only-control-unnamed |
 | 7.2 | Pour chaque script ayant une alternative, cette alternative est-elle pertinente ? | judgment | 1.1.1, 4.1.2 | — |
 | 7.3 | Chaque script est-il contrôlable par le clavier et par tout dispositif de pointage (hors cas particuliers) ? | static | 1.3.1, 2.1.1, 2.4.7 | clickable-noninteractive |
 | 7.4 | Pour chaque script qui initie un changement de contexte, l’utilisateur est-il averti ou en a-t-il le contrôle ? | judgment | 3.2.1, 3.2.2 | — |
@@ -90,11 +90,11 @@ règles du moteur qui les couvrent. Source : RGAA 4.1.2 © DINUM, Licence Ouvert
 | 8.1 | Chaque page web est-elle définie par un type de document ? | judgment | 4.1.1 | — |
 | 8.2 | Pour chaque page web, le code source généré est-il valide selon le type de document spécifié ? | static | 4.1.1, 4.1.2 | duplicate-id |
 | 8.3 | Dans chaque page web, la langue par défaut est-elle présente ? | static | 3.1.1 | html-lang-missing |
-| 8.4 | Pour chaque page web ayant une langue par défaut, le code de langue est-il pertinent ? | judgment | 3.1.1 | lang-invalid |
+| 8.4 | Pour chaque page web ayant une langue par défaut, le code de langue est-il pertinent ? | judgment | 3.1.1 | — |
 | 8.5 | Chaque page web a-t-elle un titre de page ? | static | 2.4.2 | title-missing-empty |
 | 8.6 | Pour chaque page web ayant un titre de page, ce titre est-il pertinent ? | judgment | 2.4.2 | — |
 | 8.7 | Dans chaque page web, chaque changement de langue est-il indiqué dans le code source (hors cas particuliers) ? | static | 3.1.2 | inline-lang-change-missing |
-| 8.8 | Dans chaque page web, le code de langue de chaque changement de langue est-il valide et pertinent ? | judgment | 3.1.2 | lang-invalid |
+| 8.8 | Dans chaque page web, le code de langue de chaque changement de langue est-il valide et pertinent ? | judgment | 3.1.2 | — |
 | 8.9 | Dans chaque page web, les balises ne doivent pas être utilisées uniquement à des fins de présentation. Cette règle est-elle respectée ? | judgment | 1.3.1 | — |
 | 8.10 | Dans chaque page web, les changements du sens de lecture sont-ils signalés ? | judgment | 1.3.2 | — |
 
@@ -104,7 +104,7 @@ règles du moteur qui les couvrent. Source : RGAA 4.1.2 © DINUM, Licence Ouvert
 |---|---|---|---|---|
 | 9.1 | Dans chaque page web, l’information est-elle structurée par l’utilisation appropriée de titres ? | static | 1.3.1, 2.4.1, 2.4.6, 4.1.2 | heading-order-skip, h1-missing, h1-multiple |
 | 9.2 | Dans chaque page web, la structure du document est-elle cohérente (hors cas particuliers) ? | judgment | 1.3.1 | — |
-| 9.3 | Dans chaque page web, chaque liste est-elle correctement structurée ? | static | 1.3.1 | list-structure |
+| 9.3 | Dans chaque page web, chaque liste est-elle correctement structurée ? | judgment | 1.3.1 | — |
 | 9.4 | Dans chaque page web, chaque citation est-elle correctement indiquée ? | judgment | 1.3.1 | — |
 
 ## 10. Présentation de l’information
@@ -114,7 +114,7 @@ règles du moteur qui les couvrent. Source : RGAA 4.1.2 © DINUM, Licence Ouvert
 | 10.1 | Dans le site web, des feuilles de styles sont-elles utilisées pour contrôler la présentation de l’information ? | judgment | 1.3.1, 1.3.2 | — |
 | 10.2 | Dans chaque page web, le contenu visible porteur d’information reste-t-il présent lorsque les feuilles de styles sont désactivées ? | judgment | 1.1.1, 1.3.1 | — |
 | 10.3 | Dans chaque page web, l’information reste-t-elle compréhensible lorsque les feuilles de styles sont désactivées ? | judgment | 1.3.2, 2.4.3 | — |
-| 10.4 | Dans chaque page web, le texte reste-t-il lisible lorsque la taille des caractères est augmentée jusqu’à 200 %, au moins (hors cas particuliers) ? | needs-rendering | 1.4.4 | meta-viewport-zoom-block |
+| 10.4 | Dans chaque page web, le texte reste-t-il lisible lorsque la taille des caractères est augmentée jusqu’à 200 %, au moins (hors cas particuliers) ? | needs-rendering | 1.4.4 | — |
 | 10.5 | Dans chaque page web, les déclarations CSS de couleurs de fond d’élément et de police sont-elles correctement utilisées ? | judgment | 1.4.3 | — |
 | 10.6 | Dans chaque page web, chaque lien dont la nature n’est pas évidente est-il visible par rapport au texte environnant ? | judgment | 1.4.1 | — |
 | 10.7 | Dans chaque page web, pour chaque élément recevant le focus, la prise de focus est-elle visible ? | needs-rendering | 1.4.1, 2.4.7 | — |
@@ -130,12 +130,12 @@ règles du moteur qui les couvrent. Source : RGAA 4.1.2 © DINUM, Licence Ouvert
 
 | Critère | Intitulé | Automatisabilité | WCAG | Règles |
 |---|---|---|---|---|
-| 11.1 | Chaque champ de formulaire a-t-il une étiquette ? | static | 1.3.1, 2.4.6, 3.3.2, 4.1.2 | control-label-missing, placeholder-as-label, form-field-multiple-labels, select-has-option |
+| 11.1 | Chaque champ de formulaire a-t-il une étiquette ? | static | 1.3.1, 2.4.6, 3.3.2, 4.1.2 | control-label-missing, placeholder-as-label |
 | 11.2 | Chaque étiquette associée à un champ de formulaire est-elle pertinente (hors cas particuliers) ? | judgment | 2.4.6, 2.5.3, 3.3.2 | — |
 | 11.3 | Dans chaque formulaire, chaque étiquette associée à un champ de formulaire ayant la même fonction et répétée plusieurs fois dans une même page ou dans un ensemble de pages est-elle cohérente ? | judgment | 3.2.4 | — |
 | 11.4 | Dans chaque formulaire, chaque étiquette de champ et son champ associé sont-ils accolés (hors cas particuliers) ? | judgment | 3.3.2 | — |
 | 11.5 | Dans chaque formulaire, les champs de même nature sont-ils regroupés, si nécessaire ? | judgment | 1.3.1, 3.3.2 | — |
-| 11.6 | Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ? | static | 1.3.1, 3.3.2 | fieldset-legend-missing |
+| 11.6 | Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ? | judgment | 1.3.1, 3.3.2 | — |
 | 11.7 | Dans chaque formulaire, chaque légende associée à un regroupement de champs de même nature est-elle pertinente ? | judgment | 1.3.1, 3.3.2 | — |
 | 11.8 | Dans chaque formulaire, les items de même nature d’une liste de choix sont-ils regroupés de manière pertinente ? | judgment | 1.3.1 | — |
 | 11.9 | Dans chaque formulaire, l’intitulé de chaque bouton est-il pertinent (hors cas particuliers) ? | judgment | 2.5.3, 4.1.2 | — |

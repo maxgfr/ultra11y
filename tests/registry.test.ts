@@ -3,9 +3,9 @@ import { ALL_RULES, ruleIds } from "../src/rules/registry.js";
 import { rgaa, getCriterion } from "../src/rgaa.js";
 
 describe("rule registry ↔ dataset coverage", () => {
-  it("registers 25 rules with unique ids", () => {
-    expect(ALL_RULES.length).toBe(25);
-    expect(new Set(ruleIds()).size).toBe(25);
+  it("registers 35 rules with unique ids", () => {
+    expect(ALL_RULES.length).toBe(35);
+    expect(new Set(ruleIds()).size).toBe(35);
   });
 
   it("every rule maps only to real RGAA criteria", () => {
@@ -35,10 +35,10 @@ describe("rule registry ↔ dataset coverage", () => {
         expect(r.criteria, `${rid} should cover ${c.id}`).toContain(c.id);
       }
     }
-    // every static criterion has at least one rule; non-static have none
+    // every static criterion has at least one rule (non-static may carry a
+    // definite-NC rule, e.g. 10.4 meta-viewport-zoom-block)
     for (const c of rgaa.criteria) {
       if (c.automatability === "static") expect(c.ruleIds.length, c.id).toBeGreaterThan(0);
-      else expect(c.ruleIds.length, c.id).toBe(0);
     }
   });
 });

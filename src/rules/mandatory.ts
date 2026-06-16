@@ -95,4 +95,29 @@ const inlineLangChangeMissing: Rule = {
   },
 };
 
-export const mandatoryRules: Rule[] = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing];
+// BCP47 primary subtag + optional subtags (syntactic validity only).
+const BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
+
+const langInvalid: Rule = {
+  id: "lang-invalid",
+  criteria: ["8.4", "8.8"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      const lang = (attr(el, "lang") ?? "").trim();
+      if (!lang) continue; // empty handled by inline-lang-change-missing / html-lang-missing
+      if (BCP47.test(lang)) continue;
+      out.push({
+        criteriaId: el.tag === "html" ? "8.4" : "8.8",
+        el,
+        message: `Code de langue invalide lang="${lang}" sur <${el.tag}> — n'est pas un code BCP 47 valide.`,
+        remediation: `Utilisez un code de langue valide (ex. "fr", "en", "fr-CA").`,
+      });
+    }
+    return out;
+  },
+};
+
+export const mandatoryRules: Rule[] = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing, langInvalid];

@@ -20,6 +20,21 @@ describe("data-table-no-headers (5.6/5.7)", () => {
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("5.7");
   });
+  it("skips a layout table (nested tables) — no false positive", () => {
+    const html = `<table><tr><td><table><tr><td>x</td></tr></table></td><td>y</td></tr></table>`;
+    expect(findOf(html, "data-table-no-headers")).toHaveLength(0);
+  });
+});
+
+describe("layout-table-data-markup (5.8)", () => {
+  it("conforming: presentation table with no data markup", () => {
+    expect(findOf(`<table role="presentation"><tr><td>x</td></tr></table>`, "layout-table-data-markup")).toHaveLength(0);
+  });
+  it("non-conforming: presentation table using th/caption", () => {
+    const f = findOf(`<table role="presentation"><caption>x</caption><tr><th>A</th></tr></table>`, "layout-table-data-markup");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("5.8");
+  });
 });
 
 describe("table-caption-missing (5.4)", () => {

@@ -44,9 +44,12 @@ const APPLICABLE: Record<string, (d: Doc) => boolean> = {
   "8.5": (d) => isFullDocument(d),
   "8.7": (d) => d.elements.some((e) => e.tag !== "html" && hasAttr(e, "lang")),
   "9.1": (d) => isFullDocument(d),
+  "9.3": (d) => has(d, "ul", "ol", "dl", "li", "dt", "dd"),
   "11.1": (d) => d.elements.some(isFormField),
+  "11.6": (d) => has(d, "fieldset"),
   "12.7": (d) => isFullDocument(d) && d.elements.some((e) => e.tag === "a" && (attr(e, "href") ?? "").startsWith("#")),
   "12.8": (d) => d.elements.some((e) => hasAttr(e, "tabindex")),
+  "5.8": (d) => has(d, "table"),
 };
 
 function residualReason(automatability: string): string {
@@ -74,10 +77,7 @@ export function buildAudit(docs: Doc[], inputs: string[]): AuditResult {
     let status: Status;
     let justification: string | undefined;
 
-    if (c.automatability !== "static") {
-      status = "manual";
-      residualRisks.push({ criteriaId: c.id, reason: residualReason(c.automatability), automatability: c.automatability });
-    } else {
+    if (c.automatability === "static") {
       const pred = APPLICABLE[c.id];
       const applicable = pred ? docs.some((d) => pred(d)) : docs.some((d) => isFullDocument(d));
       if (!applicable) {
@@ -88,6 +88,13 @@ export function buildAudit(docs: Doc[], inputs: string[]): AuditResult {
       } else {
         status = "C";
       }
+    } else if (fs.length > 0) {
+      // a rule on a needs-rendering / judgment criterion raised a DEFINITE failure
+      status = "NC";
+    } else {
+      // engine can't decide — leave it for the human review
+      status = "manual";
+      residualRisks.push({ criteriaId: c.id, reason: residualReason(c.automatability), automatability: c.automatability });
     }
     criteria.push({ id: c.id, theme: c.theme, status, findings: fs, ...(justification ? { justification } : {}) });
   }

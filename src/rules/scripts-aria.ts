@@ -1,7 +1,23 @@
 // Theme 7 — Scripts / ARIA correctness (the statically-checkable slice).
 import type { Doc, El } from "../parse/html.js";
-import { attr, hasAttr } from "../parse/html.js";
+import { attr, hasAttr, descendants, ancestors } from "../parse/html.js";
 import type { Rule, RuleFinding } from "./rule.js";
+
+const INTERACTIVE_ROLES = ["button", "link", "checkbox", "radio", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "switch", "textbox", "combobox", "slider", "spinbutton"];
+
+function isInteractive(el: El): boolean {
+  if (el.tag === "a") return hasAttr(el, "href");
+  if (["button", "select", "textarea"].includes(el.tag)) return true;
+  if (el.tag === "input") return (attr(el, "type") ?? "text").toLowerCase() !== "hidden";
+  return INTERACTIVE_ROLES.includes((attr(el, "role") ?? "").trim());
+}
+
+function isFocusable(el: El): boolean {
+  if (isInteractive(el)) return true;
+  const ti = attr(el, "tabindex");
+  if (ti !== undefined && Number(ti) >= 0) return true;
+  return hasAttr(el, "contenteditable") && attr(el, "contenteditable") !== "false";
+}
 
 // Concrete WAI-ARIA 1.2 roles (abstract roles like "widget"/"range" are invalid as author values).
 const VALID_ROLES = new Set([
@@ -146,4 +162,88 @@ const clickableNoninteractive: Rule = {
   },
 };
 
-export const scriptsAriaRules: Rule[] = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive];
+const REQUIRED_CHILDREN: Record<string, string[]> = {
+  list: ["listitem"],
+  tablist: ["tab"],
+  radiogroup: ["radio"],
+  tree: ["treeitem"],
+  menu: ["menuitem", "menuitemcheckbox", "menuitemradio"],
+  menubar: ["menuitem", "menuitemcheckbox", "menuitemradio"],
+};
+
+function satisfiesChild(d: El, reqRoles: string[]): boolean {
+  const role = (attr(d, "role") ?? "").trim();
+  if (reqRoles.includes(role)) return true;
+  if (reqRoles.includes("listitem") && d.tag === "li") return true;
+  if (reqRoles.includes("radio") && d.tag === "input" && (attr(d, "type") ?? "").toLowerCase() === "radio") return true;
+  return false;
+}
+
+const ariaRequiredChildren: Rule = {
+  id: "aria-required-children",
+  criteria: ["7.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      const role = (attr(el, "role") ?? "").trim();
+      const req = REQUIRED_CHILDREN[role];
+      if (!req) continue;
+      if (hasAttr(el, "aria-owns")) continue; // children may be referenced elsewhere
+      if (descendants(el).some((d) => satisfiesChild(d, req))) continue;
+      out.push({
+        criteriaId: "7.1",
+        el,
+        message: `role="${role}" sans enfant requis (${req.join("/")}) — structure ARIA incomplète.`,
+        remediation: `Ajoutez les éléments enfants au rôle approprié, ou utilisez les éléments HTML natifs.`,
+      });
+    }
+    return out;
+  },
+};
+
+const ariaHiddenFocusable: Rule = {
+  id: "aria-hidden-focusable",
+  criteria: ["7.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (attr(el, "aria-hidden") !== "true") continue;
+      const focusableHere = isFocusable(el) || descendants(el).some(isFocusable);
+      if (!focusableHere) continue;
+      out.push({
+        criteriaId: "7.1",
+        el,
+        message: `aria-hidden="true" sur (ou contenant) un élément focalisable — piège pour les technologies d'assistance.`,
+        remediation: `Retirez aria-hidden, ou rendez l'élément non focalisable (tabindex="-1", disabled).`,
+      });
+    }
+    return out;
+  },
+};
+
+const nestedInteractive: Rule = {
+  id: "nested-interactive",
+  criteria: ["7.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (!isInteractive(el)) continue;
+      if (!ancestors(el).some(isInteractive)) continue;
+      out.push({
+        criteriaId: "7.1",
+        el,
+        message: `Élément interactif <${el.tag}> imbriqué dans un autre élément interactif — non restitué correctement.`,
+        remediation: `Ne pas imbriquer des contrôles interactifs (lien/bouton) ; mettez-les côte à côte.`,
+      });
+    }
+    return out;
+  },
+};
+
+export const scriptsAriaRules: Rule[] = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive, ariaRequiredChildren, ariaHiddenFocusable, nestedInteractive];

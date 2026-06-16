@@ -61,49 +61,58 @@ const deHtml = (s) =>
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-// --- engine coverage: criterion id -> static rule ids (mirror of SKILL plan §rules).
-// The M2 registry test cross-checks this against the live rule registry.
-// NOTE: "pertinence" criteria (5.5 caption relevant, 8.4 lang code relevant,
-// 8.6 title relevant, 11.2 label relevant, 6.1 link explicit) are JUDGMENT, not
-// static — a parser can detect presence/structure, never relevance. They are
-// deliberately left out of this map so the engine never claims to decide them.
+// --- engine coverage: criterion id -> rule ids (cross-checked against the live
+// registry by the registry test). A rule may target a non-static criterion: it
+// then raises only DEFINITE non-conformities (e.g. a meta-viewport that blocks
+// zoom is a certain 10.4 failure), while the absence of a finding stays "manual"
+// — automatability is set independently below.
+// NOTE: pure "pertinence" criteria (5.5, 8.6, 11.2, 6.1, 2.2…) stay rule-less:
+// a parser detects presence/structure, never relevance.
 const RULE_COVERAGE = {
   "1.1": ["img-alt-missing", "canvas-fallback-missing", "icon-only-control-unnamed"],
   "1.2": ["decorative-alt-misuse"],
   "2.1": ["iframe-title-missing"],
-  "4.10": ["autoplay-media"], // sound triggered automatically must be controllable
+  "4.10": ["autoplay-media"],
   "5.4": ["table-caption-missing"],
   "5.6": ["data-table-no-headers"],
   "5.7": ["data-table-no-headers"],
-  "6.2": ["link-empty-name", "icon-only-control-unnamed"], // link HAS a label (presence)
-  "7.1": ["invalid-aria-role", "redundant-aria", "button-empty-name", "clickable-noninteractive", "aria-ref-missing-id", "icon-only-control-unnamed"],
-  "7.3": ["clickable-noninteractive"], // keyboard operability of scripted widgets
-  "8.2": ["duplicate-id"], // valid source (duplicate id = invalid)
-  "8.3": ["html-lang-missing"], // default language present
-  "8.5": ["title-missing-empty"], // page has a title
-  "8.7": ["inline-lang-change-missing"], // language change indicated
+  "5.8": ["layout-table-data-markup"], // layout table must not use data-table markup
+  "6.2": ["link-empty-name", "icon-only-control-unnamed"],
+  "7.1": ["invalid-aria-role", "redundant-aria", "button-empty-name", "clickable-noninteractive", "aria-ref-missing-id", "icon-only-control-unnamed", "aria-required-children", "aria-hidden-focusable", "nested-interactive"],
+  "7.3": ["clickable-noninteractive"],
+  "8.2": ["duplicate-id"],
+  "8.3": ["html-lang-missing"],
+  "8.4": ["lang-invalid"], // default lang code validity (a subset of "pertinent")
+  "8.5": ["title-missing-empty"],
+  "8.7": ["inline-lang-change-missing"],
+  "8.8": ["lang-invalid"], // inline lang code must be valid (and relevant)
   "9.1": ["heading-order-skip", "h1-missing", "h1-multiple"],
-  "11.1": ["control-label-missing", "placeholder-as-label"], // field has a label
+  "9.3": ["list-structure"], // lists correctly structured
+  "10.4": ["meta-viewport-zoom-block"], // viewport blocking zoom is a definite failure
+  "11.1": ["control-label-missing", "placeholder-as-label", "form-field-multiple-labels", "select-has-option"],
+  "11.6": ["fieldset-legend-missing"], // field group has a legend
   "12.7": ["skip-link-target-missing"],
-  "12.8": ["positive-tabindex"], // tab order coherence
-  "13.8": ["autoplay-media"], // moving/blinking content controllable
+  "12.8": ["positive-tabindex"],
+  "13.8": ["autoplay-media"],
 };
 
-// criteria that fundamentally need a rendered DOM (computed colours/layout/focus)
+// Fully static criteria: absence of any finding can safely be reported as C
+// (the engine sees every detectable failure AND can judge applicability).
+const STATIC = new Set([
+  "1.1", "1.2", "2.1", "4.10", "5.4", "5.6", "5.7", "5.8", "6.2", "7.1", "7.3",
+  "8.2", "8.3", "8.5", "8.7", "9.1", "9.3", "11.1", "11.6", "12.7", "12.8", "13.8",
+]);
+
+// Criteria that fundamentally need a rendered DOM (computed colours/layout/focus).
+// They may still carry rules that raise definite NCs; no finding => "manual".
 const NEEDS_RENDERING = new Set([
-  "3.2", "3.3", // computed contrast
-  "10.4", // text legible at 200% zoom
-  "10.7", // visible focus indicator
-  "10.11", // reflow without scroll at 320px/256px
-  "10.12", // user-redefinable text spacing
-  "10.13", // additional content on hover/focus controllable
-  "10.14", // CSS-only additional content reachable by keyboard
+  "3.2", "3.3", "10.4", "10.7", "10.11", "10.12", "10.13", "10.14",
 ]);
 
 function automatabilityOf(id) {
-  if (RULE_COVERAGE[id]) return "static";
+  if (STATIC.has(id)) return "static";
   if (NEEDS_RENDERING.has(id)) return "needs-rendering";
-  return "judgment";
+  return "judgment"; // includes 8.4/8.8 (validity is a static NC, relevance is judgment)
 }
 
 async function main() {

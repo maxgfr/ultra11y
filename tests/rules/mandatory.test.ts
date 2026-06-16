@@ -36,6 +36,21 @@ describe("duplicate-id (8.2)", () => {
   });
 });
 
+describe("lang-invalid (8.4/8.8)", () => {
+  it("conforming: valid BCP47 codes", () => {
+    expect(findOf(page("<p>x</p>", "<title>T</title>", ' lang="fr"'), "lang-invalid")).toHaveLength(0);
+    expect(findOf(`<span lang="fr-CA">x</span>`, "lang-invalid")).toHaveLength(0);
+  });
+  it("non-conforming: invalid html lang → 8.4, invalid inline lang → 8.8", () => {
+    const h = findOf(page("<p>x</p>", "<title>T</title>", ' lang="francais"'), "lang-invalid");
+    expect(h).toHaveLength(1);
+    expect(h[0]!.criteriaId).toBe("8.4");
+    const s = findOf(`<span lang="abcdefghij">x</span>`, "lang-invalid");
+    expect(s).toHaveLength(1);
+    expect(s[0]!.criteriaId).toBe("8.8");
+  });
+});
+
 describe("inline-lang-change-missing (8.7)", () => {
   it("conforming: valid inline lang", () => {
     expect(findOf(`<span lang="en">Hello</span>`, "inline-lang-change-missing")).toHaveLength(0);

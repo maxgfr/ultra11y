@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ultra11y": {
+      "source": "maxgfr/ultra11y",
+      "sourceType": "github",
+      "skillPath": "skills/ultra11y/SKILL.md",
+      "computedHash": "3778143a9889e366d53276dea83a17e8705691b82c8378cdd774f2aa60e9af97"
+    }
+  }
+}

@@ -1,6 +1,6 @@
-// Theme 11 — Forms: every field has a programmatic label.
+// Theme 11 — Forms: every field has a programmatic label + group/structure checks.
 import type { Doc } from "../parse/html.js";
-import { attr, hasAttr } from "../parse/html.js";
+import { attr, hasAttr, descendants, visibleText } from "../parse/html.js";
 import { controlLabel, isFormField } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
@@ -53,4 +53,77 @@ const placeholderAsLabel: Rule = {
   },
 };
 
-export const formsRules: Rule[] = [controlLabelMissing, placeholderAsLabel];
+const fieldsetLegendMissing: Rule = {
+  id: "fieldset-legend-missing",
+  criteria: ["11.6"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "fieldset") continue;
+      const legend = el.children.find((c) => c.type === "element" && c.tag === "legend");
+      if (legend && legend.type === "element" && visibleText(legend)) continue;
+      if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
+      out.push({
+        criteriaId: "11.6",
+        el,
+        message: `<fieldset> sans <legend> (ou légende vide) — regroupement de champs sans légende.`,
+        remediation: `Ajoutez un <legend> non vide en premier enfant du <fieldset>.`,
+      });
+    }
+    return out;
+  },
+};
+
+const formFieldMultipleLabels: Rule = {
+  id: "form-field-multiple-labels",
+  criteria: ["11.1"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const counts = new Map<string, number>();
+    for (const el of doc.elements) {
+      if (el.tag !== "label") continue;
+      const f = attr(el, "for");
+      if (f) counts.set(f, (counts.get(f) ?? 0) + 1);
+    }
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (!isFormField(el)) continue;
+      const id = attr(el, "id");
+      if (id && (counts.get(id) ?? 0) > 1) {
+        out.push({
+          criteriaId: "11.1",
+          el,
+          message: `Champ <${el.tag}> référencé par ${counts.get(id)} <label for="${id}"> — étiquettes multiples ambiguës.`,
+          remediation: `Un seul <label> doit cibler le champ ; fusionnez ou retirez les étiquettes superflues.`,
+        });
+      }
+    }
+    return out;
+  },
+};
+
+const selectHasOption: Rule = {
+  id: "select-has-option",
+  criteria: ["11.1"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "select") continue;
+      if (descendants(el).some((d) => d.tag === "option")) continue;
+      out.push({
+        criteriaId: "11.1",
+        el,
+        message: `<select> sans aucune <option> — liste de choix vide.`,
+        remediation: `Ajoutez des <option> (et un <optgroup>/option par défaut si pertinent).`,
+      });
+    }
+    return out;
+  },
+};
+
+export const formsRules: Rule[] = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption];

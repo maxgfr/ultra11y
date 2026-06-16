@@ -14,6 +14,7 @@ import { linksRules } from "./links.js";
 import { formsRules } from "./forms.js";
 import { navigationRules } from "./navigation.js";
 import { multimediaRules } from "./multimedia.js";
+import { presentationRules } from "./presentation.js";
 
 export const ALL_RULES: Rule[] = [
   ...imagesRules,
@@ -26,6 +27,7 @@ export const ALL_RULES: Rule[] = [
   ...formsRules,
   ...navigationRules,
   ...multimediaRules,
+  ...presentationRules,
 ];
 
 const SEVERITY_ORDER: Record<string, number> = { bloquant: 0, majeur: 1, mineur: 2 };

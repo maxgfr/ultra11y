@@ -34,3 +34,17 @@ describe("h1-multiple (9.1)", () => {
     expect(f[0]!.severity).toBe("mineur");
   });
 });
+
+describe("list-structure (9.3)", () => {
+  it("conforming: ul of li", () => {
+    expect(findOf(`<ul><li>a</li><li>b</li></ul>`, "list-structure")).toHaveLength(0);
+  });
+  it("non-conforming: a div directly inside a ul", () => {
+    const f = findOf(`<ul><div>a</div></ul>`, "list-structure");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("9.3");
+  });
+  it("non-conforming: an li outside any list", () => {
+    expect(findOf(`<section><li>x</li></section>`, "list-structure")).toHaveLength(1);
+  });
+});

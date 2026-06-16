@@ -40,13 +40,13 @@ describe("RGAA dataset integrity", () => {
     }
   });
 
-  it("automatability is in the enum; static carry rule ids, others carry none", () => {
+  it("automatability is in the enum; static criteria carry at least one rule", () => {
     for (const c of rgaa.criteria) {
       expect(["static", "needs-rendering", "judgment"]).toContain(c.automatability);
+      // static => engine fully covers it, so it must carry a rule. Non-static MAY
+      // carry a rule (one that raises only definite NCs, e.g. 10.4 viewport zoom).
       if (c.automatability === "static") {
         expect(c.ruleIds.length, `ruleIds of ${c.id}`).toBeGreaterThan(0);
-      } else {
-        expect(c.ruleIds.length, `ruleIds of ${c.id}`).toBe(0);
       }
     }
   });

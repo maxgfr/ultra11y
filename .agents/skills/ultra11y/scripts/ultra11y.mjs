@@ -1422,10 +1422,8 @@ var rgaa_default = {
       techniques: [
         "F46"
       ],
-      automatability: "static",
-      ruleIds: [
-        "layout-table-data-markup"
-      ]
+      automatability: "judgment",
+      ruleIds: []
     },
     {
       id: "6.1",
@@ -1578,10 +1576,7 @@ var rgaa_default = {
         "button-empty-name",
         "clickable-noninteractive",
         "aria-ref-missing-id",
-        "icon-only-control-unnamed",
-        "aria-required-children",
-        "aria-hidden-focusable",
-        "nested-interactive"
+        "icon-only-control-unnamed"
       ]
     },
     {
@@ -1820,9 +1815,7 @@ var rgaa_default = {
         "H57"
       ],
       automatability: "judgment",
-      ruleIds: [
-        "lang-invalid"
-      ]
+      ruleIds: []
     },
     {
       id: "8.5",
@@ -1916,9 +1909,7 @@ var rgaa_default = {
         "H58"
       ],
       automatability: "judgment",
-      ruleIds: [
-        "lang-invalid"
-      ]
+      ruleIds: []
     },
     {
       id: "8.9",
@@ -2072,10 +2063,8 @@ var rgaa_default = {
         'Les attributs WAI-ARIA `role="list"` et `role="listitem"` peuvent n\xE9cessiter l\u2019utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas o\xF9 l\u2019ensemble de la liste n\u2019est pas disponible via le DOM g\xE9n\xE9r\xE9 au moment de la consultation.',
         'Les attributs WAI-ARIA `role="tree"`, `role="tablist"`, `role="menu"`, `role="combobox"` et `role="listbox"` ne sont pas \xE9quivalents \xE0 une liste HTML `<ul>` ou `<ol>`.'
       ],
-      automatability: "static",
-      ruleIds: [
-        "list-structure"
-      ]
+      automatability: "judgment",
+      ruleIds: []
     },
     {
       id: "9.4",
@@ -2221,9 +2210,7 @@ var rgaa_default = {
         "[object Object]"
       ],
       automatability: "needs-rendering",
-      ruleIds: [
-        "meta-viewport-zoom-block"
-      ]
+      ruleIds: []
     },
     {
       id: "10.5",
@@ -2564,9 +2551,7 @@ var rgaa_default = {
       automatability: "static",
       ruleIds: [
         "control-label-missing",
-        "placeholder-as-label",
-        "form-field-multiple-labels",
-        "select-has-option"
+        "placeholder-as-label"
       ]
     },
     {
@@ -2719,10 +2704,8 @@ var rgaa_default = {
         "H71",
         "ARIA17"
       ],
-      automatability: "static",
-      ruleIds: [
-        "fieldset-legend-missing"
-      ]
+      automatability: "judgment",
+      ruleIds: []
     },
     {
       id: "11.7",
@@ -6693,19 +6676,6 @@ var iframeTitleMissing = {
 var framesRules = [iframeTitleMissing];
 
 // src/rules/scripts-aria.ts
-var INTERACTIVE_ROLES = ["button", "link", "checkbox", "radio", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "switch", "textbox", "combobox", "slider", "spinbutton"];
-function isInteractive(el) {
-  if (el.tag === "a") return hasAttr(el, "href");
-  if (["button", "select", "textarea"].includes(el.tag)) return true;
-  if (el.tag === "input") return (attr(el, "type") ?? "text").toLowerCase() !== "hidden";
-  return INTERACTIVE_ROLES.includes((attr(el, "role") ?? "").trim());
-}
-function isFocusable(el) {
-  if (isInteractive(el)) return true;
-  const ti = attr(el, "tabindex");
-  if (ti !== void 0 && Number(ti) >= 0) return true;
-  return hasAttr(el, "contenteditable") && attr(el, "contenteditable") !== "false";
-}
 var VALID_ROLES = /* @__PURE__ */ new Set([
   "alert",
   "alertdialog",
@@ -6918,86 +6888,7 @@ var clickableNoninteractive = {
     return out;
   }
 };
-var REQUIRED_CHILDREN = {
-  list: ["listitem"],
-  tablist: ["tab"],
-  radiogroup: ["radio"],
-  tree: ["treeitem"],
-  menu: ["menuitem", "menuitemcheckbox", "menuitemradio"],
-  menubar: ["menuitem", "menuitemcheckbox", "menuitemradio"]
-};
-function satisfiesChild(d, reqRoles) {
-  const role = (attr(d, "role") ?? "").trim();
-  if (reqRoles.includes(role)) return true;
-  if (reqRoles.includes("listitem") && d.tag === "li") return true;
-  if (reqRoles.includes("radio") && d.tag === "input" && (attr(d, "type") ?? "").toLowerCase() === "radio") return true;
-  return false;
-}
-var ariaRequiredChildren = {
-  id: "aria-required-children",
-  criteria: ["7.1"],
-  parser: ["html", "jsx"],
-  severity: "majeur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      const role = (attr(el, "role") ?? "").trim();
-      const req = REQUIRED_CHILDREN[role];
-      if (!req) continue;
-      if (hasAttr(el, "aria-owns")) continue;
-      if (descendants(el).some((d) => satisfiesChild(d, req))) continue;
-      out.push({
-        criteriaId: "7.1",
-        el,
-        message: `role="${role}" sans enfant requis (${req.join("/")}) \u2014 structure ARIA incompl\xE8te.`,
-        remediation: `Ajoutez les \xE9l\xE9ments enfants au r\xF4le appropri\xE9, ou utilisez les \xE9l\xE9ments HTML natifs.`
-      });
-    }
-    return out;
-  }
-};
-var ariaHiddenFocusable = {
-  id: "aria-hidden-focusable",
-  criteria: ["7.1"],
-  parser: ["html", "jsx"],
-  severity: "majeur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      if (attr(el, "aria-hidden") !== "true") continue;
-      const focusableHere = isFocusable(el) || descendants(el).some(isFocusable);
-      if (!focusableHere) continue;
-      out.push({
-        criteriaId: "7.1",
-        el,
-        message: `aria-hidden="true" sur (ou contenant) un \xE9l\xE9ment focalisable \u2014 pi\xE8ge pour les technologies d'assistance.`,
-        remediation: `Retirez aria-hidden, ou rendez l'\xE9l\xE9ment non focalisable (tabindex="-1", disabled).`
-      });
-    }
-    return out;
-  }
-};
-var nestedInteractive = {
-  id: "nested-interactive",
-  criteria: ["7.1"],
-  parser: ["html", "jsx"],
-  severity: "majeur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      if (!isInteractive(el)) continue;
-      if (!ancestors(el).some(isInteractive)) continue;
-      out.push({
-        criteriaId: "7.1",
-        el,
-        message: `\xC9l\xE9ment interactif <${el.tag}> imbriqu\xE9 dans un autre \xE9l\xE9ment interactif \u2014 non restitu\xE9 correctement.`,
-        remediation: `Ne pas imbriquer des contr\xF4les interactifs (lien/bouton) ; mettez-les c\xF4te \xE0 c\xF4te.`
-      });
-    }
-    return out;
-  }
-};
-var scriptsAriaRules = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive, ariaRequiredChildren, ariaHiddenFocusable, nestedInteractive];
+var scriptsAriaRules = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive];
 
 // src/rules/mandatory.ts
 var htmlLangMissing = {
@@ -7088,29 +6979,7 @@ var inlineLangChangeMissing = {
     return out;
   }
 };
-var BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
-var langInvalid = {
-  id: "lang-invalid",
-  criteria: ["8.4", "8.8"],
-  parser: ["html", "jsx"],
-  severity: "mineur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      const lang = (attr(el, "lang") ?? "").trim();
-      if (!lang) continue;
-      if (BCP47.test(lang)) continue;
-      out.push({
-        criteriaId: el.tag === "html" ? "8.4" : "8.8",
-        el,
-        message: `Code de langue invalide lang="${lang}" sur <${el.tag}> \u2014 n'est pas un code BCP 47 valide.`,
-        remediation: `Utilisez un code de langue valide (ex. "fr", "en", "fr-CA").`
-      });
-    }
-    return out;
-  }
-};
-var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing, langInvalid];
+var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing];
 
 // src/rules/headings.ts
 function headingLevel(el) {
@@ -7191,54 +7060,11 @@ var h1Multiple = {
     }));
   }
 };
-var ALLOWED_IN_LIST = /* @__PURE__ */ new Set(["li", "script", "template"]);
-var listStructure = {
-  id: "list-structure",
-  criteria: ["9.3"],
-  parser: ["html", "jsx"],
-  severity: "majeur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      if (el.tag === "ul" || el.tag === "ol") {
-        const bad = el.children.find((c) => c.type === "element" && !ALLOWED_IN_LIST.has(c.tag));
-        if (bad && bad.type === "element") {
-          out.push({
-            criteriaId: "9.3",
-            el: bad,
-            message: `<${bad.tag}> enfant direct de <${el.tag}> \u2014 une liste ne doit contenir que des <li>.`,
-            remediation: `Enveloppez le contenu dans des <li>, ou utilisez un autre \xE9l\xE9ment que <${el.tag}>.`
-          });
-        }
-      } else if (el.tag === "li") {
-        const parent = el.parent;
-        if (parent && !["ul", "ol", "menu"].includes(parent.tag)) {
-          out.push({
-            criteriaId: "9.3",
-            el,
-            message: `<li> hors d'une liste (<${parent.tag}> parent) \u2014 structure de liste invalide.`,
-            remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`
-          });
-        }
-      }
-    }
-    return out;
-  }
-};
-var headingsRules = [headingOrderSkip, h1Missing, h1Multiple, listStructure];
+var headingsRules = [headingOrderSkip, h1Missing, h1Multiple];
 
 // src/rules/tables.ts
-var declaredLayout = (t2) => ["presentation", "none"].includes((attr(t2, "role") ?? "").trim());
+var isLayout = (t2) => ["presentation", "none"].includes((attr(t2, "role") ?? "").trim());
 var named2 = (t2) => !!(attr(t2, "aria-label") ?? "").trim() || hasAttr(t2, "aria-labelledby");
-function isLayoutTable(t2) {
-  if (declaredLayout(t2)) return true;
-  const desc = descendants(t2);
-  if (desc.some((d) => d.tag === "table")) return true;
-  const hasTh = desc.some((d) => d.tag === "th");
-  const hasCaption = t2.children.some((c) => c.type === "element" && c.tag === "caption");
-  const rows = desc.filter((d) => d.tag === "tr").length;
-  return !hasTh && !hasCaption && rows <= 1;
-}
 var dataTableNoHeaders = {
   id: "data-table-no-headers",
   criteria: ["5.6", "5.7"],
@@ -7247,7 +7073,7 @@ var dataTableNoHeaders = {
   run(doc) {
     const out = [];
     for (const t2 of doc.elements) {
-      if (t2.tag !== "table" || isLayoutTable(t2)) continue;
+      if (t2.tag !== "table" || isLayout(t2)) continue;
       const desc = descendants(t2);
       const hasTh = desc.some((d) => d.tag === "th");
       const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasAttr(d, "scope") || hasAttr(d, "headers")));
@@ -7279,7 +7105,7 @@ var tableCaptionMissing = {
   run(doc) {
     const out = [];
     for (const t2 of doc.elements) {
-      if (t2.tag !== "table" || isLayoutTable(t2)) continue;
+      if (t2.tag !== "table" || isLayout(t2)) continue;
       const hasCaption = t2.children.some((c) => c.type === "element" && c.tag === "caption");
       if (hasCaption || named2(t2)) continue;
       out.push({
@@ -7292,29 +7118,7 @@ var tableCaptionMissing = {
     return out;
   }
 };
-var layoutTableDataMarkup = {
-  id: "layout-table-data-markup",
-  criteria: ["5.8"],
-  parser: ["html", "jsx"],
-  severity: "mineur",
-  run(doc) {
-    const out = [];
-    for (const t2 of doc.elements) {
-      if (t2.tag !== "table" || !declaredLayout(t2)) continue;
-      const desc = descendants(t2);
-      const dataMarkup = desc.some((d) => d.tag === "th") || t2.children.some((c) => c.type === "element" && c.tag === "caption") || desc.some((d) => hasAttr(d, "scope") || hasAttr(d, "headers"));
-      if (!dataMarkup) continue;
-      out.push({
-        criteriaId: "5.8",
-        el: t2,
-        message: `Tableau de mise en forme (role="${attr(t2, "role")}") utilisant du balisage de donn\xE9es (th/caption/scope).`,
-        remediation: `Retirez th/caption/scope/headers d'un tableau de pr\xE9sentation, ou faites-en un vrai tableau de donn\xE9es.`
-      });
-    }
-    return out;
-  }
-};
-var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup];
+var tablesRules = [dataTableNoHeaders, tableCaptionMissing];
 
 // src/rules/links.ts
 function hasIconChild(el) {
@@ -7453,77 +7257,7 @@ var placeholderAsLabel = {
     return out;
   }
 };
-var fieldsetLegendMissing = {
-  id: "fieldset-legend-missing",
-  criteria: ["11.6"],
-  parser: ["html", "jsx"],
-  severity: "majeur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      if (el.tag !== "fieldset") continue;
-      const legend = el.children.find((c) => c.type === "element" && c.tag === "legend");
-      if (legend && legend.type === "element" && visibleText(legend)) continue;
-      if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
-      out.push({
-        criteriaId: "11.6",
-        el,
-        message: `<fieldset> sans <legend> (ou l\xE9gende vide) \u2014 regroupement de champs sans l\xE9gende.`,
-        remediation: `Ajoutez un <legend> non vide en premier enfant du <fieldset>.`
-      });
-    }
-    return out;
-  }
-};
-var formFieldMultipleLabels = {
-  id: "form-field-multiple-labels",
-  criteria: ["11.1"],
-  parser: ["html", "jsx"],
-  severity: "mineur",
-  run(doc) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const el of doc.elements) {
-      if (el.tag !== "label") continue;
-      const f = attr(el, "for");
-      if (f) counts.set(f, (counts.get(f) ?? 0) + 1);
-    }
-    const out = [];
-    for (const el of doc.elements) {
-      if (!isFormField(el)) continue;
-      const id = attr(el, "id");
-      if (id && (counts.get(id) ?? 0) > 1) {
-        out.push({
-          criteriaId: "11.1",
-          el,
-          message: `Champ <${el.tag}> r\xE9f\xE9renc\xE9 par ${counts.get(id)} <label for="${id}"> \u2014 \xE9tiquettes multiples ambigu\xEBs.`,
-          remediation: `Un seul <label> doit cibler le champ ; fusionnez ou retirez les \xE9tiquettes superflues.`
-        });
-      }
-    }
-    return out;
-  }
-};
-var selectHasOption = {
-  id: "select-has-option",
-  criteria: ["11.1"],
-  parser: ["html", "jsx"],
-  severity: "mineur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      if (el.tag !== "select") continue;
-      if (descendants(el).some((d) => d.tag === "option")) continue;
-      out.push({
-        criteriaId: "11.1",
-        el,
-        message: `<select> sans aucune <option> \u2014 liste de choix vide.`,
-        remediation: `Ajoutez des <option> (et un <optgroup>/option par d\xE9faut si pertinent).`
-      });
-    }
-    return out;
-  }
-};
-var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption];
+var formsRules = [controlLabelMissing, placeholderAsLabel];
 
 // src/rules/navigation.ts
 var skipLinkTargetMissing = {
@@ -7611,38 +7345,6 @@ var autoplayMedia = {
 };
 var multimediaRules = [autoplayMedia];
 
-// src/rules/presentation.ts
-var metaViewportZoomBlock = {
-  id: "meta-viewport-zoom-block",
-  criteria: ["10.4"],
-  parser: ["html", "jsx"],
-  severity: "majeur",
-  run(doc) {
-    const out = [];
-    for (const el of doc.elements) {
-      if (el.tag !== "meta" || (attr(el, "name") ?? "").toLowerCase() !== "viewport") continue;
-      const content = (attr(el, "content") ?? "").toLowerCase();
-      const pairs = /* @__PURE__ */ new Map();
-      for (const part of content.split(/[,;]/)) {
-        const [k, v] = part.split("=").map((s) => s.trim());
-        if (k) pairs.set(k, v ?? "");
-      }
-      const userScalable = pairs.get("user-scalable");
-      const maxScale = pairs.get("maximum-scale");
-      const blocked = userScalable === "no" || userScalable === "0" || maxScale !== void 0 && Number(maxScale) < 2;
-      if (!blocked) continue;
-      out.push({
-        criteriaId: "10.4",
-        el,
-        message: `<meta viewport> bloque le zoom (${userScalable === "no" || userScalable === "0" ? "user-scalable=no" : `maximum-scale=${maxScale}`}) \u2014 agrandissement \xE0 200% emp\xEAch\xE9.`,
-        remediation: `Retirez user-scalable=no et maximum-scale (ou maximum-scale \u2265 2) du content du viewport.`
-      });
-    }
-    return out;
-  }
-};
-var presentationRules = [metaViewportZoomBlock];
-
 // src/rules/registry.ts
 var ALL_RULES = [
   ...imagesRules,
@@ -7654,8 +7356,7 @@ var ALL_RULES = [
   ...linksRules,
   ...formsRules,
   ...navigationRules,
-  ...multimediaRules,
-  ...presentationRules
+  ...multimediaRules
 ];
 var SEVERITY_ORDER = { bloquant: 0, majeur: 1, mineur: 2 };
 function runRules(doc, only) {
@@ -7798,12 +7499,9 @@ var APPLICABLE = {
   "8.5": (d) => isFullDocument(d),
   "8.7": (d) => d.elements.some((e) => e.tag !== "html" && hasAttr(e, "lang")),
   "9.1": (d) => isFullDocument(d),
-  "9.3": (d) => has(d, "ul", "ol", "dl", "li", "dt", "dd"),
   "11.1": (d) => d.elements.some(isFormField),
-  "11.6": (d) => has(d, "fieldset"),
   "12.7": (d) => isFullDocument(d) && d.elements.some((e) => e.tag === "a" && (attr(e, "href") ?? "").startsWith("#")),
-  "12.8": (d) => d.elements.some((e) => hasAttr(e, "tabindex")),
-  "5.8": (d) => has(d, "table")
+  "12.8": (d) => d.elements.some((e) => hasAttr(e, "tabindex"))
 };
 function residualReason(automatability) {
   return automatability === "needs-rendering" ? "N\xE9cessite un rendu (contraste, focus, zoom/reflow) \u2014 \xE0 v\xE9rifier manuellement." : "Crit\xE8re de jugement \u2014 \xE0 \xE9valuer manuellement avec le contexte.";
@@ -7823,7 +7521,10 @@ function buildAudit(docs, inputs) {
     const fs = byCriterion.get(c.id) ?? [];
     let status;
     let justification;
-    if (c.automatability === "static") {
+    if (c.automatability !== "static") {
+      status = "manual";
+      residualRisks.push({ criteriaId: c.id, reason: residualReason(c.automatability), automatability: c.automatability });
+    } else {
       const pred = APPLICABLE[c.id];
       const applicable = pred ? docs.some((d) => pred(d)) : docs.some((d) => isFullDocument(d));
       if (!applicable) {
@@ -7834,11 +7535,6 @@ function buildAudit(docs, inputs) {
       } else {
         status = "C";
       }
-    } else if (fs.length > 0) {
-      status = "NC";
-    } else {
-      status = "manual";
-      residualRisks.push({ criteriaId: c.id, reason: residualReason(c.automatability), automatability: c.automatability });
     }
     criteria.push({ id: c.id, theme: c.theme, status, findings: fs, ...justification ? { justification } : {} });
   }

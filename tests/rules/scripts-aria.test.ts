@@ -45,3 +45,37 @@ describe("clickable-noninteractive (7.1/7.3)", () => {
     expect(f[0]!.criteriaId).toBe("7.3");
   });
 });
+
+describe("aria-required-children (7.1)", () => {
+  it("conforming: tablist with a tab, list role with li", () => {
+    expect(findOf(`<div role="tablist"><button role="tab">A</button></div>`, "aria-required-children")).toHaveLength(0);
+    expect(findOf(`<div role="list"><li>x</li></div>`, "aria-required-children")).toHaveLength(0);
+  });
+  it("non-conforming: tablist without any tab", () => {
+    const f = findOf(`<div role="tablist"><span>A</span></div>`, "aria-required-children");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("7.1");
+  });
+});
+
+describe("aria-hidden-focusable (7.1)", () => {
+  it("conforming: aria-hidden on non-focusable content", () => {
+    expect(findOf(`<span aria-hidden="true">★</span>`, "aria-hidden-focusable")).toHaveLength(0);
+  });
+  it("non-conforming: aria-hidden wrapping a focusable link", () => {
+    const f = findOf(`<div aria-hidden="true"><a href="/">Lien</a></div>`, "aria-hidden-focusable");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("7.1");
+  });
+});
+
+describe("nested-interactive (7.1)", () => {
+  it("conforming: sibling controls", () => {
+    expect(findOf(`<div><a href="/">A</a><button>B</button></div>`, "nested-interactive")).toHaveLength(0);
+  });
+  it("non-conforming: a button inside a link", () => {
+    const f = findOf(`<a href="/"><button>X</button></a>`, "nested-interactive");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("7.1");
+  });
+});

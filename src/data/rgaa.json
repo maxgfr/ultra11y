@@ -1410,8 +1410,10 @@
       "techniques": [
         "F46"
       ],
-      "automatability": "judgment",
-      "ruleIds": []
+      "automatability": "static",
+      "ruleIds": [
+        "layout-table-data-markup"
+      ]
     },
     {
       "id": "6.1",
@@ -1564,7 +1566,10 @@
         "button-empty-name",
         "clickable-noninteractive",
         "aria-ref-missing-id",
-        "icon-only-control-unnamed"
+        "icon-only-control-unnamed",
+        "aria-required-children",
+        "aria-hidden-focusable",
+        "nested-interactive"
       ]
     },
     {
@@ -1803,7 +1808,9 @@
         "H57"
       ],
       "automatability": "judgment",
-      "ruleIds": []
+      "ruleIds": [
+        "lang-invalid"
+      ]
     },
     {
       "id": "8.5",
@@ -1897,7 +1904,9 @@
         "H58"
       ],
       "automatability": "judgment",
-      "ruleIds": []
+      "ruleIds": [
+        "lang-invalid"
+      ]
     },
     {
       "id": "8.9",
@@ -2051,8 +2060,10 @@
         "Les attributs WAI-ARIA `role=\"list\"` et `role=\"listitem\"` peuvent nécessiter l’utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas où l’ensemble de la liste n’est pas disponible via le DOM généré au moment de la consultation.",
         "Les attributs WAI-ARIA `role=\"tree\"`, `role=\"tablist\"`, `role=\"menu\"`, `role=\"combobox\"` et `role=\"listbox\"` ne sont pas équivalents à une liste HTML `<ul>` ou `<ol>`."
       ],
-      "automatability": "judgment",
-      "ruleIds": []
+      "automatability": "static",
+      "ruleIds": [
+        "list-structure"
+      ]
     },
     {
       "id": "9.4",
@@ -2198,7 +2209,9 @@
         "[object Object]"
       ],
       "automatability": "needs-rendering",
-      "ruleIds": []
+      "ruleIds": [
+        "meta-viewport-zoom-block"
+      ]
     },
     {
       "id": "10.5",
@@ -2539,7 +2552,9 @@
       "automatability": "static",
       "ruleIds": [
         "control-label-missing",
-        "placeholder-as-label"
+        "placeholder-as-label",
+        "form-field-multiple-labels",
+        "select-has-option"
       ]
     },
     {
@@ -2692,8 +2707,10 @@
         "H71",
         "ARIA17"
       ],
-      "automatability": "judgment",
-      "ruleIds": []
+      "automatability": "static",
+      "ruleIds": [
+        "fieldset-legend-missing"
+      ]
     },
     {
       "id": "11.7",

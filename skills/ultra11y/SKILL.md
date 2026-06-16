@@ -66,14 +66,17 @@ résiduel est nommé.
 ## À ne pas faire
 
 - Inventer une non-conformité que le moteur n'a pas trouvée et que vous ne pouvez
-  pas voir (le **contraste** est explicitement hors moteur — ne le déclarez pas sans rendu).
+  pas voir (le **contraste** est hors du moteur statique — passez par `scan` (tier
+  Docker) ou vérifiez au rendu avant de le déclarer).
 - Ajouter de l'ARIA qui double la sémantique native.
 - Marquer un critère de rendu/jugement « conforme » sans vérification humaine.
 - Éditer à la main `references/criteria.md` (généré depuis le référentiel).
 
 ## Portée
 
-Hors-ligne, déterministe, zéro-dépendance ; entrées HTML + JSX/TSX (best-effort)
-+ stdin. **Hors v1** (→ jugement humain) : contraste calculé, focus visible,
-zoom/reflow, contenus au survol, animations — aucun navigateur embarqué.
-Données : RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab 2.0 (voir `NOTICE`).
+Moteur statique : hors-ligne, déterministe, zéro-dépendance ; entrées HTML +
+JSX/TSX (best-effort) + stdin. Les critères de **rendu** (contraste calculé,
+reflow) sont couverts par le tier optionnel `scan` (axe-core dans Docker) ; le
+**focus visible**, le zoom texte 200% et les contenus au survol restent en revue
+humaine (risque résiduel). Données : RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab
+2.0 (voir `NOTICE`).

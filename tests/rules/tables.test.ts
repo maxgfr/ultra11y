@@ -1,0 +1,34 @@
+import { describe, it, expect } from "vitest";
+import { findOf } from "./helpers.js";
+
+describe("data-table-no-headers (5.6/5.7)", () => {
+  it("conforming: th with scope", () => {
+    expect(
+      findOf(`<table><caption>T</caption><tr><th scope="col">A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers"),
+    ).toHaveLength(0);
+  });
+  it("conforming: layout table marked presentation", () => {
+    expect(findOf(`<table role="presentation"><tr><td>x</td></tr></table>`, "data-table-no-headers")).toHaveLength(0);
+  });
+  it("non-conforming: data table with no th → 5.6", () => {
+    const f = findOf(`<table><tr><td>A</td></tr><tr><td>1</td></tr></table>`, "data-table-no-headers");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("5.6");
+  });
+  it("non-conforming: th without scope/headers → 5.7", () => {
+    const f = findOf(`<table><tr><th>A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("5.7");
+  });
+});
+
+describe("table-caption-missing (5.4)", () => {
+  it("conforming: table with caption", () => {
+    expect(findOf(`<table><caption>Ventes</caption><tr><th scope="col">A</th></tr></table>`, "table-caption-missing")).toHaveLength(0);
+  });
+  it("non-conforming: data table without caption", () => {
+    const f = findOf(`<table><tr><th scope="col">A</th></tr></table>`, "table-caption-missing");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("5.4");
+  });
+});

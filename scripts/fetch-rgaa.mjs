@@ -84,7 +84,6 @@ const RULE_COVERAGE = {
   "8.7": ["inline-lang-change-missing"], // language change indicated
   "9.1": ["heading-order-skip", "h1-missing", "h1-multiple"],
   "11.1": ["control-label-missing", "placeholder-as-label"], // field has a label
-  "11.10": ["required-field-not-marked"],
   "12.7": ["skip-link-target-missing"],
   "12.8": ["positive-tabindex"], // tab order coherence
   "13.8": ["autoplay-media"], // moving/blinking content controllable

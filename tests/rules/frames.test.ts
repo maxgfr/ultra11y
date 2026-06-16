@@ -1,0 +1,16 @@
+import { describe, it, expect } from "vitest";
+import { findOf } from "./helpers.js";
+
+describe("iframe-title-missing (2.1)", () => {
+  it("conforming: iframe with title or aria-label or aria-hidden", () => {
+    expect(findOf(`<iframe src="x" title="Carte"></iframe>`, "iframe-title-missing")).toHaveLength(0);
+    expect(findOf(`<iframe src="x" aria-label="Carte"></iframe>`, "iframe-title-missing")).toHaveLength(0);
+    expect(findOf(`<iframe src="x" aria-hidden="true"></iframe>`, "iframe-title-missing")).toHaveLength(0);
+  });
+  it("non-conforming: iframe without a title", () => {
+    const f = findOf(`<iframe src="x"></iframe>`, "iframe-title-missing");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("2.1");
+    expect(f[0]!.severity).toBe("bloquant");
+  });
+});

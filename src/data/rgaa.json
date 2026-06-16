@@ -2862,10 +2862,8 @@
         "[object Object]",
         "Dans le cas où l’ensemble des champs d’un formulaire sont obligatoires, les tests 11.10.1 et 11.10.2 restent applicables."
       ],
-      "automatability": "static",
-      "ruleIds": [
-        "required-field-not-marked"
-      ]
+      "automatability": "judgment",
+      "ruleIds": []
     },
     {
       "id": "11.11",

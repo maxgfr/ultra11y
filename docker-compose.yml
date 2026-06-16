@@ -1,0 +1,10 @@
+# Optional dynamic-tier image (axe-core in a headless browser). The `scan` command
+# builds an equivalent image automatically from embedded files; this compose file
+# is for running the tier by hand or in CI.
+#   docker compose build
+#   docker compose run --rm dynamic https://example.com
+services:
+  dynamic:
+    build: ./docker
+    image: ultra11y-dyn:1
+    init: true

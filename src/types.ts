@@ -96,3 +96,23 @@ export interface AuditResult {
   residualRisks: ResidualRisk[];
   conformancePct: number;
 }
+
+// ---- optional Docker dynamic tier (axe-core in a headless browser)
+export interface DynamicFinding {
+  criteriaId: string;
+  axeRule: string;
+  impact: string;
+  severity: Severity;
+  message: string;
+  selector: string;
+  snippet: string;
+  engine: "axe" | "reflow";
+}
+
+export interface DynamicResult {
+  tool: "ultra11y";
+  engine: string; // e.g. "axe-core@playwright (docker)"
+  target: string;
+  date: string;
+  findings: DynamicFinding[];
+}

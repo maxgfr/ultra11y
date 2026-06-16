@@ -10,7 +10,8 @@
   "files": [
     "scripts",
     "src",
-    "skills"
+    "skills",
+    "docker"
   ],
   "engines": {
     "node": ">=18"

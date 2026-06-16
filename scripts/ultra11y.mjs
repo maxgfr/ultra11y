@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync3, mkdirSync as mkdirSync3 } from "fs";
-import { join as join4 } from "path";
+import { realpathSync, writeFileSync as writeFileSync4, mkdirSync as mkdirSync3 } from "fs";
+import { join as join5 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -8153,6 +8153,273 @@ function writeWorklist(items, outDir, semantic) {
   return { todoPath, mdPath, count: items.length };
 }
 
+// src/scan.ts
+import { execFileSync } from "child_process";
+import { mkdtempSync, writeFileSync as writeFileSync3, existsSync as existsSync2, statSync as statSync2 } from "fs";
+import { tmpdir } from "os";
+import { join as join4, resolve } from "path";
+
+// src/axe-map.ts
+var AXE_RGAA = {
+  // images
+  "image-alt": "1.1",
+  "input-image-alt": "1.1",
+  "area-alt": "1.1",
+  "role-img-alt": "1.1",
+  "image-redundant-alt": "1.2",
+  "svg-img-alt": "1.1",
+  // frames
+  "frame-title": "2.1",
+  "frame-title-unique": "2.2",
+  // colour (the headline dynamic win)
+  "color-contrast": "3.2",
+  "color-contrast-enhanced": "3.2",
+  "link-in-text-block": "3.1",
+  // tables
+  "td-headers-attr": "5.7",
+  "th-has-data-cells": "5.7",
+  "scope-attr-valid": "5.7",
+  "table-fake-caption": "5.4",
+  "td-has-header": "5.6",
+  "empty-table-header": "5.6",
+  // links & buttons
+  "link-name": "6.2",
+  "button-name": "7.1",
+  "input-button-name": "7.1",
+  // scripts / ARIA
+  "aria-allowed-attr": "7.1",
+  "aria-allowed-role": "7.1",
+  "aria-command-name": "7.1",
+  "aria-hidden-body": "7.1",
+  "aria-hidden-focus": "7.1",
+  "aria-input-field-name": "11.1",
+  "aria-required-attr": "7.1",
+  "aria-required-children": "7.1",
+  "aria-required-parent": "7.1",
+  "aria-roles": "7.1",
+  "aria-toggle-field-name": "11.1",
+  "aria-valid-attr": "7.1",
+  "aria-valid-attr-value": "7.1",
+  "nested-interactive": "7.1",
+  "aria-tooltip-name": "7.1",
+  "aria-meter-name": "7.1",
+  "aria-progressbar-name": "7.1",
+  "aria-dialog-name": "7.1",
+  "presentation-role-conflict": "7.1",
+  "duplicate-id-aria": "8.2",
+  // mandatory elements / language
+  "duplicate-id": "8.2",
+  "duplicate-id-active": "8.2",
+  "html-has-lang": "8.3",
+  "html-xml-lang-mismatch": "8.3",
+  "html-lang-valid": "8.4",
+  "valid-lang": "8.8",
+  "document-title": "8.5",
+  // structure
+  "heading-order": "9.1",
+  "empty-heading": "9.1",
+  "page-has-heading-one": "9.1",
+  "list": "9.3",
+  "listitem": "9.3",
+  "definition-list": "9.3",
+  "dlitem": "9.3",
+  "landmark-one-main": "12.6",
+  "region": "12.6",
+  // presentation / zoom
+  "meta-viewport": "10.4",
+  "meta-viewport-large": "10.4",
+  // forms
+  "label": "11.1",
+  "form-field-multiple-labels": "11.1",
+  "select-name": "11.1",
+  "label-title-only": "11.1",
+  "autocomplete-valid": "11.13",
+  "fieldset": "11.6",
+  // multimedia
+  "audio-caption": "4.3",
+  "video-caption": "4.3",
+  "no-autoplay-audio": "4.10",
+  "blink": "13.8",
+  "marquee": "13.8",
+  // navigation
+  "tabindex": "12.8",
+  "skip-link": "12.7",
+  "bypass": "12.7",
+  "accesskeys": "12.10"
+};
+var FALLBACK_CRITERION = "7.1";
+function severityFromImpact(impact) {
+  switch (impact) {
+    case "critical":
+    case "serious":
+      return "bloquant";
+    case "moderate":
+      return "majeur";
+    default:
+      return "mineur";
+  }
+}
+function criterionForAxeRule(ruleId) {
+  return AXE_RGAA[ruleId] ?? FALLBACK_CRITERION;
+}
+
+// src/scan.ts
+var IMAGE_TAG = "ultra11y-dyn:1";
+var MOUNT = "/work/input.html";
+var RUNNER = `import { chromium } from "playwright";
+import axe from "axe-core";
+const target = process.argv[2];
+const isFile = target.startsWith("/work/");
+const browser = await chromium.launch({ args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+try {
+  const page = await browser.newPage();
+  await page.goto(isFile ? "file://" + target : target, { waitUntil: "load", timeout: 45000 });
+  await page.addScriptTag({ content: axe.source });
+  const axeRes = await page.evaluate(async () => await window.axe.run(document, { resultTypes: ["violations"] }));
+  await page.setViewportSize({ width: 320, height: 800 });
+  const reflow = await page.evaluate(() => {
+    const el = document.scrollingElement || document.documentElement;
+    return { horizontalScroll: el.scrollWidth > el.clientWidth + 2 };
+  });
+  const violations = axeRes.violations.map((v) => ({
+    id: v.id, impact: v.impact, help: v.help,
+    nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target, html: (n.html || "").slice(0, 200) })),
+  }));
+  console.log(JSON.stringify({ url: target, violations, reflow }));
+} finally {
+  await browser.close();
+}
+`;
+var PKG = JSON.stringify(
+  { name: "ultra11y-dynamic", private: true, type: "module", dependencies: { playwright: "^1.49.0", "axe-core": "^4.10.0" } },
+  null,
+  2
+);
+var DOCKERFILE = `FROM node:22-bookworm-slim
+WORKDIR /app
+COPY package.json ./
+RUN npm install --omit=dev && npx playwright install --with-deps chromium
+COPY runner.mjs ./
+WORKDIR /work
+ENTRYPOINT ["node", "/app/runner.mjs"]
+`;
+function dockerAvailable() {
+  try {
+    execFileSync("docker", ["info"], { stdio: "ignore", timeout: 1e4 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+function imageExists(tag) {
+  try {
+    execFileSync("docker", ["image", "inspect", tag], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+function buildImage(tag = IMAGE_TAG) {
+  const ctx = mkdtempSync(join4(tmpdir(), "ultra11y-dyn-"));
+  writeFileSync3(join4(ctx, "runner.mjs"), RUNNER);
+  writeFileSync3(join4(ctx, "package.json"), PKG);
+  writeFileSync3(join4(ctx, "Dockerfile"), DOCKERFILE);
+  execFileSync("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
+}
+function runRunner(target, isFile, tag) {
+  const args = ["run", "--rm"];
+  if (isFile) args.push("-v", `${resolve(target)}:${MOUNT}:ro`);
+  args.push(tag, isFile ? MOUNT : target);
+  const stdout = execFileSync("docker", args, { encoding: "utf8", timeout: 24e4, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
+  return JSON.parse(line);
+}
+function toDynamicResult(out, target) {
+  const findings = [];
+  for (const v of out.violations) {
+    const criteriaId = criterionForAxeRule(v.id);
+    const severity = severityFromImpact(v.impact);
+    for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
+      findings.push({
+        criteriaId,
+        axeRule: v.id,
+        impact: v.impact ?? "minor",
+        severity,
+        message: `${v.help} (axe: ${v.id})`,
+        selector: n.target.join(" ") || "\u2014",
+        snippet: n.html,
+        engine: "axe"
+      });
+    }
+  }
+  if (out.reflow?.horizontalScroll) {
+    findings.push({
+      criteriaId: "10.11",
+      axeRule: "reflow",
+      impact: "serious",
+      severity: "majeur",
+      message: "D\xE9filement horizontal \xE0 320px de large \u2014 le contenu ne se redistribue pas (reflow).",
+      selector: "document",
+      snippet: "",
+      engine: "reflow"
+    });
+  }
+  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
+}
+function runScan(opts) {
+  if (!dockerAvailable()) {
+    throw new Error("Docker n'est pas disponible. D\xE9marrez Docker puis relancez `scan --docker`.");
+  }
+  const tag = opts.tag ?? IMAGE_TAG;
+  if (!imageExists(tag)) buildImage(tag);
+  const isFile = !/^https?:\/\//i.test(opts.target) && existsSync2(opts.target) && statSync2(opts.target).isFile();
+  const out = runRunner(opts.target, isFile, tag);
+  return toDynamicResult(out, opts.target);
+}
+var sevRank = { bloquant: 3, majeur: 2, mineur: 1 };
+function mergeDynamic(audit, dynamic) {
+  const merged = JSON.parse(JSON.stringify(audit));
+  const byId2 = new Map(merged.criteria.map((c) => [c.id, c]));
+  for (const df of dynamic.findings) {
+    const c = byId2.get(df.criteriaId);
+    if (!c) continue;
+    const finding = {
+      ruleId: df.engine === "reflow" ? "dyn-reflow" : `axe:${df.axeRule}`,
+      criteriaId: df.criteriaId,
+      file: dynamic.target,
+      line: 0,
+      col: 0,
+      selectorHint: df.selector,
+      severity: df.severity,
+      message: df.message,
+      remediation: "V\xE9rifi\xE9 au rendu par axe-core ; corrigez l'\xE9l\xE9ment cit\xE9.",
+      snippet: df.snippet
+    };
+    c.findings.push(finding);
+    c.status = "NC";
+    delete c.justification;
+    merged.findings.push(finding);
+  }
+  const nowNc = new Set(dynamic.findings.map((d) => d.criteriaId));
+  merged.residualRisks = merged.residualRisks.filter((r) => !nowNc.has(r.criteriaId));
+  merged.themes = allThemes().map((t2) => {
+    const inTheme = merged.criteria.filter((c) => c.theme === t2.number);
+    return {
+      number: t2.number,
+      title: t2.name,
+      c: inTheme.filter((c) => c.status === "C").length,
+      nc: inTheme.filter((c) => c.status === "NC").length,
+      na: inTheme.filter((c) => c.status === "NA").length,
+      manual: inTheme.filter((c) => c.status === "manual").length
+    };
+  });
+  const decided = merged.criteria.filter((c) => c.status === "C" || c.status === "NC");
+  const conform = decided.filter((c) => c.status === "C").length;
+  merged.conformancePct = decided.length === 0 ? 100 : Math.round(conform / decided.length * 100);
+  merged.findings.sort((a, b) => sevRank[b.severity] - sevRank[a.severity]);
+  return merged;
+}
+
 // src/output.ts
 var STR = {
   fr: {
@@ -8218,6 +8485,7 @@ Usage:
   ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
+  ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -8233,6 +8501,10 @@ Commands:
              every NA is justified, sections + conformance maths are well-formed.
   verify     Adversarial claim\u2194criterion worklist for the report's non-conformities,
              then (--apply) gate on refuted/unsupported findings.
+  scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
+             decide the needs-rendering criteria the static engine can't \u2014 computed
+             contrast (3.2/3.3), 320px reflow (10.11) \u2014 over a URL or HTML file.
+             --merge folds the findings into a static AuditResult (manual \u2192 C/NC).
 
 Options:
   --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
@@ -8245,6 +8517,8 @@ Options:
   --list             criteria: print the 13-theme table
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
+  --merge <file>     scan: fold dynamic findings into this AuditResult JSON
+  --docker           scan: run the dynamic tier in Docker (default; built on first use)
   --semantic         verify: fold the support-check into one pass
   --lang fr|en       output language                                     (default: fr)
   --json             machine-readable output
@@ -8253,11 +8527,11 @@ Options:
   -v, --version      print version
 
 Data: RGAA 4.1.2 \xA9 DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
-var COMMANDS = ["audit", "report", "criteria", "check", "verify"];
+var COMMANDS = ["audit", "report", "criteria", "check", "verify", "scan"];
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
-var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang"]);
+var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang", "merge"]);
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   const positionals = [];
@@ -8299,7 +8573,7 @@ async function cmdAudit(p) {
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
   try {
     mkdirSync3(out, { recursive: true });
-    writeFileSync3(join4(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    writeFileSync4(join5(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
   } catch {
   }
   if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
@@ -8382,6 +8656,37 @@ function cmdVerify(p) {
   console.log(`${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}`);
   return 0;
 }
+async function cmdScan(p) {
+  const target = p.positionals.find((a) => a !== "-");
+  if (!target) {
+    console.error("ultra11y scan: provide a URL or HTML file.");
+    return 2;
+  }
+  let dynamic;
+  try {
+    dynamic = runScan({ target });
+  } catch (e) {
+    console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
+    return 1;
+  }
+  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
+  const mergeIn = p.flags["merge"];
+  if (typeof mergeIn === "string" && mergeIn) {
+    const audit = JSON.parse(readText(mergeIn));
+    const merged = mergeDynamic(audit, dynamic);
+    mkdirSync3(out, { recursive: true });
+    writeFileSync4(join5(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    if (p.flags["json"]) console.log(JSON.stringify(merged, null, 2));
+    else console.log(`Audit statique + dynamique fusionn\xE9 \u2192 ${join5(out, "audit-latest.json")} (${merged.conformancePct}% conformit\xE9, ${merged.findings.length} findings).`);
+    return 0;
+  }
+  if (p.flags["json"]) console.log(JSON.stringify(dynamic, null, 2));
+  else {
+    console.log(`Audit dynamique (${dynamic.engine}) de ${dynamic.target} \u2014 ${dynamic.findings.length} non-conformit\xE9(s) :`);
+    for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} \u2014 ${f.message}`);
+  }
+  return 0;
+}
 async function main(argv) {
   const first = argv[0];
   if (!first || first === "-h" || first === "--help") {
@@ -8408,6 +8713,8 @@ async function main(argv) {
       return cmdCheck(p);
     case "verify":
       return cmdVerify(p);
+    case "scan":
+      return cmdScan(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

@@ -7,6 +7,7 @@ import { writeReport } from "./report.js";
 import { runCriteria } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
+import { runScan, mergeDynamic } from "./scan.js";
 import { auditSummary } from "./output.js";
 import { readStdin, readText } from "./util.js";
 
@@ -22,6 +23,7 @@ Usage:
   ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
+  ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -37,6 +39,10 @@ Commands:
              every NA is justified, sections + conformance maths are well-formed.
   verify     Adversarial claim↔criterion worklist for the report's non-conformities,
              then (--apply) gate on refuted/unsupported findings.
+  scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
+             decide the needs-rendering criteria the static engine can't — computed
+             contrast (3.2/3.3), 320px reflow (10.11) — over a URL or HTML file.
+             --merge folds the findings into a static AuditResult (manual → C/NC).
 
 Options:
   --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
@@ -49,6 +55,8 @@ Options:
   --list             criteria: print the 13-theme table
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
+  --merge <file>     scan: fold dynamic findings into this AuditResult JSON
+  --docker           scan: run the dynamic tier in Docker (default; built on first use)
   --semantic         verify: fold the support-check into one pass
   --lang fr|en       output language                                     (default: fr)
   --json             machine-readable output
@@ -58,14 +66,14 @@ Options:
 
 Data: RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
 
-const COMMANDS = ["audit", "report", "criteria", "check", "verify"] as const;
+const COMMANDS = ["audit", "report", "criteria", "check", "verify", "scan"] as const;
 type Command = (typeof COMMANDS)[number];
 
 function isCommand(s: string | undefined): s is Command {
   return !!s && (COMMANDS as readonly string[]).includes(s);
 }
 
-const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang"]);
+const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang", "merge"]);
 
 export interface ParsedArgs {
   command: string;
@@ -209,6 +217,38 @@ function cmdVerify(p: ParsedArgs): number {
   return 0;
 }
 
+async function cmdScan(p: ParsedArgs): Promise<number> {
+  const target = p.positionals.find((a) => a !== "-");
+  if (!target) {
+    console.error("ultra11y scan: provide a URL or HTML file.");
+    return 2;
+  }
+  let dynamic;
+  try {
+    dynamic = runScan({ target });
+  } catch (e) {
+    console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
+    return 1;
+  }
+  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
+  const mergeIn = p.flags["merge"];
+  if (typeof mergeIn === "string" && mergeIn) {
+    const audit = JSON.parse(readText(mergeIn)) as AuditResult;
+    const merged = mergeDynamic(audit, dynamic);
+    mkdirSync(out, { recursive: true });
+    writeFileSync(join(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    if (p.flags["json"]) console.log(JSON.stringify(merged, null, 2));
+    else console.log(`Audit statique + dynamique fusionné → ${join(out, "audit-latest.json")} (${merged.conformancePct}% conformité, ${merged.findings.length} findings).`);
+    return 0;
+  }
+  if (p.flags["json"]) console.log(JSON.stringify(dynamic, null, 2));
+  else {
+    console.log(`Audit dynamique (${dynamic.engine}) de ${dynamic.target} — ${dynamic.findings.length} non-conformité(s) :`);
+    for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} — ${f.message}`);
+  }
+  return 0;
+}
+
 export async function main(argv: string[]): Promise<number> {
   const first = argv[0];
 
@@ -237,6 +277,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdCheck(p);
     case "verify":
       return cmdVerify(p);
+    case "scan":
+      return cmdScan(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

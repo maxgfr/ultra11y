@@ -28,7 +28,20 @@ ultra11y report   --in <audit.json> [--out <dir>] [--lang fr|en]
 ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
 ultra11y check    --report <md> [--quiet] [--json]
 ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
+ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
 ```
+
+### Optional dynamic tier (Docker + axe-core)
+
+`scan` runs **axe-core in a headless browser** (Playwright, in a self-contained Docker image built on first use) to decide the *needs-rendering* criteria the static engine leaves as residual risks — chiefly **computed colour contrast (3.2/3.3)** plus a 320px **reflow** check (10.11) and a render cross-check of the structural rules. `--merge` folds the findings into a static `AuditResult`, upgrading `manual` criteria to `C`/`NC`:
+
+```sh
+node scripts/ultra11y.mjs audit "src/**/*.html" --out audits --json > /dev/null
+node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json --out audits
+node scripts/ultra11y.mjs report --in audits/audit-latest.json --out audits
+```
+
+Requires Docker (the rest of the skill is zero-dependency and Docker-free). The runner + Dockerfile are embedded in the engine and mirrored under `docker/` (with a `docker-compose.yml`). See `skills/ultra11y/references/dynamic.md`.
 
 Typical audit flow:
 

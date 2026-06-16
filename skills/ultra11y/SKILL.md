@@ -35,6 +35,8 @@ empêchent toute non-conformité hallucinée de survivre.
   **`references/criteria.md`**.
 - **« Audit à haute assurance »** → `verify --report … --semantic` ; voir
   **`references/verify.md`**. Méthodologie & format : **`references/methodology.md`**.
+- **« Vérifier le contraste / le rendu (tier optionnel Docker) »** → `scan <url> --merge …`
+  (axe-core dans un navigateur headless) ; voir **`references/dynamic.md`**.
 
 ## Aide-mémoire des commandes
 
@@ -47,6 +49,7 @@ node scripts/ultra11y.mjs criteria 11.1                    # un critère + ses t
 node scripts/ultra11y.mjs criteria --theme 8 --list        # une thématique / la liste
 node scripts/ultra11y.mjs check  --report audits/rgaa-AAAA-MM-JJ.md
 node scripts/ultra11y.mjs verify --report audits/rgaa-AAAA-MM-JJ.md --semantic
+node scripts/ultra11y.mjs scan https://exemple.fr --merge audits/audit-latest.json  # tier Docker
 ```
 Sortie machine partout avec `--json`. Rapport en français par défaut, `--lang en` disponible.
 

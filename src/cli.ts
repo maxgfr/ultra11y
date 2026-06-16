@@ -7,7 +7,7 @@ import { writeReport } from "./report.js";
 import { runCriteria } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
-import { runScan, mergeDynamic } from "./scan.js";
+import { runScan, mergeDynamic, cleanDynamic } from "./scan.js";
 import { auditSummary } from "./output.js";
 import { readStdin, readText } from "./util.js";
 
@@ -24,6 +24,7 @@ Usage:
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
+  ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -57,6 +58,7 @@ Options:
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --docker           scan: run the dynamic tier in Docker (default; built on first use)
+  --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
   --lang fr|en       output language                                     (default: fr)
   --json             machine-readable output
@@ -218,9 +220,14 @@ function cmdVerify(p: ParsedArgs): number {
 }
 
 async function cmdScan(p: ParsedArgs): Promise<number> {
+  if (p.flags["clean"]) {
+    const r = cleanDynamic();
+    console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprimée" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprimé(s).`);
+    return 0;
+  }
   const target = p.positionals.find((a) => a !== "-");
   if (!target) {
-    console.error("ultra11y scan: provide a URL or HTML file.");
+    console.error("ultra11y scan: provide a URL or HTML file (or --clean to remove the Docker image).");
     return 2;
   }
   let dynamic;

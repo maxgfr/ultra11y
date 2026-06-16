@@ -6,7 +6,7 @@
 // skill stays a single distributable bundle). `--merge <audit.json>` folds the
 // dynamic findings back into a static AuditResult, upgrading "manual" criteria.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, existsSync, statSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync, statSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { AuditResult, DynamicFinding, DynamicResult, Severity } from "./types.js";
@@ -78,13 +78,52 @@ function imageExists(tag: string): boolean {
   }
 }
 
-/** Build the dynamic-tier image from the embedded context (first use only). */
+const CTX_PREFIX = "ultra11y-dyn-";
+
+/** Build the dynamic-tier image from the embedded context (first use only).
+ *  The temp build context is always removed afterwards — the host stays clean. */
 export function buildImage(tag = IMAGE_TAG): void {
-  const ctx = mkdtempSync(join(tmpdir(), "ultra11y-dyn-"));
-  writeFileSync(join(ctx, "runner.mjs"), RUNNER);
-  writeFileSync(join(ctx, "package.json"), PKG);
-  writeFileSync(join(ctx, "Dockerfile"), DOCKERFILE);
-  execFileSync("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 900000 });
+  const ctx = mkdtempSync(join(tmpdir(), CTX_PREFIX));
+  try {
+    writeFileSync(join(ctx, "runner.mjs"), RUNNER);
+    writeFileSync(join(ctx, "package.json"), PKG);
+    writeFileSync(join(ctx, "Dockerfile"), DOCKERFILE);
+    execFileSync("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 900000 });
+  } finally {
+    rmSync(ctx, { recursive: true, force: true });
+  }
+}
+
+/** Remove any leftover temp build contexts (pure fs; safe to call always). */
+export function cleanTempContexts(): number {
+  let removed = 0;
+  const dir = tmpdir();
+  for (const name of readdirSync(dir)) {
+    if (!name.startsWith(CTX_PREFIX)) continue;
+    rmSync(join(dir, name), { recursive: true, force: true });
+    removed++;
+  }
+  return removed;
+}
+
+export interface CleanResult {
+  imageRemoved: boolean;
+  tempContextsRemoved: number;
+}
+
+/** Tear down the dynamic tier: remove the image + any leftover build contexts.
+ *  Answers "clean it up easily from the script" — nothing is left on the host. */
+export function cleanDynamic(tag = IMAGE_TAG): CleanResult {
+  let imageRemoved = false;
+  if (dockerAvailable() && imageExists(tag)) {
+    try {
+      execFileSync("docker", ["rmi", "-f", tag], { stdio: "ignore" });
+      imageRemoved = true;
+    } catch {
+      /* image in use or already gone */
+    }
+  }
+  return { imageRemoved, tempContextsRemoved: cleanTempContexts() };
 }
 
 interface RunnerOutput {

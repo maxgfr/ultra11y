@@ -8155,7 +8155,7 @@ function writeWorklist(items, outDir, semantic) {
 
 // src/scan.ts
 import { execFileSync } from "child_process";
-import { mkdtempSync, writeFileSync as writeFileSync3, existsSync as existsSync2, statSync as statSync2 } from "fs";
+import { mkdtempSync, writeFileSync as writeFileSync3, existsSync as existsSync2, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join as join4, resolve } from "path";
 
@@ -8319,12 +8319,38 @@ function imageExists(tag) {
     return false;
   }
 }
+var CTX_PREFIX = "ultra11y-dyn-";
 function buildImage(tag = IMAGE_TAG) {
-  const ctx = mkdtempSync(join4(tmpdir(), "ultra11y-dyn-"));
-  writeFileSync3(join4(ctx, "runner.mjs"), RUNNER);
-  writeFileSync3(join4(ctx, "package.json"), PKG);
-  writeFileSync3(join4(ctx, "Dockerfile"), DOCKERFILE);
-  execFileSync("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
+  const ctx = mkdtempSync(join4(tmpdir(), CTX_PREFIX));
+  try {
+    writeFileSync3(join4(ctx, "runner.mjs"), RUNNER);
+    writeFileSync3(join4(ctx, "package.json"), PKG);
+    writeFileSync3(join4(ctx, "Dockerfile"), DOCKERFILE);
+    execFileSync("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
+  } finally {
+    rmSync(ctx, { recursive: true, force: true });
+  }
+}
+function cleanTempContexts() {
+  let removed = 0;
+  const dir = tmpdir();
+  for (const name of readdirSync2(dir)) {
+    if (!name.startsWith(CTX_PREFIX)) continue;
+    rmSync(join4(dir, name), { recursive: true, force: true });
+    removed++;
+  }
+  return removed;
+}
+function cleanDynamic(tag = IMAGE_TAG) {
+  let imageRemoved = false;
+  if (dockerAvailable() && imageExists(tag)) {
+    try {
+      execFileSync("docker", ["rmi", "-f", tag], { stdio: "ignore" });
+      imageRemoved = true;
+    } catch {
+    }
+  }
+  return { imageRemoved, tempContextsRemoved: cleanTempContexts() };
 }
 function runRunner(target, isFile, tag) {
   const args = ["run", "--rm"];
@@ -8486,6 +8512,7 @@ Usage:
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
+  ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -8519,6 +8546,7 @@ Options:
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --docker           scan: run the dynamic tier in Docker (default; built on first use)
+  --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
   --lang fr|en       output language                                     (default: fr)
   --json             machine-readable output
@@ -8657,9 +8685,14 @@ function cmdVerify(p) {
   return 0;
 }
 async function cmdScan(p) {
+  if (p.flags["clean"]) {
+    const r = cleanDynamic();
+    console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprim\xE9e" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprim\xE9(s).`);
+    return 0;
+  }
   const target = p.positionals.find((a) => a !== "-");
   if (!target) {
-    console.error("ultra11y scan: provide a URL or HTML file.");
+    console.error("ultra11y scan: provide a URL or HTML file (or --clean to remove the Docker image).");
     return 2;
   }
   let dynamic;

@@ -1,0 +1,8 @@
+node_modules
+.git
+audits
+*.tgz
+.DS_Store
+/tmp
+VERIFY.todo.json
+VERIFY.md

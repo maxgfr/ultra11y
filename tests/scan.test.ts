@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { toDynamicResult, mergeDynamic } from "../src/scan.js";
+import { mkdtempSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { toDynamicResult, mergeDynamic, cleanTempContexts } from "../src/scan.js";
 import { runAudit } from "../src/audit.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
@@ -22,6 +25,18 @@ describe("toDynamicResult", () => {
   });
   it("derives severity from axe impact", () => {
     expect(dyn.findings.find((f) => f.axeRule === "button-name")?.severity).toBe("bloquant");
+  });
+});
+
+describe("cleanTempContexts", () => {
+  it("removes leftover dynamic build contexts from the temp dir", () => {
+    const a = mkdtempSync(join(tmpdir(), "ultra11y-dyn-"));
+    const b = mkdtempSync(join(tmpdir(), "ultra11y-dyn-"));
+    expect(existsSync(a)).toBe(true);
+    const removed = cleanTempContexts();
+    expect(removed).toBeGreaterThanOrEqual(2);
+    expect(existsSync(a)).toBe(false);
+    expect(existsSync(b)).toBe(false);
   });
 });
 

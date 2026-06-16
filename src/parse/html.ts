@@ -1,0 +1,189 @@
+// A DOM-lite over htmlparser2: parse HTML into a flat, position-aware element
+// tree that the rules walk. Zero runtime deps beyond htmlparser2 (bundled).
+import { parseDocument } from "htmlparser2";
+import type { Document, ChildNode, Element as DhElement } from "domhandler";
+
+export interface El {
+  type: "element";
+  tag: string; // lowercased
+  attribs: Record<string, string>;
+  children: HNode[];
+  parent: El | null;
+  line: number; // 1-based
+  col: number; // 1-based
+  start: number; // source offset
+  end: number;
+}
+export interface Txt {
+  type: "text";
+  data: string;
+  parent: El | null;
+}
+export type HNode = El | Txt;
+
+export interface Doc {
+  file: string;
+  source: string;
+  lossy: boolean;
+  roots: HNode[];
+  elements: El[];
+  byId: Map<string, El>;
+  lineStarts: number[];
+}
+
+const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
+
+function lineStartsOf(source: string): number[] {
+  const starts = [0];
+  for (let i = 0; i < source.length; i++) if (source.charCodeAt(i) === 10) starts.push(i + 1);
+  return starts;
+}
+
+function lineColAt(lineStarts: number[], offset: number): { line: number; col: number } {
+  // binary search for the greatest lineStart <= offset
+  let lo = 0;
+  let hi = lineStarts.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (lineStarts[mid]! <= offset) lo = mid;
+    else hi = mid - 1;
+  }
+  return { line: lo + 1, col: offset - lineStarts[lo]! + 1 };
+}
+
+export function parseHtml(source: string, file: string, lossy = false): Doc {
+  const dom: Document = parseDocument(source, {
+    withStartIndices: true,
+    withEndIndices: true,
+    lowerCaseTags: true,
+    lowerCaseAttributeNames: true,
+    recognizeSelfClosing: true,
+  });
+  const lineStarts = lineStartsOf(source);
+  const elements: El[] = [];
+  const byId = new Map<string, El>();
+
+  const convert = (node: ChildNode, parent: El | null): HNode | null => {
+    if (node.type === "text") {
+      return { type: "text", data: (node as { data: string }).data, parent };
+    }
+    if (node.type === "tag" || node.type === "script" || node.type === "style") {
+      const dh = node as DhElement;
+      const start = dh.startIndex ?? 0;
+      const { line, col } = lineColAt(lineStarts, start);
+      const el: El = {
+        type: "element",
+        tag: dh.name.toLowerCase(),
+        attribs: { ...dh.attribs },
+        children: [],
+        parent,
+        line,
+        col,
+        start,
+        end: dh.endIndex ?? start,
+      };
+      elements.push(el);
+      const id = el.attribs["id"];
+      if (id && !byId.has(id)) byId.set(id, el);
+      for (const child of dh.children) {
+        const c = convert(child, el);
+        if (c) el.children.push(c);
+      }
+      return el;
+    }
+    return null; // comments, directives, etc. are ignored
+  };
+
+  const roots: HNode[] = [];
+  for (const node of dom.children) {
+    const c = convert(node, null);
+    if (c) roots.push(c);
+  }
+  return { file, source, lossy, roots, elements, byId, lineStarts };
+}
+
+// ---- helpers used by rules
+
+export function attr(el: El, name: string): string | undefined {
+  return el.attribs[name.toLowerCase()];
+}
+
+export function hasAttr(el: El, name: string): boolean {
+  return name.toLowerCase() in el.attribs;
+}
+
+export function isVoid(tag: string): boolean {
+  return VOID.has(tag);
+}
+
+export function textContent(node: HNode): string {
+  if (node.type === "text") return node.data;
+  let out = "";
+  for (const c of node.children) out += textContent(c);
+  return out;
+}
+
+/** Visible text content, whitespace-collapsed and trimmed. */
+export function visibleText(el: El): string {
+  return textContent(el).replace(/\s+/g, " ").trim();
+}
+
+export function descendants(el: El): El[] {
+  const out: El[] = [];
+  const stack = [...el.children];
+  while (stack.length) {
+    const n = stack.pop()!;
+    if (n.type === "element") {
+      out.push(n);
+      stack.push(...n.children);
+    }
+  }
+  return out;
+}
+
+export function ancestors(el: El): El[] {
+  const out: El[] = [];
+  let p = el.parent;
+  while (p) {
+    out.push(p);
+    p = p.parent;
+  }
+  return out;
+}
+
+export function closest(el: El, pred: (e: El) => boolean): El | undefined {
+  let p: El | null = el;
+  while (p) {
+    if (pred(p)) return p;
+    p = p.parent;
+  }
+  return undefined;
+}
+
+export function elementsByTag(doc: Doc, ...tags: string[]): El[] {
+  const want = new Set(tags.map((t) => t.toLowerCase()));
+  return doc.elements.filter((e) => want.has(e.tag));
+}
+
+export function getById(doc: Doc, id: string): El | undefined {
+  return doc.byId.get(id);
+}
+
+/** All ids in the document, with duplicates preserved (for duplicate-id). */
+export function allIds(doc: Doc): { id: string; el: El }[] {
+  const out: { id: string; el: El }[] = [];
+  for (const el of doc.elements) {
+    const id = el.attribs["id"];
+    if (id) out.push({ id, el });
+  }
+  return out;
+}
+
+/** The source line(s) the element starts on, trimmed and truncated. */
+export function snippet(doc: Doc, el: El, max = 120): string {
+  const lineStart = doc.lineStarts[el.line - 1] ?? 0;
+  let end = doc.source.indexOf("\n", lineStart);
+  if (end === -1) end = doc.source.length;
+  const raw = doc.source.slice(lineStart, end).trim();
+  return raw.length > max ? raw.slice(0, max - 1) + "…" : raw;
+}

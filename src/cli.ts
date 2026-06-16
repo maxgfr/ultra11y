@@ -1,6 +1,10 @@
-import { realpathSync } from "node:fs";
+import { realpathSync, writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { VERSION } from "./types.js";
+import { VERSION, type Lang } from "./types.js";
+import { runAudit } from "./audit.js";
+import { auditSummary } from "./output.js";
+import { readStdin } from "./util.js";
 
 const HELP = `ultra11y v${VERSION}
 Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a
@@ -57,28 +61,91 @@ function isCommand(s: string | undefined): s is Command {
   return !!s && (COMMANDS as readonly string[]).includes(s);
 }
 
-export async function main(argv: string[]): Promise<number> {
-  const [cmd, ...rest] = argv;
+const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang"]);
 
-  if (!cmd || cmd === "-h" || cmd === "--help") {
+export interface ParsedArgs {
+  command: string;
+  positionals: string[];
+  flags: Record<string, string | boolean>;
+}
+
+export function parseArgs(argv: string[]): ParsedArgs {
+  const [command, ...rest] = argv;
+  const positionals: string[] = [];
+  const flags: Record<string, string | boolean> = {};
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i]!;
+    if (a.startsWith("--")) {
+      const key = a.slice(2);
+      if (VALUE_FLAGS.has(key)) flags[key] = rest[++i] ?? "";
+      else flags[key] = true;
+    } else if (a.startsWith("-") && a !== "-") {
+      flags[a.slice(1)] = true;
+    } else {
+      positionals.push(a);
+    }
+  }
+  return { command: command ?? "", positionals, flags };
+}
+
+function langOf(flags: Record<string, string | boolean>): Lang {
+  return flags["lang"] === "en" ? "en" : "fr";
+}
+
+function asList(v: string | boolean | undefined): string[] | undefined {
+  return typeof v === "string" && v ? [v] : undefined;
+}
+
+async function cmdAudit(p: ParsedArgs): Promise<number> {
+  const inputs = p.positionals.length ? p.positionals : ["."];
+  if (inputs.length === 0) {
+    console.error("ultra11y audit: provide files/globs, or '-' to read stdin.");
+    return 2;
+  }
+  const stdin = inputs.includes("-") ? await readStdin() : undefined;
+  const result = runAudit({
+    inputs,
+    stdin,
+    forceJsx: p.flags["jsx"] === true,
+    include: asList(p.flags["include"]),
+    exclude: asList(p.flags["exclude"]),
+  });
+
+  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
+  try {
+    mkdirSync(out, { recursive: true });
+    writeFileSync(join(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+  } catch {
+    /* non-fatal: still print the result */
+  }
+
+  if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+  else console.log(auditSummary(result, langOf(p.flags)));
+  return 0;
+}
+
+export async function main(argv: string[]): Promise<number> {
+  const first = argv[0];
+
+  if (!first || first === "-h" || first === "--help") {
     console.log(HELP);
     return 0;
   }
-  if (cmd === "-v" || cmd === "--version") {
+  if (first === "-v" || first === "--version") {
     console.log(VERSION);
     return 0;
   }
-  if (!isCommand(cmd)) {
-    console.error(`ultra11y: unknown command "${cmd}". Run \`ultra11y --help\`.`);
+  if (!isCommand(first)) {
+    console.error(`ultra11y: unknown command "${first}". Run \`ultra11y --help\`.`);
     return 2;
   }
 
-  switch (cmd) {
-    // Commands are wired in as each milestone lands (M3 audit, M4 report,
-    // M5 criteria, M6 check/verify). Until then they report not-implemented.
+  const p = parseArgs(argv);
+  switch (p.command as Command) {
+    case "audit":
+      return cmdAudit(p);
     default:
-      console.error(`ultra11y: "${cmd}" is not implemented yet`);
-      void rest;
+      console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;
   }
 }

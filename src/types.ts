@@ -5,7 +5,9 @@ export const SCHEMA_VERSION = 1;
 
 export type Lang = "fr" | "en";
 export type Severity = "bloquant" | "majeur" | "mineur";
-export type Status = "C" | "NC" | "NA";
+// C = conforme, NC = non conforme, NA = non applicable, manual = à évaluer
+// (needs-rendering / judgment criteria the engine cannot decide on its own).
+export type Status = "C" | "NC" | "NA" | "manual";
 export type Automatability = "static" | "needs-rendering" | "judgment";
 export type ParserKind = "html" | "css" | "jsx" | "cross";
 
@@ -73,6 +75,7 @@ export interface ThemeTally {
   c: number;
   nc: number;
   na: number;
+  manual: number;
 }
 
 export interface ResidualRisk {

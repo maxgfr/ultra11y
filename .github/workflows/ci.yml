@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    name: build-test (node 24)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Build is reproducible (committed bundles up to date)
+        run: pnpm run check:build # tsup && copy-bundle && git diff --exit-code over both bundles
+
+      - name: Test
+        run: pnpm test
+
+      - name: Smoke-run the committed bundle (offline, fixture)
+        run: pnpm run demo # audit -> report -> check -> criteria
+
+      - name: Assert a report was produced
+        run: ls /tmp/ultra11y-demo/rgaa-*.md
+
+  # The shipped scripts/ultra11y.mjs is a dependency-free bundle declaring
+  # engines.node ">=18", but the dev toolchain (vitest 4) needs Node >=20. This
+  # job runs ONLY the committed bundle on Node 18, with no install, to guarantee
+  # the published ">=18" promise actually holds.
+  runtime-node-floor:
+    runs-on: ubuntu-latest
+    name: runtime (Node 18 floor, zero-dep bundle)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Audit / report / check / criteria on Node 18
+        run: |
+          node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out "$RUNNER_TEMP/u18" --json > /dev/null
+          node scripts/ultra11y.mjs report --in "$RUNNER_TEMP/u18/audit-latest.json" --out "$RUNNER_TEMP/u18"
+          node scripts/ultra11y.mjs check --report "$RUNNER_TEMP"/u18/rgaa-*.md
+          node scripts/ultra11y.mjs criteria --theme 1 | grep -q "1.1"
+
+      - name: The check gate blocks an invented criterion (exit 1)
+        run: |
+          printf '## 1.\n## 2.\n- **99.9 — faux** — `x:1` (`d`)\n## 3.\n## 4.\n## 5.\n50%%\n' > "$RUNNER_TEMP/bad.md"
+          if node scripts/ultra11y.mjs check --report "$RUNNER_TEMP/bad.md"; then
+            echo "expected non-zero exit for an invented criterion"; exit 1
+          fi

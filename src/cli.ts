@@ -1,10 +1,11 @@
 import { realpathSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { VERSION, type Lang } from "./types.js";
+import { VERSION, type Lang, type AuditResult } from "./types.js";
 import { runAudit } from "./audit.js";
+import { writeReport } from "./report.js";
 import { auditSummary } from "./output.js";
-import { readStdin } from "./util.js";
+import { readStdin, readText } from "./util.js";
 
 const HELP = `ultra11y v${VERSION}
 Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a
@@ -124,6 +125,30 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   return 0;
 }
 
+async function cmdReport(p: ParsedArgs): Promise<number> {
+  const inFlag = p.flags["in"];
+  if (typeof inFlag !== "string" || !inFlag) {
+    console.error("ultra11y report: --in <audit.json> is required ('-' for stdin).");
+    return 2;
+  }
+  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  let result: AuditResult;
+  try {
+    result = JSON.parse(raw) as AuditResult;
+  } catch {
+    console.error("ultra11y report: --in is not valid JSON (expected an AuditResult).");
+    return 2;
+  }
+  if (result.tool !== "ultra11y" || !Array.isArray(result.criteria)) {
+    console.error("ultra11y report: input is not an ultra11y AuditResult.");
+    return 2;
+  }
+  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
+  const path = writeReport(result, { out, lang: langOf(p.flags) });
+  console.log(path);
+  return 0;
+}
+
 export async function main(argv: string[]): Promise<number> {
   const first = argv[0];
 
@@ -144,6 +169,8 @@ export async function main(argv: string[]): Promise<number> {
   switch (p.command as Command) {
     case "audit":
       return cmdAudit(p);
+    case "report":
+      return cmdReport(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

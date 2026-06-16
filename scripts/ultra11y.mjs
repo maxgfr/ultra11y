@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync, mkdirSync } from "fs";
-import { join as join2 } from "path";
+import { realpathSync, writeFileSync as writeFileSync2, mkdirSync as mkdirSync2 } from "fs";
+import { join as join3 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -3651,6 +3651,9 @@ function allCriteria() {
 function allThemes() {
   return data.themes;
 }
+function getCriterion(id) {
+  return byId.get(id);
+}
 
 // src/parse/html.ts
 import { parseDocument } from "htmlparser2";
@@ -4915,6 +4918,125 @@ function runAudit(opts) {
   return buildAudit(docs, opts.inputs);
 }
 
+// src/report.ts
+import { mkdirSync, writeFileSync } from "fs";
+import { join as join2 } from "path";
+var ICON = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var SEV_ORDER = ["bloquant", "majeur", "mineur"];
+var L = {
+  fr: {
+    title: "Rapport d'audit d'accessibilit\xE9 \u2014 RGAA 4.1.2",
+    date: "Date",
+    tool: "Outil",
+    toolNote: "moteur statique \u2014 audit pr\xE9liminaire \xE0 compl\xE9ter par une revue humaine",
+    scope: "P\xE9rim\xE8tre",
+    files: "fichier(s)",
+    rate: "Taux de conformit\xE9 automatique",
+    rateNote: "sous-ensemble statique : C \xF7 (C + NC)",
+    warn: "Ce rapport couvre le sous-ensemble de crit\xE8res v\xE9rifiables automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) doivent \xEAtre compl\xE9t\xE9s par une revue humaine (voir la derni\xE8re section).",
+    synthTitle: "1. Synth\xE8se par th\xE9matique",
+    th: ["Th\xE9matique", "C", "NC", "NA", "\xC0 \xE9valuer"],
+    total: "Total",
+    ncTitle: "2. Non-conformit\xE9s (par priorit\xE9)",
+    sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
+    fix: "Correction",
+    none: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
+    cTitle: "3. Crit\xE8res conformes (C)",
+    naTitle: "4. Crit\xE8res non applicables (NA)",
+    manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
+    manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
+    nothing: "Aucun."
+  },
+  en: {
+    title: "Accessibility audit report \u2014 RGAA 4.1.2",
+    date: "Date",
+    tool: "Tool",
+    toolNote: "static engine \u2014 preliminary audit to be completed by a human review",
+    scope: "Scope",
+    files: "file(s)",
+    rate: "Automatic conformance rate",
+    rateNote: "static subset: C \xF7 (C + NC)",
+    warn: "This report covers the subset of criteria checkable automatically. The \u201Cto assess\u201D criteria (rendering / judgment) must be completed by a human review (see the last section).",
+    synthTitle: "1. Per-theme synthesis",
+    th: ["Theme", "C", "NC", "NA", "To assess"],
+    total: "Total",
+    ncTitle: "2. Non-conformities (by priority)",
+    sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
+    fix: "Fix",
+    none: "No non-conformity detected by the static engine.",
+    cTitle: "3. Conforming criteria (C)",
+    naTitle: "4. Not-applicable criteria (NA)",
+    manualTitle: "5. Criteria to assess manually (rendering / judgment)",
+    manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
+    nothing: "None."
+  }
+};
+function critLabel(id) {
+  const c = getCriterion(id);
+  return c ? `${id} \u2014 ${c.titlePlain}` : id;
+}
+function ncEntry(f, fixLabel) {
+  return `- **${critLabel(f.criteriaId)}** \u2014 \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)
+  - ${f.message}
+  - _${fixLabel} :_ ${f.remediation}`;
+}
+function renderReport(r, lang = "fr") {
+  const s = L[lang];
+  const out = [];
+  out.push(`# ${s.title}`, "");
+  out.push(`- **${s.date}** : ${r.date}`);
+  out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
+  out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`);
+  out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
+  out.push("", `> \u26A0\uFE0F ${s.warn}`, "");
+  out.push(`## ${s.synthTitle}`, "");
+  out.push(`| ${s.th.join(" | ")} |`);
+  out.push(`|${"---|".repeat(s.th.length)}`);
+  const tot = { c: 0, nc: 0, na: 0, manual: 0 };
+  for (const th of r.themes) {
+    out.push(`| ${th.number}. ${th.title} | ${th.c} | ${th.nc} | ${th.na} | ${th.manual} |`);
+    tot.c += th.c;
+    tot.nc += th.nc;
+    tot.na += th.na;
+    tot.manual += th.manual;
+  }
+  out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
+  out.push(`## ${s.ncTitle}`, "");
+  if (r.findings.length === 0) {
+    out.push(s.none, "");
+  } else {
+    const sorted = [...r.findings].sort(
+      (a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity) || a.criteriaId.localeCompare(b.criteriaId, void 0, { numeric: true }) || a.line - b.line
+    );
+    for (const sev of SEV_ORDER) {
+      const group = sorted.filter((f) => f.severity === sev);
+      if (!group.length) continue;
+      out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
+      for (const f of group) out.push(ncEntry(f, s.fix));
+      out.push("");
+    }
+  }
+  out.push(`## ${s.cTitle}`, "");
+  const conform = r.criteria.filter((c) => c.status === "C");
+  out.push(conform.length ? conform.map((c) => `- ${critLabel(c.id)}`).join("\n") : s.nothing, "");
+  out.push(`## ${s.naTitle}`, "");
+  const na = r.criteria.filter((c) => c.status === "NA");
+  out.push(na.length ? na.map((c) => `- ${critLabel(c.id)}${c.justification ? ` \u2014 _${c.justification}_` : ""}`).join("\n") : s.nothing, "");
+  out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
+  out.push(
+    r.residualRisks.length ? r.residualRisks.map((rr) => `- ${critLabel(rr.criteriaId)} \u2014 _${rr.reason}_`).join("\n") : s.nothing,
+    ""
+  );
+  return out.join("\n");
+}
+function writeReport(r, opts) {
+  const md = renderReport(r, opts.lang);
+  mkdirSync(opts.out, { recursive: true });
+  const path = join2(opts.out, `rgaa-${r.date}.md`);
+  writeFileSync(path, md);
+  return path;
+}
+
 // src/output.ts
 var STR = {
   fr: {
@@ -4941,7 +5063,7 @@ var STR = {
 function t(lang, key) {
   return STR[lang][key];
 }
-var ICON = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var ICON2 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
 function auditSummary(r, lang) {
   const lines = [];
   lines.push(`${t(lang, "summaryTitle")} \u2014 ${r.date}`);
@@ -4958,7 +5080,7 @@ function auditSummary(r, lang) {
   } else {
     lines.push(`${t(lang, "findingsTitle")} (${r.findings.length}) :`);
     for (const f of r.findings.slice(0, 20)) {
-      lines.push(`  ${ICON[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${f.message}`);
+      lines.push(`  ${ICON2[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${f.message}`);
     }
     if (r.findings.length > 20) lines.push(`  \u2026 (+${r.findings.length - 20})`);
   }
@@ -5060,12 +5182,35 @@ async function cmdAudit(p) {
   });
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
   try {
-    mkdirSync(out, { recursive: true });
-    writeFileSync(join2(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    mkdirSync2(out, { recursive: true });
+    writeFileSync2(join3(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
   } catch {
   }
   if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
   else console.log(auditSummary(result, langOf(p.flags)));
+  return 0;
+}
+async function cmdReport(p) {
+  const inFlag = p.flags["in"];
+  if (typeof inFlag !== "string" || !inFlag) {
+    console.error("ultra11y report: --in <audit.json> is required ('-' for stdin).");
+    return 2;
+  }
+  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  let result;
+  try {
+    result = JSON.parse(raw);
+  } catch {
+    console.error("ultra11y report: --in is not valid JSON (expected an AuditResult).");
+    return 2;
+  }
+  if (result.tool !== "ultra11y" || !Array.isArray(result.criteria)) {
+    console.error("ultra11y report: input is not an ultra11y AuditResult.");
+    return 2;
+  }
+  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
+  const path = writeReport(result, { out, lang: langOf(p.flags) });
+  console.log(path);
   return 0;
 }
 async function main(argv) {
@@ -5086,6 +5231,8 @@ async function main(argv) {
   switch (p.command) {
     case "audit":
       return cmdAudit(p);
+    case "report":
+      return cmdReport(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

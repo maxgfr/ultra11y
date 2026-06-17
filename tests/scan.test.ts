@@ -26,6 +26,20 @@ describe("toDynamicResult", () => {
   it("derives severity from axe impact", () => {
     expect(dyn.findings.find((f) => f.axeRule === "button-name")?.severity).toBe("bloquant");
   });
+  it("tags each finding with the page it came from", () => {
+    expect(dyn.findings.find((f) => f.axeRule === "color-contrast")?.page).toBe("https://exemple.fr");
+  });
+  it("maps an axe rule absent from the curated map via its RGAA tag, not the 7.1 fallback", () => {
+    const out = {
+      url: "https://exemple.fr",
+      violations: [
+        { id: "some-future-rule", impact: "moderate", help: "X", tags: ["wcag2aa", "RGAA-13.9.1"], nodes: [{ target: ["div"], html: "<div></div>" }] },
+      ],
+      reflow: { horizontalScroll: false },
+    };
+    const r = toDynamicResult(out, "https://exemple.fr");
+    expect(r.findings.find((f) => f.axeRule === "some-future-rule")?.criteriaId).toBe("13.9");
+  });
 });
 
 describe("cleanTempContexts", () => {
@@ -55,5 +69,19 @@ describe("mergeDynamic", () => {
       const inTheme = merged.criteria.filter((c) => c.theme === t.number).length;
       expect(t.c + t.nc + t.na + t.manual).toBe(inTheme);
     }
+  });
+  it("uses each finding's page as its file when merging multi-page (crawl) results", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    const dyn = {
+      tool: "ultra11y" as const,
+      engine: "axe-core@playwright (docker)",
+      target: "crawl:https://exemple.fr",
+      date: "2026-06-17",
+      findings: [
+        { criteriaId: "3.2", axeRule: "color-contrast", impact: "serious", severity: "majeur" as const, message: "m", selector: "p", snippet: "", engine: "axe" as const, page: "https://exemple.fr/contact" },
+      ],
+    };
+    const merged = mergeDynamic(audit, dyn);
+    expect(merged.findings.find((f) => f.ruleId === "axe:color-contrast")?.file).toBe("https://exemple.fr/contact");
   });
 });

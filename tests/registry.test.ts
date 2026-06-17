@@ -3,9 +3,9 @@ import { ALL_RULES, ruleIds } from "../src/rules/registry.js";
 import { rgaa, getCriterion } from "../src/rgaa.js";
 
 describe("rule registry ↔ dataset coverage", () => {
-  it("registers 35 rules with unique ids", () => {
-    expect(ALL_RULES.length).toBe(35);
-    expect(new Set(ruleIds()).size).toBe(35);
+  it("registers 36 rules with unique ids", () => {
+    expect(ALL_RULES.length).toBe(36);
+    expect(new Set(ruleIds()).size).toBe(36);
   });
 
   it("every rule maps only to real RGAA criteria", () => {

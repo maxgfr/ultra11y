@@ -26,6 +26,23 @@ node scripts/ultra11y.mjs report --in audits/audit-latest.json --out audits
 La première exécution construit l'image (`node:22` + Playwright/Chromium + axe-core)
 — quelques minutes ; les suivantes sont immédiates.
 
+### Couvrir plusieurs pages (crawl)
+
+`scan` peut balayer tout un site rendu, pas une seule URL :
+
+```
+# toutes les URL listées dans un sitemap.xml
+node scripts/ultra11y.mjs scan --sitemap https://exemple.fr/sitemap.xml --json
+
+# BFS des liens same-origin servis, depuis une page d'entrée
+node scripts/ultra11y.mjs scan --crawl https://exemple.fr --depth 2 --max 50 --json
+```
+
+Chaque finding garde la **page** d'où il provient (`--merge` reporte cette URL comme
+`fichier`). `--crawl` suit les liens présents dans le **HTML servi** (SSR/MPA) ; pour
+une SPA pure (routes rendues côté client), passez par `--sitemap`. Une page = un
+conteneur (un navigateur par page) : `--max` borne le nombre de pages scannées.
+
 ## Ce que le tier dynamique apporte
 
 - **Contraste réel (3.2/3.3)** — axe calcule les couleurs rendues (le gain principal).
@@ -33,9 +50,11 @@ La première exécution construit l'image (`node:22` + Playwright/Chromium + axe
 - **Cross-check** — axe revalide au rendu les critères structurels (alt, labels,
   ARIA, titres…) ; un finding au rendu est **autoritatif** et passe le critère en NC.
 
-Les findings axe sont mappés aux critères RGAA via une table embarquée
-(`axe-rule → critère`). À la fusion (`--merge`), un critère `manual` que le tier
-décide sort des risques résiduels et devient `C`/`NC`.
+Les findings axe sont mappés aux critères RGAA via une table curée
+(`axe-rule → critère`), complétée par les **tags RGAA natifs d'axe** (`RGAA-x.y.z`)
+pour les règles hors table — au lieu d'un repli générique en 7.1. À la fusion
+(`--merge`), un critère `manual` que le tier décide sort des risques résiduels et
+devient `C`/`NC`.
 
 ## Limites
 

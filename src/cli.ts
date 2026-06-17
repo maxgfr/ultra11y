@@ -1,13 +1,13 @@
 import { realpathSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { VERSION, type Lang, type AuditResult } from "./types.js";
+import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./types.js";
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
 import { runCriteria } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
-import { runScan, mergeDynamic, cleanDynamic } from "./scan.js";
+import { runScan, runCrawlScan, mergeDynamic, cleanDynamic } from "./scan.js";
 import { auditSummary } from "./output.js";
 import { readStdin, readText } from "./util.js";
 
@@ -18,12 +18,13 @@ A deterministic zero-dependency static engine plus your judgment, with check/ver
 gates against hallucinated non-conformities.
 
 Usage:
-  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--jsx] [--json] [--lang fr|en]
+  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--json] [--lang fr|en]
   ultra11y report   --in <audit.json> [--out <dir>] [--lang fr|en]
   ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
+  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
@@ -44,12 +45,16 @@ Commands:
              decide the needs-rendering criteria the static engine can't — computed
              contrast (3.2/3.3), 320px reflow (10.11) — over a URL or HTML file.
              --merge folds the findings into a static AuditResult (manual → C/NC).
+             --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
+             links BFS-crawled from a start URL) and aggregate the findings.
 
 Options:
   --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit: only include paths matching (comma-separated)
   --exclude <glob>   audit: skip paths matching (comma-separated)
+  --ext <list>       audit: extra file extensions to walk (e.g. .twig,.erb);
+                     .html/.htm/.xhtml/.jsx/.tsx/.vue/.svelte/.astro are built-in
   --jsx              audit: force best-effort JSX/TSX parsing
   --report <file>    check/verify: the report markdown to gate
   --theme <N>        criteria: list the criteria of theme N (1..13)
@@ -57,6 +62,10 @@ Options:
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
+  --sitemap <url>    scan: scan every URL listed in a sitemap.xml
+  --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
+  --depth <n>        scan: crawl link-hop depth from the start URL          (default: 2)
+  --max <n>          scan: cap on pages scanned (sitemap/crawl)             (default: 50)
   --docker           scan: run the dynamic tier in Docker (default; built on first use)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
@@ -75,7 +84,7 @@ function isCommand(s: string | undefined): s is Command {
   return !!s && (COMMANDS as readonly string[]).includes(s);
 }
 
-const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang", "merge"]);
+const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max"]);
 
 export interface ParsedArgs {
   command: string;
@@ -123,6 +132,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     forceJsx: p.flags["jsx"] === true,
     include: asList(p.flags["include"]),
     exclude: asList(p.flags["exclude"]),
+    ext: asList(p.flags["ext"]),
   });
 
   const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
@@ -225,14 +235,22 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprimée" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprimé(s).`);
     return 0;
   }
-  const target = p.positionals.find((a) => a !== "-");
-  if (!target) {
-    console.error("ultra11y scan: provide a URL or HTML file (or --clean to remove the Docker image).");
-    return 2;
-  }
-  let dynamic;
+  const sitemap = typeof p.flags["sitemap"] === "string" ? (p.flags["sitemap"] as string) : undefined;
+  const crawl = typeof p.flags["crawl"] === "string" ? (p.flags["crawl"] as string) : undefined;
+  let dynamic: DynamicResult;
   try {
-    dynamic = runScan({ target });
+    if (sitemap || crawl) {
+      const depth = typeof p.flags["depth"] === "string" ? Number(p.flags["depth"]) : undefined;
+      const max = typeof p.flags["max"] === "string" ? Number(p.flags["max"]) : undefined;
+      dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
+    } else {
+      const target = p.positionals.find((a) => a !== "-");
+      if (!target) {
+        console.error("ultra11y scan: provide a URL or HTML file, --sitemap <url>, --crawl <url>, or --clean.");
+        return 2;
+      }
+      dynamic = runScan({ target });
+    }
   } catch (e) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
     return 1;

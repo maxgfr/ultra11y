@@ -1,6 +1,6 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup without regressions (native-HTML-first, ARIA last). A deterministic zero-dependency engine (`node scripts/ultra11y.mjs`, no install, no keys) runs ~35 static checks across the 13 RGAA themes — missing alt/lang/title, unlabeled fields, empty links/buttons, iframes without title, tables without headers, heading skips, invalid/broken ARIA, positive tabindex, autoplay — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose, reading order) and the needs-rendering criteria (contrast, focus, zoom) it cannot see, reported as residual risks (never silently conforming). check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibilité / RGAA', 'rapport de conformité RGAA', 'is this accessible', 'check WCAG / a11y', 'make this component accessible', 'accessible form/table/modal', 'fix accessibility', 'audit de ce site/composant'."
+description: "Use to AUDIT existing HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup without regressions (native-HTML-first, ARIA last). A deterministic zero-dependency engine (`node scripts/ultra11y.mjs`, no install, no keys) runs ~36 static checks across the 13 RGAA themes — missing alt/lang/title, unlabeled fields, empty links/buttons, iframes without title, tables without headers, heading skips, invalid/broken ARIA, positive tabindex, autoplay — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose, reading order) and the needs-rendering criteria (contrast, focus, zoom) it cannot see, reported as residual risks (never silently conforming). check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibilité / RGAA', 'rapport de conformité RGAA', 'is this accessible', 'check WCAG / a11y', 'make this component accessible', 'accessible form/table/modal', 'fix accessibility', 'audit de ce site/composant'."
 license: MIT
 metadata:
   version: 1.2.0
@@ -66,8 +66,9 @@ résiduel est nommé.
 ## À ne pas faire
 
 - Inventer une non-conformité que le moteur n'a pas trouvée et que vous ne pouvez
-  pas voir (le **contraste** est hors du moteur statique — passez par `scan` (tier
-  Docker) ou vérifiez au rendu avant de le déclarer).
+  pas voir (le contraste sur **couleurs inline littérales** est tranché en statique ;
+  le contraste **calculé** — CSS externe, variables — passe par `scan` (tier Docker)
+  ou se vérifie au rendu avant d'être déclaré).
 - Ajouter de l'ARIA qui double la sémantique native.
 - Marquer un critère de rendu/jugement « conforme » sans vérification humaine.
 - Éditer à la main `references/criteria.md` (généré depuis le référentiel).

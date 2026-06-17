@@ -743,7 +743,9 @@
         "[object Object]"
       ],
       "automatability": "needs-rendering",
-      "ruleIds": []
+      "ruleIds": [
+        "contrast-literal"
+      ]
     },
     {
       "id": "3.3",

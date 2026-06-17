@@ -107,6 +107,7 @@ export interface DynamicFinding {
   selector: string;
   snippet: string;
   engine: "axe" | "reflow";
+  page?: string; // the scanned URL/page this finding came from (multi-page crawl)
 }
 
 export interface DynamicResult {

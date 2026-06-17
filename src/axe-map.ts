@@ -94,6 +94,20 @@ export const AXE_RGAA: Record<string, string> = {
 
 export const FALLBACK_CRITERION = "7.1";
 
+/** Collapse axe's per-test RGAA tag (e.g. "RGAA-3.2.1") to its criterion ("3.2").
+ *  axe tags each rule with an `RGAAv4` umbrella tag plus per-test
+ *  `RGAA-<theme>.<criterion>.<test>` tags; we read the first concrete one to fill
+ *  the gaps the curated map doesn't cover, instead of dumping to 7.1. The umbrella
+ *  `RGAAv4` tag carries no criterion and is skipped. */
+export function criterionFromRgaaTags(tags: string[] | undefined): string | null {
+  if (!tags) return null;
+  for (const t of tags) {
+    const m = /^RGAA-(\d+\.\d+)\.\d+$/.exec(t);
+    if (m) return m[1]!;
+  }
+  return null;
+}
+
 /** Map an axe impact to an ultra11y severity. */
 export function severityFromImpact(impact: string | null | undefined): Severity {
   switch (impact) {
@@ -109,4 +123,10 @@ export function severityFromImpact(impact: string | null | undefined): Severity 
 
 export function criterionForAxeRule(ruleId: string): string {
   return AXE_RGAA[ruleId] ?? FALLBACK_CRITERION;
+}
+
+/** Resolve an axe rule to an RGAA criterion: the curated map first (deliberate,
+ *  e.g. color-contrast → 3.2), then axe's own RGAA tags, then the 7.1 fallback. */
+export function criterionForAxe(ruleId: string, tags?: string[]): string {
+  return AXE_RGAA[ruleId] ?? criterionFromRgaaTags(tags) ?? FALLBACK_CRITERION;
 }

@@ -72,6 +72,7 @@ const RULE_COVERAGE = {
   "1.1": ["img-alt-missing", "canvas-fallback-missing", "icon-only-control-unnamed"],
   "1.2": ["decorative-alt-misuse"],
   "2.1": ["iframe-title-missing"],
+  "3.2": ["contrast-literal"], // contrast from literal inline colours is a definite failure
   "4.10": ["autoplay-media"],
   "5.4": ["table-caption-missing"],
   "5.6": ["data-table-no-headers"],

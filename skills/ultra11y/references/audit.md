@@ -6,7 +6,9 @@ jugement et de rendu ; les gates empêchent toute non-conformité hallucinée.
 
 ## La boucle
 
-1. **Délimiter le périmètre.** Quels fichiers / composants ? (HTML, JSX/TSX.)
+1. **Délimiter le périmètre.** Quels fichiers / composants ? HTML, JSX/TSX et les
+   composants Vue/Svelte/Astro (`.vue`/`.svelte`/`.astro`) sont parcourus par défaut ;
+   ajoutez des gabarits serveur (Twig, ERB, Handlebars…) avec `--ext .twig,.erb`.
 2. **Lancer le moteur :**
    ```
    node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
@@ -17,7 +19,10 @@ jugement et de rendu ; les gates empêchent toute non-conformité hallucinée.
 3. **Trier les résultats :**
    - `NC` du moteur = candidats confirmés (chaque finding cite `fichier:ligne`) ;
    - critères `manual` *needs-rendering* (contraste 3.2/3.3, focus 10.7, zoom 10.11…)
-     → marquez « à vérifier manuellement », **jamais** `C` en silence ;
+     → marquez « à vérifier manuellement », **jamais** `C` en silence. Note : le
+     contraste sur **couleurs inline littérales** est désormais tranché en statique
+     (3.2 passe en `NC` pour ce sous-ensemble) ; le contraste via CSS externe ou
+     variables reste résiduel (→ tier dynamique) ;
    - critères `manual` *judgment* (pertinence de l'alt 1.3, intitulé de lien 6.1,
      ordre de lecture/tabulation…) → évaluez-les avec le contexte.
 4. **Décider chaque critère applicable** : `C`, `NC` ou `NA` (avec justification).

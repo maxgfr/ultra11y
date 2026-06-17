@@ -14,7 +14,7 @@ try {
     return { horizontalScroll: el.scrollWidth > el.clientWidth + 2 };
   });
   const violations = axeRes.violations.map((v) => ({
-    id: v.id, impact: v.impact, help: v.help,
+    id: v.id, impact: v.impact, help: v.help, tags: v.tags,
     nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target, html: (n.html || "").slice(0, 200) })),
   }));
   console.log(JSON.stringify({ url: target, violations, reflow }));

@@ -20,6 +20,7 @@ export interface AuditInput {
   forceJsx?: boolean;
   include?: string[];
   exclude?: string[];
+  ext?: string[];
 }
 
 const has = (d: Doc, ...tags: string[]): boolean => d.elements.some((e) => tags.includes(e.tag));
@@ -132,7 +133,7 @@ export function buildAudit(docs: Doc[], inputs: string[]): AuditResult {
 /** Resolve inputs, parse each source, and build the AuditResult. */
 export function runAudit(opts: AuditInput): AuditResult {
   const docs: Doc[] = [];
-  for (const file of expandInputs(opts.inputs, { include: opts.include, exclude: opts.exclude })) {
+  for (const file of expandInputs(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext })) {
     docs.push(parseSource(readText(file), file, { forceJsx: opts.forceJsx }));
   }
   if (opts.inputs.includes("-") && opts.stdin !== undefined) {

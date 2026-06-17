@@ -4,7 +4,23 @@ import { readdirSync, statSync, existsSync } from "node:fs";
 import { join, sep } from "node:path";
 import { escapeRegExp, ext } from "./util.js";
 
-const DEFAULT_EXT = new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx"]);
+// HTML + JSX/TSX + the HTML-shaped single-file component formats (Vue/Svelte/Astro
+// templates parse cleanly through the HTML path). Server templates (.twig/.erb/.hbs/
+// .liquid/.njk…) are opt-in via `--ext` since their extensions are ambiguous.
+const DEFAULT_EXT = new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
+
+/** Normalise extensions (`twig` → `.twig`, lowercased) into a lookup set merged
+ *  with the built-in defaults. */
+function extSet(extra: string[] | undefined): Set<string> {
+  const set = new Set(DEFAULT_EXT);
+  for (const raw of extra ?? []) {
+    for (const e of raw.split(",")) {
+      const t = e.trim().toLowerCase();
+      if (t) set.add(t.startsWith(".") ? t : `.${t}`);
+    }
+  }
+  return set;
+}
 const SKIP_DIR = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
 
 // `**` crosses `/`, `*` runs within a segment, `?` is one non-`/` char.
@@ -69,12 +85,14 @@ function staticBase(glob: string): string {
 export interface ExpandOpts {
   include?: string[];
   exclude?: string[];
+  ext?: string[];
 }
 
 /** Expand inputs (paths/dirs/globs) into a sorted, de-duplicated file list. */
 export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] {
   const include = compileGlobs(opts.include);
   const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
   const files = new Set<string>();
 
   for (const input of inputs) {
@@ -88,7 +106,7 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
       if (statSync(input).isDirectory()) {
         const acc: string[] = [];
         walk(input, acc);
-        for (const f of acc) if (DEFAULT_EXT.has(ext(f))) files.add(f);
+        for (const f of acc) if (exts.has(ext(f))) files.add(f);
       } else {
         files.add(input);
       }

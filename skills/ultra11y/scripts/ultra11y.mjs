@@ -755,7 +755,9 @@ var rgaa_default = {
         "[object Object]"
       ],
       automatability: "needs-rendering",
-      ruleIds: []
+      ruleIds: [
+        "contrast-literal"
+      ]
     },
     {
       id: "3.3",
@@ -7643,8 +7645,179 @@ var metaViewportZoomBlock = {
 };
 var presentationRules = [metaViewportZoomBlock];
 
+// src/color.ts
+var NAMED = {
+  transparent: { r: 0, g: 0, b: 0, a: 0 },
+  white: { r: 255, g: 255, b: 255, a: 1 },
+  black: { r: 0, g: 0, b: 0, a: 1 },
+  red: { r: 255, g: 0, b: 0, a: 1 },
+  lime: { r: 0, g: 255, b: 0, a: 1 },
+  green: { r: 0, g: 128, b: 0, a: 1 },
+  blue: { r: 0, g: 0, b: 255, a: 1 },
+  yellow: { r: 255, g: 255, b: 0, a: 1 },
+  cyan: { r: 0, g: 255, b: 255, a: 1 },
+  aqua: { r: 0, g: 255, b: 255, a: 1 },
+  magenta: { r: 255, g: 0, b: 255, a: 1 },
+  fuchsia: { r: 255, g: 0, b: 255, a: 1 },
+  silver: { r: 192, g: 192, b: 192, a: 1 },
+  gray: { r: 128, g: 128, b: 128, a: 1 },
+  grey: { r: 128, g: 128, b: 128, a: 1 },
+  maroon: { r: 128, g: 0, b: 0, a: 1 },
+  olive: { r: 128, g: 128, b: 0, a: 1 },
+  purple: { r: 128, g: 0, b: 128, a: 1 },
+  teal: { r: 0, g: 128, b: 128, a: 1 },
+  navy: { r: 0, g: 0, b: 128, a: 1 },
+  orange: { r: 255, g: 165, b: 0, a: 1 }
+};
+function hex(part) {
+  return parseInt(part.length === 1 ? part + part : part, 16);
+}
+function parseColor(input) {
+  const s = input.trim().toLowerCase();
+  if (!s) return null;
+  if (s in NAMED) return { ...NAMED[s] };
+  if (s.startsWith("#")) {
+    const h = s.slice(1);
+    if (/^[0-9a-f]{3}$/.test(h)) return { r: hex(h[0]), g: hex(h[1]), b: hex(h[2]), a: 1 };
+    if (/^[0-9a-f]{4}$/.test(h)) return { r: hex(h[0]), g: hex(h[1]), b: hex(h[2]), a: hex(h[3]) / 255 };
+    if (/^[0-9a-f]{6}$/.test(h)) return { r: hex(h.slice(0, 2)), g: hex(h.slice(2, 4)), b: hex(h.slice(4, 6)), a: 1 };
+    if (/^[0-9a-f]{8}$/.test(h)) return { r: hex(h.slice(0, 2)), g: hex(h.slice(2, 4)), b: hex(h.slice(4, 6)), a: hex(h.slice(6, 8)) / 255 };
+    return null;
+  }
+  const m = /^rgba?\(([^)]+)\)$/.exec(s);
+  if (m) {
+    const parts = m[1].split(/[,/\s]+/).filter(Boolean);
+    if (parts.length < 3) return null;
+    const chan = (p) => p.endsWith("%") ? Math.round(parseFloat(p) / 100 * 255) : parseFloat(p);
+    const r = chan(parts[0]);
+    const g = chan(parts[1]);
+    const b = chan(parts[2]);
+    const a = parts[3] !== void 0 ? parts[3].endsWith("%") ? parseFloat(parts[3]) / 100 : parseFloat(parts[3]) : 1;
+    if ([r, g, b, a].some((n) => Number.isNaN(n))) return null;
+    return { r, g, b, a };
+  }
+  return null;
+}
+function channelLuminance(c) {
+  const cs = c / 255;
+  return cs <= 0.03928 ? cs / 12.92 : ((cs + 0.055) / 1.055) ** 2.4;
+}
+function relativeLuminance({ r, g, b }) {
+  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+function contrastRatio(a, b) {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const [hi, lo] = la >= lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+function parseInlineStyle(style) {
+  const out = /* @__PURE__ */ new Map();
+  for (const decl of style.split(";")) {
+    const i = decl.indexOf(":");
+    if (i === -1) continue;
+    const prop = decl.slice(0, i).trim().toLowerCase();
+    const val = decl.slice(i + 1).trim();
+    if (prop && val) out.set(prop, val);
+  }
+  return out;
+}
+
+// src/rules/colors.ts
+var SKIP_TAGS = /* @__PURE__ */ new Set(["script", "style", "head", "title", "meta", "noscript", "link"]);
+function styleOf(el) {
+  const s = attr(el, "style");
+  return s ? parseInlineStyle(s) : /* @__PURE__ */ new Map();
+}
+function colorFromValue(v) {
+  const whole = parseColor(v);
+  if (whole) return whole;
+  for (const tok of v.split(/\s+/)) {
+    const c = parseColor(tok);
+    if (c) return c;
+  }
+  return null;
+}
+function fgOf(el) {
+  for (let p = el; p; p = p.parent) {
+    const v = styleOf(p).get("color");
+    if (v) {
+      const c = colorFromValue(v);
+      if (c) return c;
+    }
+  }
+  return null;
+}
+function bgOf(el) {
+  for (let p = el; p; p = p.parent) {
+    const st = styleOf(p);
+    const v = st.get("background-color") ?? st.get("background");
+    if (v) {
+      const c = colorFromValue(v);
+      if (c) return c;
+    }
+  }
+  return null;
+}
+function fontPx(el) {
+  for (let p = el; p; p = p.parent) {
+    const v = styleOf(p).get("font-size");
+    if (!v) continue;
+    const m = /^([\d.]+)(px|pt|rem|em)?$/.exec(v.trim());
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (Number.isNaN(n)) return null;
+    const unit = m[2] ?? "px";
+    return unit === "pt" ? n * 4 / 3 : unit === "rem" || unit === "em" ? n * 16 : n;
+  }
+  return null;
+}
+function isBold(el) {
+  for (let p = el; p; p = p.parent) {
+    const v = styleOf(p).get("font-weight");
+    if (v) return v === "bold" || Number(v) >= 700;
+  }
+  return false;
+}
+function isLarge(el) {
+  const px = fontPx(el);
+  if (px === null) return false;
+  return px >= 24 || px >= 18.5 && isBold(el);
+}
+function hasDirectText(el) {
+  return el.children.some((c) => c.type === "text" && c.data.trim() !== "");
+}
+var contrastLiteral = {
+  id: "contrast-literal",
+  criteria: ["3.2"],
+  parser: ["html", "jsx", "css"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (SKIP_TAGS.has(el.tag) || !hasDirectText(el)) continue;
+      const fg = fgOf(el);
+      const bg = bgOf(el);
+      if (!fg || !bg || fg.a < 1 || bg.a < 1) continue;
+      const ratio = contrastRatio(fg, bg);
+      const large = isLarge(el);
+      const min = large ? 3 : 4.5;
+      if (ratio >= min) continue;
+      out.push({
+        criteriaId: "3.2",
+        el,
+        message: `Contraste insuffisant : ratio ${ratio.toFixed(2)}:1 entre le texte et son fond (minimum ${min}:1 pour du texte ${large ? "large" : "normal"}).`,
+        remediation: `Assombrissez le texte ou \xE9claircissez le fond pour atteindre au moins ${min}:1 (contraste calcul\xE9 sur des couleurs inline litt\xE9rales).`
+      });
+    }
+    return out;
+  }
+};
+var colorsRules = [contrastLiteral];
+
 // src/rules/registry.ts
 var ALL_RULES = [
+  ...colorsRules,
   ...imagesRules,
   ...framesRules,
   ...scriptsAriaRules,
@@ -7696,7 +7869,17 @@ async function readStdin() {
 }
 
 // src/glob.ts
-var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx"]);
+var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
+function extSet(extra) {
+  const set = new Set(DEFAULT_EXT);
+  for (const raw of extra ?? []) {
+    for (const e of raw.split(",")) {
+      const t2 = e.trim().toLowerCase();
+      if (t2) set.add(t2.startsWith(".") ? t2 : `.${t2}`);
+    }
+  }
+  return set;
+}
 var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
 function globToRegExp(glob) {
   let re = "";
@@ -7754,6 +7937,7 @@ function staticBase(glob) {
 function expandInputs(inputs, opts = {}) {
   const include = compileGlobs(opts.include);
   const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
   const files = /* @__PURE__ */ new Set();
   for (const input of inputs) {
     if (input === "-") continue;
@@ -7766,7 +7950,7 @@ function expandInputs(inputs, opts = {}) {
       if (statSync(input).isDirectory()) {
         const acc = [];
         walk(input, acc);
-        for (const f of acc) if (DEFAULT_EXT.has(ext(f))) files.add(f);
+        for (const f of acc) if (exts.has(ext(f))) files.add(f);
       } else {
         files.add(input);
       }
@@ -7871,7 +8055,7 @@ function buildAudit(docs, inputs) {
 }
 function runAudit(opts) {
   const docs = [];
-  for (const file of expandInputs(opts.inputs, { include: opts.include, exclude: opts.exclude })) {
+  for (const file of expandInputs(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext })) {
     docs.push(parseSource(readText(file), file, { forceJsx: opts.forceJsx }));
   }
   if (opts.inputs.includes("-") && opts.stdin !== void 0) {
@@ -8248,6 +8432,14 @@ var AXE_RGAA = {
   "accesskeys": "12.10"
 };
 var FALLBACK_CRITERION = "7.1";
+function criterionFromRgaaTags(tags) {
+  if (!tags) return null;
+  for (const t2 of tags) {
+    const m = /^RGAA-(\d+\.\d+)\.\d+$/.exec(t2);
+    if (m) return m[1];
+  }
+  return null;
+}
 function severityFromImpact(impact) {
   switch (impact) {
     case "critical":
@@ -8259,8 +8451,66 @@ function severityFromImpact(impact) {
       return "mineur";
   }
 }
-function criterionForAxeRule(ruleId) {
-  return AXE_RGAA[ruleId] ?? FALLBACK_CRITERION;
+function criterionForAxe(ruleId, tags) {
+  return AXE_RGAA[ruleId] ?? criterionFromRgaaTags(tags) ?? FALLBACK_CRITERION;
+}
+
+// src/crawl.ts
+function parseSitemapUrls(xml) {
+  const out = [];
+  const re = /<loc>\s*([^<]+?)\s*<\/loc>/gi;
+  let m;
+  while ((m = re.exec(xml)) !== null) out.push(m[1]);
+  return out;
+}
+function extractLinks(html, baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  const re = /<a\b[^>]*\bhref\s*=\s*["']([^"']+)["']/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const href = m[1].trim();
+    if (!href || href.startsWith("#")) continue;
+    let abs;
+    try {
+      abs = new URL(href, baseUrl);
+    } catch {
+      continue;
+    }
+    if (abs.protocol !== "http:" && abs.protocol !== "https:") continue;
+    if (abs.origin !== origin) continue;
+    abs.hash = "";
+    const url = abs.href;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+async function crawlUrls(start, opts) {
+  const depth = opts.depth ?? 1;
+  const max = opts.max ?? 50;
+  const order = [];
+  const seen = /* @__PURE__ */ new Set([start]);
+  const queue = [{ url: start, d: 0 }];
+  while (queue.length > 0 && order.length < max) {
+    const { url, d } = queue.shift();
+    order.push(url);
+    if (d >= depth) continue;
+    let html = "";
+    try {
+      html = await opts.fetchHtml(url);
+    } catch {
+      continue;
+    }
+    for (const link of extractLinks(html, url)) {
+      if (seen.has(link)) continue;
+      seen.add(link);
+      queue.push({ url: link, d: d + 1 });
+    }
+  }
+  return order;
 }
 
 // src/scan.ts
@@ -8282,7 +8532,7 @@ try {
     return { horizontalScroll: el.scrollWidth > el.clientWidth + 2 };
   });
   const violations = axeRes.violations.map((v) => ({
-    id: v.id, impact: v.impact, help: v.help,
+    id: v.id, impact: v.impact, help: v.help, tags: v.tags,
     nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target, html: (n.html || "").slice(0, 200) })),
   }));
   console.log(JSON.stringify({ url: target, violations, reflow }));
@@ -8361,9 +8611,10 @@ function runRunner(target, isFile, tag) {
   return JSON.parse(line);
 }
 function toDynamicResult(out, target) {
+  const page = out.url || target;
   const findings = [];
   for (const v of out.violations) {
-    const criteriaId = criterionForAxeRule(v.id);
+    const criteriaId = criterionForAxe(v.id, v.tags);
     const severity = severityFromImpact(v.impact);
     for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
       findings.push({
@@ -8374,7 +8625,8 @@ function toDynamicResult(out, target) {
         message: `${v.help} (axe: ${v.id})`,
         selector: n.target.join(" ") || "\u2014",
         snippet: n.html,
-        engine: "axe"
+        engine: "axe",
+        page
       });
     }
   }
@@ -8387,7 +8639,8 @@ function toDynamicResult(out, target) {
       message: "D\xE9filement horizontal \xE0 320px de large \u2014 le contenu ne se redistribue pas (reflow).",
       selector: "document",
       snippet: "",
-      engine: "reflow"
+      engine: "reflow",
+      page
     });
   }
   return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
@@ -8402,6 +8655,44 @@ function runScan(opts) {
   const out = runRunner(opts.target, isFile, tag);
   return toDynamicResult(out, opts.target);
 }
+async function fetchHtml(url) {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) return "";
+    return await res.text();
+  } catch {
+    return "";
+  }
+}
+async function discoverUrls(opts) {
+  const max = opts.max ?? 50;
+  if (opts.sitemap) {
+    return parseSitemapUrls(await fetchHtml(opts.sitemap)).slice(0, max);
+  }
+  if (opts.crawl) {
+    return crawlUrls(opts.crawl, { fetchHtml, depth: opts.depth ?? 2, max });
+  }
+  return [];
+}
+function runScanMany(urls, tag = IMAGE_TAG) {
+  if (!dockerAvailable()) {
+    throw new Error("Docker n'est pas disponible. D\xE9marrez Docker puis relancez `scan`.");
+  }
+  if (!imageExists(tag)) buildImage(tag);
+  const findings = [];
+  for (const url of urls) {
+    const out = runRunner(url, false, tag);
+    findings.push(...toDynamicResult(out, url).findings);
+  }
+  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target: `${urls.length} page(s)`, date: today(), findings };
+}
+async function runCrawlScan(opts) {
+  const urls = await discoverUrls(opts);
+  if (urls.length === 0) {
+    throw new Error("Aucune URL \xE0 scanner (sitemap vide/inaccessible, ou page d'entr\xE9e sans lien same-origin).");
+  }
+  return runScanMany(urls, opts.tag ?? IMAGE_TAG);
+}
 var sevRank = { bloquant: 3, majeur: 2, mineur: 1 };
 function mergeDynamic(audit, dynamic) {
   const merged = JSON.parse(JSON.stringify(audit));
@@ -8412,7 +8703,7 @@ function mergeDynamic(audit, dynamic) {
     const finding = {
       ruleId: df.engine === "reflow" ? "dyn-reflow" : `axe:${df.axeRule}`,
       criteriaId: df.criteriaId,
-      file: dynamic.target,
+      file: df.page ?? dynamic.target,
       line: 0,
       col: 0,
       selectorHint: df.selector,
@@ -8506,12 +8797,13 @@ A deterministic zero-dependency static engine plus your judgment, with check/ver
 gates against hallucinated non-conformities.
 
 Usage:
-  ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--jsx] [--json] [--lang fr|en]
+  ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--json] [--lang fr|en]
   ultra11y report   --in <audit.json> [--out <dir>] [--lang fr|en]
   ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
+  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
@@ -8532,12 +8824,16 @@ Commands:
              decide the needs-rendering criteria the static engine can't \u2014 computed
              contrast (3.2/3.3), 320px reflow (10.11) \u2014 over a URL or HTML file.
              --merge folds the findings into a static AuditResult (manual \u2192 C/NC).
+             --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
+             links BFS-crawled from a start URL) and aggregate the findings.
 
 Options:
   --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit: only include paths matching (comma-separated)
   --exclude <glob>   audit: skip paths matching (comma-separated)
+  --ext <list>       audit: extra file extensions to walk (e.g. .twig,.erb);
+                     .html/.htm/.xhtml/.jsx/.tsx/.vue/.svelte/.astro are built-in
   --jsx              audit: force best-effort JSX/TSX parsing
   --report <file>    check/verify: the report markdown to gate
   --theme <N>        criteria: list the criteria of theme N (1..13)
@@ -8545,6 +8841,10 @@ Options:
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
+  --sitemap <url>    scan: scan every URL listed in a sitemap.xml
+  --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
+  --depth <n>        scan: crawl link-hop depth from the start URL          (default: 2)
+  --max <n>          scan: cap on pages scanned (sitemap/crawl)             (default: 50)
   --docker           scan: run the dynamic tier in Docker (default; built on first use)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
@@ -8559,7 +8859,7 @@ var COMMANDS = ["audit", "report", "criteria", "check", "verify", "scan"];
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
-var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang", "merge"]);
+var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max"]);
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   const positionals = [];
@@ -8596,7 +8896,8 @@ async function cmdAudit(p) {
     stdin,
     forceJsx: p.flags["jsx"] === true,
     include: asList(p.flags["include"]),
-    exclude: asList(p.flags["exclude"])
+    exclude: asList(p.flags["exclude"]),
+    ext: asList(p.flags["ext"])
   });
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
   try {
@@ -8690,14 +8991,22 @@ async function cmdScan(p) {
     console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprim\xE9e" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprim\xE9(s).`);
     return 0;
   }
-  const target = p.positionals.find((a) => a !== "-");
-  if (!target) {
-    console.error("ultra11y scan: provide a URL or HTML file (or --clean to remove the Docker image).");
-    return 2;
-  }
+  const sitemap = typeof p.flags["sitemap"] === "string" ? p.flags["sitemap"] : void 0;
+  const crawl = typeof p.flags["crawl"] === "string" ? p.flags["crawl"] : void 0;
   let dynamic;
   try {
-    dynamic = runScan({ target });
+    if (sitemap || crawl) {
+      const depth = typeof p.flags["depth"] === "string" ? Number(p.flags["depth"]) : void 0;
+      const max = typeof p.flags["max"] === "string" ? Number(p.flags["max"]) : void 0;
+      dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
+    } else {
+      const target = p.positionals.find((a) => a !== "-");
+      if (!target) {
+        console.error("ultra11y scan: provide a URL or HTML file, --sitemap <url>, --crawl <url>, or --clean.");
+        return 2;
+      }
+      dynamic = runScan({ target });
+    }
   } catch (e) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
     return 1;

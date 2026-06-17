@@ -11,7 +11,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { AuditResult, DynamicFinding, DynamicResult, Severity } from "./types.js";
 import { allThemes } from "./rgaa.js";
-import { criterionForAxeRule, severityFromImpact } from "./axe-map.js";
+import { criterionForAxe, severityFromImpact } from "./axe-map.js";
+import { parseSitemapUrls, crawlUrls } from "./crawl.js";
 import { today } from "./util.js";
 
 export const IMAGE_TAG = "ultra11y-dyn:1";
@@ -36,7 +37,7 @@ try {
     return { horizontalScroll: el.scrollWidth > el.clientWidth + 2 };
   });
   const violations = axeRes.violations.map((v) => ({
-    id: v.id, impact: v.impact, help: v.help,
+    id: v.id, impact: v.impact, help: v.help, tags: v.tags,
     nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target, html: (n.html || "").slice(0, 200) })),
   }));
   console.log(JSON.stringify({ url: target, violations, reflow }));
@@ -128,7 +129,7 @@ export function cleanDynamic(tag = IMAGE_TAG): CleanResult {
 
 interface RunnerOutput {
   url: string;
-  violations: { id: string; impact: string | null; help: string; nodes: { target: string[]; html: string }[] }[];
+  violations: { id: string; impact: string | null; help: string; tags?: string[]; nodes: { target: string[]; html: string }[] }[];
   reflow: { horizontalScroll: boolean };
 }
 
@@ -142,9 +143,10 @@ function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {
 }
 
 export function toDynamicResult(out: RunnerOutput, target: string): DynamicResult {
+  const page = out.url || target;
   const findings: DynamicFinding[] = [];
   for (const v of out.violations) {
-    const criteriaId = criterionForAxeRule(v.id);
+    const criteriaId = criterionForAxe(v.id, v.tags);
     const severity: Severity = severityFromImpact(v.impact);
     for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
       findings.push({
@@ -156,6 +158,7 @@ export function toDynamicResult(out: RunnerOutput, target: string): DynamicResul
         selector: n.target.join(" ") || "—",
         snippet: n.html,
         engine: "axe",
+        page,
       });
     }
   }
@@ -169,6 +172,7 @@ export function toDynamicResult(out: RunnerOutput, target: string): DynamicResul
       selector: "document",
       snippet: "",
       engine: "reflow",
+      page,
     });
   }
   return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
@@ -191,6 +195,61 @@ export function runScan(opts: ScanOpts): DynamicResult {
   return toDynamicResult(out, opts.target);
 }
 
+/** Fetch a URL's served HTML (zero-dep, Node global fetch). Empty string on error. */
+async function fetchHtml(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) return "";
+    return await res.text();
+  } catch {
+    return "";
+  }
+}
+
+export interface DiscoverOpts {
+  sitemap?: string; // sitemap.xml URL — scan every <loc>
+  crawl?: string; // start URL — BFS the served HTML for same-origin links
+  depth?: number; // crawl: link hops from the start URL  (default 2)
+  max?: number; // cap on pages scanned                  (default 50)
+}
+
+/** Resolve the page URLs to scan from a sitemap or by crawling (zero-dep). */
+export async function discoverUrls(opts: DiscoverOpts): Promise<string[]> {
+  const max = opts.max ?? 50;
+  if (opts.sitemap) {
+    return parseSitemapUrls(await fetchHtml(opts.sitemap)).slice(0, max);
+  }
+  if (opts.crawl) {
+    return crawlUrls(opts.crawl, { fetchHtml, depth: opts.depth ?? 2, max });
+  }
+  return [];
+}
+
+/** Run the dynamic tier over many URLs and aggregate into one DynamicResult.
+ *  Each URL is one container run (browser per page); slow but reuses the proven
+ *  single-page runner. Findings keep the page they came from. */
+export function runScanMany(urls: string[], tag = IMAGE_TAG): DynamicResult {
+  if (!dockerAvailable()) {
+    throw new Error("Docker n'est pas disponible. Démarrez Docker puis relancez `scan`.");
+  }
+  if (!imageExists(tag)) buildImage(tag);
+  const findings: DynamicFinding[] = [];
+  for (const url of urls) {
+    const out = runRunner(url, false, tag);
+    findings.push(...toDynamicResult(out, url).findings);
+  }
+  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target: `${urls.length} page(s)`, date: today(), findings };
+}
+
+/** Discover URLs (sitemap/crawl) then scan them all through the dynamic tier. */
+export async function runCrawlScan(opts: DiscoverOpts & { tag?: string }): Promise<DynamicResult> {
+  const urls = await discoverUrls(opts);
+  if (urls.length === 0) {
+    throw new Error("Aucune URL à scanner (sitemap vide/inaccessible, ou page d'entrée sans lien same-origin).");
+  }
+  return runScanMany(urls, opts.tag ?? IMAGE_TAG);
+}
+
 const sevRank: Record<Severity, number> = { bloquant: 3, majeur: 2, mineur: 1 };
 
 /** Fold dynamic findings into a static AuditResult: a needs-rendering/manual or
@@ -205,7 +264,7 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult): AuditR
     const finding = {
       ruleId: df.engine === "reflow" ? "dyn-reflow" : `axe:${df.axeRule}`,
       criteriaId: df.criteriaId,
-      file: dynamic.target,
+      file: df.page ?? dynamic.target,
       line: 0,
       col: 0,
       selectorHint: df.selector,

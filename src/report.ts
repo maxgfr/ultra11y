@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity } from "./types.js";
 import { getCriterion } from "./rgaa.js";
+import { renderWcagReport, type Standard } from "./standard.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
@@ -32,6 +33,10 @@ const L = {
     manualTitle: "5. Critères à évaluer manuellement (rendu / jugement)",
     manualWarn: "Ne marquez aucun de ces critères « conforme » sans vérification humaine.",
     nothing: "Aucun.",
+    dedup: "Dédup",
+    canonical: "fichier(s) canonique(s) audité(s)",
+    duplicate: "doublon(s) identique(s) ignoré(s)",
+    truncated: (l: number, t: number, s: number) => `Périmètre tronqué : ${l}/${t} fichiers audités (priorité d'abord), ${s} ignoré(s). Élargir avec --max-files.`,
   },
   en: {
     title: "Accessibility audit report — RGAA 4.1.2",
@@ -55,6 +60,10 @@ const L = {
     manualTitle: "5. Criteria to assess manually (rendering / judgment)",
     manualWarn: "Do not mark any of these criteria “conforming” without a human check.",
     nothing: "None.",
+    dedup: "Dedup",
+    canonical: "canonical file(s) audited",
+    duplicate: "identical duplicate(s) skipped",
+    truncated: (l: number, t: number, s: number) => `Scope truncated: ${l}/${t} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`,
   },
 } as const;
 
@@ -75,7 +84,9 @@ export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
   out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
   out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} — ${r.scope.inputs.join(", ")}`);
   out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
+  if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> ⚠️ ${s.warn}`, "");
+  if (r.scope.truncated) out.push(`> ✂️ ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
 
   // 1. synthesis
   out.push(`## ${s.synthTitle}`, "");
@@ -130,13 +141,16 @@ export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
 export interface ReportOpts {
   out: string;
   lang: Lang;
+  standard?: Standard;
 }
 
-/** Render and write the report; returns the written path. */
+/** Render and write the report; returns the written path. The WCAG view is a
+ *  separate `wcag-<date>.md` artifact (presentation-only; never gated). */
 export function writeReport(r: AuditResult, opts: ReportOpts): string {
-  const md = renderReport(r, opts.lang);
+  const wcag = opts.standard === "wcag";
+  const md = wcag ? renderWcagReport(r, opts.lang) : renderReport(r, opts.lang);
   mkdirSync(opts.out, { recursive: true });
-  const path = join(opts.out, `rgaa-${r.date}.md`);
+  const path = join(opts.out, `${wcag ? "wcag" : "rgaa"}-${r.date}.md`);
   writeFileSync(path, md);
   return path;
 }

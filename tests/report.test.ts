@@ -59,4 +59,15 @@ describe("writeReport", () => {
     expect(existsSync(path)).toBe(true);
     expect(readFileSync(path, "utf8")).toContain("RGAA 4.1.2");
   });
+
+  it("the WCAG view writes a separate wcag-<date>.md and leaves the RGAA report byte-identical", () => {
+    const out = join(tmpdir(), `ultra11y-report-std-${bad.date}`);
+    const rgaaPath = writeReport(bad, { out, lang: "fr", standard: "rgaa" });
+    const wcagPath = writeReport(bad, { out, lang: "fr", standard: "wcag" });
+    expect(rgaaPath).toBe(join(out, `rgaa-${bad.date}.md`));
+    expect(wcagPath).toBe(join(out, `wcag-${bad.date}.md`));
+    // default rgaa output is unchanged by the new option
+    expect(readFileSync(rgaaPath, "utf8")).toBe(renderReport(bad, "fr"));
+    expect(readFileSync(wcagPath, "utf8")).toContain("WCAG 2.1");
+  });
 });

@@ -28,11 +28,19 @@ empêchent toute non-conformité hallucinée de survivre.
 
 - **« Auditer / rapport de conformité »** → `node scripts/ultra11y.mjs audit … --json`,
   puis `report`, puis `check` ; lire **`references/audit.md`**.
+- **« Sur un gros dépôt / auditer malin »** → se focaliser : `--changed` (diff git),
+  priorisation des gabarits, dédup, `--max-files` ; lire **`references/scale.md`**.
+- **« Mettre en place les fix »** → `fix` (dry-run par défaut, `--write` applique les
+  correctifs sûrs, propose le reste sans rien inventer) ; lire **`references/fix.md`**.
+- **« Garde automatique dans le repo (hook / CI) »** → `init --hook`/`--ci`/`--baseline`
+  (n'échoue que sur les nouvelles non-conformités) ; lire **`references/automation.md`**.
 - **« Rendre ce code accessible / le revoir »** → auditer l'extrait
   (`audit - < composant.html`) en suivant le natif-d'abord ; lire
   **`references/authoring.md`** et **`references/forbidden-patterns.md`**.
 - **« Que signifie le critère X / quelle thématique »** → `criteria` ; voir
   **`references/criteria.md`**.
+- **« Lecture internationale (WCAG / EN 301 549 / Section 508) »** → `--standard wcag`
+  sur `report`/`criteria` ; voir **`references/methodology.md`**.
 - **« Audit à haute assurance »** → `verify --report … --semantic` ; voir
   **`references/verify.md`**. Méthodologie & format : **`references/methodology.md`**.
 - **« Vérifier le contraste / le rendu (tier optionnel Docker) »** → `scan <url> --merge …`
@@ -44,11 +52,15 @@ empêchent toute non-conformité hallucinée de survivre.
 node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
 node scripts/ultra11y.mjs audit - < composant.html        # HTML via stdin
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx       # JSX/TSX best-effort
+node scripts/ultra11y.mjs audit --changed --json           # seulement le diff git (gros dépôt)
 node scripts/ultra11y.mjs report --in audit.json --out audits
+node scripts/ultra11y.mjs report --in audit.json --standard wcag   # vue WCAG (présentation)
 node scripts/ultra11y.mjs criteria 11.1                    # un critère + ses tests
 node scripts/ultra11y.mjs criteria --theme 8 --list        # une thématique / la liste
 node scripts/ultra11y.mjs check  --report audits/rgaa-AAAA-MM-JJ.md
 node scripts/ultra11y.mjs verify --report audits/rgaa-AAAA-MM-JJ.md --semantic
+node scripts/ultra11y.mjs fix "src/**/*.html"              # dry-run ; --write applique
+node scripts/ultra11y.mjs init --hook --baseline           # garde de régression (hook + baseline)
 node scripts/ultra11y.mjs scan https://exemple.fr --merge audits/audit-latest.json  # tier Docker
 ```
 Sortie machine partout avec `--json`. Rapport en français par défaut, `--lang en` disponible.

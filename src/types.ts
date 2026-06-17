@@ -59,6 +59,12 @@ export interface Finding {
   message: string;
   remediation: string;
   snippet: string;
+  // Source byte range of the anchoring element (htmlparser2 [start, end), open+close
+  // tag). Optional so older AuditResult JSON still parses. Used by `fix` (codemods
+  // edit by range) and by `init` baseline diffing (stable finding identity that
+  // survives line drift). Absent for stdin/JSX findings where it would be unusable.
+  sourceStart?: number;
+  sourceEnd?: number;
 }
 
 export interface CriterionResult {
@@ -89,7 +95,14 @@ export interface AuditResult {
   version: string;
   schemaVersion: number;
   date: string; // YYYY-MM-DD
-  scope: { inputs: string[]; files: number };
+  scope: {
+    inputs: string[];
+    files: number;
+    // Set when `--max-files` capped discovery (highest-priority files audited first).
+    truncated?: { limit: number; total: number; skipped: number };
+    // Set when content de-duplication collapsed identical files to one canonical audit.
+    dedup?: { canonicalFiles: number; duplicateFiles: number };
+  };
   themes: ThemeTally[];
   criteria: CriterionResult[];
   findings: Finding[];

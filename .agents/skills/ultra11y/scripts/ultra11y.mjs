@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync3, mkdirSync as mkdirSync3 } from "fs";
-import { join as join4 } from "path";
+import { realpathSync, writeFileSync as writeFileSync6, mkdirSync as mkdirSync4, existsSync as existsSync4 } from "fs";
+import { join as join7, relative as relative2, sep as sep2 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
-var VERSION = "1.0.1";
+var VERSION = "1.3.0";
 var SCHEMA_VERSION = 1;
+
+// src/audit.ts
+import { createHash } from "crypto";
 
 // src/data/rgaa.json
 var rgaa_default = {
@@ -755,7 +758,9 @@ var rgaa_default = {
         "[object Object]"
       ],
       automatability: "needs-rendering",
-      ruleIds: []
+      ruleIds: [
+        "contrast-literal"
+      ]
     },
     {
       id: "3.3",
@@ -1422,8 +1427,10 @@ var rgaa_default = {
       techniques: [
         "F46"
       ],
-      automatability: "judgment",
-      ruleIds: []
+      automatability: "static",
+      ruleIds: [
+        "layout-table-data-markup"
+      ]
     },
     {
       id: "6.1",
@@ -1576,7 +1583,10 @@ var rgaa_default = {
         "button-empty-name",
         "clickable-noninteractive",
         "aria-ref-missing-id",
-        "icon-only-control-unnamed"
+        "icon-only-control-unnamed",
+        "aria-required-children",
+        "aria-hidden-focusable",
+        "nested-interactive"
       ]
     },
     {
@@ -1815,7 +1825,9 @@ var rgaa_default = {
         "H57"
       ],
       automatability: "judgment",
-      ruleIds: []
+      ruleIds: [
+        "lang-invalid"
+      ]
     },
     {
       id: "8.5",
@@ -1909,7 +1921,9 @@ var rgaa_default = {
         "H58"
       ],
       automatability: "judgment",
-      ruleIds: []
+      ruleIds: [
+        "lang-invalid"
+      ]
     },
     {
       id: "8.9",
@@ -2063,8 +2077,10 @@ var rgaa_default = {
         'Les attributs WAI-ARIA `role="list"` et `role="listitem"` peuvent n\xE9cessiter l\u2019utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas o\xF9 l\u2019ensemble de la liste n\u2019est pas disponible via le DOM g\xE9n\xE9r\xE9 au moment de la consultation.',
         'Les attributs WAI-ARIA `role="tree"`, `role="tablist"`, `role="menu"`, `role="combobox"` et `role="listbox"` ne sont pas \xE9quivalents \xE0 une liste HTML `<ul>` ou `<ol>`.'
       ],
-      automatability: "judgment",
-      ruleIds: []
+      automatability: "static",
+      ruleIds: [
+        "list-structure"
+      ]
     },
     {
       id: "9.4",
@@ -2210,7 +2226,9 @@ var rgaa_default = {
         "[object Object]"
       ],
       automatability: "needs-rendering",
-      ruleIds: []
+      ruleIds: [
+        "meta-viewport-zoom-block"
+      ]
     },
     {
       id: "10.5",
@@ -2551,7 +2569,9 @@ var rgaa_default = {
       automatability: "static",
       ruleIds: [
         "control-label-missing",
-        "placeholder-as-label"
+        "placeholder-as-label",
+        "form-field-multiple-labels",
+        "select-has-option"
       ]
     },
     {
@@ -2704,8 +2724,10 @@ var rgaa_default = {
         "H71",
         "ARIA17"
       ],
-      automatability: "judgment",
-      ruleIds: []
+      automatability: "static",
+      ruleIds: [
+        "fieldset-legend-missing"
+      ]
     },
     {
       id: "11.7",
@@ -6565,7 +6587,11 @@ function toFinding(doc, ruleId, def, rf) {
     severity: rf.severity ?? def,
     message: rf.message,
     remediation: rf.remediation,
-    snippet: snippet(doc, rf.el)
+    snippet: snippet(doc, rf.el),
+    // Only carry source offsets when they index into the *real* file. For lossy
+    // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
+    // edit by range and baseline diffing falls back to line/selector identity.
+    ...doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end }
   };
 }
 
@@ -6676,6 +6702,19 @@ var iframeTitleMissing = {
 var framesRules = [iframeTitleMissing];
 
 // src/rules/scripts-aria.ts
+var INTERACTIVE_ROLES = ["button", "link", "checkbox", "radio", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "switch", "textbox", "combobox", "slider", "spinbutton"];
+function isInteractive(el) {
+  if (el.tag === "a") return hasAttr(el, "href");
+  if (["button", "select", "textarea"].includes(el.tag)) return true;
+  if (el.tag === "input") return (attr(el, "type") ?? "text").toLowerCase() !== "hidden";
+  return INTERACTIVE_ROLES.includes((attr(el, "role") ?? "").trim());
+}
+function isFocusable(el) {
+  if (isInteractive(el)) return true;
+  const ti = attr(el, "tabindex");
+  if (ti !== void 0 && Number(ti) >= 0) return true;
+  return hasAttr(el, "contenteditable") && attr(el, "contenteditable") !== "false";
+}
 var VALID_ROLES = /* @__PURE__ */ new Set([
   "alert",
   "alertdialog",
@@ -6888,7 +6927,86 @@ var clickableNoninteractive = {
     return out;
   }
 };
-var scriptsAriaRules = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive];
+var REQUIRED_CHILDREN = {
+  list: ["listitem"],
+  tablist: ["tab"],
+  radiogroup: ["radio"],
+  tree: ["treeitem"],
+  menu: ["menuitem", "menuitemcheckbox", "menuitemradio"],
+  menubar: ["menuitem", "menuitemcheckbox", "menuitemradio"]
+};
+function satisfiesChild(d, reqRoles) {
+  const role = (attr(d, "role") ?? "").trim();
+  if (reqRoles.includes(role)) return true;
+  if (reqRoles.includes("listitem") && d.tag === "li") return true;
+  if (reqRoles.includes("radio") && d.tag === "input" && (attr(d, "type") ?? "").toLowerCase() === "radio") return true;
+  return false;
+}
+var ariaRequiredChildren = {
+  id: "aria-required-children",
+  criteria: ["7.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      const role = (attr(el, "role") ?? "").trim();
+      const req = REQUIRED_CHILDREN[role];
+      if (!req) continue;
+      if (hasAttr(el, "aria-owns")) continue;
+      if (descendants(el).some((d) => satisfiesChild(d, req))) continue;
+      out.push({
+        criteriaId: "7.1",
+        el,
+        message: `role="${role}" sans enfant requis (${req.join("/")}) \u2014 structure ARIA incompl\xE8te.`,
+        remediation: `Ajoutez les \xE9l\xE9ments enfants au r\xF4le appropri\xE9, ou utilisez les \xE9l\xE9ments HTML natifs.`
+      });
+    }
+    return out;
+  }
+};
+var ariaHiddenFocusable = {
+  id: "aria-hidden-focusable",
+  criteria: ["7.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (attr(el, "aria-hidden") !== "true") continue;
+      const focusableHere = isFocusable(el) || descendants(el).some(isFocusable);
+      if (!focusableHere) continue;
+      out.push({
+        criteriaId: "7.1",
+        el,
+        message: `aria-hidden="true" sur (ou contenant) un \xE9l\xE9ment focalisable \u2014 pi\xE8ge pour les technologies d'assistance.`,
+        remediation: `Retirez aria-hidden, ou rendez l'\xE9l\xE9ment non focalisable (tabindex="-1", disabled).`
+      });
+    }
+    return out;
+  }
+};
+var nestedInteractive = {
+  id: "nested-interactive",
+  criteria: ["7.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isInteractive(el)) continue;
+      if (!ancestors(el).some(isInteractive)) continue;
+      out.push({
+        criteriaId: "7.1",
+        el,
+        message: `\xC9l\xE9ment interactif <${el.tag}> imbriqu\xE9 dans un autre \xE9l\xE9ment interactif \u2014 non restitu\xE9 correctement.`,
+        remediation: `Ne pas imbriquer des contr\xF4les interactifs (lien/bouton) ; mettez-les c\xF4te \xE0 c\xF4te.`
+      });
+    }
+    return out;
+  }
+};
+var scriptsAriaRules = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive, ariaRequiredChildren, ariaHiddenFocusable, nestedInteractive];
 
 // src/rules/mandatory.ts
 var htmlLangMissing = {
@@ -6979,7 +7097,29 @@ var inlineLangChangeMissing = {
     return out;
   }
 };
-var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing];
+var BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
+var langInvalid = {
+  id: "lang-invalid",
+  criteria: ["8.4", "8.8"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      const lang = (attr(el, "lang") ?? "").trim();
+      if (!lang) continue;
+      if (BCP47.test(lang)) continue;
+      out.push({
+        criteriaId: el.tag === "html" ? "8.4" : "8.8",
+        el,
+        message: `Code de langue invalide lang="${lang}" sur <${el.tag}> \u2014 n'est pas un code BCP 47 valide.`,
+        remediation: `Utilisez un code de langue valide (ex. "fr", "en", "fr-CA").`
+      });
+    }
+    return out;
+  }
+};
+var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing, langInvalid];
 
 // src/rules/headings.ts
 function headingLevel(el) {
@@ -7060,11 +7200,54 @@ var h1Multiple = {
     }));
   }
 };
-var headingsRules = [headingOrderSkip, h1Missing, h1Multiple];
+var ALLOWED_IN_LIST = /* @__PURE__ */ new Set(["li", "script", "template"]);
+var listStructure = {
+  id: "list-structure",
+  criteria: ["9.3"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag === "ul" || el.tag === "ol") {
+        const bad = el.children.find((c) => c.type === "element" && !ALLOWED_IN_LIST.has(c.tag));
+        if (bad && bad.type === "element") {
+          out.push({
+            criteriaId: "9.3",
+            el: bad,
+            message: `<${bad.tag}> enfant direct de <${el.tag}> \u2014 une liste ne doit contenir que des <li>.`,
+            remediation: `Enveloppez le contenu dans des <li>, ou utilisez un autre \xE9l\xE9ment que <${el.tag}>.`
+          });
+        }
+      } else if (el.tag === "li") {
+        const parent = el.parent;
+        if (parent && !["ul", "ol", "menu"].includes(parent.tag)) {
+          out.push({
+            criteriaId: "9.3",
+            el,
+            message: `<li> hors d'une liste (<${parent.tag}> parent) \u2014 structure de liste invalide.`,
+            remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`
+          });
+        }
+      }
+    }
+    return out;
+  }
+};
+var headingsRules = [headingOrderSkip, h1Missing, h1Multiple, listStructure];
 
 // src/rules/tables.ts
-var isLayout = (t2) => ["presentation", "none"].includes((attr(t2, "role") ?? "").trim());
+var declaredLayout = (t2) => ["presentation", "none"].includes((attr(t2, "role") ?? "").trim());
 var named2 = (t2) => !!(attr(t2, "aria-label") ?? "").trim() || hasAttr(t2, "aria-labelledby");
+function isLayoutTable(t2) {
+  if (declaredLayout(t2)) return true;
+  const desc = descendants(t2);
+  if (desc.some((d) => d.tag === "table")) return true;
+  const hasTh = desc.some((d) => d.tag === "th");
+  const hasCaption = t2.children.some((c) => c.type === "element" && c.tag === "caption");
+  const rows = desc.filter((d) => d.tag === "tr").length;
+  return !hasTh && !hasCaption && rows <= 1;
+}
 var dataTableNoHeaders = {
   id: "data-table-no-headers",
   criteria: ["5.6", "5.7"],
@@ -7073,7 +7256,7 @@ var dataTableNoHeaders = {
   run(doc) {
     const out = [];
     for (const t2 of doc.elements) {
-      if (t2.tag !== "table" || isLayout(t2)) continue;
+      if (t2.tag !== "table" || isLayoutTable(t2)) continue;
       const desc = descendants(t2);
       const hasTh = desc.some((d) => d.tag === "th");
       const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasAttr(d, "scope") || hasAttr(d, "headers")));
@@ -7105,7 +7288,7 @@ var tableCaptionMissing = {
   run(doc) {
     const out = [];
     for (const t2 of doc.elements) {
-      if (t2.tag !== "table" || isLayout(t2)) continue;
+      if (t2.tag !== "table" || isLayoutTable(t2)) continue;
       const hasCaption = t2.children.some((c) => c.type === "element" && c.tag === "caption");
       if (hasCaption || named2(t2)) continue;
       out.push({
@@ -7118,7 +7301,29 @@ var tableCaptionMissing = {
     return out;
   }
 };
-var tablesRules = [dataTableNoHeaders, tableCaptionMissing];
+var layoutTableDataMarkup = {
+  id: "layout-table-data-markup",
+  criteria: ["5.8"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const t2 of doc.elements) {
+      if (t2.tag !== "table" || !declaredLayout(t2)) continue;
+      const desc = descendants(t2);
+      const dataMarkup = desc.some((d) => d.tag === "th") || t2.children.some((c) => c.type === "element" && c.tag === "caption") || desc.some((d) => hasAttr(d, "scope") || hasAttr(d, "headers"));
+      if (!dataMarkup) continue;
+      out.push({
+        criteriaId: "5.8",
+        el: t2,
+        message: `Tableau de mise en forme (role="${attr(t2, "role")}") utilisant du balisage de donn\xE9es (th/caption/scope).`,
+        remediation: `Retirez th/caption/scope/headers d'un tableau de pr\xE9sentation, ou faites-en un vrai tableau de donn\xE9es.`
+      });
+    }
+    return out;
+  }
+};
+var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup];
 
 // src/rules/links.ts
 function hasIconChild(el) {
@@ -7257,7 +7462,77 @@ var placeholderAsLabel = {
     return out;
   }
 };
-var formsRules = [controlLabelMissing, placeholderAsLabel];
+var fieldsetLegendMissing = {
+  id: "fieldset-legend-missing",
+  criteria: ["11.6"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "fieldset") continue;
+      const legend = el.children.find((c) => c.type === "element" && c.tag === "legend");
+      if (legend && legend.type === "element" && visibleText(legend)) continue;
+      if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
+      out.push({
+        criteriaId: "11.6",
+        el,
+        message: `<fieldset> sans <legend> (ou l\xE9gende vide) \u2014 regroupement de champs sans l\xE9gende.`,
+        remediation: `Ajoutez un <legend> non vide en premier enfant du <fieldset>.`
+      });
+    }
+    return out;
+  }
+};
+var formFieldMultipleLabels = {
+  id: "form-field-multiple-labels",
+  criteria: ["11.1"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const el of doc.elements) {
+      if (el.tag !== "label") continue;
+      const f = attr(el, "for");
+      if (f) counts.set(f, (counts.get(f) ?? 0) + 1);
+    }
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isFormField(el)) continue;
+      const id = attr(el, "id");
+      if (id && (counts.get(id) ?? 0) > 1) {
+        out.push({
+          criteriaId: "11.1",
+          el,
+          message: `Champ <${el.tag}> r\xE9f\xE9renc\xE9 par ${counts.get(id)} <label for="${id}"> \u2014 \xE9tiquettes multiples ambigu\xEBs.`,
+          remediation: `Un seul <label> doit cibler le champ ; fusionnez ou retirez les \xE9tiquettes superflues.`
+        });
+      }
+    }
+    return out;
+  }
+};
+var selectHasOption = {
+  id: "select-has-option",
+  criteria: ["11.1"],
+  parser: ["html", "jsx"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "select") continue;
+      if (descendants(el).some((d) => d.tag === "option")) continue;
+      out.push({
+        criteriaId: "11.1",
+        el,
+        message: `<select> sans aucune <option> \u2014 liste de choix vide.`,
+        remediation: `Ajoutez des <option> (et un <optgroup>/option par d\xE9faut si pertinent).`
+      });
+    }
+    return out;
+  }
+};
+var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption];
 
 // src/rules/navigation.ts
 var skipLinkTargetMissing = {
@@ -7345,8 +7620,211 @@ var autoplayMedia = {
 };
 var multimediaRules = [autoplayMedia];
 
+// src/rules/presentation.ts
+var metaViewportZoomBlock = {
+  id: "meta-viewport-zoom-block",
+  criteria: ["10.4"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "meta" || (attr(el, "name") ?? "").toLowerCase() !== "viewport") continue;
+      const content = (attr(el, "content") ?? "").toLowerCase();
+      const pairs = /* @__PURE__ */ new Map();
+      for (const part of content.split(/[,;]/)) {
+        const [k, v] = part.split("=").map((s) => s.trim());
+        if (k) pairs.set(k, v ?? "");
+      }
+      const userScalable = pairs.get("user-scalable");
+      const maxScale = pairs.get("maximum-scale");
+      const blocked = userScalable === "no" || userScalable === "0" || maxScale !== void 0 && Number(maxScale) < 2;
+      if (!blocked) continue;
+      out.push({
+        criteriaId: "10.4",
+        el,
+        message: `<meta viewport> bloque le zoom (${userScalable === "no" || userScalable === "0" ? "user-scalable=no" : `maximum-scale=${maxScale}`}) \u2014 agrandissement \xE0 200% emp\xEAch\xE9.`,
+        remediation: `Retirez user-scalable=no et maximum-scale (ou maximum-scale \u2265 2) du content du viewport.`
+      });
+    }
+    return out;
+  }
+};
+var presentationRules = [metaViewportZoomBlock];
+
+// src/color.ts
+var NAMED = {
+  transparent: { r: 0, g: 0, b: 0, a: 0 },
+  white: { r: 255, g: 255, b: 255, a: 1 },
+  black: { r: 0, g: 0, b: 0, a: 1 },
+  red: { r: 255, g: 0, b: 0, a: 1 },
+  lime: { r: 0, g: 255, b: 0, a: 1 },
+  green: { r: 0, g: 128, b: 0, a: 1 },
+  blue: { r: 0, g: 0, b: 255, a: 1 },
+  yellow: { r: 255, g: 255, b: 0, a: 1 },
+  cyan: { r: 0, g: 255, b: 255, a: 1 },
+  aqua: { r: 0, g: 255, b: 255, a: 1 },
+  magenta: { r: 255, g: 0, b: 255, a: 1 },
+  fuchsia: { r: 255, g: 0, b: 255, a: 1 },
+  silver: { r: 192, g: 192, b: 192, a: 1 },
+  gray: { r: 128, g: 128, b: 128, a: 1 },
+  grey: { r: 128, g: 128, b: 128, a: 1 },
+  maroon: { r: 128, g: 0, b: 0, a: 1 },
+  olive: { r: 128, g: 128, b: 0, a: 1 },
+  purple: { r: 128, g: 0, b: 128, a: 1 },
+  teal: { r: 0, g: 128, b: 128, a: 1 },
+  navy: { r: 0, g: 0, b: 128, a: 1 },
+  orange: { r: 255, g: 165, b: 0, a: 1 }
+};
+function hex(part) {
+  return parseInt(part.length === 1 ? part + part : part, 16);
+}
+function parseColor(input) {
+  const s = input.trim().toLowerCase();
+  if (!s) return null;
+  if (s in NAMED) return { ...NAMED[s] };
+  if (s.startsWith("#")) {
+    const h = s.slice(1);
+    if (/^[0-9a-f]{3}$/.test(h)) return { r: hex(h[0]), g: hex(h[1]), b: hex(h[2]), a: 1 };
+    if (/^[0-9a-f]{4}$/.test(h)) return { r: hex(h[0]), g: hex(h[1]), b: hex(h[2]), a: hex(h[3]) / 255 };
+    if (/^[0-9a-f]{6}$/.test(h)) return { r: hex(h.slice(0, 2)), g: hex(h.slice(2, 4)), b: hex(h.slice(4, 6)), a: 1 };
+    if (/^[0-9a-f]{8}$/.test(h)) return { r: hex(h.slice(0, 2)), g: hex(h.slice(2, 4)), b: hex(h.slice(4, 6)), a: hex(h.slice(6, 8)) / 255 };
+    return null;
+  }
+  const m = /^rgba?\(([^)]+)\)$/.exec(s);
+  if (m) {
+    const parts = m[1].split(/[,/\s]+/).filter(Boolean);
+    if (parts.length < 3) return null;
+    const chan = (p) => p.endsWith("%") ? Math.round(parseFloat(p) / 100 * 255) : parseFloat(p);
+    const r = chan(parts[0]);
+    const g = chan(parts[1]);
+    const b = chan(parts[2]);
+    const a = parts[3] !== void 0 ? parts[3].endsWith("%") ? parseFloat(parts[3]) / 100 : parseFloat(parts[3]) : 1;
+    if ([r, g, b, a].some((n) => Number.isNaN(n))) return null;
+    return { r, g, b, a };
+  }
+  return null;
+}
+function channelLuminance(c) {
+  const cs = c / 255;
+  return cs <= 0.03928 ? cs / 12.92 : ((cs + 0.055) / 1.055) ** 2.4;
+}
+function relativeLuminance({ r, g, b }) {
+  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+function contrastRatio(a, b) {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const [hi, lo] = la >= lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+function parseInlineStyle(style) {
+  const out = /* @__PURE__ */ new Map();
+  for (const decl of style.split(";")) {
+    const i = decl.indexOf(":");
+    if (i === -1) continue;
+    const prop = decl.slice(0, i).trim().toLowerCase();
+    const val = decl.slice(i + 1).trim();
+    if (prop && val) out.set(prop, val);
+  }
+  return out;
+}
+
+// src/rules/colors.ts
+var SKIP_TAGS = /* @__PURE__ */ new Set(["script", "style", "head", "title", "meta", "noscript", "link"]);
+function styleOf(el) {
+  const s = attr(el, "style");
+  return s ? parseInlineStyle(s) : /* @__PURE__ */ new Map();
+}
+function colorFromValue(v) {
+  const whole = parseColor(v);
+  if (whole) return whole;
+  for (const tok of v.split(/\s+/)) {
+    const c = parseColor(tok);
+    if (c) return c;
+  }
+  return null;
+}
+function fgOf(el) {
+  for (let p = el; p; p = p.parent) {
+    const v = styleOf(p).get("color");
+    if (v) {
+      const c = colorFromValue(v);
+      if (c) return c;
+    }
+  }
+  return null;
+}
+function bgOf(el) {
+  for (let p = el; p; p = p.parent) {
+    const st = styleOf(p);
+    const v = st.get("background-color") ?? st.get("background");
+    if (v) {
+      const c = colorFromValue(v);
+      if (c) return c;
+    }
+  }
+  return null;
+}
+function fontPx(el) {
+  for (let p = el; p; p = p.parent) {
+    const v = styleOf(p).get("font-size");
+    if (!v) continue;
+    const m = /^([\d.]+)(px|pt|rem|em)?$/.exec(v.trim());
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (Number.isNaN(n)) return null;
+    const unit = m[2] ?? "px";
+    return unit === "pt" ? n * 4 / 3 : unit === "rem" || unit === "em" ? n * 16 : n;
+  }
+  return null;
+}
+function isBold(el) {
+  for (let p = el; p; p = p.parent) {
+    const v = styleOf(p).get("font-weight");
+    if (v) return v === "bold" || Number(v) >= 700;
+  }
+  return false;
+}
+function isLarge(el) {
+  const px = fontPx(el);
+  if (px === null) return false;
+  return px >= 24 || px >= 18.5 && isBold(el);
+}
+function hasDirectText(el) {
+  return el.children.some((c) => c.type === "text" && c.data.trim() !== "");
+}
+var contrastLiteral = {
+  id: "contrast-literal",
+  criteria: ["3.2"],
+  parser: ["html", "jsx", "css"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (SKIP_TAGS.has(el.tag) || !hasDirectText(el)) continue;
+      const fg = fgOf(el);
+      const bg = bgOf(el);
+      if (!fg || !bg || fg.a < 1 || bg.a < 1) continue;
+      const ratio = contrastRatio(fg, bg);
+      const large = isLarge(el);
+      const min = large ? 3 : 4.5;
+      if (ratio >= min) continue;
+      out.push({
+        criteriaId: "3.2",
+        el,
+        message: `Contraste insuffisant : ratio ${ratio.toFixed(2)}:1 entre le texte et son fond (minimum ${min}:1 pour du texte ${large ? "large" : "normal"}).`,
+        remediation: `Assombrissez le texte ou \xE9claircissez le fond pour atteindre au moins ${min}:1 (contraste calcul\xE9 sur des couleurs inline litt\xE9rales).`
+      });
+    }
+    return out;
+  }
+};
+var colorsRules = [contrastLiteral];
+
 // src/rules/registry.ts
 var ALL_RULES = [
+  ...colorsRules,
   ...imagesRules,
   ...framesRules,
   ...scriptsAriaRules,
@@ -7356,7 +7834,8 @@ var ALL_RULES = [
   ...linksRules,
   ...formsRules,
   ...navigationRules,
-  ...multimediaRules
+  ...multimediaRules,
+  ...presentationRules
 ];
 var SEVERITY_ORDER = { bloquant: 0, majeur: 1, mineur: 2 };
 function runRules(doc, only) {
@@ -7370,6 +7849,11 @@ function runRules(doc, only) {
   out.sort((a, b) => a.line - b.line || a.col - b.col || SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
   return out;
 }
+
+// src/discover.ts
+import { existsSync as existsSync2 } from "fs";
+import { execFileSync } from "child_process";
+import { join as join2, relative } from "path";
 
 // src/glob.ts
 import { readdirSync, statSync, existsSync } from "fs";
@@ -7397,7 +7881,17 @@ async function readStdin() {
 }
 
 // src/glob.ts
-var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx"]);
+var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
+function extSet(extra) {
+  const set = new Set(DEFAULT_EXT);
+  for (const raw of extra ?? []) {
+    for (const e of raw.split(",")) {
+      const t2 = e.trim().toLowerCase();
+      if (t2) set.add(t2.startsWith(".") ? t2 : `.${t2}`);
+    }
+  }
+  return set;
+}
 var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
 function globToRegExp(glob) {
   let re = "";
@@ -7430,6 +7924,29 @@ function compileGlobs(globs) {
 }
 var toPosix = (p) => p.split(sep).join("/");
 var hasGlob = (s) => /[*?]/.test(s);
+function makeFilter(opts = {}) {
+  const include = compileGlobs(opts.include);
+  const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
+  return (file) => {
+    if (!exts.has(ext(file))) return false;
+    const rel = toPosix(file);
+    if (include && !include(rel)) return false;
+    if (exclude && exclude(rel)) return false;
+    return true;
+  };
+}
+function inScopeMatcher(inputs) {
+  const scopes = inputs.filter((i) => i !== "-" && i !== ".");
+  if (!scopes.length) return null;
+  const globMatch = compileGlobs(scopes.filter(hasGlob));
+  const prefixes = scopes.filter((i) => !hasGlob(i)).map((p) => toPosix(p).replace(/\/+$/, ""));
+  return (file) => {
+    const rel = toPosix(file);
+    if (globMatch && globMatch(rel)) return true;
+    return prefixes.some((p) => rel === p || rel.startsWith(`${p}/`));
+  };
+}
 function walk(dir, acc) {
   let entries;
   try {
@@ -7455,6 +7972,7 @@ function staticBase(glob) {
 function expandInputs(inputs, opts = {}) {
   const include = compileGlobs(opts.include);
   const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
   const files = /* @__PURE__ */ new Set();
   for (const input of inputs) {
     if (input === "-") continue;
@@ -7462,13 +7980,13 @@ function expandInputs(inputs, opts = {}) {
       const re = globToRegExp(input);
       const acc = [];
       walk(staticBase(input), acc);
-      for (const f of acc) if (re.test(toPosix(f))) files.add(f);
+      for (const f of acc) if (re.test(toPosix(f)) && exts.has(ext(f))) files.add(f);
     } else if (existsSync(input)) {
       if (statSync(input).isDirectory()) {
         const acc = [];
         walk(input, acc);
-        for (const f of acc) if (DEFAULT_EXT.has(ext(f))) files.add(f);
-      } else {
+        for (const f of acc) if (exts.has(ext(f))) files.add(f);
+      } else if (exts.has(ext(input))) {
         files.add(input);
       }
     }
@@ -7477,6 +7995,66 @@ function expandInputs(inputs, opts = {}) {
   if (include) list = list.filter((f) => include(toPosix(f)));
   if (exclude) list = list.filter((f) => !exclude(toPosix(f)));
   return list.sort();
+}
+
+// src/discover.ts
+function git(args) {
+  try {
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  } catch {
+    return null;
+  }
+}
+function gitChangedFiles(ref) {
+  const top = git(["rev-parse", "--show-toplevel"]);
+  if (top === null) return null;
+  const repoRoot2 = top.trim();
+  const base = ref && ref.trim() ? ref.trim() : "HEAD";
+  const out = /* @__PURE__ */ new Set();
+  const add = (s) => {
+    if (!s) return;
+    for (const line of s.split("\n")) {
+      const t2 = line.trim();
+      if (t2) out.add(t2);
+    }
+  };
+  add(git(["diff", "--name-only", "--diff-filter=d", base]));
+  add(git(["diff", "--name-only", "--diff-filter=d", "--cached", base]));
+  add(git(["ls-files", "--others", "--exclude-standard"]));
+  const cwd = process.cwd();
+  return [...out].map((p) => relative(cwd, join2(repoRoot2, p)));
+}
+var TIER0 = /(^|\/)(layout|template|_app|_document|app|main|index)[.\-/]|(^|\/)(layouts?|templates?)\//i;
+var TIER1 = /(^|\/)(components?|shared|ui|design-system|ds|partials?|includes?)\//i;
+function priority(file) {
+  const rel = toPosix(file);
+  if (TIER0.test(rel)) return 0;
+  if (TIER1.test(rel)) return 1;
+  return 2;
+}
+function byPriorityThenPath(a, b) {
+  return priority(a) - priority(b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+function discover(inputs, opts = {}) {
+  const changedMode = !!(opts.changed || opts.since);
+  let files;
+  let gitUnavailable = false;
+  if (changedMode) {
+    const changed = gitChangedFiles(opts.since);
+    if (changed === null) {
+      gitUnavailable = true;
+      opts.onWarn?.("ultra11y: --changed requested but git is unavailable here \u2014 falling back to a full scan.");
+      files = expandInputs(inputs, opts);
+    } else {
+      const filter2 = makeFilter(opts);
+      const inScope = inScopeMatcher(inputs);
+      files = changed.filter((f) => existsSync2(f) && filter2(f) && (!inScope || inScope(f)));
+    }
+  } else {
+    files = expandInputs(inputs, opts);
+  }
+  files = [...new Set(files)].sort(byPriorityThenPath);
+  return { files, changedMode, gitUnavailable };
 }
 
 // src/audit.ts
@@ -7499,34 +8077,41 @@ var APPLICABLE = {
   "8.5": (d) => isFullDocument(d),
   "8.7": (d) => d.elements.some((e) => e.tag !== "html" && hasAttr(e, "lang")),
   "9.1": (d) => isFullDocument(d),
+  "9.3": (d) => has(d, "ul", "ol", "dl", "li", "dt", "dd"),
   "11.1": (d) => d.elements.some(isFormField),
+  "11.6": (d) => has(d, "fieldset"),
   "12.7": (d) => isFullDocument(d) && d.elements.some((e) => e.tag === "a" && (attr(e, "href") ?? "").startsWith("#")),
-  "12.8": (d) => d.elements.some((e) => hasAttr(e, "tabindex"))
+  "12.8": (d) => d.elements.some((e) => hasAttr(e, "tabindex")),
+  "5.8": (d) => has(d, "table")
 };
 function residualReason(automatability) {
   return automatability === "needs-rendering" ? "N\xE9cessite un rendu (contraste, focus, zoom/reflow) \u2014 \xE0 v\xE9rifier manuellement." : "Crit\xE8re de jugement \u2014 \xE0 \xE9valuer manuellement avec le contexte.";
 }
-function buildAudit(docs, inputs) {
-  const findings = [];
-  for (const d of docs) findings.push(...runRules(d));
-  const byCriterion = /* @__PURE__ */ new Map();
-  for (const f of findings) {
-    const arr = byCriterion.get(f.criteriaId) ?? [];
+var STATIC_PREDS = allCriteria().filter((c) => c.automatability === "static").map((c) => [c.id, APPLICABLE[c.id] ?? isFullDocument]);
+function newAccum() {
+  return { byCriterion: /* @__PURE__ */ new Map(), applicable: /* @__PURE__ */ new Map(), allFindings: [], fileCount: 0 };
+}
+function foldDoc(acc, doc) {
+  for (const f of runRules(doc)) {
+    acc.allFindings.push(f);
+    const arr = acc.byCriterion.get(f.criteriaId) ?? [];
     arr.push(f);
-    byCriterion.set(f.criteriaId, arr);
+    acc.byCriterion.set(f.criteriaId, arr);
   }
+  for (const [id, pred] of STATIC_PREDS) {
+    if (!acc.applicable.get(id) && pred(doc)) acc.applicable.set(id, true);
+  }
+  acc.fileCount++;
+}
+function finalize(acc, inputs, extra = {}) {
   const criteria = [];
   const residualRisks = [];
   for (const c of allCriteria()) {
-    const fs = byCriterion.get(c.id) ?? [];
+    const fs = acc.byCriterion.get(c.id) ?? [];
     let status;
     let justification;
-    if (c.automatability !== "static") {
-      status = "manual";
-      residualRisks.push({ criteriaId: c.id, reason: residualReason(c.automatability), automatability: c.automatability });
-    } else {
-      const pred = APPLICABLE[c.id];
-      const applicable = pred ? docs.some((d) => pred(d)) : docs.some((d) => isFullDocument(d));
+    if (c.automatability === "static") {
+      const applicable = acc.applicable.get(c.id) ?? false;
       if (!applicable) {
         status = "NA";
         justification = "Aucun \xE9l\xE9ment concern\xE9 par ce crit\xE8re dans le p\xE9rim\xE8tre audit\xE9.";
@@ -7535,6 +8120,11 @@ function buildAudit(docs, inputs) {
       } else {
         status = "C";
       }
+    } else if (fs.length > 0) {
+      status = "NC";
+    } else {
+      status = "manual";
+      residualRisks.push({ criteriaId: c.id, reason: residualReason(c.automatability), automatability: c.automatability });
     }
     criteria.push({ id: c.id, theme: c.theme, status, findings: fs, ...justification ? { justification } : {} });
   }
@@ -7557,28 +8147,219 @@ function buildAudit(docs, inputs) {
     version: VERSION,
     schemaVersion: SCHEMA_VERSION,
     date: today(),
-    scope: { inputs, files: docs.length },
+    scope: { inputs, files: acc.fileCount, ...extra.truncated ? { truncated: extra.truncated } : {}, ...extra.dedup ? { dedup: extra.dedup } : {} },
     themes,
     criteria,
-    findings,
+    findings: acc.allFindings,
     residualRisks,
     conformancePct
   };
 }
+function hashContent(content, mode) {
+  const norm = mode === "normalized" ? content.replace(/>\s+</g, "><").trim() : content;
+  return createHash("sha1").update(norm).digest("hex");
+}
 function runAudit(opts) {
-  const docs = [];
-  for (const file of expandInputs(opts.inputs, { include: opts.include, exclude: opts.exclude })) {
-    docs.push(parseSource(readText(file), file, { forceJsx: opts.forceJsx }));
+  const acc = newAccum();
+  const dedupMode = opts.changed || opts.since ? "off" : opts.dedup ?? "exact";
+  const seen = /* @__PURE__ */ new Set();
+  let duplicateFiles = 0;
+  let truncated;
+  const { files } = discover(opts.inputs, {
+    include: opts.include,
+    exclude: opts.exclude,
+    ext: opts.ext,
+    changed: opts.changed,
+    since: opts.since,
+    onWarn: opts.onWarn
+  });
+  for (let i = 0; i < files.length; i++) {
+    if (opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles) {
+      const skipped = files.length - acc.fileCount;
+      truncated = { limit: opts.maxFiles, total: files.length, skipped };
+      opts.onWarn?.(`ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`);
+      break;
+    }
+    const file = files[i];
+    let content;
+    try {
+      content = readText(file);
+    } catch {
+      continue;
+    }
+    if (dedupMode !== "off") {
+      const h = hashContent(content, dedupMode);
+      if (seen.has(h)) {
+        duplicateFiles++;
+        continue;
+      }
+      seen.add(h);
+    }
+    foldDoc(acc, parseSource(content, file, { forceJsx: opts.forceJsx }));
   }
-  if (opts.inputs.includes("-") && opts.stdin !== void 0) {
-    docs.push(parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }));
+  const canonicalFiles = acc.fileCount;
+  if (opts.inputs.includes("-") && opts.stdin !== void 0 && !(opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles)) {
+    foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }));
   }
-  return buildAudit(docs, opts.inputs);
+  return finalize(acc, opts.inputs, {
+    ...truncated ? { truncated } : {},
+    ...duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}
+  });
 }
 
 // src/report.ts
 import { mkdirSync, writeFileSync } from "fs";
-import { join as join2 } from "path";
+import { join as join3 } from "path";
+
+// src/standard.ts
+function parseStandard(v) {
+  return v === "wcag" ? "wcag" : "rgaa";
+}
+var WCAG_RE = /^(\d+(?:\.\d+)+)\s+(.*?)\s*\(([A]{1,3})\)\s*$/;
+function parseWcag(entry) {
+  const m = WCAG_RE.exec(entry.trim());
+  if (m) return { sc: m[1], title: m[2].trim(), level: m[3] };
+  const sp = entry.trim().split(/\s+/);
+  return { sc: sp[0] ?? entry.trim(), title: sp.slice(1).join(" "), level: "" };
+}
+function compareSC(a, b) {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d) return d;
+  }
+  return 0;
+}
+function wcagIndex() {
+  const byScId = /* @__PURE__ */ new Map();
+  for (const c of allCriteria()) {
+    for (const w of c.wcag) {
+      const p = parseWcag(w);
+      const e = byScId.get(p.sc) ?? { ...p, rgaaIds: [] };
+      e.title = p.title;
+      e.level = p.level;
+      if (!e.rgaaIds.includes(c.id)) e.rgaaIds.push(c.id);
+      byScId.set(p.sc, e);
+    }
+  }
+  return [...byScId.values()].sort((a, b) => compareSC(a.sc, b.sc));
+}
+function aggregateStatus(results) {
+  if (results.some((r) => r.status === "NC")) return "NC";
+  if (results.some((r) => r.status === "C")) return "C";
+  if (results.some((r) => r.status === "manual")) return "manual";
+  return "NA";
+}
+function scResults(r) {
+  const byId2 = new Map(r.criteria.map((c) => [c.id, c]));
+  return wcagIndex().map((e) => {
+    const results = e.rgaaIds.map((id) => byId2.get(id)).filter((x) => !!x);
+    return {
+      ...e,
+      status: aggregateStatus(results),
+      findingCount: results.reduce((n, c) => n + c.findings.length, 0)
+    };
+  });
+}
+var STATUS_LABEL = {
+  C: { fr: "Conforme", en: "Conforming" },
+  NC: { fr: "Non conforme", en: "Non-conforming" },
+  NA: { fr: "Non applicable", en: "Not applicable" },
+  manual: { fr: "\xC0 \xE9valuer", en: "To assess" }
+};
+var T = {
+  fr: {
+    title: "Rapport d'audit d'accessibilit\xE9 \u2014 WCAG 2.1 niveau AA",
+    sub: "Vue WCAG d\xE9riv\xE9e des correspondances du RGAA 4.1.2 (r\xE9f\xE9rentiel interne). Pr\xE9sentation seule \u2014 les contr\xF4les d'int\xE9grit\xE9 (`check`/`verify`) op\xE8rent sur le rapport RGAA.",
+    date: "Date",
+    scope: "P\xE9rim\xE8tre",
+    files: "fichier(s)",
+    rate: "Taux de conformit\xE9 automatique",
+    rateNote: "sous-ensemble statique des crit\xE8res RGAA mapp\xE9s",
+    synth: "1. Crit\xE8res de succ\xE8s WCAG",
+    th: ["SC", "Intitul\xE9", "Niveau", "Statut", "RGAA", "Findings"],
+    ncTitle: "2. Non-conformit\xE9s (par crit\xE8re de succ\xE8s)",
+    none: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
+    equiv: "\xC9quivalence internationale",
+    equivBody: "EN 301 549 \xA79 (Union europ\xE9enne) et la Section 508 r\xE9vis\xE9e (\xC9tats-Unis) int\xE8grent WCAG 2.1 niveau AA par r\xE9f\xE9rence ; cette vue couvre donc les exigences \xAB web \xBB de ces deux r\xE9f\xE9rentiels."
+  },
+  en: {
+    title: "Accessibility audit report \u2014 WCAG 2.1 Level AA",
+    sub: "WCAG view derived from RGAA 4.1.2 cross-references (internal reference). Presentation only \u2014 integrity gates (`check`/`verify`) operate on the RGAA report.",
+    date: "Date",
+    scope: "Scope",
+    files: "file(s)",
+    rate: "Automatic conformance rate",
+    rateNote: "static subset of mapped RGAA criteria",
+    synth: "1. WCAG success criteria",
+    th: ["SC", "Title", "Level", "Status", "RGAA", "Findings"],
+    ncTitle: "2. Non-conformities (by success criterion)",
+    none: "No non-conformity detected by the static engine.",
+    equiv: "International equivalence",
+    equivBody: "EN 301 549 \xA79 (European Union) and the revised Section 508 (United States) both incorporate WCAG 2.1 Level AA by reference; this view therefore maps to those standards' web requirements."
+  }
+};
+function renderWcagReport(r, lang = "fr") {
+  const s = T[lang];
+  const out = [];
+  out.push(`# ${s.title}`, "", `> ${s.sub}`, "");
+  out.push(`- **${s.date}** : ${r.date}`);
+  out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`);
+  out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`, "");
+  const scs = scResults(r);
+  out.push(`## ${s.synth}`, "");
+  out.push(`| ${s.th.join(" | ")} |`);
+  out.push(`|${"---|".repeat(s.th.length)}`);
+  for (const sc of scs) {
+    out.push(`| ${sc.sc} | ${sc.title} | ${sc.level} | ${STATUS_LABEL[sc.status][lang]} | ${sc.rgaaIds.join(", ")} | ${sc.findingCount || ""} |`);
+  }
+  out.push("");
+  out.push(`## ${s.ncTitle}`, "");
+  const ncScs = scs.filter((sc) => sc.status === "NC");
+  if (!ncScs.length) {
+    out.push(s.none, "");
+  } else {
+    const byId2 = new Map(r.criteria.map((c) => [c.id, c]));
+    for (const sc of ncScs) {
+      out.push(`### ${sc.sc} ${sc.title} (${sc.level})`, "");
+      for (const id of sc.rgaaIds) {
+        const cr = byId2.get(id);
+        if (!cr) continue;
+        for (const f of cr.findings) {
+          const c = getCriterion(id);
+          out.push(`- **RGAA ${id}${c ? ` \u2014 ${c.titlePlain}` : ""}** \u2014 \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)`);
+          out.push(`  - ${f.message}`);
+        }
+      }
+      out.push("");
+    }
+  }
+  out.push(`## ${s.equiv}`, "", s.equivBody, "");
+  return out.join("\n");
+}
+function wcagListText(lang = "fr") {
+  const out = [];
+  out.push(lang === "fr" ? "WCAG 2.1 \u2014 crit\xE8res de succ\xE8s r\xE9f\xE9renc\xE9s par le RGAA 4.1.2" : "WCAG 2.1 \u2014 success criteria referenced by RGAA 4.1.2");
+  for (const e of wcagIndex()) {
+    out.push(`${e.sc.padEnd(8)} [${e.level.padEnd(3)}] ${e.title}  \u2190  RGAA ${e.rgaaIds.join(", ")}`);
+  }
+  return out.join("\n");
+}
+function wcagLookupText(sc, lang = "fr") {
+  const e = wcagIndex().find((x) => x.sc === sc);
+  if (!e) return null;
+  const out = [];
+  out.push(`${e.sc} \u2014 ${e.title} (${lang === "fr" ? "niveau" : "level"} ${e.level})`);
+  out.push(`${lang === "fr" ? "Crit\xE8res RGAA correspondants" : "Corresponding RGAA criteria"} :`);
+  for (const id of e.rgaaIds) {
+    const c = getCriterion(id);
+    out.push(`  ${id} \u2014 ${c?.titlePlain ?? ""} [${c?.automatability ?? "?"}]`);
+  }
+  return out.join("\n");
+}
+
+// src/report.ts
 var ICON = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
 var SEV_ORDER = ["bloquant", "majeur", "mineur"];
 var L = {
@@ -7603,7 +8384,11 @@ var L = {
     naTitle: "4. Crit\xE8res non applicables (NA)",
     manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
     manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
-    nothing: "Aucun."
+    nothing: "Aucun.",
+    dedup: "D\xE9dup",
+    canonical: "fichier(s) canonique(s) audit\xE9(s)",
+    duplicate: "doublon(s) identique(s) ignor\xE9(s)",
+    truncated: (l, t2, s) => `P\xE9rim\xE8tre tronqu\xE9 : ${l}/${t2} fichiers audit\xE9s (priorit\xE9 d'abord), ${s} ignor\xE9(s). \xC9largir avec --max-files.`
   },
   en: {
     title: "Accessibility audit report \u2014 RGAA 4.1.2",
@@ -7626,7 +8411,11 @@ var L = {
     naTitle: "4. Not-applicable criteria (NA)",
     manualTitle: "5. Criteria to assess manually (rendering / judgment)",
     manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
-    nothing: "None."
+    nothing: "None.",
+    dedup: "Dedup",
+    canonical: "canonical file(s) audited",
+    duplicate: "identical duplicate(s) skipped",
+    truncated: (l, t2, s) => `Scope truncated: ${l}/${t2} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`
   }
 };
 function critLabel(id) {
@@ -7646,7 +8435,9 @@ function renderReport(r, lang = "fr") {
   out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
   out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`);
   out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
+  if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> \u26A0\uFE0F ${s.warn}`, "");
+  if (r.scope.truncated) out.push(`> \u2702\uFE0F ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   out.push(`## ${s.synthTitle}`, "");
   out.push(`| ${s.th.join(" | ")} |`);
   out.push(`|${"---|".repeat(s.th.length)}`);
@@ -7688,9 +8479,10 @@ function renderReport(r, lang = "fr") {
   return out.join("\n");
 }
 function writeReport(r, opts) {
-  const md = renderReport(r, opts.lang);
+  const wcag = opts.standard === "wcag";
+  const md = wcag ? renderWcagReport(r, opts.lang) : renderReport(r, opts.lang);
   mkdirSync(opts.out, { recursive: true });
-  const path = join2(opts.out, `rgaa-${r.date}.md`);
+  const path = join3(opts.out, `${wcag ? "wcag" : "rgaa"}-${r.date}.md`);
   writeFileSync(path, md);
   return path;
 }
@@ -7740,6 +8532,19 @@ function queryCriteria(opts) {
   return { kind: "list", result: allThemes() };
 }
 function runCriteria(opts) {
+  if (opts.standard === "wcag") {
+    if (opts.id) {
+      const txt = wcagLookupText(opts.id, opts.lang);
+      if (!txt) {
+        console.error(`ultra11y criteria: unknown WCAG success criterion "${opts.id}".`);
+        return 2;
+      }
+      console.log(opts.json ? JSON.stringify(wcagIndex().find((e) => e.sc === opts.id), null, 2) : txt);
+      return 0;
+    }
+    console.log(opts.json ? JSON.stringify(wcagIndex(), null, 2) : wcagListText(opts.lang));
+    return 0;
+  }
   const q = queryCriteria(opts);
   if (!q) {
     console.error(`ultra11y criteria: unknown ${opts.id ? `criterion "${opts.id}"` : `theme "${opts.theme}"`}.`);
@@ -7793,7 +8598,7 @@ function sectionBody(md, n) {
 
 // src/verify.ts
 import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
-import { join as join3 } from "path";
+import { join as join4 } from "path";
 var VERIFY_MAX = 40;
 var NC_HEADER = /^- \*\*(\d{1,2}\.\d{1,2}) — (.*?)\*\* — `([^`]+):(\d+)` \(`([^`]*)`\)/;
 function buildWorklist(reportMd, max = VERIFY_MAX) {
@@ -7842,11 +8647,773 @@ function applyVerdicts(items) {
 }
 function writeWorklist(items, outDir, semantic) {
   mkdirSync2(outDir, { recursive: true });
-  const todoPath = join3(outDir, "VERIFY.todo.json");
-  const mdPath = join3(outDir, "VERIFY.md");
+  const todoPath = join4(outDir, "VERIFY.todo.json");
+  const mdPath = join4(outDir, "VERIFY.md");
   writeFileSync2(todoPath, JSON.stringify(items, null, 2) + "\n");
   writeFileSync2(mdPath, formatWorklist(items, semantic));
   return { todoPath, mdPath, count: items.length };
+}
+
+// src/scan.ts
+import { execFileSync as execFileSync2 } from "child_process";
+import { mkdtempSync, writeFileSync as writeFileSync3, existsSync as existsSync3, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join as join5, resolve } from "path";
+
+// src/axe-map.ts
+var AXE_RGAA = {
+  // images
+  "image-alt": "1.1",
+  "input-image-alt": "1.1",
+  "area-alt": "1.1",
+  "role-img-alt": "1.1",
+  "image-redundant-alt": "1.2",
+  "svg-img-alt": "1.1",
+  // frames
+  "frame-title": "2.1",
+  "frame-title-unique": "2.2",
+  // colour (the headline dynamic win)
+  "color-contrast": "3.2",
+  "color-contrast-enhanced": "3.2",
+  "link-in-text-block": "3.1",
+  // tables
+  "td-headers-attr": "5.7",
+  "th-has-data-cells": "5.7",
+  "scope-attr-valid": "5.7",
+  "table-fake-caption": "5.4",
+  "td-has-header": "5.6",
+  "empty-table-header": "5.6",
+  // links & buttons
+  "link-name": "6.2",
+  "button-name": "7.1",
+  "input-button-name": "7.1",
+  // scripts / ARIA
+  "aria-allowed-attr": "7.1",
+  "aria-allowed-role": "7.1",
+  "aria-command-name": "7.1",
+  "aria-hidden-body": "7.1",
+  "aria-hidden-focus": "7.1",
+  "aria-input-field-name": "11.1",
+  "aria-required-attr": "7.1",
+  "aria-required-children": "7.1",
+  "aria-required-parent": "7.1",
+  "aria-roles": "7.1",
+  "aria-toggle-field-name": "11.1",
+  "aria-valid-attr": "7.1",
+  "aria-valid-attr-value": "7.1",
+  "nested-interactive": "7.1",
+  "aria-tooltip-name": "7.1",
+  "aria-meter-name": "7.1",
+  "aria-progressbar-name": "7.1",
+  "aria-dialog-name": "7.1",
+  "presentation-role-conflict": "7.1",
+  "duplicate-id-aria": "8.2",
+  // mandatory elements / language
+  "duplicate-id": "8.2",
+  "duplicate-id-active": "8.2",
+  "html-has-lang": "8.3",
+  "html-xml-lang-mismatch": "8.3",
+  "html-lang-valid": "8.4",
+  "valid-lang": "8.8",
+  "document-title": "8.5",
+  // structure
+  "heading-order": "9.1",
+  "empty-heading": "9.1",
+  "page-has-heading-one": "9.1",
+  "list": "9.3",
+  "listitem": "9.3",
+  "definition-list": "9.3",
+  "dlitem": "9.3",
+  "landmark-one-main": "12.6",
+  "region": "12.6",
+  // presentation / zoom
+  "meta-viewport": "10.4",
+  "meta-viewport-large": "10.4",
+  // forms
+  "label": "11.1",
+  "form-field-multiple-labels": "11.1",
+  "select-name": "11.1",
+  "label-title-only": "11.1",
+  "autocomplete-valid": "11.13",
+  "fieldset": "11.6",
+  // multimedia
+  "audio-caption": "4.3",
+  "video-caption": "4.3",
+  "no-autoplay-audio": "4.10",
+  "blink": "13.8",
+  "marquee": "13.8",
+  // navigation
+  "tabindex": "12.8",
+  "skip-link": "12.7",
+  "bypass": "12.7",
+  "accesskeys": "12.10"
+};
+var FALLBACK_CRITERION = "7.1";
+function criterionFromRgaaTags(tags) {
+  if (!tags) return null;
+  for (const t2 of tags) {
+    const m = /^RGAA-(\d+\.\d+)\.\d+$/.exec(t2);
+    if (m) return m[1];
+  }
+  return null;
+}
+function severityFromImpact(impact) {
+  switch (impact) {
+    case "critical":
+    case "serious":
+      return "bloquant";
+    case "moderate":
+      return "majeur";
+    default:
+      return "mineur";
+  }
+}
+function criterionForAxe(ruleId, tags) {
+  return AXE_RGAA[ruleId] ?? criterionFromRgaaTags(tags) ?? FALLBACK_CRITERION;
+}
+
+// src/crawl.ts
+function parseSitemapUrls(xml) {
+  const out = [];
+  const re = /<loc>\s*([^<]+?)\s*<\/loc>/gi;
+  let m;
+  while ((m = re.exec(xml)) !== null) out.push(m[1]);
+  return out;
+}
+function extractLinks(html, baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  const re = /<a\b[^>]*\bhref\s*=\s*["']([^"']+)["']/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const href = m[1].trim();
+    if (!href || href.startsWith("#")) continue;
+    let abs;
+    try {
+      abs = new URL(href, baseUrl);
+    } catch {
+      continue;
+    }
+    if (abs.protocol !== "http:" && abs.protocol !== "https:") continue;
+    if (abs.origin !== origin) continue;
+    abs.hash = "";
+    const url = abs.href;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+async function crawlUrls(start, opts) {
+  const depth = opts.depth ?? 1;
+  const max = opts.max ?? 50;
+  const order = [];
+  const seen = /* @__PURE__ */ new Set([start]);
+  const queue = [{ url: start, d: 0 }];
+  while (queue.length > 0 && order.length < max) {
+    const { url, d } = queue.shift();
+    order.push(url);
+    if (d >= depth) continue;
+    let html = "";
+    try {
+      html = await opts.fetchHtml(url);
+    } catch {
+      continue;
+    }
+    for (const link of extractLinks(html, url)) {
+      if (seen.has(link)) continue;
+      seen.add(link);
+      queue.push({ url: link, d: d + 1 });
+    }
+  }
+  return order;
+}
+
+// src/scan.ts
+var IMAGE_TAG = "ultra11y-dyn:1";
+var MOUNT = "/work/input.html";
+var RUNNER = `import { chromium } from "playwright";
+import axe from "axe-core";
+const target = process.argv[2];
+const isFile = target.startsWith("/work/");
+const browser = await chromium.launch({ args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+try {
+  const page = await browser.newPage();
+  await page.goto(isFile ? "file://" + target : target, { waitUntil: "load", timeout: 45000 });
+  await page.addScriptTag({ content: axe.source });
+  const axeRes = await page.evaluate(async () => await window.axe.run(document, { resultTypes: ["violations"] }));
+  await page.setViewportSize({ width: 320, height: 800 });
+  const reflow = await page.evaluate(() => {
+    const el = document.scrollingElement || document.documentElement;
+    return { horizontalScroll: el.scrollWidth > el.clientWidth + 2 };
+  });
+  const violations = axeRes.violations.map((v) => ({
+    id: v.id, impact: v.impact, help: v.help, tags: v.tags,
+    nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target, html: (n.html || "").slice(0, 200) })),
+  }));
+  console.log(JSON.stringify({ url: target, violations, reflow }));
+} finally {
+  await browser.close();
+}
+`;
+var PKG = JSON.stringify(
+  { name: "ultra11y-dynamic", private: true, type: "module", dependencies: { playwright: "^1.49.0", "axe-core": "^4.10.0" } },
+  null,
+  2
+);
+var DOCKERFILE = `FROM node:22-bookworm-slim
+WORKDIR /app
+COPY package.json ./
+RUN npm install --omit=dev && npx playwright install --with-deps chromium
+COPY runner.mjs ./
+WORKDIR /work
+ENTRYPOINT ["node", "/app/runner.mjs"]
+`;
+function dockerAvailable() {
+  try {
+    execFileSync2("docker", ["info"], { stdio: "ignore", timeout: 1e4 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+function imageExists(tag) {
+  try {
+    execFileSync2("docker", ["image", "inspect", tag], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+var CTX_PREFIX = "ultra11y-dyn-";
+function buildImage(tag = IMAGE_TAG) {
+  const ctx = mkdtempSync(join5(tmpdir(), CTX_PREFIX));
+  try {
+    writeFileSync3(join5(ctx, "runner.mjs"), RUNNER);
+    writeFileSync3(join5(ctx, "package.json"), PKG);
+    writeFileSync3(join5(ctx, "Dockerfile"), DOCKERFILE);
+    execFileSync2("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
+  } finally {
+    rmSync(ctx, { recursive: true, force: true });
+  }
+}
+function cleanTempContexts() {
+  let removed = 0;
+  const dir = tmpdir();
+  for (const name of readdirSync2(dir)) {
+    if (!name.startsWith(CTX_PREFIX)) continue;
+    rmSync(join5(dir, name), { recursive: true, force: true });
+    removed++;
+  }
+  return removed;
+}
+function cleanDynamic(tag = IMAGE_TAG) {
+  let imageRemoved = false;
+  if (dockerAvailable() && imageExists(tag)) {
+    try {
+      execFileSync2("docker", ["rmi", "-f", tag], { stdio: "ignore" });
+      imageRemoved = true;
+    } catch {
+    }
+  }
+  return { imageRemoved, tempContextsRemoved: cleanTempContexts() };
+}
+function runRunner(target, isFile, tag) {
+  const args = ["run", "--rm"];
+  if (isFile) args.push("-v", `${resolve(target)}:${MOUNT}:ro`);
+  args.push(tag, isFile ? MOUNT : target);
+  const stdout = execFileSync2("docker", args, { encoding: "utf8", timeout: 24e4, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
+  return JSON.parse(line);
+}
+function toDynamicResult(out, target) {
+  const page = out.url || target;
+  const findings = [];
+  for (const v of out.violations) {
+    const criteriaId = criterionForAxe(v.id, v.tags);
+    const severity = severityFromImpact(v.impact);
+    for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
+      findings.push({
+        criteriaId,
+        axeRule: v.id,
+        impact: v.impact ?? "minor",
+        severity,
+        message: `${v.help} (axe: ${v.id})`,
+        selector: n.target.join(" ") || "\u2014",
+        snippet: n.html,
+        engine: "axe",
+        page
+      });
+    }
+  }
+  if (out.reflow?.horizontalScroll) {
+    findings.push({
+      criteriaId: "10.11",
+      axeRule: "reflow",
+      impact: "serious",
+      severity: "majeur",
+      message: "D\xE9filement horizontal \xE0 320px de large \u2014 le contenu ne se redistribue pas (reflow).",
+      selector: "document",
+      snippet: "",
+      engine: "reflow",
+      page
+    });
+  }
+  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
+}
+function runScan(opts) {
+  if (!dockerAvailable()) {
+    throw new Error("Docker n'est pas disponible. D\xE9marrez Docker puis relancez `scan --docker`.");
+  }
+  const tag = opts.tag ?? IMAGE_TAG;
+  if (!imageExists(tag)) buildImage(tag);
+  const isFile = !/^https?:\/\//i.test(opts.target) && existsSync3(opts.target) && statSync2(opts.target).isFile();
+  const out = runRunner(opts.target, isFile, tag);
+  return toDynamicResult(out, opts.target);
+}
+async function fetchHtml(url) {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) return "";
+    return await res.text();
+  } catch {
+    return "";
+  }
+}
+async function discoverUrls(opts) {
+  const max = opts.max ?? 50;
+  if (opts.sitemap) {
+    return parseSitemapUrls(await fetchHtml(opts.sitemap)).slice(0, max);
+  }
+  if (opts.crawl) {
+    return crawlUrls(opts.crawl, { fetchHtml, depth: opts.depth ?? 2, max });
+  }
+  return [];
+}
+function runScanMany(urls, tag = IMAGE_TAG) {
+  if (!dockerAvailable()) {
+    throw new Error("Docker n'est pas disponible. D\xE9marrez Docker puis relancez `scan`.");
+  }
+  if (!imageExists(tag)) buildImage(tag);
+  const findings = [];
+  for (const url of urls) {
+    const out = runRunner(url, false, tag);
+    findings.push(...toDynamicResult(out, url).findings);
+  }
+  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target: `${urls.length} page(s)`, date: today(), findings };
+}
+async function runCrawlScan(opts) {
+  const urls = await discoverUrls(opts);
+  if (urls.length === 0) {
+    throw new Error("Aucune URL \xE0 scanner (sitemap vide/inaccessible, ou page d'entr\xE9e sans lien same-origin).");
+  }
+  return runScanMany(urls, opts.tag ?? IMAGE_TAG);
+}
+var sevRank = { bloquant: 3, majeur: 2, mineur: 1 };
+function mergeDynamic(audit, dynamic) {
+  const merged = JSON.parse(JSON.stringify(audit));
+  const byId2 = new Map(merged.criteria.map((c) => [c.id, c]));
+  for (const df of dynamic.findings) {
+    const c = byId2.get(df.criteriaId);
+    if (!c) continue;
+    const finding = {
+      ruleId: df.engine === "reflow" ? "dyn-reflow" : `axe:${df.axeRule}`,
+      criteriaId: df.criteriaId,
+      file: df.page ?? dynamic.target,
+      line: 0,
+      col: 0,
+      selectorHint: df.selector,
+      severity: df.severity,
+      message: df.message,
+      remediation: "V\xE9rifi\xE9 au rendu par axe-core ; corrigez l'\xE9l\xE9ment cit\xE9.",
+      snippet: df.snippet
+    };
+    c.findings.push(finding);
+    c.status = "NC";
+    delete c.justification;
+    merged.findings.push(finding);
+  }
+  const nowNc = new Set(dynamic.findings.map((d) => d.criteriaId));
+  merged.residualRisks = merged.residualRisks.filter((r) => !nowNc.has(r.criteriaId));
+  merged.themes = allThemes().map((t2) => {
+    const inTheme = merged.criteria.filter((c) => c.theme === t2.number);
+    return {
+      number: t2.number,
+      title: t2.name,
+      c: inTheme.filter((c) => c.status === "C").length,
+      nc: inTheme.filter((c) => c.status === "NC").length,
+      na: inTheme.filter((c) => c.status === "NA").length,
+      manual: inTheme.filter((c) => c.status === "manual").length
+    };
+  });
+  const decided = merged.criteria.filter((c) => c.status === "C" || c.status === "NC");
+  const conform = decided.filter((c) => c.status === "C").length;
+  merged.conformancePct = decided.length === 0 ? 100 : Math.round(conform / decided.length * 100);
+  merged.findings.sort((a, b) => sevRank[b.severity] - sevRank[a.severity]);
+  return merged;
+}
+
+// src/fix.ts
+import { writeFileSync as writeFileSync4 } from "fs";
+
+// src/fix/edits.ts
+function openTag(source, start) {
+  if (source[start] !== "<") return null;
+  let i = start + 1;
+  let name = "";
+  while (i < source.length && /[A-Za-z0-9:_-]/.test(source[i])) {
+    name += source[i];
+    i++;
+  }
+  if (!name) return null;
+  let quote = null;
+  for (; i < source.length; i++) {
+    const ch = source[i];
+    if (quote) {
+      if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === ">") {
+      return { tagName: name.toLowerCase(), gt: i, selfClose: source[i - 1] === "/" };
+    }
+  }
+  return null;
+}
+function findAttr(source, start, gt, name) {
+  const seg = source.slice(start, gt);
+  const re = new RegExp(`(\\s+)(${name})(?![A-Za-z0-9_:-])(\\s*=\\s*("[^"]*"|'[^']*'|[^\\s>]+))?`, "i");
+  const m = re.exec(seg);
+  if (!m) return null;
+  const attrStart = start + m.index;
+  const attrEnd = attrStart + m[0].length;
+  let value = null;
+  if (m[4]) {
+    const raw = m[4];
+    value = raw.startsWith('"') || raw.startsWith("'") ? raw.slice(1, -1) : raw;
+  }
+  return { attrStart, attrEnd, value };
+}
+function getAttr(source, start, name) {
+  const ot = openTag(source, start);
+  if (!ot) return null;
+  return findAttr(source, start, ot.gt, name)?.value ?? null;
+}
+function setAttr(source, start, name, value) {
+  const ot = openTag(source, start);
+  if (!ot) return null;
+  const existing = findAttr(source, start, ot.gt, name);
+  if (existing) return { start: existing.attrStart, end: existing.attrEnd, replacement: ` ${name}="${value}"` };
+  const insertAt = ot.selfClose ? ot.gt - 1 : ot.gt;
+  return { start: insertAt, end: insertAt, replacement: ` ${name}="${value}"` };
+}
+function removeAttr(source, start, name) {
+  const ot = openTag(source, start);
+  if (!ot) return null;
+  const span = findAttr(source, start, ot.gt, name);
+  if (!span) return null;
+  return { start: span.attrStart, end: span.attrEnd, replacement: "" };
+}
+function applyEdits(source, edits) {
+  const sorted = [...edits].sort((a, b) => b.start - a.start || b.end - a.end);
+  let out = source;
+  let lastStart = Infinity;
+  const insertedAt = /* @__PURE__ */ new Set();
+  let applied = 0;
+  let conflicts = 0;
+  for (const e of sorted) {
+    const isInsertion = e.start === e.end;
+    if (e.end > lastStart || isInsertion && insertedAt.has(e.start)) {
+      conflicts++;
+      continue;
+    }
+    out = out.slice(0, e.start) + e.replacement + out.slice(e.end);
+    lastStart = e.start;
+    if (isInsertion) insertedAt.add(e.start);
+    applied++;
+  }
+  return { output: out, applied, conflicts };
+}
+
+// src/fix/codemods.ts
+var PLACEHOLDER = "TODO";
+var LANG_PLACEHOLDER = "und";
+var one = (fn) => (s, start) => {
+  const e = fn(s, start);
+  return e ? [e] : [];
+};
+function viewportFix(source, start) {
+  const content = getAttr(source, start, "content");
+  if (content === null) return [];
+  const kept = content.split(/[,;]/).map((p) => p.trim()).filter(Boolean).filter((p) => {
+    const [k, v] = p.split("=").map((x) => x.trim().toLowerCase());
+    if (k === "user-scalable") return false;
+    if (k === "maximum-scale") return Number(v) >= 2;
+    return true;
+  });
+  const e = setAttr(source, start, "content", kept.join(", "));
+  return e ? [e] : [];
+}
+function altFix(source, start) {
+  const tag = openTag(source, start)?.tagName;
+  const name = tag === "img" || tag === "area" ? "alt" : "aria-label";
+  const e = setAttr(source, start, name, PLACEHOLDER);
+  return e ? [e] : [];
+}
+var CODEMODS = {
+  // auto
+  "positive-tabindex": { fixability: "auto", build: one((s, st) => setAttr(s, st, "tabindex", "0")) },
+  "redundant-aria": { fixability: "auto", build: one((s, st) => removeAttr(s, st, "role")) },
+  "meta-viewport-zoom-block": { fixability: "auto", build: viewportFix },
+  // placeholder
+  "iframe-title-missing": { fixability: "placeholder", build: one((s, st) => setAttr(s, st, "title", PLACEHOLDER)) },
+  "html-lang-missing": { fixability: "placeholder", build: one((s, st) => setAttr(s, st, "lang", LANG_PLACEHOLDER)) },
+  "img-alt-missing": { fixability: "placeholder", build: altFix },
+  "control-label-missing": { fixability: "placeholder", build: one((s, st) => setAttr(s, st, "aria-label", PLACEHOLDER)) }
+};
+function fixabilityOf(ruleId) {
+  return CODEMODS[ruleId]?.fixability ?? "proposal";
+}
+
+// src/fix/diff.ts
+function unifiedDiff(file, before, after, ctx = 2) {
+  if (before === after) return "";
+  const a = before.split("\n");
+  const b = after.split("\n");
+  const header = `--- a/${file}
++++ b/${file}`;
+  if (a.length > 4e3 || b.length > 4e3) return `${header}
+@@ diff omitted (large file): ${a.length} \u2192 ${b.length} lines @@`;
+  const n = a.length;
+  const m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i2 = n - 1; i2 >= 0; i2--) {
+    for (let j2 = m - 1; j2 >= 0; j2--) {
+      dp[i2][j2] = a[i2] === b[j2] ? dp[i2 + 1][j2 + 1] + 1 : Math.max(dp[i2 + 1][j2], dp[i2][j2 + 1]);
+    }
+  }
+  const ops = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      ops.push({ t: " ", line: a[i] });
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      ops.push({ t: "-", line: a[i] });
+      i++;
+    } else {
+      ops.push({ t: "+", line: b[j] });
+      j++;
+    }
+  }
+  while (i < n) ops.push({ t: "-", line: a[i++] });
+  while (j < m) ops.push({ t: "+", line: b[j++] });
+  const show = new Array(ops.length).fill(false);
+  for (let k2 = 0; k2 < ops.length; k2++) {
+    if (ops[k2].t !== " ") {
+      for (let d = -ctx; d <= ctx; d++) if (k2 + d >= 0 && k2 + d < ops.length) show[k2 + d] = true;
+    }
+  }
+  const out = [header];
+  let k = 0;
+  while (k < ops.length) {
+    if (!show[k]) {
+      k++;
+      continue;
+    }
+    let e = k;
+    while (e < ops.length && show[e]) e++;
+    out.push(`@@ ${k + 1},${e - k} @@`);
+    for (let x = k; x < e; x++) out.push(`${ops[x].t}${ops[x].line}`);
+    k = e;
+  }
+  return out.join("\n");
+}
+
+// src/fix.ts
+function itemOf(f) {
+  return { ruleId: f.ruleId, criteriaId: f.criteriaId, line: f.line, selectorHint: f.selectorHint, fixability: fixabilityOf(f.ruleId) };
+}
+function fixOne(file, source, opts) {
+  const doc = parseSource(source, file, { forceJsx: opts.forceJsx });
+  const findings = runRules(doc);
+  const items = findings.map(itemOf);
+  const edits = [];
+  if (!doc.lossy) {
+    for (const f of findings) {
+      if (opts.only && !opts.only.includes(f.ruleId)) continue;
+      const cm = CODEMODS[f.ruleId];
+      if (!cm?.build || f.sourceStart === void 0) continue;
+      edits.push(...cm.build(source, f.sourceStart));
+    }
+  } else if (opts.write && findings.some((f) => CODEMODS[f.ruleId]?.build)) {
+    opts.onWarn?.(`ultra11y fix: ${file} is JSX/TSX (lossy) \u2014 fixes are proposal-only here; edit the source by hand.`);
+  }
+  let diff = "";
+  let applied = 0;
+  let written = false;
+  let regression = false;
+  if (edits.length) {
+    const { output, applied: n } = applyEdits(source, edits);
+    applied = n;
+    diff = unifiedDiff(file, source, output);
+    const after = runRules(parseSource(output, file, { forceJsx: opts.forceJsx }));
+    const beforeKinds = new Set(findings.map((f) => f.ruleId));
+    regression = after.length > findings.length || after.some((f) => !beforeKinds.has(f.ruleId));
+    if (opts.write && !regression && file !== "<stdin>") {
+      writeFileSync4(file, output);
+      written = true;
+    }
+    if (regression) opts.onWarn?.(`ultra11y fix: ${file} not written \u2014 fix would introduce a new non-conformity (regression gate).`);
+  }
+  return { file, lossy: doc.lossy, items, diff, applied, written, regression };
+}
+function runFix(opts) {
+  const { files } = discover(opts.inputs, {
+    include: opts.include,
+    exclude: opts.exclude,
+    ext: opts.ext,
+    changed: opts.changed,
+    since: opts.since,
+    onWarn: opts.onWarn
+  });
+  const out = [];
+  for (const file of files) {
+    let src;
+    try {
+      src = readText(file);
+    } catch {
+      continue;
+    }
+    out.push(fixOne(file, src, opts));
+  }
+  if (opts.inputs.includes("-") && opts.stdin !== void 0) {
+    out.push(fixOne("<stdin>", opts.stdin, { ...opts, write: false }));
+  }
+  const totals = { auto: 0, placeholder: 0, proposal: 0, filesWritten: 0, regressions: 0 };
+  for (const ff of out) {
+    for (const it of ff.items) totals[it.fixability]++;
+    if (ff.written) totals.filesWritten++;
+    if (ff.regression) totals.regressions++;
+  }
+  return { files: out, totals };
+}
+var FIX_LABEL = {
+  auto: { fr: "auto", en: "auto" },
+  placeholder: { fr: "\xE0 compl\xE9ter", en: "fill-in" },
+  proposal: { fr: "jugement", en: "judgment" }
+};
+function fixSummary(r, lang = "fr", write = false) {
+  const out = [];
+  const t2 = r.totals;
+  const head = lang === "fr" ? `${write ? "Corrections appliqu\xE9es" : "Corrections propos\xE9es (dry-run)"} : ${t2.auto} auto, ${t2.placeholder} \xE0 compl\xE9ter, ${t2.proposal} jugement \xB7 ${t2.filesWritten} fichier(s) \xE9crit(s)${t2.regressions ? `, ${t2.regressions} bloqu\xE9(s) par le garde anti-r\xE9gression` : ""}.` : `${write ? "Fixes applied" : "Proposed fixes (dry-run)"}: ${t2.auto} auto, ${t2.placeholder} fill-in, ${t2.proposal} judgment \xB7 ${t2.filesWritten} file(s) written${t2.regressions ? `, ${t2.regressions} blocked by the regression gate` : ""}.`;
+  out.push(head, "");
+  for (const ff of r.files) {
+    const fixable = ff.items.filter((i) => i.fixability !== "proposal");
+    if (!fixable.length && !ff.items.length) continue;
+    out.push(`### ${ff.file}${ff.lossy ? " (JSX/TSX \u2014 " + (lang === "fr" ? "proposition seule" : "proposal-only") + ")" : ""}`);
+    for (const it of ff.items) out.push(`- [${FIX_LABEL[it.fixability][lang]}] ${it.ruleId} (RGAA ${it.criteriaId}) \u2014 \`${it.selectorHint}\` @ ${ff.file}:${it.line}`);
+    if (ff.diff) out.push("", "```diff", ff.diff, "```");
+    if (ff.regression) out.push(`> \u26A0\uFE0F ${lang === "fr" ? "non \xE9crit : r\xE9gression d\xE9tect\xE9e" : "not written: regression detected"}`);
+    out.push("");
+  }
+  return out.join("\n");
+}
+
+// src/baseline.ts
+var RANK = { bloquant: 0, majeur: 1, mineur: 2 };
+function findingId(f) {
+  const pos = f.sourceStart !== void 0 ? `b${f.sourceStart}-${f.sourceEnd}` : `l${f.line}:${f.col}:${f.selectorHint}`;
+  return `${f.ruleId}|${f.criteriaId}|${f.file}|${pos}`;
+}
+function parseFailOn(v) {
+  return v === "majeur" || v === "mineur" ? v : "bloquant";
+}
+function diffAgainstBaseline(current, baseline, failOn = "bloquant") {
+  const baseIds = new Set((baseline?.findings ?? []).map(findingId));
+  const curIds = new Set(current.findings.map(findingId));
+  const newFindings = current.findings.filter((f) => !baseIds.has(findingId(f)));
+  const auditedFiles = new Set(current.findings.map((f) => f.file));
+  const fixedFindings = (baseline?.findings ?? []).filter((f) => auditedFiles.has(f.file) && !curIds.has(findingId(f)));
+  const ok = !newFindings.some((f) => RANK[f.severity] <= RANK[failOn]);
+  return { newFindings, fixedFindings, ok, failOn };
+}
+function baselineSummary(diff, lang = "fr") {
+  const out = [];
+  const blocking = diff.newFindings.filter((f) => RANK[f.severity] <= RANK[diff.failOn]);
+  if (diff.ok) {
+    out.push(lang === "fr" ? `\u2713 Aucune nouvelle non-conformit\xE9 \u2265 ${diff.failOn} (${diff.newFindings.length} nouvelle(s) au total, ${diff.fixedFindings.length} corrig\xE9e(s)).` : `\u2713 No new non-conformity \u2265 ${diff.failOn} (${diff.newFindings.length} new total, ${diff.fixedFindings.length} fixed).`);
+  } else {
+    out.push(lang === "fr" ? `\u2717 ${blocking.length} nouvelle(s) non-conformit\xE9(s) \u2265 ${diff.failOn} introduite(s) :` : `\u2717 ${blocking.length} new non-conformity(ies) \u2265 ${diff.failOn} introduced:`);
+    for (const f of blocking) out.push(`  [${f.severity}] ${f.ruleId} (RGAA ${f.criteriaId}) \u2014 ${f.file}:${f.line} (${f.selectorHint})`);
+  }
+  return out.join("\n");
+}
+
+// src/init.ts
+import { writeFileSync as writeFileSync5, mkdirSync as mkdirSync3, chmodSync } from "fs";
+import { execFileSync as execFileSync3 } from "child_process";
+import { join as join6 } from "path";
+function repoRoot() {
+  try {
+    return execFileSync3("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return null;
+  }
+}
+function hookScript(enginePath, failOn) {
+  return `#!/bin/sh
+# ultra11y accessibility regression gate \u2014 generated by \`ultra11y init --hook\`.
+# Blocks a commit only on NEW non-conformities >= ${failOn} in staged changes
+# (vs audits/baseline.json). Bypass once with: SKIP_A11Y=1 git commit ...
+[ -n "$SKIP_A11Y" ] && exit 0
+ULTRA11Y=\${ULTRA11Y:-'${enginePath}'}
+command -v node >/dev/null 2>&1 || { echo "ultra11y: node not found \u2014 skipping a11y gate." >&2; exit 0; }
+if ! node "$ULTRA11Y" audit --changed --baseline audits/baseline.json --fail-on ${failOn}; then
+  echo "ultra11y: new accessibility regression in staged changes (>= ${failOn})." >&2
+  echo "  Fix it, run: node \\"$ULTRA11Y\\" fix --changed --write" >&2
+  echo "  or bypass once with: SKIP_A11Y=1 git commit ..." >&2
+  exit 1
+fi
+exit 0
+`;
+}
+function ciWorkflow(enginePath, failOn) {
+  return `name: a11y
+# Generated by \`ultra11y init --ci\`. Fails only on NEW non-conformities >= ${failOn}
+# introduced by the PR (vs audits/baseline.json) \u2014 not the existing backlog.
+on:
+  pull_request:
+jobs:
+  ultra11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: ultra11y accessibility regression gate
+        run: node "${enginePath}" audit --since "origin/\${{ github.base_ref }}" --baseline audits/baseline.json --fail-on ${failOn}
+`;
+}
+function writeHook(root, enginePath, failOn) {
+  const dir = join6(root, ".git", "hooks");
+  mkdirSync3(dir, { recursive: true });
+  const path = join6(dir, "pre-commit");
+  writeFileSync5(path, hookScript(enginePath, failOn));
+  chmodSync(path, 493);
+  return path;
+}
+function writeCi(root, enginePath, failOn) {
+  const dir = join6(root, ".github", "workflows");
+  mkdirSync3(dir, { recursive: true });
+  const path = join6(dir, "a11y.yml");
+  writeFileSync5(path, ciWorkflow(enginePath, failOn));
+  return path;
 }
 
 // src/output.ts
@@ -7909,11 +9476,17 @@ A deterministic zero-dependency static engine plus your judgment, with check/ver
 gates against hallucinated non-conformities.
 
 Usage:
-  ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--jsx] [--json] [--lang fr|en]
-  ultra11y report   --in <audit.json> [--out <dir>] [--lang fr|en]
-  ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
+  ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--json] [--lang fr|en]
+  ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on bloquant|majeur|mineur]
+  ultra11y report   --in <audit.json> [--out <dir>] [--standard rgaa|wcag] [--lang fr|en]
+  ultra11y criteria [<id>] [--theme <N>] [--list] [--standard rgaa|wcag] [--json] [--lang fr|en]
   ultra11y check    --report <md> [--quiet] [--json]
-  ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
+  ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
+  ultra11y fix      <globs\u2026 | -> [--write] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang fr|en]
+  ultra11y init     [--hook] [--ci] [--baseline] [--fail-on bloquant|majeur|mineur]
+  ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
+  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
+  ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -7929,18 +9502,54 @@ Commands:
              every NA is justified, sections + conformance maths are well-formed.
   verify     Adversarial claim\u2194criterion worklist for the report's non-conformities,
              then (--apply) gate on refuted/unsupported findings.
+  fix        Put the fixes in place (hybrid, native-first): apply deterministic
+             codemods (tabindex, redundant role, viewport zoom), insert fill-in
+             placeholders (alt/lang/title TODO) for the agent to complete, and list
+             judgment-only proposals. --dry-run (default) prints a diff; --write
+             applies, but only after a re-audit proves no new NC, and never on JSX.
+  init       Wire ultra11y into the repo as a regression gate (zero-dep, no husky):
+             a git pre-commit --hook and/or a GitHub Actions --ci job running
+             'audit --changed --baseline' so only NEW blocking NCs fail; --baseline
+             writes audits/baseline.json (the committed reference).
+  scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
+             decide the needs-rendering criteria the static engine can't \u2014 computed
+             contrast (3.2/3.3), 320px reflow (10.11) \u2014 over a URL or HTML file.
+             --merge folds the findings into a static AuditResult (manual \u2192 C/NC).
+             --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
+             links BFS-crawled from a start URL) and aggregate the findings.
 
 Options:
   --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
-  --include <glob>   audit: only include paths matching (comma-separated)
-  --exclude <glob>   audit: skip paths matching (comma-separated)
-  --jsx              audit: force best-effort JSX/TSX parsing
+  --include <glob>   audit/fix: only include paths matching (comma-separated)
+  --exclude <glob>   audit/fix: skip paths matching (comma-separated)
+  --ext <list>       audit/fix: extra file extensions to walk (e.g. .twig,.erb);
+                     .html/.htm/.xhtml/.jsx/.tsx/.vue/.svelte/.astro are built-in
+  --jsx              audit/fix: force best-effort JSX/TSX parsing
+  --changed          audit/fix: only files changed vs HEAD (git; for hooks/CI)
+  --since <ref>      audit/fix: only files changed vs the given git ref
+  --max-files <n>    audit: cap canonical files audited (logged truncation, no silent drop)
+  --dedup <mode>     audit: collapse identical files \u2014 exact|normalized|off  (default: exact)
+  --standard <std>   report/criteria: key the output by rgaa|wcag  (default: rgaa)
+  --write            fix: apply fixes to disk (default is a dry-run diff)
+  --dry-run          fix: preview only \u2014 never write (this is the default)
+  --only <ids>       fix: limit auto-fixes to these rule ids (comma-separated)
+  --baseline <file>  audit/init: regression-gate vs / write this baseline AuditResult
+  --fail-on <sev>    audit/init: gate severity \u2014 bloquant|majeur|mineur  (default: bloquant)
+  --hook             init: write a git pre-commit accessibility gate
+  --ci               init: write a GitHub Actions accessibility gate
   --report <file>    check/verify: the report markdown to gate
   --theme <N>        criteria: list the criteria of theme N (1..13)
   --list             criteria: print the 13-theme table
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
+  --merge <file>     scan: fold dynamic findings into this AuditResult JSON
+  --sitemap <url>    scan: scan every URL listed in a sitemap.xml
+  --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
+  --depth <n>        scan: crawl link-hop depth from the start URL          (default: 2)
+  --max <n>          scan: cap on pages scanned (sitemap/crawl)             (default: 50)
+  --docker           scan: run the dynamic tier in Docker (default; built on first use)
+  --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
   --lang fr|en       output language                                     (default: fr)
   --json             machine-readable output
@@ -7949,11 +9558,11 @@ Options:
   -v, --version      print version
 
 Data: RGAA 4.1.2 \xA9 DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
-var COMMANDS = ["audit", "report", "criteria", "check", "verify"];
+var COMMANDS = ["audit", "report", "criteria", "check", "verify", "scan", "fix", "init"];
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
-var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "report", "theme", "apply", "max-verify", "lang"]);
+var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max", "since", "max-files", "dedup", "only", "standard", "baseline", "fail-on"]);
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   const positionals = [];
@@ -7985,21 +9594,73 @@ async function cmdAudit(p) {
     return 2;
   }
   const stdin = inputs.includes("-") ? await readStdin() : void 0;
+  const since = typeof p.flags["since"] === "string" ? p.flags["since"] : void 0;
+  const dedupFlag = p.flags["dedup"];
   const result = runAudit({
     inputs,
     stdin,
     forceJsx: p.flags["jsx"] === true,
     include: asList(p.flags["include"]),
-    exclude: asList(p.flags["exclude"])
+    exclude: asList(p.flags["exclude"]),
+    ext: asList(p.flags["ext"]),
+    changed: p.flags["changed"] === true || since !== void 0,
+    since,
+    dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : void 0,
+    maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : void 0,
+    onWarn: (m) => console.error(m)
   });
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
   try {
-    mkdirSync3(out, { recursive: true });
-    writeFileSync3(join4(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    mkdirSync4(out, { recursive: true });
+    writeFileSync6(join7(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
   } catch {
+  }
+  const baselineFlag = p.flags["baseline"];
+  if (typeof baselineFlag === "string" && baselineFlag) {
+    let baseline = null;
+    if (existsSync4(baselineFlag)) {
+      try {
+        baseline = JSON.parse(readText(baselineFlag));
+      } catch {
+        console.error(`ultra11y audit: --baseline ${baselineFlag} is not valid JSON; treating as empty.`);
+      }
+    }
+    const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
+    if (p.flags["json"]) console.log(JSON.stringify(diff, null, 2));
+    else console.log(baselineSummary(diff, langOf(p.flags)));
+    return diff.ok ? 0 : 1;
   }
   if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
   else console.log(auditSummary(result, langOf(p.flags)));
+  return 0;
+}
+function cmdInit(p) {
+  const root = repoRoot() ?? process.cwd();
+  let engineRel = process.argv[1] ?? "scripts/ultra11y.mjs";
+  try {
+    const abs = realpathSync(engineRel);
+    engineRel = abs.startsWith(root + sep2) ? relative2(root, abs) : abs;
+  } catch {
+  }
+  const failOn = parseFailOn(p.flags["fail-on"]);
+  const want = { hook: p.flags["hook"] === true, ci: p.flags["ci"] === true, baseline: p.flags["baseline"] === true };
+  if (!want.hook && !want.ci && !want.baseline) {
+    want.hook = true;
+    want.baseline = true;
+  }
+  const wrote = [];
+  if (want.baseline) {
+    const inputs = p.positionals.length ? p.positionals : ["."];
+    const result = runAudit({ inputs, onWarn: (m) => console.error(m) });
+    mkdirSync4(join7(root, "audits"), { recursive: true });
+    const bp = join7(root, "audits", "baseline.json");
+    writeFileSync6(bp, JSON.stringify(result, null, 2) + "\n");
+    wrote.push(bp);
+  }
+  if (want.hook) wrote.push(writeHook(root, engineRel, failOn));
+  if (want.ci) wrote.push(writeCi(root, engineRel, failOn));
+  for (const w of wrote) console.log(`ultra11y init: wrote ${w}`);
+  console.log(`ultra11y init: done. Commit audits/baseline.json so the gate has a reference.`);
   return 0;
 }
 function cmdCriteria(p) {
@@ -8009,7 +9670,8 @@ function cmdCriteria(p) {
     theme: typeof themeFlag === "string" && themeFlag ? Number(themeFlag) : void 0,
     list: p.flags["list"] === true,
     json: p.flags["json"] === true,
-    lang: langOf(p.flags)
+    lang: langOf(p.flags),
+    standard: parseStandard(p.flags["standard"])
   });
 }
 async function cmdReport(p) {
@@ -8031,7 +9693,7 @@ async function cmdReport(p) {
     return 2;
   }
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
-  const path = writeReport(result, { out, lang: langOf(p.flags) });
+  const path = writeReport(result, { out, lang: langOf(p.flags), standard: parseStandard(p.flags["standard"]) });
   console.log(path);
   return 0;
 }
@@ -8078,6 +9740,77 @@ function cmdVerify(p) {
   console.log(`${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}`);
   return 0;
 }
+async function cmdFix(p) {
+  const inputs = p.positionals.length ? p.positionals : ["."];
+  const stdin = inputs.includes("-") ? await readStdin() : void 0;
+  const since = typeof p.flags["since"] === "string" ? p.flags["since"] : void 0;
+  const write = p.flags["write"] === true;
+  const onlyFlag = p.flags["only"];
+  if (onlyFlag === "" || typeof onlyFlag === "string" && !onlyFlag.trim()) {
+    console.error("ultra11y fix: --only requires one or more rule ids (comma-separated).");
+    return 2;
+  }
+  const result = runFix({
+    inputs,
+    stdin,
+    forceJsx: p.flags["jsx"] === true,
+    include: asList(p.flags["include"]),
+    exclude: asList(p.flags["exclude"]),
+    ext: asList(p.flags["ext"]),
+    changed: p.flags["changed"] === true || since !== void 0,
+    since,
+    only: typeof onlyFlag === "string" ? onlyFlag.split(",").map((s) => s.trim()).filter(Boolean) : void 0,
+    write,
+    onWarn: (m) => console.error(m)
+  });
+  if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+  else console.log(fixSummary(result, langOf(p.flags), write));
+  return 0;
+}
+async function cmdScan(p) {
+  if (p.flags["clean"]) {
+    const r = cleanDynamic();
+    console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprim\xE9e" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprim\xE9(s).`);
+    return 0;
+  }
+  const sitemap = typeof p.flags["sitemap"] === "string" ? p.flags["sitemap"] : void 0;
+  const crawl = typeof p.flags["crawl"] === "string" ? p.flags["crawl"] : void 0;
+  let dynamic;
+  try {
+    if (sitemap || crawl) {
+      const depth = typeof p.flags["depth"] === "string" ? Number(p.flags["depth"]) : void 0;
+      const max = typeof p.flags["max"] === "string" ? Number(p.flags["max"]) : void 0;
+      dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
+    } else {
+      const target = p.positionals.find((a) => a !== "-");
+      if (!target) {
+        console.error("ultra11y scan: provide a URL or HTML file, --sitemap <url>, --crawl <url>, or --clean.");
+        return 2;
+      }
+      dynamic = runScan({ target });
+    }
+  } catch (e) {
+    console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
+    return 1;
+  }
+  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
+  const mergeIn = p.flags["merge"];
+  if (typeof mergeIn === "string" && mergeIn) {
+    const audit = JSON.parse(readText(mergeIn));
+    const merged = mergeDynamic(audit, dynamic);
+    mkdirSync4(out, { recursive: true });
+    writeFileSync6(join7(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    if (p.flags["json"]) console.log(JSON.stringify(merged, null, 2));
+    else console.log(`Audit statique + dynamique fusionn\xE9 \u2192 ${join7(out, "audit-latest.json")} (${merged.conformancePct}% conformit\xE9, ${merged.findings.length} findings).`);
+    return 0;
+  }
+  if (p.flags["json"]) console.log(JSON.stringify(dynamic, null, 2));
+  else {
+    console.log(`Audit dynamique (${dynamic.engine}) de ${dynamic.target} \u2014 ${dynamic.findings.length} non-conformit\xE9(s) :`);
+    for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} \u2014 ${f.message}`);
+  }
+  return 0;
+}
 async function main(argv) {
   const first = argv[0];
   if (!first || first === "-h" || first === "--help") {
@@ -8104,6 +9837,12 @@ async function main(argv) {
       return cmdCheck(p);
     case "verify":
       return cmdVerify(p);
+    case "scan":
+      return cmdScan(p);
+    case "fix":
+      return cmdFix(p);
+    case "init":
+      return cmdInit(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

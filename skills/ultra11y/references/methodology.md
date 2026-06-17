@@ -45,3 +45,17 @@ Voir la table complète des 106 critères dans `references/criteria.md`.
 `audits/rgaa-AAAA-MM-JJ.md` contient 5 sections : (1) synthèse par thématique
 (C/NC/NA/à évaluer), (2) non-conformités par priorité, (3) critères conformes,
 (4) critères non applicables justifiés, (5) critères à évaluer manuellement.
+
+## Mondial : RGAA primaire, WCAG visible
+
+Le RGAA reste la clé interne du moteur. Pour une lecture **internationale**,
+`report --standard wcag` (et `criteria --standard wcag`) ré-affiche l'audit **par
+critère de succès WCAG 2.1 niveau AA**, à partir des correspondances que chaque
+critère RGAA porte déjà (`wcag-AAAA-MM-JJ.md`). C'est une **vue de présentation** :
+elle n'est jamais passée par `check`/`verify` (ces gates raisonnent sur les
+identifiants RGAA à 2 segments du rapport canonique).
+
+**Équivalence** : EN 301 549 §9 (Union européenne) et la Section 508 révisée
+(États-Unis) intègrent WCAG 2.1 niveau AA par référence ; la vue WCAG couvre donc les
+exigences « web » de ces référentiels. Le jeu de données ne contient pas de critère
+propre à WCAG 2.2 — la vue est annoncée comme **2.1 AA**.

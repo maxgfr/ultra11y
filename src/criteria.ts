@@ -3,6 +3,7 @@
 // the skill (never hand-edited).
 import type { Criterion, Lang } from "./types.js";
 import { allCriteria, allThemes, getCriterion, listTheme } from "./rgaa.js";
+import { type Standard, wcagIndex, wcagListText, wcagLookupText } from "./standard.js";
 
 const AUTO_LABEL: Record<string, { fr: string; en: string }> = {
   static: { fr: "automatisable (moteur)", en: "automatable (engine)" },
@@ -45,6 +46,7 @@ export interface CriteriaOpts {
   list?: boolean;
   json?: boolean;
   lang: Lang;
+  standard?: Standard;
 }
 
 export interface CriteriaQuery {
@@ -66,6 +68,21 @@ export function queryCriteria(opts: CriteriaOpts): CriteriaQuery | null {
 }
 
 export function runCriteria(opts: CriteriaOpts): number {
+  // WCAG view: re-key the offline reference by success criterion (presentation-only).
+  if (opts.standard === "wcag") {
+    if (opts.id) {
+      const txt = wcagLookupText(opts.id, opts.lang);
+      if (!txt) {
+        console.error(`ultra11y criteria: unknown WCAG success criterion "${opts.id}".`);
+        return 2;
+      }
+      console.log(opts.json ? JSON.stringify(wcagIndex().find((e) => e.sc === opts.id), null, 2) : txt);
+      return 0;
+    }
+    console.log(opts.json ? JSON.stringify(wcagIndex(), null, 2) : wcagListText(opts.lang));
+    return 0;
+  }
+
   const q = queryCriteria(opts);
   if (!q) {
     console.error(`ultra11y criteria: unknown ${opts.id ? `criterion "${opts.id}"` : `theme "${opts.theme}"`}.`);

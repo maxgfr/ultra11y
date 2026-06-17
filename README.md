@@ -23,13 +23,33 @@ node scripts/ultra11y.mjs --help
 ## Commands
 
 ```
-ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--jsx] [--json] [--lang fr|en]
-ultra11y report   --in <audit.json> [--out <dir>] [--lang fr|en]
-ultra11y criteria [<id>] [--theme <N>] [--list] [--json] [--lang fr|en]
+ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--json] [--lang fr|en]
+ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on bloquant|majeur|mineur]
+ultra11y report   --in <audit.json> [--out <dir>] [--standard rgaa|wcag] [--lang fr|en]
+ultra11y criteria [<id>] [--theme <N>] [--list] [--standard rgaa|wcag] [--json] [--lang fr|en]
 ultra11y check    --report <md> [--quiet] [--json]
 ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
+ultra11y fix      <globs… | ->  [--write] [--changed | --since <ref>] [--only <ids>] [--jsx] [--json]
+ultra11y init     [--hook] [--ci] [--baseline] [--fail-on bloquant|majeur|mineur]
 ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
 ```
+
+### Scale, fixes, and repo automation
+
+- **Scale** — the engine streams file-by-file (bounded memory), audits **only markup**,
+  and lets you focus: `--changed`/`--since` (git diff only), priority ordering
+  (layouts/templates/shared components first), content de-duplication, and an explicit
+  `--max-files` cap with logged truncation. See `references/scale.md`.
+- **Fixes** — `fix` puts the fixes in place (native-first, anti-hallucination): deterministic
+  auto-codemods, fill-in `TODO` placeholders for the agent to complete, and judgment-only
+  proposals. `--dry-run` is the default; `--write` applies but only after a re-audit proves
+  no new non-conformity, and never on lossy JSX/TSX. See `references/fix.md`.
+- **Automation** — `init` wires a zero-dependency git pre-commit hook and/or a GitHub Actions
+  job that run `audit --changed --baseline` so only **new** blocking non-conformities fail (not
+  the existing backlog). See `references/automation.md`.
+- **Worldwide** — RGAA stays the engine's key; `--standard wcag` re-keys `report`/`criteria` by
+  WCAG 2.1 AA success criterion (presentation-only), with an EN 301 549 / Section 508 equivalence
+  note. See `references/methodology.md`.
 
 ### Optional dynamic tier (Docker + axe-core)
 

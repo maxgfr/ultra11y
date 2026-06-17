@@ -58,5 +58,9 @@ export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFindi
     message: rf.message,
     remediation: rf.remediation,
     snippet: snippet(doc, rf.el),
+    // Only carry source offsets when they index into the *real* file. For lossy
+    // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
+    // edit by range and baseline diffing falls back to line/selector identity.
+    ...(doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end }),
   };
 }

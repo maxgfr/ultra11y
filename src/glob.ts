@@ -55,8 +55,38 @@ export function compileGlobs(globs: string[] | undefined): ((rel: string) => boo
   return (rel: string) => res.some((r) => r.test(rel));
 }
 
-const toPosix = (p: string): string => p.split(sep).join("/");
-const hasGlob = (s: string): boolean => /[*?]/.test(s);
+export const toPosix = (p: string): string => p.split(sep).join("/");
+export const hasGlob = (s: string): boolean => /[*?]/.test(s);
+
+/** A reusable file predicate (extension + include/exclude) for callers that
+ *  already have a file list (e.g. git-changed discovery) and skip the walk. */
+export function makeFilter(opts: ExpandOpts = {}): (file: string) => boolean {
+  const include = compileGlobs(opts.include);
+  const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
+  return (file: string): boolean => {
+    if (!exts.has(ext(file))) return false;
+    const rel = toPosix(file);
+    if (include && !include(rel)) return false;
+    if (exclude && exclude(rel)) return false;
+    return true;
+  };
+}
+
+/** Match a file against explicit input scopes (globs OR directory prefixes).
+ *  Used by `--changed` to keep only git-changed files inside the audited scope.
+ *  Returns null when inputs impose no scope (only "." / "-"). */
+export function inScopeMatcher(inputs: string[]): ((file: string) => boolean) | null {
+  const scopes = inputs.filter((i) => i !== "-" && i !== ".");
+  if (!scopes.length) return null;
+  const globMatch = compileGlobs(scopes.filter(hasGlob));
+  const prefixes = scopes.filter((i) => !hasGlob(i)).map((p) => toPosix(p).replace(/\/+$/, ""));
+  return (file: string): boolean => {
+    const rel = toPosix(file);
+    if (globMatch && globMatch(rel)) return true;
+    return prefixes.some((p) => rel === p || rel.startsWith(`${p}/`));
+  };
+}
 
 function walk(dir: string, acc: string[]): void {
   let entries;
@@ -101,13 +131,15 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
       const re = globToRegExp(input);
       const acc: string[] = [];
       walk(staticBase(input), acc);
-      for (const f of acc) if (re.test(toPosix(f))) files.add(f);
+      // Honour the markup allowlist for globs too — a broad `src/**` must not pull
+      // in .js/.css/.json and parse them as HTML (engine scope is markup only).
+      for (const f of acc) if (re.test(toPosix(f)) && exts.has(ext(f))) files.add(f);
     } else if (existsSync(input)) {
       if (statSync(input).isDirectory()) {
         const acc: string[] = [];
         walk(input, acc);
         for (const f of acc) if (exts.has(ext(f))) files.add(f);
-      } else {
+      } else if (exts.has(ext(input))) {
         files.add(input);
       }
     }

@@ -1,9 +1,9 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup without regressions (native-HTML-first, ARIA last). A deterministic zero-dependency engine (`node scripts/ultra11y.mjs`, no install, no keys) runs ~25 static checks across the 13 RGAA themes — missing alt/lang/title, unlabeled fields, empty links/buttons, iframes without title, tables without headers, heading skips, invalid/broken ARIA, positive tabindex, autoplay — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose, reading order) and the needs-rendering criteria (contrast, focus, zoom) it cannot see, reported as residual risks (never silently conforming). check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibilité / RGAA', 'rapport de conformité RGAA', 'is this accessible', 'check WCAG / a11y', 'make this component accessible', 'accessible form/table/modal', 'fix accessibility', 'audit de ce site/composant'."
+description: "Use to AUDIT existing HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup without regressions (native-HTML-first, ARIA last). A deterministic zero-dependency engine (`node scripts/ultra11y.mjs`, no install, no keys) runs ~36 static checks across the 13 RGAA themes — missing alt/lang/title, unlabeled fields, empty links/buttons, iframes without title, tables without headers, heading skips, invalid/broken ARIA, positive tabindex, autoplay — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose, reading order) and the needs-rendering criteria (contrast, focus, zoom) it cannot see, reported as residual risks (never silently conforming). check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibilité / RGAA', 'rapport de conformité RGAA', 'is this accessible', 'check WCAG / a11y', 'make this component accessible', 'accessible form/table/modal', 'fix accessibility', 'audit de ce site/composant'."
 license: MIT
 metadata:
-  version: 1.0.1
+  version: 1.3.0
 ---
 
 # ultra11y — auditer le RGAA 4.1.2 et écrire de l'accessible
@@ -28,13 +28,23 @@ empêchent toute non-conformité hallucinée de survivre.
 
 - **« Auditer / rapport de conformité »** → `node scripts/ultra11y.mjs audit … --json`,
   puis `report`, puis `check` ; lire **`references/audit.md`**.
+- **« Sur un gros dépôt / auditer malin »** → se focaliser : `--changed` (diff git),
+  priorisation des gabarits, dédup, `--max-files` ; lire **`references/scale.md`**.
+- **« Mettre en place les fix »** → `fix` (dry-run par défaut, `--write` applique les
+  correctifs sûrs, propose le reste sans rien inventer) ; lire **`references/fix.md`**.
+- **« Garde automatique dans le repo (hook / CI) »** → `init --hook`/`--ci`/`--baseline`
+  (n'échoue que sur les nouvelles non-conformités) ; lire **`references/automation.md`**.
 - **« Rendre ce code accessible / le revoir »** → auditer l'extrait
   (`audit - < composant.html`) en suivant le natif-d'abord ; lire
   **`references/authoring.md`** et **`references/forbidden-patterns.md`**.
 - **« Que signifie le critère X / quelle thématique »** → `criteria` ; voir
   **`references/criteria.md`**.
+- **« Lecture internationale (WCAG / EN 301 549 / Section 508) »** → `--standard wcag`
+  sur `report`/`criteria` ; voir **`references/methodology.md`**.
 - **« Audit à haute assurance »** → `verify --report … --semantic` ; voir
   **`references/verify.md`**. Méthodologie & format : **`references/methodology.md`**.
+- **« Vérifier le contraste / le rendu (tier optionnel Docker) »** → `scan <url> --merge …`
+  (axe-core dans un navigateur headless) ; voir **`references/dynamic.md`**.
 
 ## Aide-mémoire des commandes
 
@@ -42,11 +52,16 @@ empêchent toute non-conformité hallucinée de survivre.
 node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
 node scripts/ultra11y.mjs audit - < composant.html        # HTML via stdin
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx       # JSX/TSX best-effort
+node scripts/ultra11y.mjs audit --changed --json           # seulement le diff git (gros dépôt)
 node scripts/ultra11y.mjs report --in audit.json --out audits
+node scripts/ultra11y.mjs report --in audit.json --standard wcag   # vue WCAG (présentation)
 node scripts/ultra11y.mjs criteria 11.1                    # un critère + ses tests
 node scripts/ultra11y.mjs criteria --theme 8 --list        # une thématique / la liste
 node scripts/ultra11y.mjs check  --report audits/rgaa-AAAA-MM-JJ.md
 node scripts/ultra11y.mjs verify --report audits/rgaa-AAAA-MM-JJ.md --semantic
+node scripts/ultra11y.mjs fix "src/**/*.html"              # dry-run ; --write applique
+node scripts/ultra11y.mjs init --hook --baseline           # garde de régression (hook + baseline)
+node scripts/ultra11y.mjs scan https://exemple.fr --merge audits/audit-latest.json  # tier Docker
 ```
 Sortie machine partout avec `--json`. Rapport en français par défaut, `--lang en` disponible.
 
@@ -63,14 +78,18 @@ résiduel est nommé.
 ## À ne pas faire
 
 - Inventer une non-conformité que le moteur n'a pas trouvée et que vous ne pouvez
-  pas voir (le **contraste** est explicitement hors moteur — ne le déclarez pas sans rendu).
+  pas voir (le contraste sur **couleurs inline littérales** est tranché en statique ;
+  le contraste **calculé** — CSS externe, variables — passe par `scan` (tier Docker)
+  ou se vérifie au rendu avant d'être déclaré).
 - Ajouter de l'ARIA qui double la sémantique native.
 - Marquer un critère de rendu/jugement « conforme » sans vérification humaine.
 - Éditer à la main `references/criteria.md` (généré depuis le référentiel).
 
 ## Portée
 
-Hors-ligne, déterministe, zéro-dépendance ; entrées HTML + JSX/TSX (best-effort)
-+ stdin. **Hors v1** (→ jugement humain) : contraste calculé, focus visible,
-zoom/reflow, contenus au survol, animations — aucun navigateur embarqué.
-Données : RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab 2.0 (voir `NOTICE`).
+Moteur statique : hors-ligne, déterministe, zéro-dépendance ; entrées HTML +
+JSX/TSX (best-effort) + stdin. Les critères de **rendu** (contraste calculé,
+reflow) sont couverts par le tier optionnel `scan` (axe-core dans Docker) ; le
+**focus visible**, le zoom texte 200% et les contenus au survol restent en revue
+humaine (risque résiduel). Données : RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab
+2.0 (voir `NOTICE`).

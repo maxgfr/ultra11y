@@ -43,4 +43,16 @@ describe("expandInputs file-type coverage", () => {
     expect(files.some((f) => f.endsWith("tpl.twig"))).toBe(true);
     expect(files.some((f) => f.endsWith("notes.md"))).toBe(true);
   });
+
+  it("a broad glob honours the markup allowlist (no .js/.md leak)", () => {
+    const files = expandInputs([`${dir}/*`]);
+    expect(files.some((f) => f.endsWith("page.html"))).toBe(true);
+    expect(files.some((f) => f.endsWith("app.js"))).toBe(false);
+    expect(files.some((f) => f.endsWith("notes.md"))).toBe(false);
+  });
+
+  it("excludes an explicit non-markup file unless its ext is opted in", () => {
+    expect(expandInputs([join(dir, "app.js")])).toEqual([]);
+    expect(expandInputs([join(dir, "app.js")], { ext: [".js"] })).toEqual([join(dir, "app.js")]);
+  });
 });

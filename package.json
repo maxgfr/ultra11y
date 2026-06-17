@@ -1,6 +1,6 @@
 {
   "name": "ultra11y",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, or author/review accessible markup (native-HTML-first). A skills.sh agent skill: a zero-dependency static engine plus Claude's judgment, with check/verify gates against hallucinated non-conformities.",
   "type": "module",
   "packageManager": "pnpm@10.33.0",

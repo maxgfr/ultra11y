@@ -18,6 +18,13 @@ export function parseFailOn(v: string | boolean | undefined): Severity {
   return v === "majeur" || v === "mineur" ? v : "bloquant";
 }
 
+/** Findings at or above a severity threshold — the standalone `audit --fail-on`
+ *  gate (no baseline): unlike diffAgainstBaseline this counts ALL findings, not
+ *  just newly-introduced ones. */
+export function findingsAtOrAbove(findings: Finding[], failOn: Severity): Finding[] {
+  return findings.filter((f) => RANK[f.severity] <= RANK[failOn]);
+}
+
 export interface BaselineDiff {
   newFindings: Finding[];
   fixedFindings: Finding[];

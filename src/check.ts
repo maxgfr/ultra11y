@@ -37,8 +37,15 @@ export function checkReport(md: string): CheckResult {
     if (item && !line.includes("_")) issues.push(`Critère NA sans justification : ${item[1]}.`);
   }
 
-  // 4. a conformance rate must be present
-  if (!/\d+\s*%/.test(md)) issues.push("Taux de conformité absent de l'en-tête du rapport.");
+  // 4. a conformance rate must be present in the header bullet AND be a sane 0–100
+  //    value (a presence-only check let a doctored "999 %" sail through).
+  const rateM = /^-\s+\*\*[^*\n]*\*\*\s*:\s*(\d+(?:[.,]\d+)?)\s*%/m.exec(md);
+  if (!rateM) {
+    issues.push("Taux de conformité absent de l'en-tête du rapport.");
+  } else {
+    const pct = parseFloat(rateM[1]!.replace(",", "."));
+    if (pct < 0 || pct > 100) issues.push(`Taux de conformité hors bornes (0–100) : ${rateM[1]}%.`);
+  }
 
   return { ok: issues.length === 0, issues };
 }

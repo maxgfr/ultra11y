@@ -38,4 +38,11 @@ describe("checkReport", () => {
     expect(r.issues.some((i) => i.includes("99.9"))).toBe(true);
     expect(r.issues.some((i) => i.includes("12.1"))).toBe(true);
   });
+
+  it("flags a conformance rate outside 0–100", () => {
+    const tampered = validReport.replace(/:\s*\d+(?:[.,]\d+)?\s*%/, ": 999%");
+    const r = checkReport(tampered);
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.includes("999") || i.toLowerCase().includes("born"))).toBe(true);
+  });
 });

@@ -69,15 +69,39 @@ export interface ApplyResult {
   refuted: number;
   unsupported: number;
   unadjudicated: number;
+  invalid: number;
   failures: VerifyItem[];
 }
 
+// Only these two verdicts clear the gate. Everything else — refuted, unsupported,
+// null/unadjudicated, AND any unknown/typo/mis-cased token — must FAIL, so a
+// fat-fingered verdict can never produce a false-green gate.
+const PASSING: ReadonlySet<string> = new Set(["supported", "partial"]);
+
+/** Canonicalise a stored verdict for gating: trim + lowercase, null if not a
+ *  non-empty string. Does not coerce unknown tokens to a valid verdict. */
+function normalizeVerdict(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim().toLowerCase();
+  return s ? s : null;
+}
+
 export function applyVerdicts(items: VerifyItem[]): ApplyResult {
-  const refuted = items.filter((i) => i.verdict === "refuted").length;
-  const unsupported = items.filter((i) => i.verdict === "unsupported").length;
-  const unadjudicated = items.filter((i) => i.verdict == null).length;
-  const failures = items.filter((i) => i.verdict == null || i.verdict === "refuted" || i.verdict === "unsupported");
-  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, failures };
+  let refuted = 0;
+  let unsupported = 0;
+  let unadjudicated = 0;
+  let invalid = 0;
+  const failures: VerifyItem[] = [];
+  for (const it of items) {
+    const v = normalizeVerdict(it.verdict);
+    if (v !== null && PASSING.has(v)) continue;
+    failures.push(it);
+    if (v === "refuted") refuted++;
+    else if (v === "unsupported") unsupported++;
+    else if (v === null) unadjudicated++;
+    else invalid++; // unknown/typo token — counted as a failure, not silently passed
+  }
+  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, invalid, failures };
 }
 
 export interface WriteWorklistResult {

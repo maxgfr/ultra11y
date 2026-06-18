@@ -47,6 +47,24 @@ describe("applyVerdicts", () => {
     expect(r.ok).toBe(false);
     expect(r.unadjudicated).toBe(3);
   });
+
+  it("rejects an unknown/typo verdict token instead of silently passing", () => {
+    const items = base().map((i) => ({ ...i, verdict: "conforming" as unknown as VerifyItem["verdict"] }));
+    const r = applyVerdicts(items);
+    expect(r.ok).toBe(false);
+  });
+
+  it("normalizes case: 'Refuted' fails the gate, 'Supported' passes", () => {
+    const refuted = base().map((i) => ({ ...i, verdict: "Refuted" as unknown as VerifyItem["verdict"] }));
+    expect(applyVerdicts(refuted).ok).toBe(false);
+    const supported = base().map((i) => ({ ...i, verdict: "Supported" as unknown as VerifyItem["verdict"] }));
+    expect(applyVerdicts(supported).ok).toBe(true);
+  });
+
+  it("accepts 'partial' as supporting the non-conformity", () => {
+    const items = base().map((i) => ({ ...i, verdict: "partial" as const }));
+    expect(applyVerdicts(items).ok).toBe(true);
+  });
 });
 
 describe("writeWorklist", () => {

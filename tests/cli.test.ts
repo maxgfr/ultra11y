@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main, parseArgs } from "../src/cli.js";
@@ -70,5 +71,74 @@ describe("main — command wiring", () => {
   it("--lang en switches the criteria list language", async () => {
     const r = await run(["criteria", "--list", "--lang", "en"]);
     expect(r.out).toContain("13 themes");
+  });
+});
+
+describe("init — --baseline is a boolean selector, not a value flag", () => {
+  it("init --baseline does not swallow the following token", () => {
+    const p = parseArgs(["init", "--baseline", "--hook"]);
+    expect(p.flags["baseline"]).toBe(true);
+    expect(p.flags["hook"]).toBe(true);
+  });
+  it("init --baseline alone selects baseline only", () => {
+    const p = parseArgs(["init", "--baseline"]);
+    expect(p.flags["baseline"]).toBe(true);
+  });
+  it("init --ci --baseline --fail-on majeur keeps fail-on as its value", () => {
+    const p = parseArgs(["init", "--ci", "--baseline", "--fail-on", "majeur"]);
+    expect(p.flags["ci"]).toBe(true);
+    expect(p.flags["baseline"]).toBe(true);
+    expect(p.flags["fail-on"]).toBe("majeur");
+  });
+  it("audit --baseline still consumes its path value", () => {
+    const p = parseArgs(["audit", "x.html", "--baseline", "bl.json"]);
+    expect(p.flags["baseline"]).toBe("bl.json");
+  });
+});
+
+describe("subcommand --help is intercepted (no side effects)", () => {
+  it("check --help prints help and exits 0 (instead of erroring on missing --report)", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("Usage:");
+  });
+  it("verify -h prints help and exits 0", async () => {
+    const r = await run(["verify", "-h"]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("Usage:");
+  });
+});
+
+describe("audit --fail-on gates a standalone audit (no --baseline)", () => {
+  it("exits 1 when blocking NCs exist", async () => {
+    const r = await run(["audit", `${FIX}non-conforming/bad.html`, "--fail-on", "bloquant"]);
+    expect(r.code).toBe(1);
+  });
+  it("exits 0 on a conforming file", async () => {
+    const r = await run(["audit", `${FIX}conforming/good.html`, "--fail-on", "bloquant"]);
+    expect(r.code).toBe(0);
+  });
+  it("still exits 0 without --fail-on even with NCs", async () => {
+    const r = await run(["audit", `${FIX}non-conforming/bad.html`, "--out", join(tmpdir(), "u11y-cli2"), "--json"]);
+    expect(r.code).toBe(0);
+  });
+});
+
+describe("verify — input validation hardening", () => {
+  it("--apply on a missing file reports not-found and exits 2", async () => {
+    const r = await run(["verify", "--apply", join(tmpdir(), "u11y-nope.json")]);
+    expect(r.code).toBe(2);
+    expect(r.err.toLowerCase()).toContain("introuvable");
+  });
+  it("--apply on non-array JSON exits 2 cleanly (no TypeError)", async () => {
+    const f = join(tmpdir(), "u11y-apply-obj.json");
+    writeFileSync(f, '{"verdict":"refuted"}');
+    const r = await run(["verify", "--apply", f]);
+    expect(r.code).toBe(2);
+    expect(r.err).not.toContain("filter is not a function");
+  });
+  it("--max-verify with a non-numeric value exits 2 (no false-clean worklist)", async () => {
+    const r = await run(["verify", "--report", `${FIX}non-conforming/bad.html`, "--max-verify", "abc", "--out", join(tmpdir(), "u11y-mv")]);
+    expect(r.code).toBe(2);
   });
 });

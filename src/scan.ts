@@ -185,12 +185,19 @@ export interface ScanOpts {
 
 /** Run the dynamic tier (builds the image on first use). Throws if Docker absent. */
 export function runScan(opts: ScanOpts): DynamicResult {
+  // A non-URL target must exist as a file BEFORE we spend a Docker build on a typo
+  // (otherwise a mistyped path silently falls through to URL mode and fails deep
+  // inside `docker run`, leaking the raw command).
+  const isUrl = /^https?:\/\//i.test(opts.target);
+  if (!isUrl && !existsSync(opts.target)) {
+    throw new Error(`Fichier introuvable : ${opts.target}. Donnez une URL http(s):// ou un fichier HTML existant.`);
+  }
   if (!dockerAvailable()) {
     throw new Error("Docker n'est pas disponible. Démarrez Docker puis relancez `scan --docker`.");
   }
   const tag = opts.tag ?? IMAGE_TAG;
   if (!imageExists(tag)) buildImage(tag);
-  const isFile = !/^https?:\/\//i.test(opts.target) && existsSync(opts.target) && statSync(opts.target).isFile();
+  const isFile = !isUrl && existsSync(opts.target) && statSync(opts.target).isFile();
   const out = runRunner(opts.target, isFile, tag);
   return toDynamicResult(out, opts.target);
 }

@@ -9,7 +9,7 @@ import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
 import { runScan, runCrawlScan, mergeDynamic, cleanDynamic } from "./scan.js";
 import { runFix, fixSummary } from "./fix.js";
-import { diffAgainstBaseline, baselineSummary, parseFailOn } from "./baseline.js";
+import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } from "./baseline.js";
 import { repoRoot, writeHook, writeCi } from "./init.js";
 import { auditSummary } from "./output.js";
 import { parseStandard } from "./standard.js";
@@ -54,9 +54,10 @@ Commands:
              judgment-only proposals. --dry-run (default) prints a diff; --write
              applies, but only after a re-audit proves no new NC, and never on JSX.
   init       Wire ultra11y into the repo as a regression gate (zero-dep, no husky):
-             a git pre-commit --hook and/or a GitHub Actions --ci job running
-             'audit --changed --baseline' so only NEW blocking NCs fail; --baseline
-             writes audits/baseline.json (the committed reference).
+             a git pre-commit --hook (audit --changed, vs HEAD) and/or a GitHub
+             Actions --ci job (audit --since the PR base ref), both gating against
+             --baseline so only NEW blocking NCs fail; --baseline writes
+             audits/baseline.json (the committed reference).
   scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
              decide the needs-rendering criteria the static engine can't — computed
              contrast (3.2/3.3), 320px reflow (10.11) — over a URL or HTML file.
@@ -113,6 +114,15 @@ function isCommand(s: string | undefined): s is Command {
 }
 
 const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max", "since", "max-files", "dedup", "only", "standard", "baseline", "fail-on"]);
+// `init` treats --baseline as a boolean selector ("write the baseline"), not a
+// path, so it must NOT consume the following token. audit/fix keep it as a value
+// flag (`--baseline <file>`). Without this split, `init --baseline --hook` swallows
+// --hook, and `init --baseline` never matches the `=== true` selector in cmdInit.
+const INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
+
+function valueFlagsFor(command: string): ReadonlySet<string> {
+  return command === "init" ? INIT_VALUE_FLAGS : VALUE_FLAGS;
+}
 
 export interface ParsedArgs {
   command: string;
@@ -122,13 +132,14 @@ export interface ParsedArgs {
 
 export function parseArgs(argv: string[]): ParsedArgs {
   const [command, ...rest] = argv;
+  const valueFlags = valueFlagsFor(command ?? "");
   const positionals: string[] = [];
   const flags: Record<string, string | boolean> = {};
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i]!;
     if (a.startsWith("--")) {
       const key = a.slice(2);
-      if (VALUE_FLAGS.has(key)) flags[key] = rest[++i] ?? "";
+      if (valueFlags.has(key)) flags[key] = rest[++i] ?? "";
       else flags[key] = true;
     } else if (a.startsWith("-") && a !== "-") {
       flags[a.slice(1)] = true;
@@ -194,6 +205,20 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     if (p.flags["json"]) console.log(JSON.stringify(diff, null, 2));
     else console.log(baselineSummary(diff, langOf(p.flags)));
     return diff.ok ? 0 : 1;
+  }
+
+  // Standalone gate: `--fail-on` without a baseline gates the WHOLE audit by exit
+  // code (linter-style), not just newly-introduced findings. Only triggers when
+  // --fail-on is passed explicitly, so a plain `audit` still always exits 0.
+  if (p.flags["fail-on"] !== undefined) {
+    const failOn = parseFailOn(p.flags["fail-on"]);
+    const failing = findingsAtOrAbove(result.findings, failOn);
+    if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(auditSummary(result, langOf(p.flags)));
+      if (failing.length) console.error(langOf(p.flags) === "fr" ? `✗ ${failing.length} non-conformité(s) ≥ ${failOn}.` : `✗ ${failing.length} non-conformity(ies) ≥ ${failOn}.`);
+    }
+    return failing.length ? 1 : 0;
   }
 
   if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
@@ -287,17 +312,29 @@ function cmdCheck(p: ParsedArgs): number {
 function cmdVerify(p: ParsedArgs): number {
   const apply = p.flags["apply"];
   if (typeof apply === "string" && apply) {
+    // Read and parse separately so a missing file is not mislabeled as bad JSON.
+    let raw: string;
+    try {
+      raw = readText(apply);
+    } catch {
+      console.error(`ultra11y verify: --apply file introuvable : ${apply}.`);
+      return 2;
+    }
     let items: VerifyItem[];
     try {
-      items = JSON.parse(readText(apply)) as VerifyItem[];
+      items = JSON.parse(raw) as VerifyItem[];
     } catch {
       console.error("ultra11y verify: --apply file is not valid JSON.");
+      return 2;
+    }
+    if (!Array.isArray(items)) {
+      console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
       return 2;
     }
     const r = applyVerdicts(items);
     if (p.flags["json"]) console.log(JSON.stringify(r, null, 2));
     else if (r.ok) console.log(`✓ ${r.total} non-conformités vérifiées, toutes étayées.`);
-    else console.error(`✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}).`);
+    else console.error(`✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`);
     return r.ok ? 0 : 1;
   }
 
@@ -306,7 +343,16 @@ function cmdVerify(p: ParsedArgs): number {
     console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
     return 2;
   }
-  const max = typeof p.flags["max-verify"] === "string" ? Number(p.flags["max-verify"]) : VERIFY_MAX;
+  let max = VERIFY_MAX;
+  const mvFlag = p.flags["max-verify"];
+  if (typeof mvFlag === "string" && mvFlag !== "") {
+    const n = Number(mvFlag);
+    if (!Number.isInteger(n) || n < 0) {
+      console.error("ultra11y verify: --max-verify must be a non-negative integer.");
+      return 2;
+    }
+    max = n;
+  }
   const items = buildWorklist(readText(rep), max);
   const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags["semantic"] === true);
@@ -404,6 +450,13 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   const p = parseArgs(argv);
+  // `<cmd> --help` / `<cmd> -h` shows help with NO side effects. Without this every
+  // subcommand ignored the flag and ran — and `init --help` would write a hook +
+  // baseline into the cwd repo.
+  if (p.flags["help"] === true || p.flags["h"] === true) {
+    console.log(HELP);
+    return 0;
+  }
   switch (p.command as Command) {
     case "audit":
       return cmdAudit(p);

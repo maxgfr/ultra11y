@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [1.4.1](https://github.com/maxgfr/ultra11y/compare/v1.4.0...v1.4.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **cli:** harden gates and flag parsing across audit/verify/init/check/scan ([3e7676a](https://github.com/maxgfr/ultra11y/commit/3e7676a120a0406bac7e5abb7afa592a58a3c7d9))
+
 # [1.4.0](https://github.com/maxgfr/ultra11y/compare/v1.3.0...v1.4.0) (2026-06-17)
 
 

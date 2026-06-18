@@ -6,7 +6,7 @@ import { join as join7, relative as relative2, sep as sep2 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
-var VERSION = "1.3.0";
+var VERSION = "1.4.1";
 var SCHEMA_VERSION = 1;
 
 // src/audit.ts
@@ -8585,7 +8585,13 @@ function checkReport(md) {
     const item = /^-\s+(\d{1,2}\.\d{1,2})\s*—/.exec(line);
     if (item && !line.includes("_")) issues.push(`Crit\xE8re NA sans justification : ${item[1]}.`);
   }
-  if (!/\d+\s*%/.test(md)) issues.push("Taux de conformit\xE9 absent de l'en-t\xEAte du rapport.");
+  const rateM = /^-\s+\*\*[^*\n]*\*\*\s*:\s*(\d+(?:[.,]\d+)?)\s*%/m.exec(md);
+  if (!rateM) {
+    issues.push("Taux de conformit\xE9 absent de l'en-t\xEAte du rapport.");
+  } else {
+    const pct = parseFloat(rateM[1].replace(",", "."));
+    if (pct < 0 || pct > 100) issues.push(`Taux de conformit\xE9 hors bornes (0\u2013100) : ${rateM[1]}%.`);
+  }
   return { ok: issues.length === 0, issues };
 }
 function sectionBody(md, n) {
@@ -8638,12 +8644,28 @@ function formatWorklist(items, semantic) {
   out.push("");
   return out.join("\n");
 }
+var PASSING = /* @__PURE__ */ new Set(["supported", "partial"]);
+function normalizeVerdict(v) {
+  if (typeof v !== "string") return null;
+  const s = v.trim().toLowerCase();
+  return s ? s : null;
+}
 function applyVerdicts(items) {
-  const refuted = items.filter((i) => i.verdict === "refuted").length;
-  const unsupported = items.filter((i) => i.verdict === "unsupported").length;
-  const unadjudicated = items.filter((i) => i.verdict == null).length;
-  const failures = items.filter((i) => i.verdict == null || i.verdict === "refuted" || i.verdict === "unsupported");
-  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, failures };
+  let refuted = 0;
+  let unsupported = 0;
+  let unadjudicated = 0;
+  let invalid = 0;
+  const failures = [];
+  for (const it of items) {
+    const v = normalizeVerdict(it.verdict);
+    if (v !== null && PASSING.has(v)) continue;
+    failures.push(it);
+    if (v === "refuted") refuted++;
+    else if (v === "unsupported") unsupported++;
+    else if (v === null) unadjudicated++;
+    else invalid++;
+  }
+  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, invalid, failures };
 }
 function writeWorklist(items, outDir, semantic) {
   mkdirSync2(outDir, { recursive: true });
@@ -8963,12 +8985,16 @@ function toDynamicResult(out, target) {
   return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
 }
 function runScan(opts) {
+  const isUrl = /^https?:\/\//i.test(opts.target);
+  if (!isUrl && !existsSync3(opts.target)) {
+    throw new Error(`Fichier introuvable : ${opts.target}. Donnez une URL http(s):// ou un fichier HTML existant.`);
+  }
   if (!dockerAvailable()) {
     throw new Error("Docker n'est pas disponible. D\xE9marrez Docker puis relancez `scan --docker`.");
   }
   const tag = opts.tag ?? IMAGE_TAG;
   if (!imageExists(tag)) buildImage(tag);
-  const isFile = !/^https?:\/\//i.test(opts.target) && existsSync3(opts.target) && statSync2(opts.target).isFile();
+  const isFile = !isUrl && existsSync3(opts.target) && statSync2(opts.target).isFile();
   const out = runRunner(opts.target, isFile, tag);
   return toDynamicResult(out, opts.target);
 }
@@ -9331,6 +9357,9 @@ function findingId(f) {
 function parseFailOn(v) {
   return v === "majeur" || v === "mineur" ? v : "bloquant";
 }
+function findingsAtOrAbove(findings, failOn) {
+  return findings.filter((f) => RANK[f.severity] <= RANK[failOn]);
+}
 function diffAgainstBaseline(current, baseline, failOn = "bloquant") {
   const baseIds = new Set((baseline?.findings ?? []).map(findingId));
   const curIds = new Set(current.findings.map(findingId));
@@ -9508,9 +9537,10 @@ Commands:
              judgment-only proposals. --dry-run (default) prints a diff; --write
              applies, but only after a re-audit proves no new NC, and never on JSX.
   init       Wire ultra11y into the repo as a regression gate (zero-dep, no husky):
-             a git pre-commit --hook and/or a GitHub Actions --ci job running
-             'audit --changed --baseline' so only NEW blocking NCs fail; --baseline
-             writes audits/baseline.json (the committed reference).
+             a git pre-commit --hook (audit --changed, vs HEAD) and/or a GitHub
+             Actions --ci job (audit --since the PR base ref), both gating against
+             --baseline so only NEW blocking NCs fail; --baseline writes
+             audits/baseline.json (the committed reference).
   scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
              decide the needs-rendering criteria the static engine can't \u2014 computed
              contrast (3.2/3.3), 320px reflow (10.11) \u2014 over a URL or HTML file.
@@ -9563,15 +9593,20 @@ function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
 var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max", "since", "max-files", "dedup", "only", "standard", "baseline", "fail-on"]);
+var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
+function valueFlagsFor(command) {
+  return command === "init" ? INIT_VALUE_FLAGS : VALUE_FLAGS;
+}
 function parseArgs(argv) {
   const [command, ...rest] = argv;
+  const valueFlags = valueFlagsFor(command ?? "");
   const positionals = [];
   const flags = {};
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a.startsWith("--")) {
       const key = a.slice(2);
-      if (VALUE_FLAGS.has(key)) flags[key] = rest[++i] ?? "";
+      if (valueFlags.has(key)) flags[key] = rest[++i] ?? "";
       else flags[key] = true;
     } else if (a.startsWith("-") && a !== "-") {
       flags[a.slice(1)] = true;
@@ -9629,6 +9664,16 @@ async function cmdAudit(p) {
     if (p.flags["json"]) console.log(JSON.stringify(diff, null, 2));
     else console.log(baselineSummary(diff, langOf(p.flags)));
     return diff.ok ? 0 : 1;
+  }
+  if (p.flags["fail-on"] !== void 0) {
+    const failOn = parseFailOn(p.flags["fail-on"]);
+    const failing = findingsAtOrAbove(result.findings, failOn);
+    if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(auditSummary(result, langOf(p.flags)));
+      if (failing.length) console.error(langOf(p.flags) === "fr" ? `\u2717 ${failing.length} non-conformit\xE9(s) \u2265 ${failOn}.` : `\u2717 ${failing.length} non-conformity(ies) \u2265 ${failOn}.`);
+    }
+    return failing.length ? 1 : 0;
   }
   if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
   else console.log(auditSummary(result, langOf(p.flags)));
@@ -9715,17 +9760,28 @@ function cmdCheck(p) {
 function cmdVerify(p) {
   const apply = p.flags["apply"];
   if (typeof apply === "string" && apply) {
+    let raw;
+    try {
+      raw = readText(apply);
+    } catch {
+      console.error(`ultra11y verify: --apply file introuvable : ${apply}.`);
+      return 2;
+    }
     let items2;
     try {
-      items2 = JSON.parse(readText(apply));
+      items2 = JSON.parse(raw);
     } catch {
       console.error("ultra11y verify: --apply file is not valid JSON.");
+      return 2;
+    }
+    if (!Array.isArray(items2)) {
+      console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
       return 2;
     }
     const r = applyVerdicts(items2);
     if (p.flags["json"]) console.log(JSON.stringify(r, null, 2));
     else if (r.ok) console.log(`\u2713 ${r.total} non-conformit\xE9s v\xE9rifi\xE9es, toutes \xE9tay\xE9es.`);
-    else console.error(`\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}).`);
+    else console.error(`\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`);
     return r.ok ? 0 : 1;
   }
   const rep = p.flags["report"];
@@ -9733,7 +9789,16 @@ function cmdVerify(p) {
     console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
     return 2;
   }
-  const max = typeof p.flags["max-verify"] === "string" ? Number(p.flags["max-verify"]) : VERIFY_MAX;
+  let max = VERIFY_MAX;
+  const mvFlag = p.flags["max-verify"];
+  if (typeof mvFlag === "string" && mvFlag !== "") {
+    const n = Number(mvFlag);
+    if (!Number.isInteger(n) || n < 0) {
+      console.error("ultra11y verify: --max-verify must be a non-negative integer.");
+      return 2;
+    }
+    max = n;
+  }
   const items = buildWorklist(readText(rep), max);
   const out = typeof p.flags["out"] === "string" ? p.flags["out"] : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags["semantic"] === true);
@@ -9826,6 +9891,10 @@ async function main(argv) {
     return 2;
   }
   const p = parseArgs(argv);
+  if (p.flags["help"] === true || p.flags["h"] === true) {
+    console.log(HELP);
+    return 0;
+  }
   switch (p.command) {
     case "audit":
       return cmdAudit(p);

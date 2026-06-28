@@ -21,7 +21,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check:build": "tsup && node scripts/copy-bundle.mjs && git diff --exit-code -- scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs",
+    "verify:bundle": "node scripts/verify-skill-bundle.mjs",
+    "check:build": "tsup && node scripts/copy-bundle.mjs && git diff --exit-code -- scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs && node scripts/verify-skill-bundle.mjs",
     "fetch:rgaa": "node scripts/fetch-rgaa.mjs",
     "demo": "node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out /tmp/ultra11y-demo --json > /dev/null && node scripts/ultra11y.mjs report --in /tmp/ultra11y-demo/audit-latest.json --out /tmp/ultra11y-demo && node scripts/ultra11y.mjs check --report /tmp/ultra11y-demo/rgaa-*.md && node scripts/ultra11y.mjs criteria --list",
     "release": "semantic-release"

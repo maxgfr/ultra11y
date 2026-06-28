@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [1.4.4](https://github.com/maxgfr/ultra11y/compare/v1.4.3...v1.4.4) (2026-06-28)
+
+
+### Bug Fixes
+
+* **scan:** validate AuditResult shape on --merge; add biome lint + coverage parity ([e5e2d84](https://github.com/maxgfr/ultra11y/commit/e5e2d84a8602c2738fc58e7f617ecdc3a50216a1))
+
 ## [1.4.3](https://github.com/maxgfr/ultra11y/compare/v1.4.2...v1.4.3) (2026-06-28)
 
 

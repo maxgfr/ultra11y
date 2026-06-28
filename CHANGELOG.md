@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [1.4.3](https://github.com/maxgfr/ultra11y/compare/v1.4.2...v1.4.3) (2026-06-28)
+
+
+### Bug Fixes
+
+* **skill:** drop redundant .agents mirror, unify ultra11y on skills/ single source ([efcf9d1](https://github.com/maxgfr/ultra11y/commit/efcf9d134f81e799422f67bb5614c7f5f1a5ba9c))
+
 ## [1.4.2](https://github.com/maxgfr/ultra11y/compare/v1.4.1...v1.4.2) (2026-06-28)
 
 

@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [1.4.2](https://github.com/maxgfr/ultra11y/compare/v1.4.1...v1.4.2) (2026-06-28)
+
+
+### Bug Fixes
+
+* **skill:** resync .agents/ ultra11y mirror (1043→1009) and guard it against drift ([fac516f](https://github.com/maxgfr/ultra11y/commit/fac516fa72aebd65bbf0d6175f35e13c7d482dbb))
+
 ## [1.4.1](https://github.com/maxgfr/ultra11y/compare/v1.4.0...v1.4.1) (2026-06-18)
 
 

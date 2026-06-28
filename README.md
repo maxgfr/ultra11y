@@ -2,7 +2,7 @@
 
 > Audit HTML/CSS/JSX for **RGAA 4.1.2** + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report — or author/review accessible markup without regressions. A [skills.sh](https://skills.sh) agent skill: a deterministic, zero-dependency static engine **plus** the agent's judgment, with `check`/`verify` gates against hallucinated non-conformities.
 
-ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — the ~35 machine-detectable checks across the 13 RGAA themes — and is explicit about everything it cannot decide:
+ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — the 36 machine-detectable checks across the 13 RGAA themes — and is explicit about everything it cannot decide:
 
 - **Automatable (engine):** missing `alt`/`lang`/`title`, unlabeled fields, empty links/buttons, icon-only controls, iframes without title, tables without headers, heading-level skips, duplicate ids, invalid/broken ARIA, positive `tabindex`, autoplay media…
 - **Needs rendering (you):** computed contrast, visible focus, zoom/reflow, content on hover — flagged as **residual risks**, never silently "conforming".

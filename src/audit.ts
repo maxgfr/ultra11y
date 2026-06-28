@@ -207,7 +207,9 @@ export function runAudit(opts: AuditInput): AuditResult {
       // counting both never-examined files and any read failures along the way.
       const skipped = files.length - acc.fileCount;
       truncated = { limit: opts.maxFiles, total: files.length, skipped };
-      opts.onWarn?.(`ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`);
+      opts.onWarn?.(
+        `ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`,
+      );
       break;
     }
     const file = files[i]!;

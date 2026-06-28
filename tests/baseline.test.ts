@@ -18,7 +18,7 @@ const F = (over: Partial<Finding> = {}): Finding => ({
   ...over,
 });
 
-const audit = (findings: Finding[]): AuditResult => ({ findings } as AuditResult);
+const audit = (findings: Finding[]): AuditResult => ({ findings }) as AuditResult;
 
 describe("finding identity", () => {
   it("is stable across line drift (keyed by source range, not line)", () => {

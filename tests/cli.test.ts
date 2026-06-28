@@ -12,7 +12,14 @@ function capture() {
   const err: string[] = [];
   const lo = vi.spyOn(console, "log").mockImplementation((...a: unknown[]) => void out.push(a.join(" ")));
   const le = vi.spyOn(console, "error").mockImplementation((...a: unknown[]) => void err.push(a.join(" ")));
-  return { out, err, restore: () => (lo.mockRestore(), le.mockRestore()) };
+  return {
+    out,
+    err,
+    restore: () => {
+      lo.mockRestore();
+      le.mockRestore();
+    },
+  };
 }
 async function run(argv: string[]): Promise<{ code: number; out: string; err: string }> {
   const c = capture();
@@ -28,8 +35,8 @@ describe("parseArgs", () => {
     const p = parseArgs(["audit", "a.html", "-", "--out", "x", "--jsx", "--json"]);
     expect(p.command).toBe("audit");
     expect(p.positionals).toEqual(["a.html", "-"]);
-    expect(p.flags["out"]).toBe("x");
-    expect(p.flags["jsx"]).toBe(true);
+    expect(p.flags.out).toBe("x");
+    expect(p.flags.jsx).toBe(true);
   });
 });
 
@@ -77,22 +84,22 @@ describe("main — command wiring", () => {
 describe("init — --baseline is a boolean selector, not a value flag", () => {
   it("init --baseline does not swallow the following token", () => {
     const p = parseArgs(["init", "--baseline", "--hook"]);
-    expect(p.flags["baseline"]).toBe(true);
-    expect(p.flags["hook"]).toBe(true);
+    expect(p.flags.baseline).toBe(true);
+    expect(p.flags.hook).toBe(true);
   });
   it("init --baseline alone selects baseline only", () => {
     const p = parseArgs(["init", "--baseline"]);
-    expect(p.flags["baseline"]).toBe(true);
+    expect(p.flags.baseline).toBe(true);
   });
   it("init --ci --baseline --fail-on majeur keeps fail-on as its value", () => {
     const p = parseArgs(["init", "--ci", "--baseline", "--fail-on", "majeur"]);
-    expect(p.flags["ci"]).toBe(true);
-    expect(p.flags["baseline"]).toBe(true);
+    expect(p.flags.ci).toBe(true);
+    expect(p.flags.baseline).toBe(true);
     expect(p.flags["fail-on"]).toBe("majeur");
   });
   it("audit --baseline still consumes its path value", () => {
     const p = parseArgs(["audit", "x.html", "--baseline", "bl.json"]);
-    expect(p.flags["baseline"]).toBe("bl.json");
+    expect(p.flags.baseline).toBe("bl.json");
   });
 });
 

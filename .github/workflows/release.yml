@@ -37,9 +37,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Gate — typecheck / test / reproducible bundles
+      - name: Gate — typecheck / lint / test / reproducible bundles
         run: |
           pnpm run typecheck
+          pnpm run lint
           pnpm test
           pnpm run check:build
 

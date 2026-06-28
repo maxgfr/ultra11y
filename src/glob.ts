@@ -1,6 +1,6 @@
 // Zero-dependency input expansion for `audit`: turn file paths, directories and
 // globs into a concrete file list, then apply --include/--exclude predicates.
-import { readdirSync, statSync, existsSync } from "node:fs";
+import { type Dirent, existsSync, readdirSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
 import { escapeRegExp, ext } from "./util.js";
 
@@ -51,7 +51,11 @@ function globToRegExp(glob: string): RegExp {
 
 export function compileGlobs(globs: string[] | undefined): ((rel: string) => boolean) | null {
   if (!globs || globs.length === 0) return null;
-  const res = globs.flatMap((g) => g.split(",")).map((g) => g.trim()).filter(Boolean).map(globToRegExp);
+  const res = globs
+    .flatMap((g) => g.split(","))
+    .map((g) => g.trim())
+    .filter(Boolean)
+    .map(globToRegExp);
   return (rel: string) => res.some((r) => r.test(rel));
 }
 
@@ -68,7 +72,7 @@ export function makeFilter(opts: ExpandOpts = {}): (file: string) => boolean {
     if (!exts.has(ext(file))) return false;
     const rel = toPosix(file);
     if (include && !include(rel)) return false;
-    if (exclude && exclude(rel)) return false;
+    if (exclude?.(rel)) return false;
     return true;
   };
 }
@@ -83,13 +87,13 @@ export function inScopeMatcher(inputs: string[]): ((file: string) => boolean) | 
   const prefixes = scopes.filter((i) => !hasGlob(i)).map((p) => toPosix(p).replace(/\/+$/, ""));
   return (file: string): boolean => {
     const rel = toPosix(file);
-    if (globMatch && globMatch(rel)) return true;
+    if (globMatch?.(rel)) return true;
     return prefixes.some((p) => rel === p || rel.startsWith(`${p}/`));
   };
 }
 
 function walk(dir: string, acc: string[]): void {
-  let entries;
+  let entries: Dirent[];
   try {
     entries = readdirSync(dir, { withFileTypes: true });
   } catch {

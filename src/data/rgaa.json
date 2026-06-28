@@ -114,22 +114,10 @@
           "Un mécanisme permet à l’utilisateur de remplacer l’élément `<canvas>` par un [contenu alternatif](#contenu-alternatif)."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "H36",
-        "H37",
-        "H53",
-        "F65",
-        "H24"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["H36", "H37", "H53", "F65", "H24"],
       "automatability": "static",
-      "ruleIds": [
-        "img-alt-missing",
-        "canvas-fallback-missing",
-        "icon-only-control-unnamed"
-      ]
+      "ruleIds": ["img-alt-missing", "canvas-fallback-missing", "icon-only-control-unnamed"]
     },
     {
       "id": "1.2",
@@ -172,28 +160,15 @@
           "La balise `<embed>` et ses enfants sont dépourvus d’[alternative textuelle](#alternative-textuelle-image)."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "H67",
-        "G196",
-        "C9",
-        "F39",
-        "F38",
-        "ARIA4",
-        "ARIA10"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["H67", "G196", "C9", "F39", "F38", "ARIA4", "ARIA10"],
       "technicalNote": [
         "Lorsqu'une image est associée à une [légende](#legende-d-image), la note technique WCAG recommande de prévoir systématiquement une [alternative textuelle](#alternative-textuelle-image) (cf. critère 1.9). Dans ce cas le critère 1.2 est non applicable.",
         "Dans le cas d'une image vectorielle (balise `<svg>`) de décoration qui serait affichée au travers d'un élément `<use href=\"…\">` enfant de l'élément `<svg>`, le test 1.2.4 s'appliquera également à l'élément `<svg>` associée par le biais de l'élément `<use>`.",
         "Un attribut WAI-ARIA `role=\"presentation\"` peut être utilisé sur les images de décoration et les zones non cliquables de décoration. Le rôle `\"none\"` introduit en ARIA 1.1 et synonyme du rôle `\"presentation\"` peut être aussi utilisé. Il reste préférable cependant d'utiliser le rôle `\"presentation\"` en attendant un support satisfaisant du rôle `\"none\"`."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "decorative-alt-misuse"
-      ]
+      "ruleIds": ["decorative-alt-misuse"]
     },
     {
       "id": "1.3",
@@ -256,20 +231,8 @@
           "Pour chaque image [porteuse d’information](#image-porteuse-d-information) et ayant une [alternative textuelle](#alternative-textuelle-image), l’[alternative textuelle](#alternative-textuelle-image) est-elle [courte et concise](#alternative-courte-et-concise) (hors cas particuliers) ?"
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G94",
-        "G95",
-        "F30",
-        "F71",
-        "G196",
-        "ARIA6",
-        "ARIA9",
-        "ARIA10"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G94", "G95", "F30", "F71", "G196", "ARIA6", "ARIA9", "ARIA10"],
       "particularCases": [
         "Il existe une gestion de cas particuliers lorsque l’image est utilisée comme [CAPTCHA](#captcha) ou comme [image-test](#image-test). Dans cette situation, où il n’est pas possible de donner une alternative pertinente sans détruire l’objet du CAPTCHA ou du test, le critère est non applicable.",
         "Note : le cas des CAPTCHA et des images-test est traité de manière spécifique par le critère 1.4."
@@ -336,13 +299,8 @@
           "S’il est présent le [contenu alternatif](#contenu-alternatif) est pertinent."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "G100",
-        "G143"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["G100", "G143"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -363,12 +321,8 @@
           "Il existe une autre solution d’accès à la fonctionnalité sécurisée par le [CAPTCHA](#captcha)."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "G144"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["G144"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -434,16 +388,8 @@
           "Il existe un [lien ou un bouton adjacent](#lien-ou-bouton-adjacent) permettant d’accéder à la [description détaillée](#description-detaillee-image)."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "G92",
-        "G74",
-        "G73",
-        "H45",
-        "ARIA6"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["G92", "G74", "G73", "H45", "ARIA6"],
       "technicalNote": [
         "Dans le cas du SVG, le manque de support de l’élément `<title>` et `<desc>` par les technologies d’assistance crée une difficulté dans le cas de l’implémentation de l’[alternative textuelle](#alternative-textuelle-image) de l’image et de sa [description détaillée](#description-detaillee-image). Dans ce cas, il est recommandé d’utiliser l’attribut WAI-ARIA `aria-label` pour implémenter à la fois l’[alternative textuelle](#alternative-textuelle-image) courte et la référence à la [description détaillée](#description-detaillee-image) adjacente ou l’attribut WAI-ARIA `aria-labelledby` pour associer les passages de texte faisant office d’alternative courte et de [description détaillée](#description-detaillee-image).",
         "L’utilisation de l’attribut WAI-ARIA aria-describedby n’est pas recommandée pour lier une image (`<img>`, `<object>`, `<embed>`, `<canvas>`) à sa [description détaillée](#description-detaillee-image), par manque de support des technologies d’assistance. Néanmoins, lorsqu’il est utilisé, l’attribut devra nécessairement faire référence à l’`id` de la zone contenant la [description détaillée](#description-detaillee-image).",
@@ -504,13 +450,8 @@
           "Le passage de texte associé via l’attribut WAI-ARIA `aria-describedby` est pertinent."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "G92",
-        "F67"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["G92", "F67"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -539,18 +480,9 @@
           "Chaque [image texte](#image-texte) SVG (balise `<svg>`) [porteuse d’information](#image-porteuse-d-information) et dont le texte n’est pas complètement structuré au moyen d’éléments `<text>`, en l’absence d’un [mécanisme de remplacement](#mecanisme-de-remplacement), doit si possible être remplacée par du [texte stylé](#texte-style). Cette règle est-elle respectée (hors cas particuliers) ?"
         ]
       },
-      "wcag": [
-        "1.4.5 Images of Text (AA)"
-      ],
-      "techniques": [
-        "G136",
-        "G140",
-        "C22",
-        "C30"
-      ],
-      "technicalNote": [
-        "Le texte dans les images vectorielles étant du texte réel, il n’est pas concerné par ce critère."
-      ],
+      "wcag": ["1.4.5 Images of Text (AA)"],
+      "techniques": ["G136", "G140", "C22", "C30"],
+      "technicalNote": ["Le texte dans les images vectorielles étant du texte réel, il n’est pas concerné par ce critère."],
       "particularCases": [
         "Pour ce critère, il existe une gestion de cas particulier lorsque le texte fait partie du logo, d’une dénomination commerciale, d’un [CAPTCHA](#captcha), d’une [image-test](#image-test) ou d’une image dont l’exactitude graphique serait considérée comme essentielle à la bonne transmission de l’information véhiculée par l’image. Dans ces situations, le critère est non applicable pour ces éléments."
       ],
@@ -599,15 +531,8 @@
           "La [légende](#legende-d-image) est contenue dans une balise `<figcaption>`."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G140",
-        "ARIA4",
-        "ARIA6"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G140", "ARIA4", "ARIA6"],
       "technicalNote": [
         "L’implémentation d’un attribut WAI-ARIA `role=\"group\"` ou `role=\"figure\"` sur l’élément parent `<figure>` est destiné à pallier le manque de support actuel des éléments `<figure>` par les technologies d’assistance. L’utilisation d’un élément `<figcaption>` pour associer une [légende](#legende-d-image) à une image impose au minimum l’utilisation d’un attribut WAI-ARIA `aria-label` sur l’élément parent `<figure>` dont le contenu sera identique au contenu de l’élément `<figcaption>`. Pour s’assurer d’un support optimal, il peut également être fait une association explicite entre le contenu de l’[alternative textuelle](#alternative-textuelle-image) de l’image et le contenu de l’élément `<figcaption>`, par exemple :",
         "`<img src=\"image.png\" alt=\"Photo : soleil couchant\" /><figcaption>Photo : crédit xxx</figcaption>`",
@@ -623,20 +548,12 @@
       "title": "Chaque [cadre](#cadre) a-t-il un [titre de cadre](#titre-de-cadre) ?",
       "titlePlain": "Chaque cadre a-t-il un titre de cadre ?",
       "tests": {
-        "1": [
-          "Chaque cadre (balise `<iframe>` ou `<frame>`) a-t-il un attribut `title` ?"
-        ]
+        "1": ["Chaque cadre (balise `<iframe>` ou `<frame>`) a-t-il un attribut `title` ?"]
       },
-      "wcag": [
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "H64"
-      ],
+      "wcag": ["4.1.2 Name, Role, Value (A)"],
+      "techniques": ["H64"],
       "automatability": "static",
-      "ruleIds": [
-        "iframe-title-missing"
-      ]
+      "ruleIds": ["iframe-title-missing"]
     },
     {
       "id": "2.2",
@@ -644,16 +561,10 @@
       "title": "Pour chaque [cadre](#cadre) ayant un [titre de cadre](#titre-de-cadre), ce titre de cadre est-il pertinent ?",
       "titlePlain": "Pour chaque cadre ayant un titre de cadre, ce titre de cadre est-il pertinent ?",
       "tests": {
-        "1": [
-          "Pour chaque cadre (balise `<iframe>` ou `<frame>`) ayant un attribut `title`, le contenu de cet attribut est-il pertinent ?"
-        ]
+        "1": ["Pour chaque cadre (balise `<iframe>` ou `<frame>`) ayant un attribut `title`, le contenu de cet attribut est-il pertinent ?"]
       },
-      "wcag": [
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "H64"
-      ],
+      "wcag": ["4.1.2 Name, Role, Value (A)"],
+      "techniques": ["H64"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -682,18 +593,8 @@
           "Pour chaque [média non temporel](#media-non-temporel) [véhiculant une information](#image-vehiculant-une-information-donnee-par-la-couleur), l’[information](#information-donnee-par-la-couleur) ne doit pas être donnée uniquement par la couleur. Cette règle est-elle respectée ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "1.4.1 Use of color (A)"
-      ],
-      "techniques": [
-        "G14",
-        "G182",
-        "G111",
-        "G117",
-        "G138",
-        "G205"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "1.4.1 Use of color (A)"],
+      "techniques": ["G14", "G182", "G111", "G117", "G138", "G205"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -727,25 +628,11 @@
           "Dans le [mécanisme qui permet d’afficher un rapport de contraste](#mecanisme-qui-permet-d-afficher-un-rapport-de-contraste-conforme) conforme, le rapport de contraste entre le texte et la couleur d’arrière-plan est-il suffisamment élevé ?"
         ]
       },
-      "wcag": [
-        "1.4.3 Contrast (Minimum) (AA)"
-      ],
-      "techniques": [
-        "G18",
-        "G136",
-        "G148",
-        "G174",
-        "G145",
-        "C29"
-      ],
-      "particularCases": [
-        "Dans ces situations, les critères sont non applicables pour ces éléments :",
-        "[object Object]"
-      ],
+      "wcag": ["1.4.3 Contrast (Minimum) (AA)"],
+      "techniques": ["G18", "G136", "G148", "G174", "G145", "C29"],
+      "particularCases": ["Dans ces situations, les critères sont non applicables pour ces éléments :", "[object Object]"],
       "automatability": "needs-rendering",
-      "ruleIds": [
-        "contrast-literal"
-      ]
+      "ruleIds": ["contrast-literal"]
     },
     {
       "id": "3.3",
@@ -772,22 +659,9 @@
           "Dans le [mécanisme qui permet d’afficher un rapport de contraste](#mecanisme-qui-permet-d-afficher-un-rapport-de-contraste-conforme) conforme, les couleurs du composant ou des éléments graphiques porteurs d’informations qui le composent, sont-elles suffisamment contrastées ?"
         ]
       },
-      "wcag": [
-        "1.4.11 Non-text Contrast (AA)"
-      ],
-      "techniques": [
-        "G18",
-        "G195",
-        "G207",
-        "G174",
-        "G145",
-        "G183",
-        "F78"
-      ],
-      "particularCases": [
-        "Les cas suivants sont non applicables pour ce critère :",
-        "[object Object]"
-      ],
+      "wcag": ["1.4.11 Non-text Contrast (AA)"],
+      "techniques": ["G18", "G195", "G207", "G174", "G145", "G183", "F78"],
+      "particularCases": ["Les cas suivants sont non applicables pour ce critère :", "[object Object]"],
       "automatability": "needs-rendering",
       "ruleIds": []
     },
@@ -819,23 +693,8 @@
           "Il existe une version alternative avec une [audiodescription](#audiodescription-synchronisee-media-temporel) synchronisée accessible via un [lien ou bouton adjacent](#lien-ou-bouton-adjacent)."
         ]
       },
-      "wcag": [
-        "1.2.1 Audio-only and Video-only (Prerecorded) (A)",
-        "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"
-      ],
-      "techniques": [
-        "G58",
-        "G69",
-        "G78",
-        "G158",
-        "G159",
-        "G173",
-        "G8",
-        "G166",
-        "H96",
-        "SM6",
-        "SM7"
-      ],
+      "wcag": ["1.2.1 Audio-only and Video-only (Prerecorded) (A)", "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"],
+      "techniques": ["G58", "G69", "G78", "G158", "G159", "G173", "G8", "G166", "H96", "SM6", "SM7"],
       "particularCases": [
         "Il existe une gestion de cas particulier lorsque :",
         "[object Object]",
@@ -868,19 +727,9 @@
           "L’[audiodescription](#audiodescription-synchronisee-media-temporel) synchronisée de la version alternative est pertinente."
         ]
       },
-      "wcag": [
-        "1.2.1 Audio-only and Video-only (Prerecorded) (A)",
-        "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"
-      ],
-      "techniques": [
-        "F30",
-        "F67",
-        "SM6",
-        "SM7"
-      ],
-      "particularCases": [
-        "Voir cas particuliers critère 4.1."
-      ],
+      "wcag": ["1.2.1 Audio-only and Video-only (Prerecorded) (A)", "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"],
+      "techniques": ["F30", "F67", "SM6", "SM7"],
+      "particularCases": ["Voir cas particuliers critère 4.1."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -899,22 +748,9 @@
           "Pour chaque [média temporel](#media-temporel-type-son-video-et-synchronise) synchronisé pré-enregistré possédant des [sous-titres synchronisés](#sous-titres-synchronises-objet-multimedia) diffusés via une balise `<track>`, la balise `<track>` possède-t-elle un attribut `kind=\"captions\"` ?"
         ]
       },
-      "wcag": [
-        "1.2.2 Captions (Prerecorded) (A)"
-      ],
-      "techniques": [
-        "G58",
-        "G93",
-        "G87",
-        "H95",
-        "SM11",
-        "SM12",
-        "F74",
-        "F75"
-      ],
-      "particularCases": [
-        "Voir cas particuliers critère 4.1."
-      ],
+      "wcag": ["1.2.2 Captions (Prerecorded) (A)"],
+      "techniques": ["G58", "G93", "G87", "H95", "SM11", "SM12", "F74", "F75"],
+      "particularCases": ["Voir cas particuliers critère 4.1."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -928,18 +764,8 @@
           "Pour chaque [média temporel](#media-temporel-type-son-video-et-synchronise) synchronisé pré-enregistré ayant des [sous-titres synchronisés](#sous-titres-synchronises-objet-multimedia), ces sous-titres sont-ils pertinents ?"
         ]
       },
-      "wcag": [
-        "1.2.2 Captions (Prerecorded) (A)"
-      ],
-      "techniques": [
-        "G93",
-        "G87",
-        "SM11",
-        "SM12",
-        "F8",
-        "F74",
-        "F75"
-      ],
+      "wcag": ["1.2.2 Captions (Prerecorded) (A)"],
+      "techniques": ["G93", "G87", "SM11", "SM12", "F8", "F74", "F75"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -960,23 +786,9 @@
           "Il existe une version alternative avec une [audiodescription](#audiodescription-synchronisee-media-temporel) synchronisée."
         ]
       },
-      "wcag": [
-        "1.2.5 Audio Description (Prerecorded) (AA)"
-      ],
-      "techniques": [
-        "G8",
-        "G58",
-        "G78",
-        "G173",
-        "H96",
-        "SM1",
-        "SM2",
-        "SM6",
-        "SM7"
-      ],
-      "particularCases": [
-        "Voir cas particuliers critère 4.1."
-      ],
+      "wcag": ["1.2.5 Audio Description (Prerecorded) (AA)"],
+      "techniques": ["G8", "G58", "G78", "G173", "H96", "SM1", "SM2", "SM6", "SM7"],
+      "particularCases": ["Voir cas particuliers critère 4.1."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -993,15 +805,8 @@
           "Pour chaque [média temporel](#media-temporel-type-son-video-et-synchronise) synchronisé ayant une [audiodescription](#audiodescription-synchronisee-media-temporel) synchronisée, celle-ci est-elle pertinente ?"
         ]
       },
-      "wcag": [
-        "1.2.5 Audio Description (Prerecorded) (AA)"
-      ],
-      "techniques": [
-        "SM1",
-        "SM2",
-        "SM6",
-        "SM7"
-      ],
+      "wcag": ["1.2.5 Audio Description (Prerecorded) (AA)"],
+      "techniques": ["SM1", "SM2", "SM6", "SM7"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1015,13 +820,8 @@
           "Pour chaque [média temporel](#media-temporel-type-son-video-et-synchronise) seulement son, seulement vidéo ou synchronisé, le contenu textuel adjacent permet-il d’identifier clairement le [média temporel](#media-temporel-type-son-video-et-synchronise) (hors cas particuliers) ?"
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "G68",
-        "G100"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["G68", "G100"],
       "particularCases": [
         "Il existe une gestion de cas particulier lorsque le [média temporel](#media-temporel-type-son-video-et-synchronise) est utilisé à des fins décoratives (c’est-à-dire qu’il n’apporte aucune information). Dans cette situation, le critère est non applicable."
       ],
@@ -1045,18 +845,9 @@
           "L’alternative dans la page, référencée par le [lien ou bouton adjacent](#lien-ou-bouton-adjacent), est accessible."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "H35",
-        "H46"
-      ],
-      "particularCases": [
-        "Il existe une gestion de cas particulier lorsque :",
-        "[object Object]",
-        "Dans ces situations, le critère est non applicable."
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["H35", "H46"],
+      "particularCases": ["Il existe une gestion de cas particulier lorsque :", "[object Object]", "Dans ces situations, le critère est non applicable."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1070,13 +861,8 @@
           "Pour chaque [média non temporel](#media-non-temporel) ayant une alternative, cette alternative permet-elle d’accéder au même contenu et à des fonctionnalités similaires ?"
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "H46",
-        "F30"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["H46", "F30"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1093,20 +879,10 @@
           "Le volume de la séquence sonore peut être contrôlé par l’utilisateur indépendamment du contrôle de volume du système."
         ]
       },
-      "wcag": [
-        "1.4.2 Audio Control (A)"
-      ],
-      "techniques": [
-        "G60",
-        "G170",
-        "G171",
-        "F23",
-        "F93"
-      ],
+      "wcag": ["1.4.2 Audio Control (A)"],
+      "techniques": ["G60", "G170", "G171", "F23", "F93"],
       "automatability": "static",
-      "ruleIds": [
-        "autoplay-media"
-      ]
+      "ruleIds": ["autoplay-media"]
     },
     {
       "id": "4.11",
@@ -1128,15 +904,8 @@
           "Une fonctionnalité [activable par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) permettant de réaliser la même action est présente dans la page."
         ]
       },
-      "wcag": [
-        "2.1.1 Keyboard (A)",
-        "2.1.2 No Keyboard Trap (A)"
-      ],
-      "techniques": [
-        "G4",
-        "G90",
-        "G202"
-      ],
+      "wcag": ["2.1.1 Keyboard (A)", "2.1.2 No Keyboard Trap (A)"],
+      "techniques": ["G4", "G90", "G202"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1157,14 +926,8 @@
           "Une fonctionnalité [activable par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) permettant de réaliser la même action est présente dans la page."
         ]
       },
-      "wcag": [
-        "2.1.1 Keyboard (A)",
-        "2.1.2 No Keyboard Trap (A)"
-      ],
-      "techniques": [
-        "G4",
-        "G90"
-      ],
+      "wcag": ["2.1.1 Keyboard (A)", "2.1.2 No Keyboard Trap (A)"],
+      "techniques": ["G4", "G90"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1186,15 +949,8 @@
           "Un mécanisme permet de remplacer le [média temporel](#media-temporel-type-son-video-et-synchronise) ou [non temporel](#media-non-temporel) par son alternative."
         ]
       },
-      "wcag": [
-        "4.1.2 Name, role, Value (A)"
-      ],
-      "techniques": [
-        "G10",
-        "G135",
-        "F15",
-        "F54"
-      ],
+      "wcag": ["4.1.2 Name, role, Value (A)"],
+      "techniques": ["G10", "G135", "F15", "F54"],
       "particularCases": [
         "Il existe une gestion de cas particulier lorsque le [média temporel](#media-temporel-type-son-video-et-synchronise) ou [non temporel](#media-non-temporel) est utilisé à des fins décoratives (c’est-à-dire qu’il n’apporte aucune information).",
         "Dans ces situations, le critère est non applicable."
@@ -1208,16 +964,10 @@
       "title": "Chaque [tableau de données complexe](#tableau-de-donnees-complexe) a-t-il un [résumé](#resume-de-tableau) ?",
       "titlePlain": "Chaque tableau de données complexe a-t-il un résumé ?",
       "tests": {
-        "1": [
-          "Pour chaque [tableau de données complexe](#tableau-de-donnees-complexe), un [résumé](#resume-de-tableau) est-il disponible ?"
-        ]
+        "1": ["Pour chaque [tableau de données complexe](#tableau-de-donnees-complexe), un [résumé](#resume-de-tableau) est-il disponible ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H73"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H73"],
       "technicalNote": [
         "La spécification HTML propose plusieurs [méthodes pour lier un résumé à un tableau](#table-descriptions-techniques) (tableau lié à un passage de texte avec l’attribut `aria-describedby`, tableau groupé dans un élément `figure` avec un résumé présent dans un élément `figcaption` ou un élément `p`, résumé présent dans un élément `details` contenu dans l’élément `caption`). Ces méthodes n’ont pas un support suffisant pour être utilisées actuellement."
       ],
@@ -1230,16 +980,10 @@
       "title": "Pour chaque [tableau de données complexe](#tableau-de-donnees-complexe) ayant un [résumé](#resume-de-tableau), celui-ci est-il pertinent ?",
       "titlePlain": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
       "tests": {
-        "1": [
-          "Pour chaque [tableau de données complexe](#tableau-de-donnees-complexe) ayant un [résumé](#resume-de-tableau), celui-ci est-il pertinent ?"
-        ]
+        "1": ["Pour chaque [tableau de données complexe](#tableau-de-donnees-complexe) ayant un [résumé](#resume-de-tableau), celui-ci est-il pertinent ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H73"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H73"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1255,14 +999,8 @@
           "La balise `<table>` possède un attribut `role=\"presentation\"`."
         ]
       },
-      "wcag": [
-        "1.3.2 Meaningful Sequence (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "F49",
-        "ARIA4"
-      ],
+      "wcag": ["1.3.2 Meaningful Sequence (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["F49", "ARIA4"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1276,16 +1014,10 @@
           "Pour chaque [tableau de données ayant un titre](#tableau-de-donnees-ayant-un-titre), le titre est-il correctement associé au tableau de données ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H39"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H39"],
       "automatability": "static",
-      "ruleIds": [
-        "table-caption-missing"
-      ]
+      "ruleIds": ["table-caption-missing"]
     },
     {
       "id": "5.5",
@@ -1297,12 +1029,8 @@
           "Pour chaque [tableau de données ayant un titre](#tableau-de-donnees-ayant-un-titre), ce titre permet-il d’identifier le contenu du [tableau de données](#tableau-de-donnees) de manière claire et concise ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H39"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H39"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1329,17 +1057,10 @@
           "Pour chaque [tableau de données](#tableau-de-donnees), chaque cellule associée à plusieurs en-têtes est-elle structurée au moyen d’une balise `<td>` ou `<th>` ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H51",
-        "F91"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H51", "F91"],
       "automatability": "static",
-      "ruleIds": [
-        "data-table-no-headers"
-      ]
+      "ruleIds": ["data-table-no-headers"]
     },
     {
       "id": "5.7",
@@ -1375,14 +1096,8 @@
           "La balise possède un attribut WAI-ARIA `role=\"columnheader\"` pour les [en-têtes de colonne](#en-tete-de-colonne-ou-de-ligne)."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H43",
-        "H63",
-        "F90"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H43", "H63", "F90"],
       "technicalNote": [
         "Si l’attribut `headers` est implémenté sur une cellule déjà reliée à un en-tête (de ligne ou de colonne) avec l’attribut `scope` (avec la valeur `col` ou `row`), c’est l’en-tête ou les en-têtes référencés par l’attribut `headers` qui seront restitués aux technologies d’assistance. Les en-têtes reliés avec l’attribut `scope` seront ignorés."
       ],
@@ -1390,9 +1105,7 @@
         "Dans le cas de tableaux de données ayant des en-têtes sur une seule ligne ou une seule colonne, les en-têtes peuvent être structurés à l’aide de balise `<th>` sans attribut `scope`."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "data-table-no-headers"
-      ]
+      "ruleIds": ["data-table-no-headers"]
     },
     {
       "id": "5.8",
@@ -1406,16 +1119,10 @@
           "Les cellules du tableau de mise en forme (balises `<td>`) ne possèdent pas d’attributs `scope`, `headers` et `axis`."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "F46"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["F46"],
       "automatability": "static",
-      "ruleIds": [
-        "layout-table-data-markup"
-      ]
+      "ruleIds": ["layout-table-data-markup"]
     },
     {
       "id": "6.1",
@@ -1447,24 +1154,8 @@
           "Pour chaque [lien](#lien) ayant un [intitulé visible](#intitule-visible), le [nom accessible du lien](#intitule-ou-nom-accessible-de-lien) contient-il au moins l’[intitulé visible](#intitule-visible) (hors cas particuliers) ?"
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "2.4.4 Link Purpose (In Context) (A)",
-        "2.5.3 Label in Name (A)"
-      ],
-      "techniques": [
-        "H30",
-        "H78",
-        "H79",
-        "H80",
-        "H81",
-        "G53",
-        "G91",
-        "F63",
-        "F89",
-        "ARIA7",
-        "ARIA8"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "2.4.4 Link Purpose (In Context) (A)", "2.5.3 Label in Name (A)"],
+      "techniques": ["H30", "H78", "H79", "H80", "H81", "G53", "G91", "F63", "F89", "ARIA7", "ARIA8"],
       "technicalNote": [
         "Lorsque l’intitulé visible est complété par une autre expression dans le nom accessible :",
         "[object Object]",
@@ -1486,27 +1177,15 @@
       "title": "Dans chaque page web, chaque [lien](#lien) a-t-il un [intitulé](#intitule-ou-nom-accessible-de-lien) ?",
       "titlePlain": "Dans chaque page web, chaque lien a-t-il un intitulé ?",
       "tests": {
-        "1": [
-          "Dans chaque page web, chaque [lien](#lien) a-t-il un [intitulé](#intitule-ou-nom-accessible-de-lien) entre `<a>` et `</a>` ?"
-        ]
+        "1": ["Dans chaque page web, chaque [lien](#lien) a-t-il un [intitulé](#intitule-ou-nom-accessible-de-lien) entre `<a>` et `</a>` ?"]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "2.4.4 Link Purpose (In Context) (A)"
-      ],
-      "techniques": [
-        "H30",
-        "G91",
-        "F89"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "2.4.4 Link Purpose (In Context) (A)"],
+      "techniques": ["H30", "G91", "F89"],
       "technicalNote": [
         "Une ancre n’est pas un lien même si pendant longtemps l’élément `<a>` a servi de support à cette technique. Elle n’est donc pas concernée par le présent critère."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "link-empty-name",
-        "icon-only-control-unnamed"
-      ]
+      "ruleIds": ["link-empty-name", "icon-only-control-unnamed"]
     },
     {
       "id": "7.1",
@@ -1532,26 +1211,8 @@
           "Le composant possède un rôle pertinent."
         ]
       },
-      "wcag": [
-        "2.5.3 Label in Name (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G10",
-        "G135",
-        "G136",
-        "F15",
-        "F19",
-        "F20",
-        "F42",
-        "F59",
-        "F79",
-        "ARIA4",
-        "ARIA5",
-        "ARIA18",
-        "ARIA19",
-        "SCR21"
-      ],
+      "wcag": ["2.5.3 Label in Name (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G10", "G135", "G136", "F15", "F19", "F20", "F42", "F59", "F79", "ARIA4", "ARIA5", "ARIA18", "ARIA19", "SCR21"],
       "technicalNote": [
         "Le critère 7.1 implémente la notion de « compatible avec les technologies d’assistance » telle que définie par les WCAG, ainsi que le recours à WAI-ARIA pour rendre un composant ou une fonctionnalité accessible. Le bon usage de WAI-ARIA est vérifié via les tests 7.1.1, 7.1.2, 7.1.3.",
         "Note importante : dans un environnement HTML5, beaucoup de composants peuvent nécessiter JavaScript pour fonctionner ; en conséquence la fourniture d’une alternative à un composant JavaScript qui ne pourrait pas être rendu accessible devra bénéficier d’une méthode spécifique au composant en cause, permettant de le remplacer par une alternative accessible (et de le réactiver). Cela signifie que la désactivation de JavaScript pour l’ensemble de la page ne sera pas acceptée comme une méthode valable, à moins qu’elle ne remette pas en cause l’utilisation des autres composants."
@@ -1594,15 +1255,8 @@
           "L’alternative mise à jour est pertinente."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G136",
-        "F19",
-        "F20"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G136", "F19", "F20"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1617,33 +1271,15 @@
           "L’élément est [accessible par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) ;",
           "Un élément [accessible par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) permettant de réaliser la même action est présent dans la page."
         ],
-        "2": [
-          "Un [script](#script) ne doit pas supprimer le focus d’un élément qui le reçoit. Cette règle est-elle respectée (hors cas particuliers) ?"
-        ]
+        "2": ["Un [script](#script) ne doit pas supprimer le focus d’un élément qui le reçoit. Cette règle est-elle respectée (hors cas particuliers) ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "2.1.1 Keyboard (A)",
-        "2.4.7 Focus Visible (AA)"
-      ],
-      "techniques": [
-        "G90",
-        "G202",
-        "F42",
-        "F54",
-        "F55",
-        "SCR2",
-        "SCR20",
-        "SCR29",
-        "SCR35"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "2.1.1 Keyboard (A)", "2.4.7 Focus Visible (AA)"],
+      "techniques": ["G90", "G202", "F42", "F54", "F55", "SCR2", "SCR20", "SCR29", "SCR35"],
       "particularCases": [
         "Il existe une gestion de cas particuliers lorsque la fonctionnalité dépend de l’utilisation d’un gestionnaire d’événement sans équivalent universel ; par exemple, une application de dessin à main levée ne pourra pas être rendue contrôlable au clavier. Dans ces situations, le critère est non applicable."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "clickable-noninteractive"
-      ]
+      "ruleIds": ["clickable-noninteractive"]
     },
     {
       "id": "7.4",
@@ -1658,24 +1294,8 @@
           "Le changement de contexte est initié par un lien explicite."
         ]
       },
-      "wcag": [
-        "3.2.1 On Focus (A)",
-        "3.2.2 On Input (A)"
-      ],
-      "techniques": [
-        "G13",
-        "G76",
-        "G80",
-        "G107",
-        "H32",
-        "H84",
-        "F9",
-        "F22",
-        "F36",
-        "F37",
-        "F41",
-        "SCR19"
-      ],
+      "wcag": ["3.2.1 On Focus (A)", "3.2.2 On Input (A)"],
+      "techniques": ["G13", "G76", "G80", "G107", "H32", "H84", "F9", "F22", "F36", "F37", "F41", "SCR19"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1695,14 +1315,8 @@
           "Chaque [message de statut](#message-de-statut) qui indique la progression d’un processus utilise-t-il l’un des attributs WAI-ARIA `role=\"log\"`, `role=\"progressbar\"` ou `role=\"status\"` ?"
         ]
       },
-      "wcag": [
-        "4.1.3 Status Messages (AA)"
-      ],
-      "techniques": [
-        "ARIA19",
-        "ARIA22",
-        "ARIA23"
-      ],
+      "wcag": ["4.1.3 Status Messages (AA)"],
+      "techniques": ["ARIA19", "ARIA22", "ARIA23"],
       "technicalNote": [
         "Les rôles WAI-ARIA `log`, `status` et `alert` ont implicitement une valeur d’attribut WAI-ARIA `aria-live` et `aria-atomic`. On pourra donc considérer (conformément à la spécification WAI-ARIA 1.1) que :",
         "[object Object]",
@@ -1717,23 +1331,14 @@
       "title": "Chaque page web est-elle définie par un [type de document](#type-de-document) ?",
       "titlePlain": "Chaque page web est-elle définie par un type de document ?",
       "tests": {
-        "1": [
-          "Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il présent ?"
-        ],
-        "2": [
-          "Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il valide ?"
-        ],
+        "1": ["Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il présent ?"],
+        "2": ["Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il valide ?"],
         "3": [
           "Pour chaque page web possédant une déclaration de [type de document](#type-de-document), celle-ci est-elle située avant la balise `<html>` dans le code source ?"
         ]
       },
-      "wcag": [
-        "4.1.1 Parsing (A)"
-      ],
-      "techniques": [
-        "G134",
-        "G192"
-      ],
+      "wcag": ["4.1.1 Parsing (A)"],
+      "techniques": ["G134", "G192"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1752,21 +1357,10 @@
           "Les attributs ne sont pas doublés sur un même élément."
         ]
       },
-      "wcag": [
-        "4.1.1 Parsing (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "H74",
-        "H93",
-        "H94",
-        "F70",
-        "F77"
-      ],
+      "wcag": ["4.1.1 Parsing (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["H74", "H93", "H94", "F70", "F77"],
       "automatability": "static",
-      "ruleIds": [
-        "duplicate-id"
-      ]
+      "ruleIds": ["duplicate-id"]
     },
     {
       "id": "8.3",
@@ -1780,16 +1374,10 @@
           "L’indication de la langue de la page (attribut `lang` et/ou `xml:lang`) est donnée sur chaque élément de texte ou sur l’un des éléments parents."
         ]
       },
-      "wcag": [
-        "3.1.1 Language of Page (A)"
-      ],
-      "techniques": [
-        "H57"
-      ],
+      "wcag": ["3.1.1 Language of Page (A)"],
+      "techniques": ["H57"],
       "automatability": "static",
-      "ruleIds": [
-        "html-lang-missing"
-      ]
+      "ruleIds": ["html-lang-missing"]
     },
     {
       "id": "8.4",
@@ -1803,16 +1391,10 @@
           "Le code de langue est pertinent."
         ]
       },
-      "wcag": [
-        "3.1.1 Language of Page (A)"
-      ],
-      "techniques": [
-        "H57"
-      ],
+      "wcag": ["3.1.1 Language of Page (A)"],
+      "techniques": ["H57"],
       "automatability": "judgment",
-      "ruleIds": [
-        "lang-invalid"
-      ]
+      "ruleIds": ["lang-invalid"]
     },
     {
       "id": "8.5",
@@ -1820,22 +1402,12 @@
       "title": "Chaque page web a-t-elle un [titre de page](#titre-de-page) ?",
       "titlePlain": "Chaque page web a-t-elle un titre de page ?",
       "tests": {
-        "1": [
-          "Chaque page web a-t-elle un [titre de page](#titre-de-page) (balise `<title>`) ?"
-        ]
+        "1": ["Chaque page web a-t-elle un [titre de page](#titre-de-page) (balise `<title>`) ?"]
       },
-      "wcag": [
-        "2.4.2 Page Titled (A)"
-      ],
-      "techniques": [
-        "G88",
-        "G127",
-        "H25"
-      ],
+      "wcag": ["2.4.2 Page Titled (A)"],
+      "techniques": ["G88", "G127", "H25"],
       "automatability": "static",
-      "ruleIds": [
-        "title-missing-empty"
-      ]
+      "ruleIds": ["title-missing-empty"]
     },
     {
       "id": "8.6",
@@ -1843,18 +1415,10 @@
       "title": "Pour chaque page web ayant un [titre de page](#titre-de-page), ce titre est-il pertinent ?",
       "titlePlain": "Pour chaque page web ayant un titre de page, ce titre est-il pertinent ?",
       "tests": {
-        "1": [
-          "Pour chaque page web ayant un [titre de page](#titre-de-page) (balise `<title>`), le contenu de cette balise est-il pertinent ?"
-        ]
+        "1": ["Pour chaque page web ayant un [titre de page](#titre-de-page) (balise `<title>`), le contenu de cette balise est-il pertinent ?"]
       },
-      "wcag": [
-        "2.4.2 Page Titled (A)"
-      ],
-      "techniques": [
-        "G88",
-        "G127",
-        "H25"
-      ],
+      "wcag": ["2.4.2 Page Titled (A)"],
+      "techniques": ["G88", "G127", "H25"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1870,12 +1434,8 @@
           "L’indication de langue est donnée sur un des éléments parents (attribut `lang` et/ou `xml:lang`)"
         ]
       },
-      "wcag": [
-        "3.1.2 Language of Parts (AA)"
-      ],
-      "techniques": [
-        "H58"
-      ],
+      "wcag": ["3.1.2 Language of Parts (AA)"],
+      "techniques": ["H58"],
       "particularCases": [
         "Il y a une gestion de cas particuliers sur le changement de langue pour les cas suivants :",
         "[object Object]",
@@ -1883,9 +1443,7 @@
         "Note 2 : pour les noms communs de langue étrangère, absents dans le dictionnaire officiel de la langue par défaut de la page web, et qui sont passés dans le langage commun (exemple : newsletter) : le critère est applicable, uniquement lorsque l’absence d’indication de langue peut provoquer une incompréhension pour la restitution."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "inline-lang-change-missing"
-      ]
+      "ruleIds": ["inline-lang-change-missing"]
     },
     {
       "id": "8.8",
@@ -1899,16 +1457,10 @@
           "Le code de langue est pertinent."
         ]
       },
-      "wcag": [
-        "3.1.2 Language of Parts (AA)"
-      ],
-      "techniques": [
-        "H58"
-      ],
+      "wcag": ["3.1.2 Language of Parts (AA)"],
+      "techniques": ["H58"],
       "automatability": "judgment",
-      "ruleIds": [
-        "lang-invalid"
-      ]
+      "ruleIds": ["lang-invalid"]
     },
     {
       "id": "8.9",
@@ -1920,15 +1472,8 @@
           "Dans chaque page web les balises (à l’exception de `<div>`, `<span>` et `<table>`) ne doivent pas être utilisées [uniquement à des fins de présentation](#uniquement-a-des-fins-de-presentation). Cette règle est-elle respectée ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "G115",
-        "H88",
-        "F43",
-        "F92"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["G115", "H88", "F43", "F92"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1947,12 +1492,8 @@
           "La valeur de l’attribut `dir` est pertinente."
         ]
       },
-      "wcag": [
-        "1.3.2 Meaningful Sequence (A)"
-      ],
-      "techniques": [
-        "H56"
-      ],
+      "wcag": ["1.3.2 Meaningful Sequence (A)"],
+      "techniques": ["H56"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -1972,29 +1513,13 @@
           "Dans chaque page web, chaque passage de texte constituant un [titre](#titre) est-il structuré à l’aide d’une balise `<hx>` ou d’une balise possédant un attribut WAI-ARIA `role=\"heading\"` associé à un attribut WAI-ARIA `aria-level` ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "2.4.1 Bypass Blocks (A)",
-        "2.4.6 Headings and Labels (AA)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G115",
-        "G130",
-        "H42",
-        "G141",
-        "ARIA4",
-        "ARIA12"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "2.4.1 Bypass Blocks (A)", "2.4.6 Headings and Labels (AA)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G115", "G130", "H42", "G141", "ARIA4", "ARIA12"],
       "technicalNote": [
         "WAI-ARIA permet de définir des titres via le rôle `heading` et l’attribut `aria-level` (indication du niveau de titre). Bien qu’il soit préférable d’utiliser l’élément de titre natif en HTML `<hx>`, l’utilisation du rôle WAI-ARIA `heading` est compatible avec l’accessibilité."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "heading-order-skip",
-        "h1-missing",
-        "h1-multiple"
-      ]
+      "ruleIds": ["heading-order-skip", "h1-missing", "h1-multiple"]
     },
     {
       "id": "9.2",
@@ -2012,19 +1537,12 @@
           "La [zone de pied de page](#zone-de-pied-de-page) est structurée via une balise `<footer>`."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "G115",
-        "ARIA11"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["G115", "ARIA11"],
       "technicalNote": [
         "La balise `<main>` peut être utilisée plusieurs fois dans le même document HTML. Néanmoins, il ne peut y avoir en permanence qu’une seule balise visible et lisible par les technologies d’assistances, les autres devant disposer d’un attribut `hidden` ou d’un style permettant de les masquer aux technologies d’assistances. À noter cependant que l’utilisation d’un style seul restera insuffisante pour assurer l’unicité d’une balise `<main>` visible en cas de désactivation des feuilles de styles."
       ],
-      "particularCases": [
-        "Lorsque le doctype déclaré dans la page n’est pas le doctype HTML5, ce critère est non applicable."
-      ],
+      "particularCases": ["Lorsque le doctype déclaré dans la page n’est pas le doctype HTML5, ce critère est non applicable."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2048,24 +1566,14 @@
           "Dans chaque page web, les informations regroupées sous forme de [liste](#listes) de description utilisent-elles les balises `<dl>` et `<dt>/<dd>` ?"
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "G115",
-        "G153",
-        "H40",
-        "H48",
-        "F2"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["G115", "G153", "H40", "H48", "F2"],
       "technicalNote": [
         "Les attributs WAI-ARIA `role=\"list\"` et `role=\"listitem\"` peuvent nécessiter l’utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas où l’ensemble de la liste n’est pas disponible via le DOM généré au moment de la consultation.",
         "Les attributs WAI-ARIA `role=\"tree\"`, `role=\"tablist\"`, `role=\"menu\"`, `role=\"combobox\"` et `role=\"listbox\"` ne sont pas équivalents à une liste HTML `<ul>` ou `<ol>`."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "list-structure"
-      ]
+      "ruleIds": ["list-structure"]
     },
     {
       "id": "9.4",
@@ -2073,21 +1581,11 @@
       "title": "Dans chaque page web, chaque citation est-elle correctement indiquée ?",
       "titlePlain": "Dans chaque page web, chaque citation est-elle correctement indiquée ?",
       "tests": {
-        "1": [
-          "Dans chaque page web, chaque citation courte utilise-t-elle une balise `<q>` ?"
-        ],
-        "2": [
-          "Dans chaque page web, chaque bloc de citation utilise-t-il une balise `<blockquote>` ?"
-        ]
+        "1": ["Dans chaque page web, chaque citation courte utilise-t-elle une balise `<q>` ?"],
+        "2": ["Dans chaque page web, chaque bloc de citation utilise-t-il une balise `<blockquote>` ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "G115",
-        "H49",
-        "F2"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["G115", "H49", "F2"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2110,21 +1608,8 @@
           "Les espaces ne sont pas utilisées pour simuler des colonnes de texte."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "1.3.2 Meaningful Sequence (A)"
-      ],
-      "techniques": [
-        "G140",
-        "F32",
-        "F33",
-        "F34",
-        "F48",
-        "C6",
-        "C8",
-        "C18",
-        "C22"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "1.3.2 Meaningful Sequence (A)"],
+      "techniques": ["G140", "F32", "F33", "F34", "F48", "C6", "C8", "C18", "C22"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2134,19 +1619,10 @@
       "title": "Dans chaque page web, le [contenu visible](#contenu-visible) porteur d’information reste-t-il présent lorsque les [feuilles de styles](#feuille-de-style) sont désactivées ?",
       "titlePlain": "Dans chaque page web, le contenu visible porteur d’information reste-t-il présent lorsque les feuilles de styles sont désactivées ?",
       "tests": {
-        "1": [
-          "Dans chaque page web, l’information reste-t-elle présente lorsque les [feuilles de styles](#feuille-de-style) sont désactivées ?"
-        ]
+        "1": ["Dans chaque page web, l’information reste-t-elle présente lorsque les [feuilles de styles](#feuille-de-style) sont désactivées ?"]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)",
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "G140",
-        "F3",
-        "F87"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)", "1.3.1 Info and Relationships (A)"],
+      "techniques": ["G140", "F3", "F87"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2160,15 +1636,8 @@
           "Dans chaque page web, l’information reste-t-elle [compréhensible](#comprehensible-ordre-de-lecture) lorsque les [feuilles de styles](#feuille-de-style) sont désactivées ?"
         ]
       },
-      "wcag": [
-        "1.3.2 Meaningful Sequence (A)",
-        "2.4.3 Focus Order (A)"
-      ],
-      "techniques": [
-        "G59",
-        "G140",
-        "F1"
-      ],
+      "wcag": ["1.3.2 Meaningful Sequence (A)", "2.4.3 Focus Order (A)"],
+      "techniques": ["G59", "G140", "F1"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2191,29 +1660,14 @@
           "Lors de l’utilisation d’un [composant d’interface](#composant-d-interface) propre au site permettant d’agrandir le texte ou de zoomer."
         ]
       },
-      "wcag": [
-        "1.4.4 Resize Text (AA)"
-      ],
-      "techniques": [
-        "G146",
-        "G179",
-        "F69",
-        "F80",
-        "SCR34",
-        "C12",
-        "C13",
-        "C14",
-        "C17",
-        "C28"
-      ],
+      "wcag": ["1.4.4 Resize Text (AA)"],
+      "techniques": ["G146", "G179", "F69", "F80", "SCR34", "C12", "C13", "C14", "C17", "C28"],
       "particularCases": [
         "Font exception à ce critère, les contenus pour lesquels l’utilisateur n’a pas de possibilité de personnalisation :",
         "[object Object]"
       ],
       "automatability": "needs-rendering",
-      "ruleIds": [
-        "meta-viewport-zoom-block"
-      ]
+      "ruleIds": ["meta-viewport-zoom-block"]
     },
     {
       "id": "10.5",
@@ -2231,12 +1685,8 @@
           "Dans chaque page web, chaque utilisation d’une image pour créer une couleur de fond d’un élément susceptible de contenir du texte, via CSS (`background`, `background-image`), est-elle accompagnée d’une déclaration de couleur de fond (`background`, `background-color`), au moins, héritée d’un parent ?"
         ]
       },
-      "wcag": [
-        "1.4.3 Contrast (Minimum) (AA)"
-      ],
-      "techniques": [
-        "F24"
-      ],
+      "wcag": ["1.4.3 Contrast (Minimum) (AA)"],
+      "techniques": ["F24"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2253,13 +1703,8 @@
           "Le lien dispose d’une indication visuelle au focus autre qu’un changement de couleur."
         ]
       },
-      "wcag": [
-        "1.4.1 Use of Color (A)"
-      ],
-      "techniques": [
-        "G183",
-        "F73"
-      ],
+      "wcag": ["1.4.1 Use of Color (A)"],
+      "techniques": ["G183", "F73"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2275,20 +1720,8 @@
           "Un style du focus défini par l’auteur est visible."
         ]
       },
-      "wcag": [
-        "1.4.1 Use of Color (A)",
-        "2.4.7 Focus Visible (AA)"
-      ],
-      "techniques": [
-        "G149",
-        "G165",
-        "G183",
-        "G195",
-        "F73",
-        "F78",
-        "SCR31",
-        "C15"
-      ],
+      "wcag": ["1.4.1 Use of Color (A)", "2.4.7 Focus Visible (AA)"],
+      "techniques": ["G149", "G165", "G183", "G195", "F73", "F78", "SCR31", "C15"],
       "automatability": "needs-rendering",
       "ruleIds": []
     },
@@ -2304,13 +1737,8 @@
           "Le [contenu caché](#contenu-cache) n’a pas vocation à être ignoré par les technologies d’assistance et est rendu restituable par les technologies d’assistance suite à une action de l’utilisateur réalisable au clavier ou par tout dispositif de pointage sur un élément précédent le contenu caché ou suite à un repositionnement du focus dessus."
         ]
       },
-      "wcag": [
-        "1.3.2 Meaningful Sequence (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G57"
-      ],
+      "wcag": ["1.3.2 Meaningful Sequence (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G57"],
       "technicalNote": [
         "WAI-ARIA propose un attribut `aria-hidden` (`true` ou `false`) qui permet d’inhiber la restitution d’un contenu en direction des technologies d’assistance, sans action sur sa visibilité en direction des agents utilisateurs : un contenu avec `aria-hidden=\"true\"` ne sera donc plus vocalisable, mais restera visible.",
         "Sauf si le contenu contrôlé par `aria-hidden` n’a pas vocation à être restitué par les technologies d’assistance, la valeur de l’attribut `aria-hidden` doit être cohérente avec l’état affiché ou masqué du contenu à l’écran.",
@@ -2339,16 +1767,8 @@
           "Dans chaque page web, pour chaque [média non temporel](#media-non-temporel), l’information ne doit pas être donnée uniquement [par la forme, taille ou position](#indication-donnee-par-la-forme-la-taille-ou-la-position). Cette règle est-elle respectée ?"
         ]
       },
-      "wcag": [
-        "1.3.3 Sensory Characteristics (A)",
-        "1.4.1 Use of Color (A)"
-      ],
-      "techniques": [
-        "G96",
-        "G140",
-        "F14",
-        "F26"
-      ],
+      "wcag": ["1.3.3 Sensory Characteristics (A)", "1.4.1 Use of Color (A)"],
+      "techniques": ["G96", "G140", "F14", "F26"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2371,16 +1791,8 @@
           "Dans chaque page web, pour chaque [média non temporel](#media-non-temporel), l’information ne doit pas être donnée uniquement [par la forme, taille ou position](#indication-donnee-par-la-forme-la-taille-ou-la-position). Cette règle est-elle implémentée de façon pertinente ?"
         ]
       },
-      "wcag": [
-        "1.3.3 Sensory Characteristics (A)",
-        "1.4.1 Use of Color (A)"
-      ],
-      "techniques": [
-        "G96",
-        "G140",
-        "F14",
-        "F26"
-      ],
+      "wcag": ["1.3.3 Sensory Characteristics (A)", "1.4.1 Use of Color (A)"],
+      "techniques": ["G96", "G140", "F14", "F26"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2397,16 +1809,9 @@
           "Pour chaque page web, lorsque le contenu dont le sens de lecture est vertical est affiché dans une fenêtre réduite à une hauteur de 256 px, l’ensemble des informations et des fonctionnalités sont-elles disponibles sans aucun défilement vertical (hors cas particuliers) ?"
         ]
       },
-      "wcag": [
-        "1.4.10 Reflow (AA)"
-      ],
-      "techniques": [
-        "C34",
-        "C37"
-      ],
-      "technicalNote": [
-        "Lorsqu'il est ici question de pixel, il s'agit du pixel CSS tel que défini par le W3C https://www.w3.org/TR/css3-values/"
-      ],
+      "wcag": ["1.4.10 Reflow (AA)"],
+      "techniques": ["C34", "C37"],
+      "technicalNote": ["Lorsqu'il est ici question de pixel, il s'agit du pixel CSS tel que défini par le W3C https://www.w3.org/TR/css3-values/"],
       "particularCases": [
         "L'objectif de ce critère est de garantir un défilement dans une unique direction pour une lecture facilitée selon le sens de l'écriture.",
         "Font exception à ce critère, les contenus dont l'agencement requiert deux dimensions pour être compris ou utilisés comme :",
@@ -2430,15 +1835,8 @@
           "L’espacement des mots (`word-spacing`) est augmenté jusqu’à 0,16 fois la taille de la police."
         ]
       },
-      "wcag": [
-        "1.4.12 Text Spacing (AA)"
-      ],
-      "techniques": [
-        "C8",
-        "C21",
-        "C35",
-        "C36"
-      ],
+      "wcag": ["1.4.12 Text Spacing (AA)"],
+      "techniques": ["C8", "C21", "C35", "C36"],
       "particularCases": [
         "Font exception à ce critère, les contenus pour lesquels l’utilisateur n’a pas de possibilité de personnalisation :",
         "[object Object]"
@@ -2465,12 +1863,8 @@
           "Le contenu additionnel reste visible jusqu’à ce qu’il ne soit plus valide."
         ]
       },
-      "wcag": [
-        "1.4.13 Content on Hover or Focus (AA)"
-      ],
-      "techniques": [
-        "F95"
-      ],
+      "wcag": ["1.4.13 Content on Hover or Focus (AA)"],
+      "techniques": ["F95"],
       "particularCases": [
         "Lorsque le contenu additionnel est contrôlé par l’agent utilisateur (par exemple, attribut `title` ou validation native de formulaire) ou correspond à une fenêtre modale conforme au [motif de conception](#motif-de-conception) WAI-ARIA `dialog`, le critère 10.13 est non applicable.",
         "Lorsque le contenu additionnel ne masque ou ne remplace aucun contenu porteur d’information, le test 10.13.1 est non applicable."
@@ -2497,12 +1891,8 @@
           "Les contenus additionnels apparaissent également par le biais de l’activation ou du survol d’un autre composant."
         ]
       },
-      "wcag": [
-        "2.1.1 Keyboard (A)"
-      ],
-      "techniques": [
-        "G202"
-      ],
+      "wcag": ["2.1.1 Keyboard (A)"],
+      "techniques": ["G202"],
       "automatability": "needs-rendering",
       "ruleIds": []
     },
@@ -2532,32 +1922,10 @@
           "Le [champ de formulaire](#champ-de-saisie-de-formulaire) est accompagné d’un [passage de texte](#passage-de-texte-lie-par-aria-labelledby-ou-aria-describedby) visible accolé au champ permettant de comprendre la nature de la saisie attendue."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "2.4.6 Headings and Labels (AA)",
-        "3.3.2 Labels or Instructions (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "G82",
-        "G131",
-        "H44",
-        "H65",
-        "F68",
-        "F82",
-        "F86",
-        "ARIA6",
-        "ARIA9",
-        "ARIA14",
-        "ARIA16"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "2.4.6 Headings and Labels (AA)", "3.3.2 Labels or Instructions (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["G82", "G131", "H44", "H65", "F68", "F82", "F86", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
       "automatability": "static",
-      "ruleIds": [
-        "control-label-missing",
-        "placeholder-as-label",
-        "form-field-multiple-labels",
-        "select-has-option"
-      ]
+      "ruleIds": ["control-label-missing", "placeholder-as-label", "form-field-multiple-labels", "select-has-option"]
     },
     {
       "id": "11.2",
@@ -2588,21 +1956,8 @@
           "Chaque bouton adjacent au [champ de formulaire](#champ-de-saisie-de-formulaire) qui fournit une étiquette visible permet-il de connaître la fonction exacte du [champ de formulaire](#champ-de-saisie-de-formulaire) auquel il est associé ?"
         ]
       },
-      "wcag": [
-        "2.4.6 Headings and Labels (AA)",
-        "2.5.3 Label in Name (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      "techniques": [
-        "G82",
-        "G131",
-        "H44",
-        "H65",
-        "ARIA6",
-        "ARIA9",
-        "ARIA14",
-        "ARIA16"
-      ],
+      "wcag": ["2.4.6 Headings and Labels (AA)", "2.5.3 Label in Name (A)", "3.3.2 Labels or Instructions (A)"],
+      "techniques": ["G82", "G131", "H44", "H65", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
       "particularCases": [
         "Il existe une gestion de cas particuliers pour le test 11.2.5 lorsque :",
         "[object Object]",
@@ -2625,12 +1980,8 @@
           "Chaque [étiquette](#etiquette-de-champ-de-formulaire) associée à un [champ de formulaire](#champ-de-saisie-de-formulaire) ayant la même fonction et répétée dans un ensemble de pages est-elle [cohérente](#etiquettes-coherentes) ?"
         ]
       },
-      "wcag": [
-        "3.2.4 Consistent Identification (AA)"
-      ],
-      "techniques": [
-        "F31"
-      ],
+      "wcag": ["3.2.4 Consistent Identification (AA)"],
+      "techniques": ["F31"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2654,16 +2005,9 @@
           "L’étiquette est visuellement [accolée](#accoles-etiquette-et-champ-accoles) immédiatement au-dessous ou à gauche du [champ de formulaire](#champ-de-saisie-de-formulaire) lorsque le sens de lecture de la langue de l’étiquette est de droite à gauche."
         ]
       },
-      "wcag": [
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      "techniques": [
-        "G162"
-      ],
-      "particularCases": [
-        "Les tests 11.4.2 et 11.4.3 seront considérés comme non applicables :",
-        "[object Object]"
-      ],
+      "wcag": ["3.3.2 Labels or Instructions (A)"],
+      "techniques": ["G162"],
+      "particularCases": ["Les tests 11.4.2 et 11.4.3 seront considérés comme non applicables :", "[object Object]"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2680,14 +2024,8 @@
           "Les [champs de même nature](#champs-de-meme-nature) de type radio (`<input type=\"radio\">`) ou balises possédant un attribut WAI-ARIA `role=\"radio\"`) sont regroupés dans une balise possédant un attribut WAI-ARIA `role=\"radiogroup\"` ou `role=\"group\"`."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      "techniques": [
-        "H71",
-        "ARIA17"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "3.3.2 Labels or Instructions (A)"],
+      "techniques": ["H71", "ARIA17"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2697,22 +2035,12 @@
       "title": "Dans chaque [formulaire](#formulaire), chaque regroupement de [champs de même nature](#champs-de-meme-nature) a-t-il une [légende](#legende) ?",
       "titlePlain": "Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ?",
       "tests": {
-        "1": [
-          "Chaque regroupement de [champs de même nature](#champs-de-meme-nature) possède-t-il une [légende](#legende) ?"
-        ]
+        "1": ["Chaque regroupement de [champs de même nature](#champs-de-meme-nature) possède-t-il une [légende](#legende) ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      "techniques": [
-        "H71",
-        "ARIA17"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "3.3.2 Labels or Instructions (A)"],
+      "techniques": ["H71", "ARIA17"],
       "automatability": "static",
-      "ruleIds": [
-        "fieldset-legend-missing"
-      ]
+      "ruleIds": ["fieldset-legend-missing"]
     },
     {
       "id": "11.7",
@@ -2720,18 +2048,10 @@
       "title": "Dans chaque [formulaire](#formulaire), chaque [légende](#legende) associée à un regroupement de [champs de même nature](#champs-de-meme-nature) est-elle pertinente ?",
       "titlePlain": "Dans chaque formulaire, chaque légende associée à un regroupement de champs de même nature est-elle pertinente ?",
       "tests": {
-        "1": [
-          "Chaque [légende](#legende) associée à un regroupement de [champs de même nature](#champs-de-meme-nature) est-elle pertinente ?"
-        ]
+        "1": ["Chaque [légende](#legende) associée à un regroupement de [champs de même nature](#champs-de-meme-nature) est-elle pertinente ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      "techniques": [
-        "H71",
-        "ARIA17"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "3.3.2 Labels or Instructions (A)"],
+      "techniques": ["H71", "ARIA17"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2744,19 +2064,11 @@
         "1": [
           "Pour chaque balise `<select>`, les [items de même nature d’une liste de choix](#items-de-meme-nature-d-une-liste-de-choix) sont-ils regroupés avec une balise `<optgroup>`, si nécessaire ?"
         ],
-        "2": [
-          "Dans chaque balise `<select>`, chaque balise `<optgroup>` possède-t-elle un attribut `label` ?"
-        ],
-        "3": [
-          "Pour chaque balise `<optgroup>` ayant un attribut `label`, le contenu de l’attribut `label` est-il pertinent ?"
-        ]
+        "2": ["Dans chaque balise `<select>`, chaque balise `<optgroup>` possède-t-elle un attribut `label` ?"],
+        "3": ["Pour chaque balise `<optgroup>` ayant un attribut `label`, le contenu de l’attribut `label` est-il pertinent ?"]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      "techniques": [
-        "H85"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)"],
+      "techniques": ["H85"],
       "technicalNote": [
         "Il est possible d’utiliser une balise ayant un attribut WAI-ARIA `role=\"listbox\"` en remplacement d’une balise `<select>`. En revanche, il est impossible de créer des groupes d’options via l’utilisation de WAI-ARIA. De ce fait, une liste nécessitant un regroupement d’options structurée à l’aide d’une balise ayant un attribut WAI-ARIA `role=\"listbox\"` sera considérée comme non conforme au critère 11.8."
       ],
@@ -2788,21 +2100,9 @@
           "S’il est présent, le contenu de l’attribut `title` contient au moins l’[intitulé visible](#intitule-visible)."
         ]
       },
-      "wcag": [
-        "2.5.3 Label in Name (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "H36",
-        "H91",
-        "ARIA6",
-        "ARIA9",
-        "ARIA14",
-        "ARIA16"
-      ],
-      "particularCases": [
-        "Pour le test 11.9.2, voir cas particuliers critère 11.2."
-      ],
+      "wcag": ["2.5.3 Label in Name (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["H36", "H91", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
+      "particularCases": ["Pour le test 11.9.2, voir cas particuliers critère 11.2."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2848,10 +2148,7 @@
           "Une instruction ou une indication du type de données et/ou de format obligatoire est visible et située dans le [passage de texte](#passage-de-texte-lie-par-aria-labelledby-ou-aria-describedby) associé au champ."
         ]
       },
-      "wcag": [
-        "3.3.1 Error Identification (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
+      "wcag": ["3.3.1 Error Identification (A)", "3.3.2 Labels or Instructions (A)"],
       "techniques": [
         "G83",
         "G84",
@@ -2890,23 +2187,11 @@
       "title": "Dans chaque [formulaire](#formulaire), le [contrôle de saisie](#controle-de-saisie-formulaire) est-il accompagné, si nécessaire, de suggestions facilitant la correction des erreurs de saisie ?",
       "titlePlain": "Dans chaque formulaire, le contrôle de saisie est-il accompagné, si nécessaire, de suggestions facilitant la correction des erreurs de saisie ?",
       "tests": {
-        "1": [
-          "Pour chaque erreur de saisie, les types et les formats de données sont-ils suggérés, si nécessaire ?"
-        ],
-        "2": [
-          "Pour chaque erreur de saisie, des exemples de valeurs attendues sont-ils suggérés, si nécessaire ?"
-        ]
+        "1": ["Pour chaque erreur de saisie, les types et les formats de données sont-ils suggérés, si nécessaire ?"],
+        "2": ["Pour chaque erreur de saisie, des exemples de valeurs attendues sont-ils suggérés, si nécessaire ?"]
       },
-      "wcag": [
-        "3.3.3 Error Suggestion (AA)"
-      ],
-      "techniques": [
-        "G84",
-        "G85",
-        "G89",
-        "G177",
-        "H89"
-      ],
+      "wcag": ["3.3.3 Error Suggestion (AA)"],
+      "techniques": ["G84", "G85", "G89", "G177", "H89"],
       "technicalNote": [
         "Certains types de contrôles en HTML5 proposent des messages d’aide à la saisie automatique : par exemple le type `email` affiche un message du type « veuillez saisir une adresse e-mail valide » dans le cas où l’adresse e-mail saisie ne correspond pas au format attendu. Ces messages sont personnalisables via l’API Constraint Validation, ce qui permet de personnaliser les messages d’erreur et de valider le critère. L’attribut `pattern` permet d’effectuer automatiquement des contrôles de format (via des expressions régulières) et affiche un message d’aide personnalisable via l’attribut `title` : ce dispositif valide également le critère."
       ],
@@ -2931,16 +2216,8 @@
           "Un mécanisme de demande de confirmation explicite de la suppression ou de la modification, via un [champ de formulaire](#champ-de-saisie-de-formulaire) ou une étape supplémentaire, est proposé."
         ]
       },
-      "wcag": [
-        "3.3.4 Error Prevention (Legal, Financial, Data) (AA)"
-      ],
-      "techniques": [
-        "G98",
-        "G99",
-        "G155",
-        "G164",
-        "G168"
-      ],
+      "wcag": ["3.3.4 Error Prevention (Legal, Financial, Data) (AA)"],
+      "techniques": ["G98", "G99", "G155", "G164", "G168"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -2957,12 +2234,8 @@
           "La valeur indiquée pour l’attribut `autocomplete` est pertinente au regard du type d’information attendu."
         ]
       },
-      "wcag": [
-        "1.3.5 Identify Input Purpose (AA)"
-      ],
-      "techniques": [
-        "H98"
-      ],
+      "wcag": ["1.3.5 Identify Input Purpose (AA)"],
+      "techniques": ["H98"],
       "technicalNote": [
         "La [liste des valeurs possibles pour l’attribut `autocomplete`](#liste-des-valeurs-possibles-pour-l-attribut-autocomplete) repose sur la liste des valeurs présentes dans la spécification WCAG2.1 qui reprend elle-même la liste des valeurs de type “field name” de la spécification HTML5.2. Le critère WCAG demande à ce que l’une de ces valeurs soit présente pour qualifier un champ de saisie concernant l’utilisateur.",
         "Ce que le critère WCAG laisse implicite, ce sont les différentes règles de construction possibles pour obtenir une valeur (simple ou composée) pour l’attribut `autocomplete`. C’est cependant l’affaire du développeur de fournir à l’attribut `autocomplete` une valeur ou un ensemble de valeurs valides au regard des exigences de l’algorithme fourni par la spécification HTML5.2. Ainsi, un attribut `autocomplete` ne peut contenir qu’une seule valeur de type `“field name”`, comme `\"name\"` ou `\"street-address\"`. On peut avoir également un ensemble composé de différentes valeurs comme, par exemple, `autocomplete=\"shipping name\"` ou `autocomplete=\"section-software shipping street-address\"` : `\"section-software\"` renvoie à une valeur de type <span lang=\"en\">“scope”</span> et `\"shipping\"` à une valeur de type <span lang=\"en\">“hint set”</span>, mais toujours une seule valeur de type <span lang=\"en\">“field name”</span>."
@@ -2983,14 +2256,8 @@
           "Un [moteur de recherche](#moteur-de-recherche-interne-a-un-site-web) et un [plan du site](#page-plan-du-site) sont présents."
         ]
       },
-      "wcag": [
-        "2.4.5 Multiple Ways (AA)"
-      ],
-      "techniques": [
-        "G63",
-        "G64",
-        "G161"
-      ],
+      "wcag": ["2.4.5 Multiple Ways (AA)"],
+      "techniques": ["G63", "G64", "G161"],
       "particularCases": [
         "Il existe une gestion de cas particulier lorsque le site web est constitué d’une seule page ou d’un nombre très limité de pages (cf. note). Dans ce cas-là, le critère est non applicable.",
         "Le critère est également non applicable pour les pages d’un ensemble de pages qui sont le résultat ou une partie d’un processus (un processus de paiement ou de prise de commande, par exemple).",
@@ -3011,18 +2278,9 @@
           "Le [menu et les barres de navigation](#menu-et-barre-de-navigation) se présentent toujours dans le même ordre relatif dans le code source."
         ]
       },
-      "wcag": [
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      "techniques": [
-        "G61",
-        "F66"
-      ],
-      "particularCases": [
-        "Il existe une gestion de cas particuliers lorsque :",
-        "[object Object]",
-        "Dans ces situations, le critère est non applicable."
-      ],
+      "wcag": ["3.2.3 Consistent Navigation (AA)"],
+      "techniques": ["G61", "F66"],
+      "particularCases": ["Il existe une gestion de cas particuliers lorsque :", "[object Object]", "Dans ces situations, le critère est non applicable."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3032,22 +2290,12 @@
       "title": "La [page « plan du site »](#page-plan-du-site) est-elle pertinente ?",
       "titlePlain": "La page « plan du site » est-elle pertinente ?",
       "tests": {
-        "1": [
-          "La [page « plan du site »](#page-plan-du-site) est-elle représentative de l’architecture générale du site ?"
-        ],
-        "2": [
-          "Les liens du [plan du site](#page-plan-du-site) sont-ils fonctionnels ?"
-        ],
-        "3": [
-          "Les liens du [plan du site](#page-plan-du-site) renvoient-ils bien vers les pages indiquées par l’intitulé ?"
-        ]
+        "1": ["La [page « plan du site »](#page-plan-du-site) est-elle représentative de l’architecture générale du site ?"],
+        "2": ["Les liens du [plan du site](#page-plan-du-site) sont-ils fonctionnels ?"],
+        "3": ["Les liens du [plan du site](#page-plan-du-site) renvoient-ils bien vers les pages indiquées par l’intitulé ?"]
       },
-      "wcag": [
-        "2.4.5 Multiple Ways (AA)"
-      ],
-      "techniques": [
-        "G63"
-      ],
+      "wcag": ["2.4.5 Multiple Ways (AA)"],
+      "techniques": ["G63"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3067,14 +2315,8 @@
           "Dans chaque [ensemble de pages](#ensemble-de-pages), la fonctionnalité vers la [page « plan du site »](#page-plan-du-site) se présente-t-elle toujours dans le même ordre relatif dans le code source ?"
         ]
       },
-      "wcag": [
-        "2.4.5 Multiple Ways (AA)",
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      "techniques": [
-        "G61",
-        "G63"
-      ],
+      "wcag": ["2.4.5 Multiple Ways (AA)", "3.2.3 Consistent Navigation (AA)"],
+      "techniques": ["G61", "G63"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3094,13 +2336,8 @@
           "Dans chaque [ensemble de pages](#ensemble-de-pages), la fonctionnalité vers le [moteur de recherche](#moteur-de-recherche-interne-a-un-site-web) se présente-t-elle toujours dans le même ordre relatif dans le code source ?"
         ]
       },
-      "wcag": [
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      "techniques": [
-        "G61",
-        "F66"
-      ],
+      "wcag": ["3.2.3 Consistent Navigation (AA)"],
+      "techniques": ["G61", "F66"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3119,17 +2356,8 @@
           "La zone peut être atteinte par le biais d’un [lien d’accès rapide](#liens-d-evitement-ou-d-acces-rapide) visible ou, à défaut, visible à la prise de focus."
         ]
       },
-      "wcag": [
-        "1.3.1 Info and Relationships (A)",
-        "2.4.1 Bypass Blocks (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      "techniques": [
-        "H69",
-        "G115",
-        "ARIA4",
-        "ARIA11"
-      ],
+      "wcag": ["1.3.1 Info and Relationships (A)", "2.4.1 Bypass Blocks (A)", "4.1.2 Name, Role, Value (A)"],
+      "techniques": ["H69", "G115", "ARIA4", "ARIA11"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3150,27 +2378,14 @@
           "Le lien est fonctionnel."
         ]
       },
-      "wcag": [
-        "2.4.1 Bypass Blocks (A)",
-        "2.4.3 Focus Order (A)",
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      "techniques": [
-        "G1",
-        "G59",
-        "G123",
-        "G124",
-        "SCR28",
-        "F66"
-      ],
+      "wcag": ["2.4.1 Bypass Blocks (A)", "2.4.3 Focus Order (A)", "3.2.3 Consistent Navigation (AA)"],
+      "techniques": ["G1", "G59", "G123", "G124", "SCR28", "F66"],
       "particularCases": [
         "Il existe une gestion de cas particuliers lorsque le site web est constitué d’une seule page.",
         "Dans ce cas de figure, l’obligation de la présence d’un lien d’accès rapide est liée au contexte de la page : présence ou absence de navigation ou de contenus additionnels, par exemple. Le critère peut être considéré comme non applicable lorsqu’il est avéré qu’un lien d’accès rapide est inutile."
       ],
       "automatability": "static",
-      "ruleIds": [
-        "skip-link-target-missing"
-      ]
+      "ruleIds": ["skip-link-target-missing"]
     },
     {
       "id": "12.8",
@@ -3178,30 +2393,15 @@
       "title": "Dans chaque page web, l’[ordre de tabulation](#ordre-de-tabulation) est-il [cohérent](#comprehensible-ordre-de-lecture) ?",
       "titlePlain": "Dans chaque page web, l’ordre de tabulation est-il cohérent ?",
       "tests": {
-        "1": [
-          "Dans chaque page web, l’[ordre de tabulation](#ordre-de-tabulation) dans le contenu est-il [cohérent](#comprehensible-ordre-de-lecture) ?"
-        ],
+        "1": ["Dans chaque page web, l’[ordre de tabulation](#ordre-de-tabulation) dans le contenu est-il [cohérent](#comprehensible-ordre-de-lecture) ?"],
         "2": [
           "Pour chaque [script](#script) qui met à jour ou insère un contenu, l’[ordre de tabulation](#ordre-de-tabulation) reste-t-il [cohérent](#comprehensible-ordre-de-lecture) ?"
         ]
       },
-      "wcag": [
-        "2.4.3 Focus Order (A)"
-      ],
-      "techniques": [
-        "G59",
-        "H4",
-        "F44",
-        "F85",
-        "SCR26",
-        "SCR27",
-        "SCR37",
-        "C27"
-      ],
+      "wcag": ["2.4.3 Focus Order (A)"],
+      "techniques": ["G59", "H4", "F44", "F85", "SCR26", "SCR27", "SCR37", "C27"],
       "automatability": "static",
-      "ruleIds": [
-        "positive-tabindex"
-      ]
+      "ruleIds": ["positive-tabindex"]
     },
     {
       "id": "12.9",
@@ -3215,15 +2415,8 @@
           "L’utilisateur est informé d’un mécanisme fonctionnel permettant d’atteindre au clavier l’élément suivant ou précédent pouvant recevoir le focus."
         ]
       },
-      "wcag": [
-        "2.1.1 Keyboard (A)",
-        "2.1.2 No Keyboard Trap (A)"
-      ],
-      "techniques": [
-        "G21",
-        "H91",
-        "F10"
-      ],
+      "wcag": ["2.1.1 Keyboard (A)", "2.1.2 No Keyboard Trap (A)"],
+      "techniques": ["G21", "H91", "F10"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3240,13 +2433,8 @@
           "Dans le cas d’un [composant d’interface](#composant-d-interface) utilisateur, le [raccourci clavier](#raccourci-clavier) qui lui est associé ne peut être activé que si le focus clavier est sur ce composant."
         ]
       },
-      "wcag": [
-        "2.1.4 Character Key Shortcuts (A)"
-      ],
-      "techniques": [
-        "F99",
-        "G217"
-      ],
+      "wcag": ["2.1.4 Character Key Shortcuts (A)"],
+      "techniques": ["F99", "G217"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3260,9 +2448,7 @@
           "Dans chaque page web, les contenus additionnels apparaissant au survol, à la prise de focus ou à l’activation d’un [composant d’interface](#composant-d-interface) sont-ils si nécessaire atteignables au clavier ?"
         ]
       },
-      "wcag": [
-        "2.1.1 Keyboard (A)"
-      ],
+      "wcag": ["2.1.1 Keyboard (A)"],
       "techniques": [],
       "technicalNote": [
         "Ce critère adresse les situations où un contenu additionnel contient des [composants d’interface](#composant-d-interface) avec lesquels il doit être possible d’interagir au clavier. Par exemple, une infobulle personnalisée qui propose un lien dans son contenu."
@@ -3283,9 +2469,7 @@
           "L’utilisateur est averti de l’imminence du rafraîchissement et dispose de vingt secondes, au moins, pour augmenter la limite de temps avant le prochain rafraîchissement ;",
           "La limite de temps entre deux rafraîchissements est de vingt heures, au moins."
         ],
-        "2": [
-          "Pour chaque page web, chaque procédé de [redirection](#redirection) effectué via une balise `<meta>` est-il immédiat (hors cas particuliers) ?"
-        ],
+        "2": ["Pour chaque page web, chaque procédé de [redirection](#redirection) effectué via une balise `<meta>` est-il immédiat (hors cas particuliers) ?"],
         "3": [
           "Pour chaque page web, chaque procédé de [redirection](#redirection) effectué via un [script](#script) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
           "L’utilisateur peut arrêter ou relancer la redirection ;",
@@ -3300,28 +2484,8 @@
           "La limite de temps avant la fin de la session est de vingt heures au moins."
         ]
       },
-      "wcag": [
-        "2.2.1 Timing Adjustable (A)",
-        "2.2.2 Pause, Stop, Hide (A)"
-      ],
-      "techniques": [
-        "F40",
-        "F41",
-        "F58",
-        "F61",
-        "G75",
-        "G76",
-        "G110",
-        "G133",
-        "G180",
-        "G186",
-        "G198",
-        "H76",
-        "SCR1",
-        "SCR16",
-        "SCR36",
-        "SVR1"
-      ],
+      "wcag": ["2.2.1 Timing Adjustable (A)", "2.2.2 Pause, Stop, Hide (A)"],
+      "techniques": ["F40", "F41", "F58", "F61", "G75", "G76", "G110", "G133", "G180", "G186", "G198", "H76", "SCR1", "SCR16", "SCR36", "SVR1"],
       "particularCases": [
         "Il existe une gestion de cas particuliers lorsque la limite de temps est essentielle, notamment lorsqu’elle ne pourrait pas être supprimée sans changer fondamentalement le contenu ou les fonctionnalités liées au contenu.",
         "Dans ces situations, le critère est non applicable. Par exemple, le rafraîchissement d’un flux RSS dans une page n’est pas une limite de temps essentielle ; le critère est applicable. En revanche, une redirection automatique qui amène vers la nouvelle version d’une page à partir d’une URL obsolète est essentielle ; le critère est non applicable."
@@ -3339,13 +2503,8 @@
           "Dans chaque page web, l’ouverture d’une nouvelle fenêtre ne doit pas être déclenchée sans action de l’utilisateur. Cette règle est-elle respectée ?"
         ]
       },
-      "wcag": [
-        "3.2.1 On focus (A)"
-      ],
-      "techniques": [
-        "F55",
-        "G107"
-      ],
+      "wcag": ["3.2.1 On focus (A)"],
+      "techniques": ["F55", "G107"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3371,16 +2530,8 @@
         "3.1.1 Language of Page (A)",
         "4.1.2 Name, Role, Value (A)"
       ],
-      "techniques": [
-        "F15",
-        "G10",
-        "G135"
-      ],
-      "particularCases": [
-        "Il existe une gestion de cas particuliers :",
-        "[object Object]",
-        "Dans cette situation, le critère est non applicable."
-      ],
+      "techniques": ["F15", "G10", "G135"],
+      "particularCases": ["Il existe une gestion de cas particuliers :", "[object Object]", "Dans cette situation, le critère est non applicable."],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3405,11 +2556,7 @@
         "3.1.1 Language of Page (A)",
         "4.1.2 Name, Role, Value (A)"
       ],
-      "techniques": [
-        "F15",
-        "G10",
-        "G135"
-      ],
+      "techniques": ["F15", "G10", "G135"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3425,15 +2572,8 @@
           "Une définition est donnée par le contexte adjacent."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "F71",
-        "F70",
-        "G135",
-        "H86"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["F71", "F70", "G135", "H86"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3449,14 +2589,8 @@
           "La définition donnée par le contexte adjacent est pertinente."
         ]
       },
-      "wcag": [
-        "1.1.1 Non-text Content (A)"
-      ],
-      "techniques": [
-        "F71",
-        "F72",
-        "H86"
-      ],
+      "wcag": ["1.1.1 Non-text Content (A)"],
+      "techniques": ["F71", "F72", "H86"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3482,14 +2616,8 @@
           "La surface totale cumulée des effets est inférieure ou égale à 21824 pixels."
         ]
       },
-      "wcag": [
-        "2.3.1 Three Flashes or Below Threshold (A)"
-      ],
-      "techniques": [
-        "G15",
-        "G19",
-        "G176"
-      ],
+      "wcag": ["2.3.1 Three Flashes or Below Threshold (A)"],
+      "techniques": ["G15", "G19", "G176"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3514,32 +2642,10 @@
           "L’utilisateur peut afficher la totalité de l’information sans le clignotement."
         ]
       },
-      "wcag": [
-        "2.2.1 Timing Adjustable (A)",
-        "2.2.2 Pause, Stop, Hide (A)"
-      ],
-      "techniques": [
-        "F4",
-        "F7",
-        "F16",
-        "F47",
-        "F50",
-        "G4",
-        "G11",
-        "G152",
-        "G186",
-        "G187",
-        "G191",
-        "SCR22",
-        "SCR33",
-        "SCR36",
-        "SM11",
-        "SM12"
-      ],
+      "wcag": ["2.2.1 Timing Adjustable (A)", "2.2.2 Pause, Stop, Hide (A)"],
+      "techniques": ["F4", "F7", "F16", "F47", "F50", "G4", "G11", "G152", "G186", "G187", "G191", "SCR22", "SCR33", "SCR36", "SM11", "SM12"],
       "automatability": "static",
-      "ruleIds": [
-        "autoplay-media"
-      ]
+      "ruleIds": ["autoplay-media"]
     },
     {
       "id": "13.9",
@@ -3553,9 +2659,7 @@
           "Le contenu proposé reste le même quel que soit le mode d’orientation de l’écran utilisé même si sa présentation et le moyen d’y accéder peut différer."
         ]
       },
-      "wcag": [
-        "1.3.4 Orientation (AA)"
-      ],
+      "wcag": ["1.3.4 Orientation (AA)"],
       "techniques": [],
       "particularCases": [
         "Il existe des interfaces pour lesquelles l’orientation du périphérique est essentielle à leur utilisation.",
@@ -3578,17 +2682,9 @@
           "Dans chaque page web, chaque fonctionnalité utilisable ou disponible suite à un geste basé sur le suivi d’une trajectoire sur l’écran est-elle également utilisable ou disponible suite à un contact en un point unique de l’écran (hors cas particuliers)."
         ]
       },
-      "wcag": [
-        "2.5.1 Pointer Gestures (A)"
-      ],
-      "techniques": [
-        "G215",
-        "G216"
-      ],
-      "particularCases": [
-        "Il existe une gestion de cas particuliers dans deux types de situation :",
-        "[object Object]"
-      ],
+      "wcag": ["2.5.1 Pointer Gestures (A)"],
+      "techniques": ["G215", "G216"],
+      "particularCases": ["Il existe une gestion de cas particuliers dans deux types de situation :", "[object Object]"],
       "automatability": "judgment",
       "ruleIds": []
     },
@@ -3605,9 +2701,7 @@
           "Un mécanisme est disponible pour abandonner (avant achèvement de l’action) ou annuler (après achèvement) l’exécution de l’action."
         ]
       },
-      "wcag": [
-        "2.5.2 Pointer Cancellation (A)"
-      ],
+      "wcag": ["2.5.2 Pointer Cancellation (A)"],
       "techniques": [],
       "technicalNote": [
         "Deux exemples de mécanisme mis en place pour annuler ou abandonner une action déclenchée au moyen d’un dispositif de pointage sur un point unique de l’écran :",
@@ -3635,14 +2729,9 @@
           "L’utilisateur a-t-il la possibilité de désactiver la détection du mouvement pour éviter un déclenchement accidentel de la fonctionnalité (hors cas particuliers) ?"
         ]
       },
-      "wcag": [
-        "2.5.4 Motion Actuation (A)"
-      ],
+      "wcag": ["2.5.4 Motion Actuation (A)"],
       "techniques": [],
-      "particularCases": [
-        "Il existe une gestion de cas particulier lorsque :",
-        "[object Object]"
-      ],
+      "particularCases": ["Il existe une gestion de cas particulier lorsque :", "[object Object]"],
       "automatability": "judgment",
       "ruleIds": []
     }

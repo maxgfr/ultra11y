@@ -35,7 +35,7 @@ export function gitChangedFiles(ref?: string): string[] | null {
   const top = git(["rev-parse", "--show-toplevel"]);
   if (top === null) return null;
   const repoRoot = top.trim();
-  const base = ref && ref.trim() ? ref.trim() : "HEAD";
+  const base = ref?.trim() ? ref.trim() : "HEAD";
   const out = new Set<string>();
   const add = (s: string | null): void => {
     if (!s) return;

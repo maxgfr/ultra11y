@@ -49,7 +49,7 @@ const decorativeAltMisuse: Rule = {
           message: `Image décorative (alt="") mais nommée par aria-label/title — incohérence décoratif/informatif.`,
           remediation: `Si l'image est décorative, retirez aria-label/title ; sinon donnez un alt descriptif.`,
         });
-      } else if (["presentation", "none"].includes(role) && alt && alt.trim()) {
+      } else if (["presentation", "none"].includes(role) && alt?.trim()) {
         out.push({
           criteriaId: "1.2",
           el,

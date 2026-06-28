@@ -33,14 +33,14 @@ export function isFullDocument(doc: Doc): boolean {
 
 /** A short, human CSS-ish selector to locate the element in source. */
 export function selectorOf(el: El): string {
-  const id = el.attribs["id"];
+  const id = el.attribs.id;
   if (id) return `${el.tag}#${id}`;
-  const type = el.attribs["type"];
+  const type = el.attribs.type;
   if (type && (el.tag === "input" || el.tag === "button")) return `${el.tag}[type=${type}]`;
-  const cls = el.attribs["class"];
+  const cls = el.attribs.class;
   if (cls) return `${el.tag}.${cls.trim().split(/\s+/)[0]}`;
-  if (el.tag === "a" && el.attribs["href"]) {
-    const h = el.attribs["href"]!;
+  if (el.tag === "a" && el.attribs.href) {
+    const h = el.attribs.href!;
     return `a[href=${h.length > 30 ? h.slice(0, 30) + "…" : h}]`;
   }
   return el.tag;

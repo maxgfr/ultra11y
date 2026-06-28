@@ -113,7 +113,30 @@ function isCommand(s: string | undefined): s is Command {
   return !!s && (COMMANDS as readonly string[]).includes(s);
 }
 
-const VALUE_FLAGS = new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max", "since", "max-files", "dedup", "only", "standard", "baseline", "fail-on"]);
+const VALUE_FLAGS = new Set([
+  "out",
+  "in",
+  "include",
+  "exclude",
+  "ext",
+  "report",
+  "theme",
+  "apply",
+  "max-verify",
+  "lang",
+  "merge",
+  "sitemap",
+  "crawl",
+  "depth",
+  "max",
+  "since",
+  "max-files",
+  "dedup",
+  "only",
+  "standard",
+  "baseline",
+  "fail-on",
+]);
 // `init` treats --baseline as a boolean selector ("write the baseline"), not a
 // path, so it must NOT consume the following token. audit/fix keep it as a value
 // flag (`--baseline <file>`). Without this split, `init --baseline --hook` swallows
@@ -151,7 +174,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
 }
 
 function langOf(flags: Record<string, string | boolean>): Lang {
-  return flags["lang"] === "en" ? "en" : "fr";
+  return flags.lang === "en" ? "en" : "fr";
 }
 
 function asList(v: string | boolean | undefined): string[] | undefined {
@@ -165,23 +188,23 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     return 2;
   }
   const stdin = inputs.includes("-") ? await readStdin() : undefined;
-  const since = typeof p.flags["since"] === "string" ? (p.flags["since"] as string) : undefined;
-  const dedupFlag = p.flags["dedup"];
+  const since = typeof p.flags.since === "string" ? (p.flags.since as string) : undefined;
+  const dedupFlag = p.flags.dedup;
   const result = runAudit({
     inputs,
     stdin,
-    forceJsx: p.flags["jsx"] === true,
-    include: asList(p.flags["include"]),
-    exclude: asList(p.flags["exclude"]),
-    ext: asList(p.flags["ext"]),
-    changed: p.flags["changed"] === true || since !== undefined,
+    forceJsx: p.flags.jsx === true,
+    include: asList(p.flags.include),
+    exclude: asList(p.flags.exclude),
+    ext: asList(p.flags.ext),
+    changed: p.flags.changed === true || since !== undefined,
     since,
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : undefined,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : undefined,
     onWarn: (m) => console.error(m),
   });
 
-  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   try {
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
@@ -191,7 +214,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
 
   // Regression-gate mode (used by the init hook / CI): diff against a committed
   // baseline and exit non-zero only on NEW non-conformities at/above --fail-on.
-  const baselineFlag = p.flags["baseline"];
+  const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
     if (existsSync(baselineFlag)) {
@@ -202,7 +225,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
       }
     }
     const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
-    if (p.flags["json"]) console.log(JSON.stringify(diff, null, 2));
+    if (p.flags.json) console.log(JSON.stringify(diff, null, 2));
     else console.log(baselineSummary(diff, langOf(p.flags)));
     return diff.ok ? 0 : 1;
   }
@@ -213,15 +236,16 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   if (p.flags["fail-on"] !== undefined) {
     const failOn = parseFailOn(p.flags["fail-on"]);
     const failing = findingsAtOrAbove(result.findings, failOn);
-    if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+    if (p.flags.json) console.log(JSON.stringify(result, null, 2));
     else {
       console.log(auditSummary(result, langOf(p.flags)));
-      if (failing.length) console.error(langOf(p.flags) === "fr" ? `✗ ${failing.length} non-conformité(s) ≥ ${failOn}.` : `✗ ${failing.length} non-conformity(ies) ≥ ${failOn}.`);
+      if (failing.length)
+        console.error(langOf(p.flags) === "fr" ? `✗ ${failing.length} non-conformité(s) ≥ ${failOn}.` : `✗ ${failing.length} non-conformity(ies) ≥ ${failOn}.`);
     }
     return failing.length ? 1 : 0;
   }
 
-  if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+  if (p.flags.json) console.log(JSON.stringify(result, null, 2));
   else console.log(auditSummary(result, langOf(p.flags)));
   return 0;
 }
@@ -236,7 +260,7 @@ function cmdInit(p: ParsedArgs): number {
     /* keep as-is */
   }
   const failOn = parseFailOn(p.flags["fail-on"]);
-  const want = { hook: p.flags["hook"] === true, ci: p.flags["ci"] === true, baseline: p.flags["baseline"] === true };
+  const want = { hook: p.flags.hook === true, ci: p.flags.ci === true, baseline: p.flags.baseline === true };
   if (!want.hook && !want.ci && !want.baseline) {
     want.hook = true;
     want.baseline = true; // sensible default: local gate + its baseline
@@ -258,19 +282,19 @@ function cmdInit(p: ParsedArgs): number {
 }
 
 function cmdCriteria(p: ParsedArgs): number {
-  const themeFlag = p.flags["theme"];
+  const themeFlag = p.flags.theme;
   return runCriteria({
     id: p.positionals[0],
     theme: typeof themeFlag === "string" && themeFlag ? Number(themeFlag) : undefined,
-    list: p.flags["list"] === true,
-    json: p.flags["json"] === true,
+    list: p.flags.list === true,
+    json: p.flags.json === true,
     lang: langOf(p.flags),
-    standard: parseStandard(p.flags["standard"]),
+    standard: parseStandard(p.flags.standard),
   });
 }
 
 async function cmdReport(p: ParsedArgs): Promise<number> {
-  const inFlag = p.flags["in"];
+  const inFlag = p.flags.in;
   if (typeof inFlag !== "string" || !inFlag) {
     console.error("ultra11y report: --in <audit.json> is required ('-' for stdin).");
     return 2;
@@ -287,22 +311,22 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
     console.error("ultra11y report: input is not an ultra11y AuditResult.");
     return 2;
   }
-  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
-  const path = writeReport(result, { out, lang: langOf(p.flags), standard: parseStandard(p.flags["standard"]) });
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
+  const path = writeReport(result, { out, lang: langOf(p.flags), standard: parseStandard(p.flags.standard) });
   console.log(path);
   return 0;
 }
 
 function cmdCheck(p: ParsedArgs): number {
-  const rep = p.flags["report"];
+  const rep = p.flags.report;
   if (typeof rep !== "string" || !rep) {
     console.error("ultra11y check: --report <md> is required.");
     return 2;
   }
   const res = checkReport(readText(rep));
-  if (p.flags["json"]) {
+  if (p.flags.json) {
     console.log(JSON.stringify(res, null, 2));
-  } else if (!p.flags["quiet"]) {
+  } else if (!p.flags.quiet) {
     if (res.ok) console.log("✓ Rapport valide : sections, critères cités et justifications NA cohérents.");
     else for (const i of res.issues) console.error(`✗ ${i}`);
   }
@@ -310,7 +334,7 @@ function cmdCheck(p: ParsedArgs): number {
 }
 
 function cmdVerify(p: ParsedArgs): number {
-  const apply = p.flags["apply"];
+  const apply = p.flags.apply;
   if (typeof apply === "string" && apply) {
     // Read and parse separately so a missing file is not mislabeled as bad JSON.
     let raw: string;
@@ -332,13 +356,16 @@ function cmdVerify(p: ParsedArgs): number {
       return 2;
     }
     const r = applyVerdicts(items);
-    if (p.flags["json"]) console.log(JSON.stringify(r, null, 2));
+    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
     else if (r.ok) console.log(`✓ ${r.total} non-conformités vérifiées, toutes étayées.`);
-    else console.error(`✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`);
+    else
+      console.error(
+        `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`,
+      );
     return r.ok ? 0 : 1;
   }
 
-  const rep = p.flags["report"];
+  const rep = p.flags.report;
   if (typeof rep !== "string" || !rep) {
     console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
     return 2;
@@ -354,8 +381,8 @@ function cmdVerify(p: ParsedArgs): number {
     max = n;
   }
   const items = buildWorklist(readText(rep), max);
-  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : ".";
-  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags["semantic"] === true);
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
+  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true);
   console.log(`${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}`);
   return 0;
 }
@@ -363,9 +390,9 @@ function cmdVerify(p: ParsedArgs): number {
 async function cmdFix(p: ParsedArgs): Promise<number> {
   const inputs = p.positionals.length ? p.positionals : ["."];
   const stdin = inputs.includes("-") ? await readStdin() : undefined;
-  const since = typeof p.flags["since"] === "string" ? (p.flags["since"] as string) : undefined;
-  const write = p.flags["write"] === true;
-  const onlyFlag = p.flags["only"];
+  const since = typeof p.flags.since === "string" ? (p.flags.since as string) : undefined;
+  const write = p.flags.write === true;
+  const onlyFlag = p.flags.only;
   if (onlyFlag === "" || (typeof onlyFlag === "string" && !onlyFlag.trim())) {
     console.error("ultra11y fix: --only requires one or more rule ids (comma-separated).");
     return 2;
@@ -373,34 +400,40 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
   const result = runFix({
     inputs,
     stdin,
-    forceJsx: p.flags["jsx"] === true,
-    include: asList(p.flags["include"]),
-    exclude: asList(p.flags["exclude"]),
-    ext: asList(p.flags["ext"]),
-    changed: p.flags["changed"] === true || since !== undefined,
+    forceJsx: p.flags.jsx === true,
+    include: asList(p.flags.include),
+    exclude: asList(p.flags.exclude),
+    ext: asList(p.flags.ext),
+    changed: p.flags.changed === true || since !== undefined,
     since,
-    only: typeof onlyFlag === "string" ? onlyFlag.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+    only:
+      typeof onlyFlag === "string"
+        ? onlyFlag
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
     write,
     onWarn: (m) => console.error(m),
   });
-  if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+  if (p.flags.json) console.log(JSON.stringify(result, null, 2));
   else console.log(fixSummary(result, langOf(p.flags), write));
   return 0;
 }
 
 async function cmdScan(p: ParsedArgs): Promise<number> {
-  if (p.flags["clean"]) {
+  if (p.flags.clean) {
     const r = cleanDynamic();
     console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprimée" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprimé(s).`);
     return 0;
   }
-  const sitemap = typeof p.flags["sitemap"] === "string" ? (p.flags["sitemap"] as string) : undefined;
-  const crawl = typeof p.flags["crawl"] === "string" ? (p.flags["crawl"] as string) : undefined;
+  const sitemap = typeof p.flags.sitemap === "string" ? (p.flags.sitemap as string) : undefined;
+  const crawl = typeof p.flags.crawl === "string" ? (p.flags.crawl as string) : undefined;
   let dynamic: DynamicResult;
   try {
     if (sitemap || crawl) {
-      const depth = typeof p.flags["depth"] === "string" ? Number(p.flags["depth"]) : undefined;
-      const max = typeof p.flags["max"] === "string" ? Number(p.flags["max"]) : undefined;
+      const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : undefined;
+      const max = typeof p.flags.max === "string" ? Number(p.flags.max) : undefined;
       dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
       const target = p.positionals.find((a) => a !== "-");
@@ -414,18 +447,31 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
   }
-  const out = typeof p.flags["out"] === "string" ? (p.flags["out"] as string) : "audits";
-  const mergeIn = p.flags["merge"];
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
+  const mergeIn = p.flags.merge;
   if (typeof mergeIn === "string" && mergeIn) {
-    const audit = JSON.parse(readText(mergeIn)) as AuditResult;
+    let audit: AuditResult;
+    try {
+      audit = JSON.parse(readText(mergeIn)) as AuditResult;
+    } catch {
+      console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
+      return 2;
+    }
+    if (audit.tool !== "ultra11y" || !Array.isArray(audit.criteria)) {
+      console.error("ultra11y scan: --merge input is not an ultra11y AuditResult.");
+      return 2;
+    }
     const merged = mergeDynamic(audit, dynamic);
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
-    if (p.flags["json"]) console.log(JSON.stringify(merged, null, 2));
-    else console.log(`Audit statique + dynamique fusionné → ${join(out, "audit-latest.json")} (${merged.conformancePct}% conformité, ${merged.findings.length} findings).`);
+    if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
+    else
+      console.log(
+        `Audit statique + dynamique fusionné → ${join(out, "audit-latest.json")} (${merged.conformancePct}% conformité, ${merged.findings.length} findings).`,
+      );
     return 0;
   }
-  if (p.flags["json"]) console.log(JSON.stringify(dynamic, null, 2));
+  if (p.flags.json) console.log(JSON.stringify(dynamic, null, 2));
   else {
     console.log(`Audit dynamique (${dynamic.engine}) de ${dynamic.target} — ${dynamic.findings.length} non-conformité(s) :`);
     for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} — ${f.message}`);
@@ -453,7 +499,7 @@ export async function main(argv: string[]): Promise<number> {
   // `<cmd> --help` / `<cmd> -h` shows help with NO side effects. Without this every
   // subcommand ignored the flag and ran — and `init --help` would write a hook +
   // baseline into the cwd repo.
-  if (p.flags["help"] === true || p.flags["h"] === true) {
+  if (p.flags.help === true || p.flags.h === true) {
     console.log(HELP);
     return 0;
   }

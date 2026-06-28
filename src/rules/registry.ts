@@ -50,6 +50,6 @@ export function runRules(doc: Doc, only?: Set<string>): Finding[] {
     if (rule.scope === "page" && !fullDoc) continue;
     for (const rf of rule.run(doc)) out.push(toFinding(doc, rule.id, rule.severity, rf));
   }
-  out.sort((a, b) => a.line - b.line || a.col - b.col || (SEVERITY_ORDER[a.severity]! - SEVERITY_ORDER[b.severity]!));
+  out.sort((a, b) => a.line - b.line || a.col - b.col || SEVERITY_ORDER[a.severity]! - SEVERITY_ORDER[b.severity]!);
   return out;
 }

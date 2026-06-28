@@ -2,15 +2,7 @@
 // summary (the --json path prints the AuditResult verbatim instead).
 import type { AuditResult, Lang, Severity } from "./types.js";
 
-type Key =
-  | "summaryTitle"
-  | "files"
-  | "autoConformance"
-  | "theme"
-  | "findingsTitle"
-  | "noFindings"
-  | "residualTitle"
-  | "manualNote";
+type Key = "summaryTitle" | "files" | "autoConformance" | "theme" | "findingsTitle" | "noFindings" | "residualTitle" | "manualNote";
 
 const STR: Record<Lang, Record<Key, string>> = {
   fr: {

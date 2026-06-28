@@ -20,10 +20,12 @@ export interface Codemod {
   build?: (source: string, start: number) => Edit[];
 }
 
-const one = (fn: (s: string, start: number) => Edit | null) => (s: string, start: number): Edit[] => {
-  const e = fn(s, start);
-  return e ? [e] : [];
-};
+const one =
+  (fn: (s: string, start: number) => Edit | null) =>
+  (s: string, start: number): Edit[] => {
+    const e = fn(s, start);
+    return e ? [e] : [];
+  };
 
 // Re-enable zoom: drop user-scalable=no/0 and any maximum-scale that blocks 200%.
 function viewportFix(source: string, start: number): Edit[] {

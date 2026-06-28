@@ -15,10 +15,7 @@ describe("detectKind", () => {
 
 describe("parseSource (JSX best-effort)", () => {
   it("flags the doc lossy and maps className→class, htmlFor→for, tabIndex→tabindex", () => {
-    const doc = parseSource(
-      `<div className="box" tabIndex={0}><label htmlFor="n">Nom</label><input id="n" /></div>`,
-      "C.tsx",
-    );
+    const doc = parseSource(`<div className="box" tabIndex={0}><label htmlFor="n">Nom</label><input id="n" /></div>`, "C.tsx");
     expect(doc.lossy).toBe(true);
     const div = elementsByTag(doc, "div")[0]!;
     expect(attr(div, "class")).toBe("box");

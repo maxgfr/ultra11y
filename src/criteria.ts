@@ -2,7 +2,7 @@
 // the 13-theme list. Also generates the references/criteria.md doc shipped with
 // the skill (never hand-edited).
 import type { Criterion, Lang } from "./types.js";
-import { allCriteria, allThemes, getCriterion, listTheme } from "./rgaa.js";
+import { allThemes, getCriterion, listTheme } from "./rgaa.js";
 import { type Standard, wcagIndex, wcagListText, wcagLookupText } from "./standard.js";
 
 const AUTO_LABEL: Record<string, { fr: string; en: string }> = {
@@ -16,7 +16,9 @@ export function formatCriterion(c: Criterion, lang: Lang = "fr"): string {
   out.push(`${c.id} — ${c.titlePlain}`);
   const auto = AUTO_LABEL[c.automatability]![lang];
   const theme = allThemes().find((t) => t.number === c.theme)?.name ?? "";
-  out.push(`${lang === "fr" ? "Thématique" : "Theme"} ${c.theme} (${theme}) · ${lang === "fr" ? "automatisabilité" : "automatability"} : ${auto}${c.ruleIds.length ? ` · ${lang === "fr" ? "règles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`);
+  out.push(
+    `${lang === "fr" ? "Thématique" : "Theme"} ${c.theme} (${theme}) · ${lang === "fr" ? "automatisabilité" : "automatability"} : ${auto}${c.ruleIds.length ? ` · ${lang === "fr" ? "règles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`,
+  );
   if (c.wcag.length) out.push(`WCAG : ${c.wcag.join(" ; ")}`);
   if (c.techniques.length) out.push(`${lang === "fr" ? "Techniques" : "Techniques"} : ${c.techniques.join(", ")}`);
   const testKeys = Object.keys(c.tests);
@@ -35,7 +37,9 @@ function themeList(lang: Lang): string {
   for (const t of allThemes()) {
     const crits = listTheme(t.number);
     const stat = crits.filter((c) => c.automatability === "static").length;
-    out.push(`${String(t.number).padStart(2)}. ${t.name.padEnd(32).slice(0, 32)} ${String(t.count).padStart(3)} ${lang === "fr" ? "critères" : "criteria"} (${stat} ${lang === "fr" ? "auto" : "auto"})`);
+    out.push(
+      `${String(t.number).padStart(2)}. ${t.name.padEnd(32).slice(0, 32)} ${String(t.count).padStart(3)} ${lang === "fr" ? "critères" : "criteria"} (${stat} ${lang === "fr" ? "auto" : "auto"})`,
+    );
   }
   return out.join("\n");
 }
@@ -76,7 +80,15 @@ export function runCriteria(opts: CriteriaOpts): number {
         console.error(`ultra11y criteria: unknown WCAG success criterion "${opts.id}".`);
         return 2;
       }
-      console.log(opts.json ? JSON.stringify(wcagIndex().find((e) => e.sc === opts.id), null, 2) : txt);
+      console.log(
+        opts.json
+          ? JSON.stringify(
+              wcagIndex().find((e) => e.sc === opts.id),
+              null,
+              2,
+            )
+          : txt,
+      );
       return 0;
     }
     console.log(opts.json ? JSON.stringify(wcagIndex(), null, 2) : wcagListText(opts.lang));

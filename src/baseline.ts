@@ -50,9 +50,17 @@ export function baselineSummary(diff: BaselineDiff, lang: "fr" | "en" = "fr"): s
   const out: string[] = [];
   const blocking = diff.newFindings.filter((f) => RANK[f.severity] <= RANK[diff.failOn]);
   if (diff.ok) {
-    out.push(lang === "fr" ? `✓ Aucune nouvelle non-conformité ≥ ${diff.failOn} (${diff.newFindings.length} nouvelle(s) au total, ${diff.fixedFindings.length} corrigée(s)).` : `✓ No new non-conformity ≥ ${diff.failOn} (${diff.newFindings.length} new total, ${diff.fixedFindings.length} fixed).`);
+    out.push(
+      lang === "fr"
+        ? `✓ Aucune nouvelle non-conformité ≥ ${diff.failOn} (${diff.newFindings.length} nouvelle(s) au total, ${diff.fixedFindings.length} corrigée(s)).`
+        : `✓ No new non-conformity ≥ ${diff.failOn} (${diff.newFindings.length} new total, ${diff.fixedFindings.length} fixed).`,
+    );
   } else {
-    out.push(lang === "fr" ? `✗ ${blocking.length} nouvelle(s) non-conformité(s) ≥ ${diff.failOn} introduite(s) :` : `✗ ${blocking.length} new non-conformity(ies) ≥ ${diff.failOn} introduced:`);
+    out.push(
+      lang === "fr"
+        ? `✗ ${blocking.length} nouvelle(s) non-conformité(s) ≥ ${diff.failOn} introduite(s) :`
+        : `✗ ${blocking.length} new non-conformity(ies) ≥ ${diff.failOn} introduced:`,
+    );
     for (const f of blocking) out.push(`  [${f.severity}] ${f.ruleId} (RGAA ${f.criteriaId}) — ${f.file}:${f.line} (${f.selectorHint})`);
   }
   return out.join("\n");

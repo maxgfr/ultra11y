@@ -11,7 +11,12 @@ const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const sampleOut = {
   url: "https://exemple.fr",
   violations: [
-    { id: "color-contrast", impact: "serious", help: "Elements must have sufficient color contrast", nodes: [{ target: ["p.lead"], html: "<p class='lead'>x</p>" }] },
+    {
+      id: "color-contrast",
+      impact: "serious",
+      help: "Elements must have sufficient color contrast",
+      nodes: [{ target: ["p.lead"], html: "<p class='lead'>x</p>" }],
+    },
     { id: "button-name", impact: "critical", help: "Buttons must have discernible text", nodes: [{ target: ["button"], html: "<button></button>" }] },
   ],
   reflow: { horizontalScroll: true },
@@ -78,7 +83,17 @@ describe("mergeDynamic", () => {
       target: "crawl:https://exemple.fr",
       date: "2026-06-17",
       findings: [
-        { criteriaId: "3.2", axeRule: "color-contrast", impact: "serious", severity: "majeur" as const, message: "m", selector: "p", snippet: "", engine: "axe" as const, page: "https://exemple.fr/contact" },
+        {
+          criteriaId: "3.2",
+          axeRule: "color-contrast",
+          impact: "serious",
+          severity: "majeur" as const,
+          message: "m",
+          selector: "p",
+          snippet: "",
+          engine: "axe" as const,
+          page: "https://exemple.fr/contact",
+        },
       ],
     };
     const merged = mergeDynamic(audit, dyn);

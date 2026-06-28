@@ -21,11 +21,7 @@ describe("extractLinks", () => {
   const base = "https://exemple.fr/blog/";
   it("resolves relative links to absolute, same-origin only", () => {
     const html = `<a href="article">A</a> <a href="/about">B</a> <a href="https://exemple.fr/c">C</a>`;
-    expect(extractLinks(html, base)).toEqual([
-      "https://exemple.fr/blog/article",
-      "https://exemple.fr/about",
-      "https://exemple.fr/c",
-    ]);
+    expect(extractLinks(html, base)).toEqual(["https://exemple.fr/blog/article", "https://exemple.fr/about", "https://exemple.fr/c"]);
   });
   it("drops cross-origin, mailto/tel, pure fragments, and strips hashes; de-duplicates", () => {
     const html = `

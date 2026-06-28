@@ -83,7 +83,7 @@ export function parseHtml(source: string, file: string, lossy = false): Doc {
         end: dh.endIndex ?? start,
       };
       elements.push(el);
-      const id = el.attribs["id"];
+      const id = el.attribs.id;
       if (id && !byId.has(id)) byId.set(id, el);
       for (const child of dh.children) {
         const c = convert(child, el);
@@ -173,7 +173,7 @@ export function getById(doc: Doc, id: string): El | undefined {
 export function allIds(doc: Doc): { id: string; el: El }[] {
   const out: { id: string; el: El }[] = [];
   for (const el of doc.elements) {
-    const id = el.attribs["id"];
+    const id = el.attribs.id;
     if (id) out.push({ id, el });
   }
   return out;

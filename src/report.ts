@@ -36,7 +36,8 @@ const L = {
     dedup: "Dédup",
     canonical: "fichier(s) canonique(s) audité(s)",
     duplicate: "doublon(s) identique(s) ignoré(s)",
-    truncated: (l: number, t: number, s: number) => `Périmètre tronqué : ${l}/${t} fichiers audités (priorité d'abord), ${s} ignoré(s). Élargir avec --max-files.`,
+    truncated: (l: number, t: number, s: number) =>
+      `Périmètre tronqué : ${l}/${t} fichiers audités (priorité d'abord), ${s} ignoré(s). Élargir avec --max-files.`,
   },
   en: {
     title: "Accessibility audit report — RGAA 4.1.2",
@@ -95,7 +96,10 @@ export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
   const tot = { c: 0, nc: 0, na: 0, manual: 0 };
   for (const th of r.themes) {
     out.push(`| ${th.number}. ${th.title} | ${th.c} | ${th.nc} | ${th.na} | ${th.manual} |`);
-    tot.c += th.c; tot.nc += th.nc; tot.na += th.na; tot.manual += th.manual;
+    tot.c += th.c;
+    tot.nc += th.nc;
+    tot.na += th.na;
+    tot.manual += th.manual;
   }
   out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
 
@@ -105,7 +109,10 @@ export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
     out.push(s.none, "");
   } else {
     const sorted = [...r.findings].sort(
-      (a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity) || a.criteriaId.localeCompare(b.criteriaId, undefined, { numeric: true }) || a.line - b.line,
+      (a, b) =>
+        SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity) ||
+        a.criteriaId.localeCompare(b.criteriaId, undefined, { numeric: true }) ||
+        a.line - b.line,
     );
     for (const sev of SEV_ORDER) {
       const group = sorted.filter((f) => f.severity === sev);
@@ -128,12 +135,7 @@ export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
 
   // 5. manual worklist
   out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
-  out.push(
-    r.residualRisks.length
-      ? r.residualRisks.map((rr) => `- ${critLabel(rr.criteriaId)} — _${rr.reason}_`).join("\n")
-      : s.nothing,
-    "",
-  );
+  out.push(r.residualRisks.length ? r.residualRisks.map((rr) => `- ${critLabel(rr.criteriaId)} — _${rr.reason}_`).join("\n") : s.nothing, "");
 
   return out.join("\n");
 }

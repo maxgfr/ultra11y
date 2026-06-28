@@ -8,7 +8,11 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    name: build-test (node 24)
+    strategy:
+      matrix:
+        # 20 is the dev-toolchain floor (vitest 4 needs ≥20.19); 24 is current.
+        # The published bundle's Node 18 floor is covered by runtime-node-floor.
+        node-version: [20, 24]
     steps:
       - uses: actions/checkout@v4
 
@@ -16,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
 
       - name: Install dependencies
@@ -25,11 +29,14 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
+      - name: Lint
+        run: pnpm run lint
+
       - name: Build is reproducible (committed bundles up to date)
         run: pnpm run check:build # tsup && copy-bundle && git diff --exit-code over both bundles
 
-      - name: Test
-        run: pnpm test
+      - name: Test (with coverage)
+        run: pnpm run test:coverage
 
       - name: Smoke-run the committed bundle (offline, fixture)
         run: pnpm run demo # audit -> report -> check -> criteria

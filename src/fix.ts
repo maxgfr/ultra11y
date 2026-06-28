@@ -150,7 +150,8 @@ export function fixSummary(r: FixResult, lang: Lang = "fr", write = false): stri
     const fixable = ff.items.filter((i) => i.fixability !== "proposal");
     if (!fixable.length && !ff.items.length) continue;
     out.push(`### ${ff.file}${ff.lossy ? " (JSX/TSX — " + (lang === "fr" ? "proposition seule" : "proposal-only") + ")" : ""}`);
-    for (const it of ff.items) out.push(`- [${FIX_LABEL[it.fixability][lang]}] ${it.ruleId} (RGAA ${it.criteriaId}) — \`${it.selectorHint}\` @ ${ff.file}:${it.line}`);
+    for (const it of ff.items)
+      out.push(`- [${FIX_LABEL[it.fixability][lang]}] ${it.ruleId} (RGAA ${it.criteriaId}) — \`${it.selectorHint}\` @ ${ff.file}:${it.line}`);
     if (ff.diff) out.push("", "```diff", ff.diff, "```");
     if (ff.regression) out.push(`> ⚠️ ${lang === "fr" ? "non écrit : régression détectée" : "not written: regression detected"}`);
     out.push("");

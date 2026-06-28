@@ -3,9 +3,7 @@ import { findOf } from "./helpers.js";
 
 describe("data-table-no-headers (5.6/5.7)", () => {
   it("conforming: th with scope", () => {
-    expect(
-      findOf(`<table><caption>T</caption><tr><th scope="col">A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers"),
-    ).toHaveLength(0);
+    expect(findOf(`<table><caption>T</caption><tr><th scope="col">A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers")).toHaveLength(0);
   });
   it("conforming: layout table marked presentation", () => {
     expect(findOf(`<table role="presentation"><tr><td>x</td></tr></table>`, "data-table-no-headers")).toHaveLength(0);

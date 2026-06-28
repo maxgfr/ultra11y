@@ -129,22 +129,10 @@ var rgaa_default = {
           "Un m\xE9canisme permet \xE0 l\u2019utilisateur de remplacer l\u2019\xE9l\xE9ment `<canvas>` par un [contenu alternatif](#contenu-alternatif)."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "H36",
-        "H37",
-        "H53",
-        "F65",
-        "H24"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["H36", "H37", "H53", "F65", "H24"],
       automatability: "static",
-      ruleIds: [
-        "img-alt-missing",
-        "canvas-fallback-missing",
-        "icon-only-control-unnamed"
-      ]
+      ruleIds: ["img-alt-missing", "canvas-fallback-missing", "icon-only-control-unnamed"]
     },
     {
       id: "1.2",
@@ -187,28 +175,15 @@ var rgaa_default = {
           "La balise `<embed>` et ses enfants sont d\xE9pourvus d\u2019[alternative textuelle](#alternative-textuelle-image)."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "H67",
-        "G196",
-        "C9",
-        "F39",
-        "F38",
-        "ARIA4",
-        "ARIA10"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["H67", "G196", "C9", "F39", "F38", "ARIA4", "ARIA10"],
       technicalNote: [
         "Lorsqu'une image est associ\xE9e \xE0 une [l\xE9gende](#legende-d-image), la note technique WCAG recommande de pr\xE9voir syst\xE9matiquement une [alternative textuelle](#alternative-textuelle-image) (cf. crit\xE8re 1.9). Dans ce cas le crit\xE8re 1.2 est non applicable.",
         "Dans le cas d'une image vectorielle (balise `<svg>`) de d\xE9coration qui serait affich\xE9e au travers d'un \xE9l\xE9ment `<use href=\"\u2026\">` enfant de l'\xE9l\xE9ment `<svg>`, le test 1.2.4 s'appliquera \xE9galement \xE0 l'\xE9l\xE9ment `<svg>` associ\xE9e par le biais de l'\xE9l\xE9ment `<use>`.",
         'Un attribut WAI-ARIA `role="presentation"` peut \xEAtre utilis\xE9 sur les images de d\xE9coration et les zones non cliquables de d\xE9coration. Le r\xF4le `"none"` introduit en ARIA 1.1 et synonyme du r\xF4le `"presentation"` peut \xEAtre aussi utilis\xE9. Il reste pr\xE9f\xE9rable cependant d\'utiliser le r\xF4le `"presentation"` en attendant un support satisfaisant du r\xF4le `"none"`.'
       ],
       automatability: "static",
-      ruleIds: [
-        "decorative-alt-misuse"
-      ]
+      ruleIds: ["decorative-alt-misuse"]
     },
     {
       id: "1.3",
@@ -271,20 +246,8 @@ var rgaa_default = {
           "Pour chaque image [porteuse d\u2019information](#image-porteuse-d-information) et ayant une [alternative textuelle](#alternative-textuelle-image), l\u2019[alternative textuelle](#alternative-textuelle-image) est-elle [courte et concise](#alternative-courte-et-concise) (hors cas particuliers)\xA0?"
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G94",
-        "G95",
-        "F30",
-        "F71",
-        "G196",
-        "ARIA6",
-        "ARIA9",
-        "ARIA10"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G94", "G95", "F30", "F71", "G196", "ARIA6", "ARIA9", "ARIA10"],
       particularCases: [
         "Il existe une gestion de cas particuliers lorsque l\u2019image est utilis\xE9e comme [CAPTCHA](#captcha) ou comme [image-test](#image-test). Dans cette situation, o\xF9 il n\u2019est pas possible de donner une alternative pertinente sans d\xE9truire l\u2019objet du CAPTCHA ou du test, le crit\xE8re est non applicable.",
         "Note\xA0: le cas des CAPTCHA et des images-test est trait\xE9 de mani\xE8re sp\xE9cifique par le crit\xE8re 1.4."
@@ -351,13 +314,8 @@ var rgaa_default = {
           "S\u2019il est pr\xE9sent le [contenu alternatif](#contenu-alternatif) est pertinent."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "G100",
-        "G143"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["G100", "G143"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -378,12 +336,8 @@ var rgaa_default = {
           "Il existe une autre solution d\u2019acc\xE8s \xE0 la fonctionnalit\xE9 s\xE9curis\xE9e par le [CAPTCHA](#captcha)."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "G144"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["G144"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -449,16 +403,8 @@ var rgaa_default = {
           "Il existe un [lien ou un bouton adjacent](#lien-ou-bouton-adjacent) permettant d\u2019acc\xE9der \xE0 la [description d\xE9taill\xE9e](#description-detaillee-image)."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "G92",
-        "G74",
-        "G73",
-        "H45",
-        "ARIA6"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["G92", "G74", "G73", "H45", "ARIA6"],
       technicalNote: [
         "Dans le cas du SVG, le manque de support de l\u2019\xE9l\xE9ment `<title>` et `<desc>` par les technologies d\u2019assistance cr\xE9e une difficult\xE9 dans le cas de l\u2019impl\xE9mentation de l\u2019[alternative textuelle](#alternative-textuelle-image) de l\u2019image et de sa [description d\xE9taill\xE9e](#description-detaillee-image). Dans ce cas, il est recommand\xE9 d\u2019utiliser l\u2019attribut WAI-ARIA `aria-label` pour impl\xE9menter \xE0 la fois l\u2019[alternative textuelle](#alternative-textuelle-image) courte et la r\xE9f\xE9rence \xE0 la [description d\xE9taill\xE9e](#description-detaillee-image) adjacente ou l\u2019attribut WAI-ARIA `aria-labelledby` pour associer les passages de texte faisant office d\u2019alternative courte et de [description d\xE9taill\xE9e](#description-detaillee-image).",
         "L\u2019utilisation de l\u2019attribut WAI-ARIA aria-describedby n\u2019est pas recommand\xE9e pour lier une image (`<img>`, `<object>`, `<embed>`, `<canvas>`) a\u0300 sa [description d\xE9taill\xE9e](#description-detaillee-image), par manque de support des technologies d\u2019assistance. N\xE9anmoins, lorsqu\u2019il est utilis\xE9, l\u2019attribut devra n\xE9cessairement faire r\xE9f\xE9rence \xE0 l\u2019`id` de la zone contenant la [description d\xE9taill\xE9e](#description-detaillee-image).",
@@ -519,13 +465,8 @@ var rgaa_default = {
           "Le passage de texte associ\xE9 via l\u2019attribut WAI-ARIA `aria-describedby` est pertinent."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "G92",
-        "F67"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["G92", "F67"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -554,18 +495,9 @@ var rgaa_default = {
           "Chaque [image texte](#image-texte) SVG (balise `<svg>`) [porteuse d\u2019information](#image-porteuse-d-information) et dont le texte n\u2019est pas compl\xE8tement structur\xE9 au moyen d\u2019\xE9l\xE9ments `<text>`, en l\u2019absence d\u2019un [m\xE9canisme de remplacement](#mecanisme-de-remplacement), doit si possible \xEAtre remplac\xE9e par du [texte styl\xE9](#texte-style). Cette r\xE8gle est-elle respect\xE9e (hors cas particuliers)\xA0?"
         ]
       },
-      wcag: [
-        "1.4.5 Images of Text (AA)"
-      ],
-      techniques: [
-        "G136",
-        "G140",
-        "C22",
-        "C30"
-      ],
-      technicalNote: [
-        "Le texte dans les images vectorielles \xE9tant du texte r\xE9el, il n\u2019est pas concern\xE9 par ce crit\xE8re."
-      ],
+      wcag: ["1.4.5 Images of Text (AA)"],
+      techniques: ["G136", "G140", "C22", "C30"],
+      technicalNote: ["Le texte dans les images vectorielles \xE9tant du texte r\xE9el, il n\u2019est pas concern\xE9 par ce crit\xE8re."],
       particularCases: [
         "Pour ce crit\xE8re, il existe une gestion de cas particulier lorsque le texte fait partie du logo, d\u2019une d\xE9nomination commerciale, d\u2019un [CAPTCHA](#captcha), d\u2019une [image-test](#image-test) ou d\u2019une image dont l\u2019exactitude graphique serait consid\xE9r\xE9e comme essentielle \xE0 la bonne transmission de l\u2019information v\xE9hicul\xE9e par l\u2019image. Dans ces situations, le crit\xE8re est non applicable pour ces \xE9l\xE9ments."
       ],
@@ -614,15 +546,8 @@ var rgaa_default = {
           "La [l\xE9gende](#legende-d-image) est contenue dans une balise `<figcaption>`."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G140",
-        "ARIA4",
-        "ARIA6"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G140", "ARIA4", "ARIA6"],
       technicalNote: [
         'L\u2019impl\xE9mentation d\u2019un attribut WAI-ARIA `role="group"` ou `role="figure"` sur l\u2019\xE9l\xE9ment parent `<figure>` est destin\xE9 \xE0 pallier le manque de support actuel des \xE9l\xE9ments `<figure>` par les technologies d\u2019assistance. L\u2019utilisation d\u2019un \xE9l\xE9ment `<figcaption>` pour associer une [l\xE9gende](#legende-d-image) \xE0 une image impose au minimum l\u2019utilisation d\u2019un attribut WAI-ARIA `aria-label` sur l\u2019\xE9l\xE9ment parent `<figure>` dont le contenu sera identique au contenu de l\u2019\xE9l\xE9ment `<figcaption>`. Pour s\u2019assurer d\u2019un support optimal, il peut \xE9galement \xEAtre fait une association explicite entre le contenu de l\u2019[alternative textuelle](#alternative-textuelle-image) de l\u2019image et le contenu de l\u2019\xE9l\xE9ment `<figcaption>`, par exemple\xA0:',
         '`<img src="image.png" alt="Photo\xA0: soleil couchant" /><figcaption>Photo\xA0: cr\xE9dit xxx</figcaption>`',
@@ -638,20 +563,12 @@ var rgaa_default = {
       title: "Chaque [cadre](#cadre) a-t-il un [titre de cadre](#titre-de-cadre)\xA0?",
       titlePlain: "Chaque cadre a-t-il un titre de cadre\xA0?",
       tests: {
-        "1": [
-          "Chaque cadre (balise `<iframe>` ou `<frame>`) a-t-il un attribut `title`\xA0?"
-        ]
+        "1": ["Chaque cadre (balise `<iframe>` ou `<frame>`) a-t-il un attribut `title`\xA0?"]
       },
-      wcag: [
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "H64"
-      ],
+      wcag: ["4.1.2 Name, Role, Value (A)"],
+      techniques: ["H64"],
       automatability: "static",
-      ruleIds: [
-        "iframe-title-missing"
-      ]
+      ruleIds: ["iframe-title-missing"]
     },
     {
       id: "2.2",
@@ -659,16 +576,10 @@ var rgaa_default = {
       title: "Pour chaque [cadre](#cadre) ayant un [titre de cadre](#titre-de-cadre), ce titre de cadre est-il pertinent\xA0?",
       titlePlain: "Pour chaque cadre ayant un titre de cadre, ce titre de cadre est-il pertinent\xA0?",
       tests: {
-        "1": [
-          "Pour chaque cadre (balise `<iframe>` ou `<frame>`) ayant un attribut `title`, le contenu de cet attribut est-il pertinent\xA0?"
-        ]
+        "1": ["Pour chaque cadre (balise `<iframe>` ou `<frame>`) ayant un attribut `title`, le contenu de cet attribut est-il pertinent\xA0?"]
       },
-      wcag: [
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "H64"
-      ],
+      wcag: ["4.1.2 Name, Role, Value (A)"],
+      techniques: ["H64"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -697,18 +608,8 @@ var rgaa_default = {
           "Pour chaque [m\xE9dia non temporel](#media-non-temporel) [v\xE9hiculant une information](#image-vehiculant-une-information-donnee-par-la-couleur), l\u2019[information](#information-donnee-par-la-couleur) ne doit pas \xEAtre donn\xE9e uniquement par la couleur. Cette r\xE8gle est-elle respect\xE9e\xA0?"
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "1.4.1 Use of color (A)"
-      ],
-      techniques: [
-        "G14",
-        "G182",
-        "G111",
-        "G117",
-        "G138",
-        "G205"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "1.4.1 Use of color (A)"],
+      techniques: ["G14", "G182", "G111", "G117", "G138", "G205"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -742,25 +643,11 @@ var rgaa_default = {
           "Dans le [m\xE9canisme qui permet d\u2019afficher un rapport de contraste](#mecanisme-qui-permet-d-afficher-un-rapport-de-contraste-conforme) conforme, le rapport de contraste entre le texte et la couleur d\u2019arri\xE8re-plan est-il suffisamment \xE9lev\xE9\xA0?"
         ]
       },
-      wcag: [
-        "1.4.3 Contrast (Minimum) (AA)"
-      ],
-      techniques: [
-        "G18",
-        "G136",
-        "G148",
-        "G174",
-        "G145",
-        "C29"
-      ],
-      particularCases: [
-        "Dans ces situations, les crit\xE8res sont non applicables pour ces \xE9l\xE9ments\xA0:",
-        "[object Object]"
-      ],
+      wcag: ["1.4.3 Contrast (Minimum) (AA)"],
+      techniques: ["G18", "G136", "G148", "G174", "G145", "C29"],
+      particularCases: ["Dans ces situations, les crit\xE8res sont non applicables pour ces \xE9l\xE9ments\xA0:", "[object Object]"],
       automatability: "needs-rendering",
-      ruleIds: [
-        "contrast-literal"
-      ]
+      ruleIds: ["contrast-literal"]
     },
     {
       id: "3.3",
@@ -787,22 +674,9 @@ var rgaa_default = {
           "Dans le [m\xE9canisme qui permet d\u2019afficher un rapport de contraste](#mecanisme-qui-permet-d-afficher-un-rapport-de-contraste-conforme) conforme, les couleurs du composant ou des \xE9l\xE9ments graphiques porteurs d\u2019informations qui le composent, sont-elles suffisamment contrast\xE9es\xA0?"
         ]
       },
-      wcag: [
-        "1.4.11 Non-text Contrast (AA)"
-      ],
-      techniques: [
-        "G18",
-        "G195",
-        "G207",
-        "G174",
-        "G145",
-        "G183",
-        "F78"
-      ],
-      particularCases: [
-        "Les cas suivants sont non applicables pour ce crit\xE8re\xA0:",
-        "[object Object]"
-      ],
+      wcag: ["1.4.11 Non-text Contrast (AA)"],
+      techniques: ["G18", "G195", "G207", "G174", "G145", "G183", "F78"],
+      particularCases: ["Les cas suivants sont non applicables pour ce crit\xE8re\xA0:", "[object Object]"],
       automatability: "needs-rendering",
       ruleIds: []
     },
@@ -834,23 +708,8 @@ var rgaa_default = {
           "Il existe une version alternative avec une [audiodescription](#audiodescription-synchronisee-media-temporel) synchronis\xE9e accessible via un [lien ou bouton adjacent](#lien-ou-bouton-adjacent)."
         ]
       },
-      wcag: [
-        "1.2.1 Audio-only and Video-only (Prerecorded) (A)",
-        "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"
-      ],
-      techniques: [
-        "G58",
-        "G69",
-        "G78",
-        "G158",
-        "G159",
-        "G173",
-        "G8",
-        "G166",
-        "H96",
-        "SM6",
-        "SM7"
-      ],
+      wcag: ["1.2.1 Audio-only and Video-only (Prerecorded) (A)", "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"],
+      techniques: ["G58", "G69", "G78", "G158", "G159", "G173", "G8", "G166", "H96", "SM6", "SM7"],
       particularCases: [
         "Il existe une gestion de cas particulier lorsque\xA0:",
         "[object Object]",
@@ -883,19 +742,9 @@ var rgaa_default = {
           "L\u2019[audiodescription](#audiodescription-synchronisee-media-temporel) synchronis\xE9e de la version alternative est pertinente."
         ]
       },
-      wcag: [
-        "1.2.1 Audio-only and Video-only (Prerecorded) (A)",
-        "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"
-      ],
-      techniques: [
-        "F30",
-        "F67",
-        "SM6",
-        "SM7"
-      ],
-      particularCases: [
-        "Voir cas particuliers crit\xE8re 4.1."
-      ],
+      wcag: ["1.2.1 Audio-only and Video-only (Prerecorded) (A)", "1.2.3 Audio Description or Media Alternative (Prerecorded) (A)"],
+      techniques: ["F30", "F67", "SM6", "SM7"],
+      particularCases: ["Voir cas particuliers crit\xE8re 4.1."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -914,22 +763,9 @@ var rgaa_default = {
           'Pour chaque [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) synchronis\xE9 pr\xE9-enregistr\xE9 poss\xE9dant des [sous-titres synchronis\xE9s](#sous-titres-synchronises-objet-multimedia) diffus\xE9s via une balise `<track>`, la balise `<track>` poss\xE8de-t-elle un attribut `kind="captions"`\xA0?'
         ]
       },
-      wcag: [
-        "1.2.2 Captions (Prerecorded) (A)"
-      ],
-      techniques: [
-        "G58",
-        "G93",
-        "G87",
-        "H95",
-        "SM11",
-        "SM12",
-        "F74",
-        "F75"
-      ],
-      particularCases: [
-        "Voir cas particuliers crit\xE8re 4.1."
-      ],
+      wcag: ["1.2.2 Captions (Prerecorded) (A)"],
+      techniques: ["G58", "G93", "G87", "H95", "SM11", "SM12", "F74", "F75"],
+      particularCases: ["Voir cas particuliers crit\xE8re 4.1."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -943,18 +779,8 @@ var rgaa_default = {
           "Pour chaque [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) synchronis\xE9 pr\xE9-enregistr\xE9 ayant des [sous-titres synchronis\xE9s](#sous-titres-synchronises-objet-multimedia), ces sous-titres sont-ils pertinents\xA0?"
         ]
       },
-      wcag: [
-        "1.2.2 Captions (Prerecorded) (A)"
-      ],
-      techniques: [
-        "G93",
-        "G87",
-        "SM11",
-        "SM12",
-        "F8",
-        "F74",
-        "F75"
-      ],
+      wcag: ["1.2.2 Captions (Prerecorded) (A)"],
+      techniques: ["G93", "G87", "SM11", "SM12", "F8", "F74", "F75"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -975,23 +801,9 @@ var rgaa_default = {
           "Il existe une version alternative avec une [audiodescription](#audiodescription-synchronisee-media-temporel) synchronis\xE9e."
         ]
       },
-      wcag: [
-        "1.2.5 Audio Description (Prerecorded) (AA)"
-      ],
-      techniques: [
-        "G8",
-        "G58",
-        "G78",
-        "G173",
-        "H96",
-        "SM1",
-        "SM2",
-        "SM6",
-        "SM7"
-      ],
-      particularCases: [
-        "Voir cas particuliers crit\xE8re 4.1."
-      ],
+      wcag: ["1.2.5 Audio Description (Prerecorded) (AA)"],
+      techniques: ["G8", "G58", "G78", "G173", "H96", "SM1", "SM2", "SM6", "SM7"],
+      particularCases: ["Voir cas particuliers crit\xE8re 4.1."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1008,15 +820,8 @@ var rgaa_default = {
           "Pour chaque [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) synchronis\xE9 ayant une [audiodescription](#audiodescription-synchronisee-media-temporel) synchronis\xE9e, celle-ci est-elle pertinente\xA0?"
         ]
       },
-      wcag: [
-        "1.2.5 Audio Description (Prerecorded) (AA)"
-      ],
-      techniques: [
-        "SM1",
-        "SM2",
-        "SM6",
-        "SM7"
-      ],
+      wcag: ["1.2.5 Audio Description (Prerecorded) (AA)"],
+      techniques: ["SM1", "SM2", "SM6", "SM7"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1030,13 +835,8 @@ var rgaa_default = {
           "Pour chaque [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) seulement son, seulement vid\xE9o ou synchronis\xE9, le contenu textuel adjacent permet-il d\u2019identifier clairement le [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) (hors cas particuliers)\xA0?"
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "G68",
-        "G100"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["G68", "G100"],
       particularCases: [
         "Il existe une gestion de cas particulier lorsque le [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) est utilis\xE9 \xE0 des fins d\xE9coratives (c\u2019est-\xE0-dire qu\u2019il n\u2019apporte aucune information). Dans cette situation, le crit\xE8re est non applicable."
       ],
@@ -1060,18 +860,9 @@ var rgaa_default = {
           "L\u2019alternative dans la page, r\xE9f\xE9renc\xE9e par le [lien ou bouton adjacent](#lien-ou-bouton-adjacent), est accessible."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "H35",
-        "H46"
-      ],
-      particularCases: [
-        "Il existe une gestion de cas particulier lorsque\xA0:",
-        "[object Object]",
-        "Dans ces situations, le crit\xE8re est non applicable."
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["H35", "H46"],
+      particularCases: ["Il existe une gestion de cas particulier lorsque\xA0:", "[object Object]", "Dans ces situations, le crit\xE8re est non applicable."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1085,13 +876,8 @@ var rgaa_default = {
           "Pour chaque [m\xE9dia non temporel](#media-non-temporel) ayant une alternative, cette alternative permet-elle d\u2019acc\xE9der au m\xEAme contenu et \xE0 des fonctionnalit\xE9s similaires\xA0?"
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "H46",
-        "F30"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["H46", "F30"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1108,20 +894,10 @@ var rgaa_default = {
           "Le volume de la s\xE9quence sonore peut \xEAtre contr\xF4l\xE9 par l\u2019utilisateur ind\xE9pendamment du contr\xF4le de volume du syst\xE8me."
         ]
       },
-      wcag: [
-        "1.4.2 Audio Control (A)"
-      ],
-      techniques: [
-        "G60",
-        "G170",
-        "G171",
-        "F23",
-        "F93"
-      ],
+      wcag: ["1.4.2 Audio Control (A)"],
+      techniques: ["G60", "G170", "G171", "F23", "F93"],
       automatability: "static",
-      ruleIds: [
-        "autoplay-media"
-      ]
+      ruleIds: ["autoplay-media"]
     },
     {
       id: "4.11",
@@ -1143,15 +919,8 @@ var rgaa_default = {
           "Une fonctionnalit\xE9 [activable par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) permettant de r\xE9aliser la m\xEAme action est pr\xE9sente dans la page."
         ]
       },
-      wcag: [
-        "2.1.1 Keyboard (A)",
-        "2.1.2 No Keyboard Trap (A)"
-      ],
-      techniques: [
-        "G4",
-        "G90",
-        "G202"
-      ],
+      wcag: ["2.1.1 Keyboard (A)", "2.1.2 No Keyboard Trap (A)"],
+      techniques: ["G4", "G90", "G202"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1172,14 +941,8 @@ var rgaa_default = {
           "Une fonctionnalit\xE9 [activable par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) permettant de r\xE9aliser la m\xEAme action est pr\xE9sente dans la page."
         ]
       },
-      wcag: [
-        "2.1.1 Keyboard (A)",
-        "2.1.2 No Keyboard Trap (A)"
-      ],
-      techniques: [
-        "G4",
-        "G90"
-      ],
+      wcag: ["2.1.1 Keyboard (A)", "2.1.2 No Keyboard Trap (A)"],
+      techniques: ["G4", "G90"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1201,15 +964,8 @@ var rgaa_default = {
           "Un m\xE9canisme permet de remplacer le [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) ou [non temporel](#media-non-temporel) par son alternative."
         ]
       },
-      wcag: [
-        "4.1.2 Name, role, Value (A)"
-      ],
-      techniques: [
-        "G10",
-        "G135",
-        "F15",
-        "F54"
-      ],
+      wcag: ["4.1.2 Name, role, Value (A)"],
+      techniques: ["G10", "G135", "F15", "F54"],
       particularCases: [
         "Il existe une gestion de cas particulier lorsque\xA0le [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) ou [non temporel](#media-non-temporel) est utilis\xE9 \xE0 des fins d\xE9coratives (c\u2019est-\xE0-dire qu\u2019il n\u2019apporte aucune information).",
         "Dans ces situations, le crit\xE8re est non applicable."
@@ -1223,16 +979,10 @@ var rgaa_default = {
       title: "Chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe) a-t-il un [r\xE9sum\xE9](#resume-de-tableau)\xA0?",
       titlePlain: "Chaque tableau de donn\xE9es complexe a-t-il un r\xE9sum\xE9\xA0?",
       tests: {
-        "1": [
-          "Pour chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe), un [r\xE9sum\xE9](#resume-de-tableau) est-il disponible\xA0?"
-        ]
+        "1": ["Pour chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe), un [r\xE9sum\xE9](#resume-de-tableau) est-il disponible\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H73"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H73"],
       technicalNote: [
         "La sp\xE9cification HTML propose plusieurs [m\xE9thodes pour lier un r\xE9sum\xE9 \xE0 un tableau](#table-descriptions-techniques) (tableau li\xE9 \xE0 un passage de texte avec l\u2019attribut `aria-describedby`, tableau group\xE9 dans un \xE9l\xE9ment `figure` avec un r\xE9sum\xE9 pr\xE9sent dans un \xE9l\xE9ment `figcaption` ou un \xE9l\xE9ment `p`, r\xE9sum\xE9 pr\xE9sent dans un \xE9l\xE9ment `details` contenu dans l\u2019\xE9l\xE9ment `caption`). Ces m\xE9thodes n\u2019ont pas un support suffisant pour \xEAtre utilis\xE9es actuellement."
       ],
@@ -1245,16 +995,10 @@ var rgaa_default = {
       title: "Pour chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe) ayant un [r\xE9sum\xE9](#resume-de-tableau), celui-ci est-il pertinent\xA0?",
       titlePlain: "Pour chaque tableau de donn\xE9es complexe ayant un r\xE9sum\xE9, celui-ci est-il pertinent\xA0?",
       tests: {
-        "1": [
-          "Pour chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe) ayant un [r\xE9sum\xE9](#resume-de-tableau), celui-ci est-il pertinent\xA0?"
-        ]
+        "1": ["Pour chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe) ayant un [r\xE9sum\xE9](#resume-de-tableau), celui-ci est-il pertinent\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H73"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H73"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1270,14 +1014,8 @@ var rgaa_default = {
           'La balise `<table>` poss\xE8de un attribut `role="presentation"`.'
         ]
       },
-      wcag: [
-        "1.3.2 Meaningful Sequence (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "F49",
-        "ARIA4"
-      ],
+      wcag: ["1.3.2 Meaningful Sequence (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["F49", "ARIA4"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1291,16 +1029,10 @@ var rgaa_default = {
           "Pour chaque [tableau de donn\xE9es ayant un titre](#tableau-de-donnees-ayant-un-titre), le titre est-il correctement associ\xE9 au tableau de donn\xE9es\xA0?"
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H39"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H39"],
       automatability: "static",
-      ruleIds: [
-        "table-caption-missing"
-      ]
+      ruleIds: ["table-caption-missing"]
     },
     {
       id: "5.5",
@@ -1312,12 +1044,8 @@ var rgaa_default = {
           "Pour chaque [tableau de donn\xE9es ayant un titre](#tableau-de-donnees-ayant-un-titre), ce titre permet-il d\u2019identifier le contenu du [tableau de donn\xE9es](#tableau-de-donnees) de mani\xE8re claire et concise\xA0?"
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H39"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H39"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1344,17 +1072,10 @@ var rgaa_default = {
           "Pour chaque [tableau de donn\xE9es](#tableau-de-donnees), chaque cellule associ\xE9e \xE0 plusieurs en-t\xEAtes est-elle structur\xE9e au moyen d\u2019une balise `<td>` ou `<th>`\xA0?"
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H51",
-        "F91"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H51", "F91"],
       automatability: "static",
-      ruleIds: [
-        "data-table-no-headers"
-      ]
+      ruleIds: ["data-table-no-headers"]
     },
     {
       id: "5.7",
@@ -1390,14 +1111,8 @@ var rgaa_default = {
           'La balise poss\xE8de un attribut WAI-ARIA `role="columnheader"` pour les [en-t\xEAtes de colonne](#en-tete-de-colonne-ou-de-ligne).'
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H43",
-        "H63",
-        "F90"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H43", "H63", "F90"],
       technicalNote: [
         "Si l\u2019attribut `headers` est impl\xE9ment\xE9 sur une cellule d\xE9j\xE0 reli\xE9e \xE0 un en-t\xEAte (de ligne ou de colonne) avec l\u2019attribut `scope` (avec la valeur `col` ou `row`), c\u2019est l\u2019en-t\xEAte ou les en-t\xEAtes r\xE9f\xE9renc\xE9s par l\u2019attribut `headers` qui seront restitu\xE9s aux technologies d\u2019assistance. Les en-t\xEAtes reli\xE9s avec l\u2019attribut `scope` seront ignor\xE9s."
       ],
@@ -1405,9 +1120,7 @@ var rgaa_default = {
         "Dans le cas de tableaux de donn\xE9es ayant des en-t\xEAtes sur une seule ligne ou une seule colonne, les en-t\xEAtes peuvent \xEAtre structur\xE9s \xE0 l\u2019aide de balise `<th>` sans attribut `scope`."
       ],
       automatability: "static",
-      ruleIds: [
-        "data-table-no-headers"
-      ]
+      ruleIds: ["data-table-no-headers"]
     },
     {
       id: "5.8",
@@ -1421,16 +1134,10 @@ var rgaa_default = {
           "Les cellules du tableau de mise en forme (balises `<td>`) ne poss\xE8dent pas d\u2019attributs `scope`, `headers` et `axis`."
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "F46"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["F46"],
       automatability: "static",
-      ruleIds: [
-        "layout-table-data-markup"
-      ]
+      ruleIds: ["layout-table-data-markup"]
     },
     {
       id: "6.1",
@@ -1462,24 +1169,8 @@ var rgaa_default = {
           "Pour chaque [lien](#lien) ayant un [intitul\xE9 visible](#intitule-visible), le [nom accessible du lien](#intitule-ou-nom-accessible-de-lien) contient-il au moins l\u2019[intitul\xE9 visible](#intitule-visible) (hors cas particuliers)\xA0?"
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "2.4.4 Link Purpose (In Context) (A)",
-        "2.5.3 Label in Name (A)"
-      ],
-      techniques: [
-        "H30",
-        "H78",
-        "H79",
-        "H80",
-        "H81",
-        "G53",
-        "G91",
-        "F63",
-        "F89",
-        "ARIA7",
-        "ARIA8"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "2.4.4 Link Purpose (In Context) (A)", "2.5.3 Label in Name (A)"],
+      techniques: ["H30", "H78", "H79", "H80", "H81", "G53", "G91", "F63", "F89", "ARIA7", "ARIA8"],
       technicalNote: [
         "Lorsque l\u2019intitul\xE9 visible est compl\xE9t\xE9 par une autre expression dans le nom accessible\xA0:",
         "[object Object]",
@@ -1501,27 +1192,15 @@ var rgaa_default = {
       title: "Dans chaque page web, chaque [lien](#lien) a-t-il un [intitul\xE9](#intitule-ou-nom-accessible-de-lien)\xA0?",
       titlePlain: "Dans chaque page web, chaque lien a-t-il un intitul\xE9\xA0?",
       tests: {
-        "1": [
-          "Dans chaque page web, chaque [lien](#lien) a-t-il un [intitul\xE9](#intitule-ou-nom-accessible-de-lien) entre `<a>` et `</a>`\xA0?"
-        ]
+        "1": ["Dans chaque page web, chaque [lien](#lien) a-t-il un [intitul\xE9](#intitule-ou-nom-accessible-de-lien) entre `<a>` et `</a>`\xA0?"]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "2.4.4 Link Purpose (In Context) (A)"
-      ],
-      techniques: [
-        "H30",
-        "G91",
-        "F89"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "2.4.4 Link Purpose (In Context) (A)"],
+      techniques: ["H30", "G91", "F89"],
       technicalNote: [
         "Une ancre n\u2019est pas un lien m\xEAme si pendant longtemps l\u2019\xE9l\xE9ment `<a>` a servi de support \xE0 cette technique. Elle n\u2019est donc pas concern\xE9e par le pr\xE9sent crit\xE8re."
       ],
       automatability: "static",
-      ruleIds: [
-        "link-empty-name",
-        "icon-only-control-unnamed"
-      ]
+      ruleIds: ["link-empty-name", "icon-only-control-unnamed"]
     },
     {
       id: "7.1",
@@ -1547,26 +1226,8 @@ var rgaa_default = {
           "Le composant poss\xE8de un r\xF4le pertinent."
         ]
       },
-      wcag: [
-        "2.5.3 Label in Name (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G10",
-        "G135",
-        "G136",
-        "F15",
-        "F19",
-        "F20",
-        "F42",
-        "F59",
-        "F79",
-        "ARIA4",
-        "ARIA5",
-        "ARIA18",
-        "ARIA19",
-        "SCR21"
-      ],
+      wcag: ["2.5.3 Label in Name (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G10", "G135", "G136", "F15", "F19", "F20", "F42", "F59", "F79", "ARIA4", "ARIA5", "ARIA18", "ARIA19", "SCR21"],
       technicalNote: [
         "Le crit\xE8re 7.1 impl\xE9mente la notion de \xAB\xA0compatible avec les technologies d\u2019assistance\xA0\xBB telle que d\xE9finie par les WCAG, ainsi que le recours \xE0 WAI-ARIA pour rendre un composant ou une fonctionnalit\xE9 accessible. Le bon usage de WAI-ARIA est v\xE9rifi\xE9 via les tests 7.1.1, 7.1.2, 7.1.3.",
         "Note importante\xA0: dans un environnement HTML5, beaucoup de composants peuvent n\xE9cessiter JavaScript pour fonctionner\xA0; en cons\xE9quence la fourniture d\u2019une alternative \xE0 un composant JavaScript qui ne pourrait pas \xEAtre rendu accessible devra b\xE9n\xE9ficier d\u2019une m\xE9thode sp\xE9cifique au composant en cause, permettant de le remplacer par une alternative accessible (et de le r\xE9activer). Cela signifie que la d\xE9sactivation de JavaScript pour l\u2019ensemble de la page ne sera pas accept\xE9e comme une m\xE9thode valable, \xE0 moins qu\u2019elle ne remette pas en cause l\u2019utilisation des autres composants."
@@ -1609,15 +1270,8 @@ var rgaa_default = {
           "L\u2019alternative mise \xE0 jour est pertinente."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G136",
-        "F19",
-        "F20"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G136", "F19", "F20"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1632,33 +1286,15 @@ var rgaa_default = {
           "L\u2019\xE9l\xE9ment est [accessible par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage)\xA0;",
           "Un \xE9l\xE9ment [accessible par le clavier et tout dispositif de pointage](#accessible-et-activable-par-le-clavier-et-tout-dispositif-de-pointage) permettant de r\xE9aliser la m\xEAme action est pr\xE9sent dans la page."
         ],
-        "2": [
-          "Un [script](#script) ne doit pas supprimer le focus d\u2019un \xE9l\xE9ment qui le re\xE7oit. Cette r\xE8gle est-elle respect\xE9e (hors cas particuliers)\xA0?"
-        ]
+        "2": ["Un [script](#script) ne doit pas supprimer le focus d\u2019un \xE9l\xE9ment qui le re\xE7oit. Cette r\xE8gle est-elle respect\xE9e (hors cas particuliers)\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "2.1.1 Keyboard (A)",
-        "2.4.7 Focus Visible (AA)"
-      ],
-      techniques: [
-        "G90",
-        "G202",
-        "F42",
-        "F54",
-        "F55",
-        "SCR2",
-        "SCR20",
-        "SCR29",
-        "SCR35"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "2.1.1 Keyboard (A)", "2.4.7 Focus Visible (AA)"],
+      techniques: ["G90", "G202", "F42", "F54", "F55", "SCR2", "SCR20", "SCR29", "SCR35"],
       particularCases: [
         "Il existe une gestion de cas particuliers lorsque la fonctionnalit\xE9 d\xE9pend de l\u2019utilisation d\u2019un gestionnaire d\u2019\xE9v\xE9nement sans \xE9quivalent universel\xA0; par exemple, une application de dessin \xE0 main lev\xE9e ne pourra pas \xEAtre rendue contr\xF4lable au clavier. Dans ces situations, le crit\xE8re est non applicable."
       ],
       automatability: "static",
-      ruleIds: [
-        "clickable-noninteractive"
-      ]
+      ruleIds: ["clickable-noninteractive"]
     },
     {
       id: "7.4",
@@ -1673,24 +1309,8 @@ var rgaa_default = {
           "Le changement de contexte est initi\xE9 par un lien explicite."
         ]
       },
-      wcag: [
-        "3.2.1 On Focus (A)",
-        "3.2.2 On Input (A)"
-      ],
-      techniques: [
-        "G13",
-        "G76",
-        "G80",
-        "G107",
-        "H32",
-        "H84",
-        "F9",
-        "F22",
-        "F36",
-        "F37",
-        "F41",
-        "SCR19"
-      ],
+      wcag: ["3.2.1 On Focus (A)", "3.2.2 On Input (A)"],
+      techniques: ["G13", "G76", "G80", "G107", "H32", "H84", "F9", "F22", "F36", "F37", "F41", "SCR19"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1710,14 +1330,8 @@ var rgaa_default = {
           'Chaque [message de statut](#message-de-statut) qui indique la progression d\u2019un processus utilise-t-il l\u2019un des attributs WAI-ARIA `role="log"`, `role="progressbar"` ou `role="status"`\xA0?'
         ]
       },
-      wcag: [
-        "4.1.3 Status Messages (AA)"
-      ],
-      techniques: [
-        "ARIA19",
-        "ARIA22",
-        "ARIA23"
-      ],
+      wcag: ["4.1.3 Status Messages (AA)"],
+      techniques: ["ARIA19", "ARIA22", "ARIA23"],
       technicalNote: [
         "Les r\xF4les WAI-ARIA `log`, `status` et `alert` ont implicitement une valeur d\u2019attribut WAI-ARIA `aria-live` et `aria-atomic`. On pourra donc consid\xE9rer (conform\xE9ment \xE0 la sp\xE9cification WAI-ARIA 1.1) que\xA0:",
         "[object Object]",
@@ -1732,23 +1346,14 @@ var rgaa_default = {
       title: "Chaque page web est-elle d\xE9finie par un [type de document](#type-de-document)\xA0?",
       titlePlain: "Chaque page web est-elle d\xE9finie par un type de document\xA0?",
       tests: {
-        "1": [
-          "Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il pr\xE9sent\xA0?"
-        ],
-        "2": [
-          "Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il valide\xA0?"
-        ],
+        "1": ["Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il pr\xE9sent\xA0?"],
+        "2": ["Pour chaque page web, le [type de document](#type-de-document) (balise `doctype`) est-il valide\xA0?"],
         "3": [
           "Pour chaque page web poss\xE9dant une d\xE9claration de [type de document](#type-de-document), celle-ci est-elle situ\xE9e avant la balise `<html>` dans le code source\xA0?"
         ]
       },
-      wcag: [
-        "4.1.1 Parsing (A)"
-      ],
-      techniques: [
-        "G134",
-        "G192"
-      ],
+      wcag: ["4.1.1 Parsing (A)"],
+      techniques: ["G134", "G192"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1767,21 +1372,10 @@ var rgaa_default = {
           "Les attributs ne sont pas doubl\xE9s sur un m\xEAme \xE9l\xE9ment."
         ]
       },
-      wcag: [
-        "4.1.1 Parsing (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "H74",
-        "H93",
-        "H94",
-        "F70",
-        "F77"
-      ],
+      wcag: ["4.1.1 Parsing (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["H74", "H93", "H94", "F70", "F77"],
       automatability: "static",
-      ruleIds: [
-        "duplicate-id"
-      ]
+      ruleIds: ["duplicate-id"]
     },
     {
       id: "8.3",
@@ -1795,16 +1389,10 @@ var rgaa_default = {
           "L\u2019indication de la langue de la page (attribut `lang` et/ou `xml:lang`) est donn\xE9e sur chaque \xE9l\xE9ment de texte ou sur l\u2019un des \xE9l\xE9ments parents."
         ]
       },
-      wcag: [
-        "3.1.1 Language of Page (A)"
-      ],
-      techniques: [
-        "H57"
-      ],
+      wcag: ["3.1.1 Language of Page (A)"],
+      techniques: ["H57"],
       automatability: "static",
-      ruleIds: [
-        "html-lang-missing"
-      ]
+      ruleIds: ["html-lang-missing"]
     },
     {
       id: "8.4",
@@ -1818,16 +1406,10 @@ var rgaa_default = {
           "Le code de langue est pertinent."
         ]
       },
-      wcag: [
-        "3.1.1 Language of Page (A)"
-      ],
-      techniques: [
-        "H57"
-      ],
+      wcag: ["3.1.1 Language of Page (A)"],
+      techniques: ["H57"],
       automatability: "judgment",
-      ruleIds: [
-        "lang-invalid"
-      ]
+      ruleIds: ["lang-invalid"]
     },
     {
       id: "8.5",
@@ -1835,22 +1417,12 @@ var rgaa_default = {
       title: "Chaque page web a-t-elle un [titre de page](#titre-de-page)\xA0?",
       titlePlain: "Chaque page web a-t-elle un titre de page\xA0?",
       tests: {
-        "1": [
-          "Chaque page web a-t-elle un [titre de page](#titre-de-page) (balise `<title>`)\xA0?"
-        ]
+        "1": ["Chaque page web a-t-elle un [titre de page](#titre-de-page) (balise `<title>`)\xA0?"]
       },
-      wcag: [
-        "2.4.2 Page Titled (A)"
-      ],
-      techniques: [
-        "G88",
-        "G127",
-        "H25"
-      ],
+      wcag: ["2.4.2 Page Titled (A)"],
+      techniques: ["G88", "G127", "H25"],
       automatability: "static",
-      ruleIds: [
-        "title-missing-empty"
-      ]
+      ruleIds: ["title-missing-empty"]
     },
     {
       id: "8.6",
@@ -1858,18 +1430,10 @@ var rgaa_default = {
       title: "Pour chaque page web ayant un [titre de page](#titre-de-page), ce titre est-il pertinent\xA0?",
       titlePlain: "Pour chaque page web ayant un titre de page, ce titre est-il pertinent\xA0?",
       tests: {
-        "1": [
-          "Pour chaque page web ayant un [titre de page](#titre-de-page) (balise `<title>`), le contenu de cette balise est-il pertinent\xA0?"
-        ]
+        "1": ["Pour chaque page web ayant un [titre de page](#titre-de-page) (balise `<title>`), le contenu de cette balise est-il pertinent\xA0?"]
       },
-      wcag: [
-        "2.4.2 Page Titled (A)"
-      ],
-      techniques: [
-        "G88",
-        "G127",
-        "H25"
-      ],
+      wcag: ["2.4.2 Page Titled (A)"],
+      techniques: ["G88", "G127", "H25"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1885,12 +1449,8 @@ var rgaa_default = {
           "L\u2019indication de langue est donn\xE9e sur un des \xE9l\xE9ments parents (attribut `lang` et/ou `xml:lang`)"
         ]
       },
-      wcag: [
-        "3.1.2 Language of Parts (AA)"
-      ],
-      techniques: [
-        "H58"
-      ],
+      wcag: ["3.1.2 Language of Parts (AA)"],
+      techniques: ["H58"],
       particularCases: [
         "Il y a une gestion de cas particuliers sur le changement de langue pour les cas suivants\xA0:",
         "[object Object]",
@@ -1898,9 +1458,7 @@ var rgaa_default = {
         "Note 2\xA0: pour les noms communs de langue \xE9trang\xE8re, absents dans le dictionnaire officiel de la langue par d\xE9faut de la page web, et qui sont pass\xE9s dans le langage commun (exemple\xA0: newsletter)\xA0: le crit\xE8re est applicable, uniquement lorsque l\u2019absence d\u2019indication de langue peut provoquer une incompr\xE9hension pour la restitution."
       ],
       automatability: "static",
-      ruleIds: [
-        "inline-lang-change-missing"
-      ]
+      ruleIds: ["inline-lang-change-missing"]
     },
     {
       id: "8.8",
@@ -1914,16 +1472,10 @@ var rgaa_default = {
           "Le code de langue est pertinent."
         ]
       },
-      wcag: [
-        "3.1.2 Language of Parts (AA)"
-      ],
-      techniques: [
-        "H58"
-      ],
+      wcag: ["3.1.2 Language of Parts (AA)"],
+      techniques: ["H58"],
       automatability: "judgment",
-      ruleIds: [
-        "lang-invalid"
-      ]
+      ruleIds: ["lang-invalid"]
     },
     {
       id: "8.9",
@@ -1935,15 +1487,8 @@ var rgaa_default = {
           "Dans chaque page web les balises (\xE0 l\u2019exception de `<div>`, `<span>` et `<table>`) ne doivent pas \xEAtre utilis\xE9es [uniquement \xE0 des fins de pr\xE9sentation](#uniquement-a-des-fins-de-presentation). Cette r\xE8gle est-elle respect\xE9e\xA0?"
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "G115",
-        "H88",
-        "F43",
-        "F92"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["G115", "H88", "F43", "F92"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1962,12 +1507,8 @@ var rgaa_default = {
           "La valeur de l\u2019attribut `dir` est pertinente."
         ]
       },
-      wcag: [
-        "1.3.2 Meaningful Sequence (A)"
-      ],
-      techniques: [
-        "H56"
-      ],
+      wcag: ["1.3.2 Meaningful Sequence (A)"],
+      techniques: ["H56"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -1987,29 +1528,13 @@ var rgaa_default = {
           'Dans chaque page web, chaque passage de texte constituant un [titre](#titre) est-il structur\xE9 \xE0 l\u2019aide d\u2019une balise `<hx>` ou d\u2019une balise poss\xE9dant un attribut WAI-ARIA `role="heading"` associ\xE9 \xE0 un attribut WAI-ARIA `aria-level`\xA0?'
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "2.4.1 Bypass Blocks (A)",
-        "2.4.6 Headings and Labels (AA)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G115",
-        "G130",
-        "H42",
-        "G141",
-        "ARIA4",
-        "ARIA12"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "2.4.1 Bypass Blocks (A)", "2.4.6 Headings and Labels (AA)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G115", "G130", "H42", "G141", "ARIA4", "ARIA12"],
       technicalNote: [
         "WAI-ARIA permet de d\xE9finir des titres via le r\xF4le `heading` et l\u2019attribut `aria-level` (indication du niveau de titre). Bien qu\u2019il soit pr\xE9f\xE9rable d\u2019utiliser l\u2019\xE9l\xE9ment de titre natif en HTML `<hx>`, l\u2019utilisation du r\xF4le WAI-ARIA `heading` est compatible avec l\u2019accessibilit\xE9."
       ],
       automatability: "static",
-      ruleIds: [
-        "heading-order-skip",
-        "h1-missing",
-        "h1-multiple"
-      ]
+      ruleIds: ["heading-order-skip", "h1-missing", "h1-multiple"]
     },
     {
       id: "9.2",
@@ -2027,19 +1552,12 @@ var rgaa_default = {
           "La [zone de pied de page](#zone-de-pied-de-page) est structur\xE9e via une balise `<footer>`."
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "G115",
-        "ARIA11"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["G115", "ARIA11"],
       technicalNote: [
         "La balise `<main>` peut \xEAtre utilis\xE9e plusieurs fois dans le m\xEAme document HTML. N\xE9anmoins, il ne peut y avoir en permanence qu\u2019une seule balise visible et lisible par les technologies d\u2019assistances, les autres devant disposer d\u2019un attribut `hidden` ou d\u2019un style permettant de les masquer aux technologies d\u2019assistances. \xC0 noter cependant que l\u2019utilisation d\u2019un style seul restera insuffisante pour assurer l\u2019unicit\xE9 d\u2019une balise `<main>` visible en cas de d\xE9sactivation des feuilles de styles."
       ],
-      particularCases: [
-        "Lorsque le doctype d\xE9clar\xE9 dans la page n\u2019est pas le doctype HTML5, ce crit\xE8re est non applicable."
-      ],
+      particularCases: ["Lorsque le doctype d\xE9clar\xE9 dans la page n\u2019est pas le doctype HTML5, ce crit\xE8re est non applicable."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2063,24 +1581,14 @@ var rgaa_default = {
           "Dans chaque page web, les informations regroup\xE9es sous forme de [liste](#listes) de description utilisent-elles les balises `<dl>` et `<dt>/<dd>`\xA0?"
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "G115",
-        "G153",
-        "H40",
-        "H48",
-        "F2"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["G115", "G153", "H40", "H48", "F2"],
       technicalNote: [
         'Les attributs WAI-ARIA `role="list"` et `role="listitem"` peuvent n\xE9cessiter l\u2019utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas o\xF9 l\u2019ensemble de la liste n\u2019est pas disponible via le DOM g\xE9n\xE9r\xE9 au moment de la consultation.',
         'Les attributs WAI-ARIA `role="tree"`, `role="tablist"`, `role="menu"`, `role="combobox"` et `role="listbox"` ne sont pas \xE9quivalents \xE0 une liste HTML `<ul>` ou `<ol>`.'
       ],
       automatability: "static",
-      ruleIds: [
-        "list-structure"
-      ]
+      ruleIds: ["list-structure"]
     },
     {
       id: "9.4",
@@ -2088,21 +1596,11 @@ var rgaa_default = {
       title: "Dans chaque page web, chaque citation est-elle correctement indiqu\xE9e\xA0?",
       titlePlain: "Dans chaque page web, chaque citation est-elle correctement indiqu\xE9e\xA0?",
       tests: {
-        "1": [
-          "Dans chaque page web, chaque citation courte utilise-t-elle une balise `<q>`\xA0?"
-        ],
-        "2": [
-          "Dans chaque page web, chaque bloc de citation utilise-t-il une balise `<blockquote>`\xA0?"
-        ]
+        "1": ["Dans chaque page web, chaque citation courte utilise-t-elle une balise `<q>`\xA0?"],
+        "2": ["Dans chaque page web, chaque bloc de citation utilise-t-il une balise `<blockquote>`\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "G115",
-        "H49",
-        "F2"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["G115", "H49", "F2"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2125,21 +1623,8 @@ var rgaa_default = {
           "Les espaces ne sont pas utilis\xE9es pour simuler des colonnes de texte."
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "1.3.2 Meaningful Sequence (A)"
-      ],
-      techniques: [
-        "G140",
-        "F32",
-        "F33",
-        "F34",
-        "F48",
-        "C6",
-        "C8",
-        "C18",
-        "C22"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "1.3.2 Meaningful Sequence (A)"],
+      techniques: ["G140", "F32", "F33", "F34", "F48", "C6", "C8", "C18", "C22"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2149,19 +1634,10 @@ var rgaa_default = {
       title: "Dans chaque page web, le [contenu visible](#contenu-visible) porteur d\u2019information reste-t-il pr\xE9sent lorsque les [feuilles de styles](#feuille-de-style) sont d\xE9sactiv\xE9es\xA0?",
       titlePlain: "Dans chaque page web, le contenu visible porteur d\u2019information reste-t-il pr\xE9sent lorsque les feuilles de styles sont d\xE9sactiv\xE9es\xA0?",
       tests: {
-        "1": [
-          "Dans chaque page web, l\u2019information reste-t-elle pr\xE9sente lorsque les [feuilles de styles](#feuille-de-style) sont d\xE9sactiv\xE9es\xA0?"
-        ]
+        "1": ["Dans chaque page web, l\u2019information reste-t-elle pr\xE9sente lorsque les [feuilles de styles](#feuille-de-style) sont d\xE9sactiv\xE9es\xA0?"]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)",
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "G140",
-        "F3",
-        "F87"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)", "1.3.1 Info and Relationships (A)"],
+      techniques: ["G140", "F3", "F87"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2175,15 +1651,8 @@ var rgaa_default = {
           "Dans chaque page web, l\u2019information reste-t-elle [compr\xE9hensible](#comprehensible-ordre-de-lecture) lorsque les [feuilles de styles](#feuille-de-style) sont d\xE9sactiv\xE9es\xA0?"
         ]
       },
-      wcag: [
-        "1.3.2 Meaningful Sequence (A)",
-        "2.4.3 Focus Order (A)"
-      ],
-      techniques: [
-        "G59",
-        "G140",
-        "F1"
-      ],
+      wcag: ["1.3.2 Meaningful Sequence (A)", "2.4.3 Focus Order (A)"],
+      techniques: ["G59", "G140", "F1"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2206,29 +1675,14 @@ var rgaa_default = {
           "Lors de l\u2019utilisation d\u2019un [composant d\u2019interface](#composant-d-interface) propre au site permettant d\u2019agrandir le texte ou de zoomer."
         ]
       },
-      wcag: [
-        "1.4.4 Resize Text (AA)"
-      ],
-      techniques: [
-        "G146",
-        "G179",
-        "F69",
-        "F80",
-        "SCR34",
-        "C12",
-        "C13",
-        "C14",
-        "C17",
-        "C28"
-      ],
+      wcag: ["1.4.4 Resize Text (AA)"],
+      techniques: ["G146", "G179", "F69", "F80", "SCR34", "C12", "C13", "C14", "C17", "C28"],
       particularCases: [
         "Font exception \xE0 ce crit\xE8re, les contenus pour lesquels l\u2019utilisateur n\u2019a pas de possibilit\xE9 de personnalisation\xA0:",
         "[object Object]"
       ],
       automatability: "needs-rendering",
-      ruleIds: [
-        "meta-viewport-zoom-block"
-      ]
+      ruleIds: ["meta-viewport-zoom-block"]
     },
     {
       id: "10.5",
@@ -2246,12 +1700,8 @@ var rgaa_default = {
           "Dans chaque page web, chaque utilisation d\u2019une image pour cr\xE9er une couleur de fond d\u2019un \xE9l\xE9ment susceptible de contenir du texte, via CSS (`background`, `background-image`), est-elle accompagn\xE9e d\u2019une d\xE9claration de couleur de fond (`background`, `background-color`), au moins, h\xE9rit\xE9e d\u2019un parent\xA0?"
         ]
       },
-      wcag: [
-        "1.4.3 Contrast (Minimum) (AA)"
-      ],
-      techniques: [
-        "F24"
-      ],
+      wcag: ["1.4.3 Contrast (Minimum) (AA)"],
+      techniques: ["F24"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2268,13 +1718,8 @@ var rgaa_default = {
           "Le lien dispose d\u2019une indication visuelle au focus autre qu\u2019un changement de couleur."
         ]
       },
-      wcag: [
-        "1.4.1 Use of Color (A)"
-      ],
-      techniques: [
-        "G183",
-        "F73"
-      ],
+      wcag: ["1.4.1 Use of Color (A)"],
+      techniques: ["G183", "F73"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2290,20 +1735,8 @@ var rgaa_default = {
           "Un style du focus d\xE9fini par l\u2019auteur est visible."
         ]
       },
-      wcag: [
-        "1.4.1 Use of Color (A)",
-        "2.4.7 Focus Visible (AA)"
-      ],
-      techniques: [
-        "G149",
-        "G165",
-        "G183",
-        "G195",
-        "F73",
-        "F78",
-        "SCR31",
-        "C15"
-      ],
+      wcag: ["1.4.1 Use of Color (A)", "2.4.7 Focus Visible (AA)"],
+      techniques: ["G149", "G165", "G183", "G195", "F73", "F78", "SCR31", "C15"],
       automatability: "needs-rendering",
       ruleIds: []
     },
@@ -2319,13 +1752,8 @@ var rgaa_default = {
           "Le [contenu cach\xE9](#contenu-cache) n\u2019a pas vocation \xE0 \xEAtre ignor\xE9 par les technologies d\u2019assistance et est rendu restituable par les technologies d\u2019assistance suite \xE0 une action de l\u2019utilisateur r\xE9alisable au clavier ou par tout dispositif de pointage sur un \xE9l\xE9ment pr\xE9c\xE9dent le contenu cach\xE9 ou suite \xE0 un repositionnement du focus dessus."
         ]
       },
-      wcag: [
-        "1.3.2 Meaningful Sequence (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G57"
-      ],
+      wcag: ["1.3.2 Meaningful Sequence (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G57"],
       technicalNote: [
         'WAI-ARIA propose un attribut `aria-hidden` (`true` ou `false`) qui permet d\u2019inhiber la restitution d\u2019un contenu en direction des technologies d\u2019assistance, sans action sur sa visibilit\xE9 en direction des agents utilisateurs\xA0: un contenu avec `aria-hidden="true"` ne sera donc plus vocalisable, mais restera visible.',
         "Sauf si le contenu contr\xF4l\xE9 par `aria-hidden` n\u2019a pas vocation \xE0 \xEAtre restitu\xE9 par les technologies d\u2019assistance, la valeur de l\u2019attribut `aria-hidden` doit \xEAtre coh\xE9rente avec l\u2019\xE9tat affich\xE9 ou masqu\xE9 du contenu \xE0 l\u2019\xE9cran.",
@@ -2354,16 +1782,8 @@ var rgaa_default = {
           "Dans chaque page web, pour chaque [m\xE9dia non temporel](#media-non-temporel), l\u2019information ne doit pas \xEAtre donn\xE9e uniquement [par la forme, taille ou position](#indication-donnee-par-la-forme-la-taille-ou-la-position). Cette r\xE8gle est-elle respect\xE9e\xA0?"
         ]
       },
-      wcag: [
-        "1.3.3 Sensory Characteristics (A)",
-        "1.4.1 Use of Color (A)"
-      ],
-      techniques: [
-        "G96",
-        "G140",
-        "F14",
-        "F26"
-      ],
+      wcag: ["1.3.3 Sensory Characteristics (A)", "1.4.1 Use of Color (A)"],
+      techniques: ["G96", "G140", "F14", "F26"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2386,16 +1806,8 @@ var rgaa_default = {
           "Dans chaque page web, pour chaque [m\xE9dia non temporel](#media-non-temporel), l\u2019information ne doit pas \xEAtre donn\xE9e uniquement [par la forme, taille ou position](#indication-donnee-par-la-forme-la-taille-ou-la-position). Cette r\xE8gle est-elle impl\xE9ment\xE9e de fa\xE7on pertinente\xA0?"
         ]
       },
-      wcag: [
-        "1.3.3 Sensory Characteristics (A)",
-        "1.4.1 Use of Color (A)"
-      ],
-      techniques: [
-        "G96",
-        "G140",
-        "F14",
-        "F26"
-      ],
+      wcag: ["1.3.3 Sensory Characteristics (A)", "1.4.1 Use of Color (A)"],
+      techniques: ["G96", "G140", "F14", "F26"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2412,16 +1824,9 @@ var rgaa_default = {
           "Pour chaque page web, lorsque le contenu dont le sens de lecture est vertical est affich\xE9 dans une fen\xEAtre r\xE9duite \xE0 une hauteur de 256\u202Fpx, l\u2019ensemble des informations et des fonctionnalit\xE9s sont-elles disponibles sans aucun d\xE9filement vertical (hors cas particuliers)\xA0?"
         ]
       },
-      wcag: [
-        "1.4.10 Reflow (AA)"
-      ],
-      techniques: [
-        "C34",
-        "C37"
-      ],
-      technicalNote: [
-        "Lorsqu'il est ici question de pixel, il s'agit du pixel CSS tel que d\xE9fini par le W3C https://www.w3.org/TR/css3-values/"
-      ],
+      wcag: ["1.4.10 Reflow (AA)"],
+      techniques: ["C34", "C37"],
+      technicalNote: ["Lorsqu'il est ici question de pixel, il s'agit du pixel CSS tel que d\xE9fini par le W3C https://www.w3.org/TR/css3-values/"],
       particularCases: [
         "L'objectif de ce crit\xE8re est de garantir un d\xE9filement dans une unique direction pour une lecture facilit\xE9e selon le sens de l'\xE9criture.",
         "Font exception \xE0 ce crit\xE8re, les contenus dont l'agencement requiert deux dimensions pour \xEAtre compris ou utilis\xE9s comme\xA0:",
@@ -2445,15 +1850,8 @@ var rgaa_default = {
           "L\u2019espacement des mots (`word-spacing`) est augment\xE9 jusqu\u2019\xE0 0,16 fois la taille de la police."
         ]
       },
-      wcag: [
-        "1.4.12 Text Spacing (AA)"
-      ],
-      techniques: [
-        "C8",
-        "C21",
-        "C35",
-        "C36"
-      ],
+      wcag: ["1.4.12 Text Spacing (AA)"],
+      techniques: ["C8", "C21", "C35", "C36"],
       particularCases: [
         "Font exception \xE0 ce crit\xE8re, les contenus pour lesquels l\u2019utilisateur n\u2019a pas de possibilit\xE9 de personnalisation\xA0:",
         "[object Object]"
@@ -2480,12 +1878,8 @@ var rgaa_default = {
           "Le contenu additionnel reste visible jusqu\u2019\xE0 ce qu\u2019il ne soit plus valide."
         ]
       },
-      wcag: [
-        "1.4.13 Content on Hover or Focus (AA)"
-      ],
-      techniques: [
-        "F95"
-      ],
+      wcag: ["1.4.13 Content on Hover or Focus (AA)"],
+      techniques: ["F95"],
       particularCases: [
         "Lorsque le contenu additionnel est contr\xF4l\xE9 par l\u2019agent utilisateur (par exemple, attribut `title` ou validation native de formulaire) ou correspond \xE0 une fen\xEAtre modale conforme au [motif de conception](#motif-de-conception) WAI-ARIA `dialog`, le crit\xE8re 10.13 est non applicable.",
         "Lorsque le contenu additionnel ne masque ou ne remplace aucun contenu porteur d\u2019information, le test 10.13.1 est non applicable."
@@ -2512,12 +1906,8 @@ var rgaa_default = {
           "Les contenus additionnels apparaissent \xE9galement par le biais de l\u2019activation ou du survol d\u2019un autre composant."
         ]
       },
-      wcag: [
-        "2.1.1 Keyboard (A)"
-      ],
-      techniques: [
-        "G202"
-      ],
+      wcag: ["2.1.1 Keyboard (A)"],
+      techniques: ["G202"],
       automatability: "needs-rendering",
       ruleIds: []
     },
@@ -2547,32 +1937,10 @@ var rgaa_default = {
           "Le [champ de formulaire](#champ-de-saisie-de-formulaire) est accompagn\xE9 d\u2019un [passage de texte](#passage-de-texte-lie-par-aria-labelledby-ou-aria-describedby) visible accol\xE9 au champ permettant de comprendre la nature de la saisie attendue."
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "2.4.6 Headings and Labels (AA)",
-        "3.3.2 Labels or Instructions (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "G82",
-        "G131",
-        "H44",
-        "H65",
-        "F68",
-        "F82",
-        "F86",
-        "ARIA6",
-        "ARIA9",
-        "ARIA14",
-        "ARIA16"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "2.4.6 Headings and Labels (AA)", "3.3.2 Labels or Instructions (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["G82", "G131", "H44", "H65", "F68", "F82", "F86", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
       automatability: "static",
-      ruleIds: [
-        "control-label-missing",
-        "placeholder-as-label",
-        "form-field-multiple-labels",
-        "select-has-option"
-      ]
+      ruleIds: ["control-label-missing", "placeholder-as-label", "form-field-multiple-labels", "select-has-option"]
     },
     {
       id: "11.2",
@@ -2603,21 +1971,8 @@ var rgaa_default = {
           "Chaque bouton adjacent au [champ de formulaire](#champ-de-saisie-de-formulaire) qui fournit une \xE9tiquette visible permet-il de conna\xEEtre la fonction exacte du [champ de formulaire](#champ-de-saisie-de-formulaire) auquel il est associ\xE9\xA0?"
         ]
       },
-      wcag: [
-        "2.4.6 Headings and Labels (AA)",
-        "2.5.3 Label in Name (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      techniques: [
-        "G82",
-        "G131",
-        "H44",
-        "H65",
-        "ARIA6",
-        "ARIA9",
-        "ARIA14",
-        "ARIA16"
-      ],
+      wcag: ["2.4.6 Headings and Labels (AA)", "2.5.3 Label in Name (A)", "3.3.2 Labels or Instructions (A)"],
+      techniques: ["G82", "G131", "H44", "H65", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
       particularCases: [
         "Il existe une gestion de cas particuliers pour le test 11.2.5 lorsque\xA0:",
         "[object Object]",
@@ -2640,12 +1995,8 @@ var rgaa_default = {
           "Chaque [\xE9tiquette](#etiquette-de-champ-de-formulaire) associ\xE9e \xE0 un [champ de formulaire](#champ-de-saisie-de-formulaire) ayant la m\xEAme fonction et r\xE9p\xE9t\xE9e dans un ensemble de pages est-elle [coh\xE9rente](#etiquettes-coherentes)\xA0?"
         ]
       },
-      wcag: [
-        "3.2.4 Consistent Identification (AA)"
-      ],
-      techniques: [
-        "F31"
-      ],
+      wcag: ["3.2.4 Consistent Identification (AA)"],
+      techniques: ["F31"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2669,16 +2020,9 @@ var rgaa_default = {
           "L\u2019\xE9tiquette est visuellement [accol\xE9e](#accoles-etiquette-et-champ-accoles) imm\xE9diatement au-dessous ou \xE0 gauche du [champ de formulaire](#champ-de-saisie-de-formulaire) lorsque le sens de lecture de la langue de l\u2019\xE9tiquette est de droite \xE0 gauche."
         ]
       },
-      wcag: [
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      techniques: [
-        "G162"
-      ],
-      particularCases: [
-        "Les tests 11.4.2 et 11.4.3 seront consid\xE9r\xE9s comme non applicables\xA0:",
-        "[object Object]"
-      ],
+      wcag: ["3.3.2 Labels or Instructions (A)"],
+      techniques: ["G162"],
+      particularCases: ["Les tests 11.4.2 et 11.4.3 seront consid\xE9r\xE9s comme non applicables\xA0:", "[object Object]"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2695,14 +2039,8 @@ var rgaa_default = {
           'Les [champs de m\xEAme nature](#champs-de-meme-nature) de type radio (`<input type="radio">`) ou balises poss\xE9dant un attribut WAI-ARIA `role="radio"`) sont regroup\xE9s dans une balise poss\xE9dant un attribut WAI-ARIA `role="radiogroup"` ou `role="group"`.'
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      techniques: [
-        "H71",
-        "ARIA17"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "3.3.2 Labels or Instructions (A)"],
+      techniques: ["H71", "ARIA17"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2712,22 +2050,12 @@ var rgaa_default = {
       title: "Dans chaque [formulaire](#formulaire), chaque regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) a-t-il une [l\xE9gende](#legende)\xA0?",
       titlePlain: "Dans chaque formulaire, chaque regroupement de champs de m\xEAme nature a-t-il une l\xE9gende\xA0?",
       tests: {
-        "1": [
-          "Chaque regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) poss\xE8de-t-il une [l\xE9gende](#legende)\xA0?"
-        ]
+        "1": ["Chaque regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) poss\xE8de-t-il une [l\xE9gende](#legende)\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      techniques: [
-        "H71",
-        "ARIA17"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "3.3.2 Labels or Instructions (A)"],
+      techniques: ["H71", "ARIA17"],
       automatability: "static",
-      ruleIds: [
-        "fieldset-legend-missing"
-      ]
+      ruleIds: ["fieldset-legend-missing"]
     },
     {
       id: "11.7",
@@ -2735,18 +2063,10 @@ var rgaa_default = {
       title: "Dans chaque [formulaire](#formulaire), chaque [l\xE9gende](#legende) associ\xE9e \xE0 un regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) est-elle pertinente\xA0?",
       titlePlain: "Dans chaque formulaire, chaque l\xE9gende associ\xE9e \xE0 un regroupement de champs de m\xEAme nature est-elle pertinente\xA0?",
       tests: {
-        "1": [
-          "Chaque [l\xE9gende](#legende) associ\xE9e \xE0 un regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) est-elle pertinente\xA0?"
-        ]
+        "1": ["Chaque [l\xE9gende](#legende) associ\xE9e \xE0 un regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) est-elle pertinente\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
-      techniques: [
-        "H71",
-        "ARIA17"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "3.3.2 Labels or Instructions (A)"],
+      techniques: ["H71", "ARIA17"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2759,19 +2079,11 @@ var rgaa_default = {
         "1": [
           "Pour chaque balise `<select>`, les [items de m\xEAme nature d\u2019une liste de choix](#items-de-meme-nature-d-une-liste-de-choix) sont-ils regroup\xE9s avec une balise `<optgroup>`, si n\xE9cessaire\xA0?"
         ],
-        "2": [
-          "Dans chaque balise `<select>`, chaque balise `<optgroup>` poss\xE8de-t-elle un attribut `label`\xA0?"
-        ],
-        "3": [
-          "Pour chaque balise `<optgroup>` ayant un attribut `label`, le contenu de l\u2019attribut `label` est-il pertinent\xA0?"
-        ]
+        "2": ["Dans chaque balise `<select>`, chaque balise `<optgroup>` poss\xE8de-t-elle un attribut `label`\xA0?"],
+        "3": ["Pour chaque balise `<optgroup>` ayant un attribut `label`, le contenu de l\u2019attribut `label` est-il pertinent\xA0?"]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)"
-      ],
-      techniques: [
-        "H85"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)"],
+      techniques: ["H85"],
       technicalNote: [
         'Il est possible d\u2019utiliser une balise ayant un attribut WAI-ARIA `role="listbox"` en remplacement d\u2019une balise `<select>`. En revanche, il est impossible de cr\xE9er des groupes d\u2019options via l\u2019utilisation de WAI-ARIA. De ce fait, une liste n\xE9cessitant un regroupement d\u2019options structur\xE9e \xE0 l\u2019aide d\u2019une balise ayant un attribut WAI-ARIA `role="listbox"` sera consid\xE9r\xE9e comme non conforme au crit\xE8re 11.8.'
       ],
@@ -2803,21 +2115,9 @@ var rgaa_default = {
           "S\u2019il est pr\xE9sent, le contenu de l\u2019attribut `title` contient au moins l\u2019[intitul\xE9 visible](#intitule-visible)."
         ]
       },
-      wcag: [
-        "2.5.3 Label in Name (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "H36",
-        "H91",
-        "ARIA6",
-        "ARIA9",
-        "ARIA14",
-        "ARIA16"
-      ],
-      particularCases: [
-        "Pour le test 11.9.2, voir cas particuliers crit\xE8re 11.2."
-      ],
+      wcag: ["2.5.3 Label in Name (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["H36", "H91", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
+      particularCases: ["Pour le test 11.9.2, voir cas particuliers crit\xE8re 11.2."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2863,10 +2163,7 @@ var rgaa_default = {
           "Une instruction ou une indication du type de donn\xE9es et/ou de format obligatoire est visible et situ\xE9e dans le [passage de texte](#passage-de-texte-lie-par-aria-labelledby-ou-aria-describedby) associ\xE9 au champ."
         ]
       },
-      wcag: [
-        "3.3.1 Error Identification (A)",
-        "3.3.2 Labels or Instructions (A)"
-      ],
+      wcag: ["3.3.1 Error Identification (A)", "3.3.2 Labels or Instructions (A)"],
       techniques: [
         "G83",
         "G84",
@@ -2905,23 +2202,11 @@ var rgaa_default = {
       title: "Dans chaque [formulaire](#formulaire), le [contr\xF4le de saisie](#controle-de-saisie-formulaire) est-il accompagn\xE9, si n\xE9cessaire, de suggestions facilitant la correction des erreurs de saisie\xA0?",
       titlePlain: "Dans chaque formulaire, le contr\xF4le de saisie est-il accompagn\xE9, si n\xE9cessaire, de suggestions facilitant la correction des erreurs de saisie\xA0?",
       tests: {
-        "1": [
-          "Pour chaque erreur de saisie, les types et les formats de donn\xE9es sont-ils sugg\xE9r\xE9s, si n\xE9cessaire\xA0?"
-        ],
-        "2": [
-          "Pour chaque erreur de saisie, des exemples de valeurs attendues sont-ils sugg\xE9r\xE9s, si n\xE9cessaire\xA0?"
-        ]
+        "1": ["Pour chaque erreur de saisie, les types et les formats de donn\xE9es sont-ils sugg\xE9r\xE9s, si n\xE9cessaire\xA0?"],
+        "2": ["Pour chaque erreur de saisie, des exemples de valeurs attendues sont-ils sugg\xE9r\xE9s, si n\xE9cessaire\xA0?"]
       },
-      wcag: [
-        "3.3.3 Error Suggestion (AA)"
-      ],
-      techniques: [
-        "G84",
-        "G85",
-        "G89",
-        "G177",
-        "H89"
-      ],
+      wcag: ["3.3.3 Error Suggestion (AA)"],
+      techniques: ["G84", "G85", "G89", "G177", "H89"],
       technicalNote: [
         "Certains types de contr\xF4les en HTML5 proposent des messages d\u2019aide \xE0 la saisie automatique\xA0: par exemple le type `email` affiche un message du type \xAB\xA0veuillez saisir une adresse e-mail valide\xA0\xBB dans le cas o\xF9 l\u2019adresse e-mail saisie ne correspond pas au format attendu. Ces messages sont personnalisables via l\u2019API Constraint Validation, ce qui permet de personnaliser les messages d\u2019erreur et de valider le crit\xE8re. L\u2019attribut `pattern` permet d\u2019effectuer automatiquement des contr\xF4les de format (via des expressions r\xE9guli\xE8res) et affiche un message d\u2019aide personnalisable via l\u2019attribut `title`\xA0: ce dispositif valide \xE9galement le crit\xE8re."
       ],
@@ -2946,16 +2231,8 @@ var rgaa_default = {
           "Un m\xE9canisme de demande de confirmation explicite de la suppression ou de la modification, via un [champ de formulaire](#champ-de-saisie-de-formulaire) ou une \xE9tape suppl\xE9mentaire, est propos\xE9."
         ]
       },
-      wcag: [
-        "3.3.4 Error Prevention (Legal, Financial, Data) (AA)"
-      ],
-      techniques: [
-        "G98",
-        "G99",
-        "G155",
-        "G164",
-        "G168"
-      ],
+      wcag: ["3.3.4 Error Prevention (Legal, Financial, Data) (AA)"],
+      techniques: ["G98", "G99", "G155", "G164", "G168"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -2972,12 +2249,8 @@ var rgaa_default = {
           "La valeur indiqu\xE9e pour l\u2019attribut `autocomplete` est pertinente au regard du type d\u2019information attendu."
         ]
       },
-      wcag: [
-        "1.3.5 Identify Input Purpose (AA)"
-      ],
-      techniques: [
-        "H98"
-      ],
+      wcag: ["1.3.5 Identify Input Purpose (AA)"],
+      techniques: ["H98"],
       technicalNote: [
         "La [liste des valeurs possibles pour l\u2019attribut `autocomplete`](#liste-des-valeurs-possibles-pour-l-attribut-autocomplete) repose sur la liste des valeurs pr\xE9sentes dans la sp\xE9cification WCAG2.1 qui reprend elle-m\xEAme la liste des valeurs de type \u201Cfield name\u201D de la sp\xE9cification HTML5.2. Le crit\xE8re WCAG demande \xE0 ce que l\u2019une de ces valeurs soit pr\xE9sente pour qualifier un champ de saisie concernant l\u2019utilisateur.",
         'Ce que le crit\xE8re WCAG laisse implicite, ce sont les diff\xE9rentes r\xE8gles de construction possibles pour obtenir une valeur (simple ou compos\xE9e) pour l\u2019attribut `autocomplete`. C\u2019est cependant l\u2019affaire du d\xE9veloppeur de fournir \xE0 l\u2019attribut `autocomplete` une valeur ou un ensemble de valeurs valides au regard des exigences de l\u2019algorithme fourni par la sp\xE9cification HTML5.2. Ainsi, un attribut `autocomplete` ne peut contenir qu\u2019une seule valeur de type `\u201Cfield name\u201D`, comme `"name"` ou `"street-address"`. On peut avoir \xE9galement un ensemble compos\xE9 de diff\xE9rentes valeurs comme, par exemple, `autocomplete="shipping name"` ou `autocomplete="section-software shipping street-address"`\xA0: `"section-software"` renvoie \xE0 une valeur de type <span lang="en">\u201Cscope\u201D</span> et `"shipping"` \xE0 une valeur de type <span lang="en">\u201Chint set\u201D</span>, mais toujours une seule valeur de type <span lang="en">\u201Cfield name\u201D</span>.'
@@ -2998,14 +2271,8 @@ var rgaa_default = {
           "Un [moteur de recherche](#moteur-de-recherche-interne-a-un-site-web) et un [plan du site](#page-plan-du-site) sont pr\xE9sents."
         ]
       },
-      wcag: [
-        "2.4.5 Multiple Ways (AA)"
-      ],
-      techniques: [
-        "G63",
-        "G64",
-        "G161"
-      ],
+      wcag: ["2.4.5 Multiple Ways (AA)"],
+      techniques: ["G63", "G64", "G161"],
       particularCases: [
         "Il existe une gestion de cas particulier lorsque le site web est constitu\xE9 d\u2019une seule page ou d\u2019un nombre tr\xE8s limit\xE9 de pages (cf. note). Dans ce cas-l\xE0, le crit\xE8re est non applicable.",
         "Le crit\xE8re est \xE9galement non applicable pour les pages d\u2019un ensemble de pages qui sont le r\xE9sultat ou une partie d\u2019un processus (un processus de paiement ou de prise de commande, par exemple).",
@@ -3026,18 +2293,9 @@ var rgaa_default = {
           "Le [menu et les barres de navigation](#menu-et-barre-de-navigation) se pr\xE9sentent toujours dans le m\xEAme ordre relatif dans le code source."
         ]
       },
-      wcag: [
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      techniques: [
-        "G61",
-        "F66"
-      ],
-      particularCases: [
-        "Il existe une gestion de cas particuliers lorsque\xA0:",
-        "[object Object]",
-        "Dans ces situations, le crit\xE8re est non applicable."
-      ],
+      wcag: ["3.2.3 Consistent Navigation (AA)"],
+      techniques: ["G61", "F66"],
+      particularCases: ["Il existe une gestion de cas particuliers lorsque\xA0:", "[object Object]", "Dans ces situations, le crit\xE8re est non applicable."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3047,22 +2305,12 @@ var rgaa_default = {
       title: "La [page \xAB\xA0plan du site\xA0\xBB](#page-plan-du-site) est-elle pertinente\xA0?",
       titlePlain: "La page \xAB\xA0plan du site\xA0\xBB est-elle pertinente\xA0?",
       tests: {
-        "1": [
-          "La [page \xAB\xA0plan du site\xA0\xBB](#page-plan-du-site) est-elle repr\xE9sentative de l\u2019architecture g\xE9n\xE9rale du site\xA0?"
-        ],
-        "2": [
-          "Les liens du [plan du site](#page-plan-du-site) sont-ils fonctionnels\xA0?"
-        ],
-        "3": [
-          "Les liens du [plan du site](#page-plan-du-site) renvoient-ils bien vers les pages indiqu\xE9es par l\u2019intitul\xE9\xA0?"
-        ]
+        "1": ["La [page \xAB\xA0plan du site\xA0\xBB](#page-plan-du-site) est-elle repr\xE9sentative de l\u2019architecture g\xE9n\xE9rale du site\xA0?"],
+        "2": ["Les liens du [plan du site](#page-plan-du-site) sont-ils fonctionnels\xA0?"],
+        "3": ["Les liens du [plan du site](#page-plan-du-site) renvoient-ils bien vers les pages indiqu\xE9es par l\u2019intitul\xE9\xA0?"]
       },
-      wcag: [
-        "2.4.5 Multiple Ways (AA)"
-      ],
-      techniques: [
-        "G63"
-      ],
+      wcag: ["2.4.5 Multiple Ways (AA)"],
+      techniques: ["G63"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3082,14 +2330,8 @@ var rgaa_default = {
           "Dans chaque [ensemble de pages](#ensemble-de-pages), la fonctionnalit\xE9 vers la [page \xAB\xA0plan du site\xA0\xBB](#page-plan-du-site) se pr\xE9sente-t-elle toujours dans le m\xEAme ordre relatif dans le code source\xA0?"
         ]
       },
-      wcag: [
-        "2.4.5 Multiple Ways (AA)",
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      techniques: [
-        "G61",
-        "G63"
-      ],
+      wcag: ["2.4.5 Multiple Ways (AA)", "3.2.3 Consistent Navigation (AA)"],
+      techniques: ["G61", "G63"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3109,13 +2351,8 @@ var rgaa_default = {
           "Dans chaque [ensemble de pages](#ensemble-de-pages), la fonctionnalit\xE9 vers le [moteur de recherche](#moteur-de-recherche-interne-a-un-site-web) se pr\xE9sente-t-elle toujours dans le m\xEAme ordre relatif dans le code source\xA0?"
         ]
       },
-      wcag: [
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      techniques: [
-        "G61",
-        "F66"
-      ],
+      wcag: ["3.2.3 Consistent Navigation (AA)"],
+      techniques: ["G61", "F66"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3134,17 +2371,8 @@ var rgaa_default = {
           "La zone peut \xEAtre atteinte par le biais d\u2019un [lien d\u2019acc\xE8s rapide](#liens-d-evitement-ou-d-acces-rapide) visible ou, \xE0 d\xE9faut, visible \xE0 la prise de focus."
         ]
       },
-      wcag: [
-        "1.3.1 Info and Relationships (A)",
-        "2.4.1 Bypass Blocks (A)",
-        "4.1.2 Name, Role, Value (A)"
-      ],
-      techniques: [
-        "H69",
-        "G115",
-        "ARIA4",
-        "ARIA11"
-      ],
+      wcag: ["1.3.1 Info and Relationships (A)", "2.4.1 Bypass Blocks (A)", "4.1.2 Name, Role, Value (A)"],
+      techniques: ["H69", "G115", "ARIA4", "ARIA11"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3165,27 +2393,14 @@ var rgaa_default = {
           "Le lien est fonctionnel."
         ]
       },
-      wcag: [
-        "2.4.1 Bypass Blocks (A)",
-        "2.4.3 Focus Order (A)",
-        "3.2.3 Consistent Navigation (AA)"
-      ],
-      techniques: [
-        "G1",
-        "G59",
-        "G123",
-        "G124",
-        "SCR28",
-        "F66"
-      ],
+      wcag: ["2.4.1 Bypass Blocks (A)", "2.4.3 Focus Order (A)", "3.2.3 Consistent Navigation (AA)"],
+      techniques: ["G1", "G59", "G123", "G124", "SCR28", "F66"],
       particularCases: [
         "Il existe une gestion de cas particuliers lorsque le site web est constitu\xE9 d\u2019une seule page.",
         "Dans ce cas de figure, l\u2019obligation de la pr\xE9sence d\u2019un lien d\u2019acc\xE8s rapide est li\xE9e au contexte de la page\xA0: pr\xE9sence ou absence de navigation ou de contenus additionnels, par exemple. Le crit\xE8re peut \xEAtre consid\xE9r\xE9 comme non applicable lorsqu\u2019il est av\xE9r\xE9 qu\u2019un lien d\u2019acc\xE8s rapide est inutile."
       ],
       automatability: "static",
-      ruleIds: [
-        "skip-link-target-missing"
-      ]
+      ruleIds: ["skip-link-target-missing"]
     },
     {
       id: "12.8",
@@ -3193,30 +2408,15 @@ var rgaa_default = {
       title: "Dans chaque page web, l\u2019[ordre de tabulation](#ordre-de-tabulation) est-il [coh\xE9rent](#comprehensible-ordre-de-lecture)\xA0?",
       titlePlain: "Dans chaque page web, l\u2019ordre de tabulation est-il coh\xE9rent\xA0?",
       tests: {
-        "1": [
-          "Dans chaque page web, l\u2019[ordre de tabulation](#ordre-de-tabulation) dans le contenu est-il [coh\xE9rent](#comprehensible-ordre-de-lecture)\xA0?"
-        ],
+        "1": ["Dans chaque page web, l\u2019[ordre de tabulation](#ordre-de-tabulation) dans le contenu est-il [coh\xE9rent](#comprehensible-ordre-de-lecture)\xA0?"],
         "2": [
           "Pour chaque [script](#script) qui met \xE0 jour ou ins\xE8re un contenu, l\u2019[ordre de tabulation](#ordre-de-tabulation) reste-t-il [coh\xE9rent](#comprehensible-ordre-de-lecture)\xA0?"
         ]
       },
-      wcag: [
-        "2.4.3 Focus Order (A)"
-      ],
-      techniques: [
-        "G59",
-        "H4",
-        "F44",
-        "F85",
-        "SCR26",
-        "SCR27",
-        "SCR37",
-        "C27"
-      ],
+      wcag: ["2.4.3 Focus Order (A)"],
+      techniques: ["G59", "H4", "F44", "F85", "SCR26", "SCR27", "SCR37", "C27"],
       automatability: "static",
-      ruleIds: [
-        "positive-tabindex"
-      ]
+      ruleIds: ["positive-tabindex"]
     },
     {
       id: "12.9",
@@ -3230,15 +2430,8 @@ var rgaa_default = {
           "L\u2019utilisateur est inform\xE9 d\u2019un m\xE9canisme fonctionnel permettant d\u2019atteindre au clavier l\u2019\xE9l\xE9ment suivant ou pr\xE9c\xE9dent pouvant recevoir le focus."
         ]
       },
-      wcag: [
-        "2.1.1 Keyboard (A)",
-        "2.1.2 No Keyboard Trap (A)"
-      ],
-      techniques: [
-        "G21",
-        "H91",
-        "F10"
-      ],
+      wcag: ["2.1.1 Keyboard (A)", "2.1.2 No Keyboard Trap (A)"],
+      techniques: ["G21", "H91", "F10"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3255,13 +2448,8 @@ var rgaa_default = {
           "Dans le cas d\u2019un [composant d\u2019interface](#composant-d-interface) utilisateur, le [raccourci clavier](#raccourci-clavier) qui lui est associ\xE9 ne peut \xEAtre activ\xE9 que si le focus clavier est sur ce composant."
         ]
       },
-      wcag: [
-        "2.1.4 Character Key Shortcuts (A)"
-      ],
-      techniques: [
-        "F99",
-        "G217"
-      ],
+      wcag: ["2.1.4 Character Key Shortcuts (A)"],
+      techniques: ["F99", "G217"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3275,9 +2463,7 @@ var rgaa_default = {
           "Dans chaque page web, les contenus additionnels apparaissant au survol, \xE0 la prise de focus ou \xE0 l\u2019activation d\u2019un [composant d\u2019interface](#composant-d-interface) sont-ils si n\xE9cessaire atteignables au clavier\xA0?"
         ]
       },
-      wcag: [
-        "2.1.1 Keyboard (A)"
-      ],
+      wcag: ["2.1.1 Keyboard (A)"],
       techniques: [],
       technicalNote: [
         "Ce crit\xE8re adresse les situations o\xF9 un contenu additionnel contient des [composants d\u2019interface](#composant-d-interface) avec lesquels il doit \xEAtre possible d\u2019interagir au clavier. Par exemple, une infobulle personnalis\xE9e qui propose un lien dans son contenu."
@@ -3298,9 +2484,7 @@ var rgaa_default = {
           "L\u2019utilisateur est averti de l\u2019imminence du rafra\xEEchissement et dispose de vingt secondes, au moins, pour augmenter la limite de temps avant le prochain rafra\xEEchissement\xA0;",
           "La limite de temps entre deux rafra\xEEchissements est de vingt heures, au moins."
         ],
-        "2": [
-          "Pour chaque page web, chaque proc\xE9d\xE9 de [redirection](#redirection) effectu\xE9 via une balise `<meta>` est-il imm\xE9diat (hors cas particuliers)\xA0?"
-        ],
+        "2": ["Pour chaque page web, chaque proc\xE9d\xE9 de [redirection](#redirection) effectu\xE9 via une balise `<meta>` est-il imm\xE9diat (hors cas particuliers)\xA0?"],
         "3": [
           "Pour chaque page web, chaque proc\xE9d\xE9 de [redirection](#redirection) effectu\xE9 via un [script](#script) v\xE9rifie-t-il une de ces conditions (hors cas particuliers)\xA0?",
           "L\u2019utilisateur peut arr\xEAter ou relancer la redirection\xA0;",
@@ -3315,28 +2499,8 @@ var rgaa_default = {
           "La limite de temps avant la fin de la session est de vingt heures au moins."
         ]
       },
-      wcag: [
-        "2.2.1 Timing Adjustable (A)",
-        "2.2.2 Pause, Stop, Hide (A)"
-      ],
-      techniques: [
-        "F40",
-        "F41",
-        "F58",
-        "F61",
-        "G75",
-        "G76",
-        "G110",
-        "G133",
-        "G180",
-        "G186",
-        "G198",
-        "H76",
-        "SCR1",
-        "SCR16",
-        "SCR36",
-        "SVR1"
-      ],
+      wcag: ["2.2.1 Timing Adjustable (A)", "2.2.2 Pause, Stop, Hide (A)"],
+      techniques: ["F40", "F41", "F58", "F61", "G75", "G76", "G110", "G133", "G180", "G186", "G198", "H76", "SCR1", "SCR16", "SCR36", "SVR1"],
       particularCases: [
         "Il existe une gestion de cas particuliers lorsque la limite de temps est essentielle, notamment lorsqu\u2019elle ne pourrait pas \xEAtre supprim\xE9e sans changer fondamentalement le contenu ou les fonctionnalit\xE9s li\xE9es au contenu.",
         "Dans ces situations, le crit\xE8re est non applicable. Par exemple, le rafra\xEEchissement d\u2019un flux RSS dans une page n\u2019est pas une limite de temps essentielle\xA0; le crit\xE8re est applicable. En revanche, une redirection automatique qui am\xE8ne vers la nouvelle version d\u2019une page \xE0 partir d\u2019une URL obsol\xE8te est essentielle\xA0; le crit\xE8re est non applicable."
@@ -3354,13 +2518,8 @@ var rgaa_default = {
           "Dans chaque page web, l\u2019ouverture d\u2019une nouvelle fen\xEAtre ne doit pas \xEAtre d\xE9clench\xE9e sans action de l\u2019utilisateur. Cette r\xE8gle est-elle respect\xE9e\xA0?"
         ]
       },
-      wcag: [
-        "3.2.1 On focus (A)"
-      ],
-      techniques: [
-        "F55",
-        "G107"
-      ],
+      wcag: ["3.2.1 On focus (A)"],
+      techniques: ["F55", "G107"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3386,16 +2545,8 @@ var rgaa_default = {
         "3.1.1 Language of Page (A)",
         "4.1.2 Name, Role, Value (A)"
       ],
-      techniques: [
-        "F15",
-        "G10",
-        "G135"
-      ],
-      particularCases: [
-        "Il existe une gestion de cas particuliers\xA0:",
-        "[object Object]",
-        "Dans cette situation, le crit\xE8re est non applicable."
-      ],
+      techniques: ["F15", "G10", "G135"],
+      particularCases: ["Il existe une gestion de cas particuliers\xA0:", "[object Object]", "Dans cette situation, le crit\xE8re est non applicable."],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3420,11 +2571,7 @@ var rgaa_default = {
         "3.1.1 Language of Page (A)",
         "4.1.2 Name, Role, Value (A)"
       ],
-      techniques: [
-        "F15",
-        "G10",
-        "G135"
-      ],
+      techniques: ["F15", "G10", "G135"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3440,15 +2587,8 @@ var rgaa_default = {
           "Une d\xE9finition est donn\xE9e par le contexte adjacent."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "F71",
-        "F70",
-        "G135",
-        "H86"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["F71", "F70", "G135", "H86"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3464,14 +2604,8 @@ var rgaa_default = {
           "La d\xE9finition donn\xE9e par le contexte adjacent est pertinente."
         ]
       },
-      wcag: [
-        "1.1.1 Non-text Content (A)"
-      ],
-      techniques: [
-        "F71",
-        "F72",
-        "H86"
-      ],
+      wcag: ["1.1.1 Non-text Content (A)"],
+      techniques: ["F71", "F72", "H86"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3497,14 +2631,8 @@ var rgaa_default = {
           "La surface totale cumul\xE9e des effets est inf\xE9rieure ou \xE9gale \xE0 21824 pixels."
         ]
       },
-      wcag: [
-        "2.3.1 Three Flashes or Below Threshold (A)"
-      ],
-      techniques: [
-        "G15",
-        "G19",
-        "G176"
-      ],
+      wcag: ["2.3.1 Three Flashes or Below Threshold (A)"],
+      techniques: ["G15", "G19", "G176"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3529,32 +2657,10 @@ var rgaa_default = {
           "L\u2019utilisateur peut afficher la totalit\xE9 de l\u2019information sans le clignotement."
         ]
       },
-      wcag: [
-        "2.2.1 Timing Adjustable (A)",
-        "2.2.2 Pause, Stop, Hide (A)"
-      ],
-      techniques: [
-        "F4",
-        "F7",
-        "F16",
-        "F47",
-        "F50",
-        "G4",
-        "G11",
-        "G152",
-        "G186",
-        "G187",
-        "G191",
-        "SCR22",
-        "SCR33",
-        "SCR36",
-        "SM11",
-        "SM12"
-      ],
+      wcag: ["2.2.1 Timing Adjustable (A)", "2.2.2 Pause, Stop, Hide (A)"],
+      techniques: ["F4", "F7", "F16", "F47", "F50", "G4", "G11", "G152", "G186", "G187", "G191", "SCR22", "SCR33", "SCR36", "SM11", "SM12"],
       automatability: "static",
-      ruleIds: [
-        "autoplay-media"
-      ]
+      ruleIds: ["autoplay-media"]
     },
     {
       id: "13.9",
@@ -3568,9 +2674,7 @@ var rgaa_default = {
           "Le contenu propos\xE9 reste le m\xEAme quel que soit le mode d\u2019orientation de l\u2019\xE9cran utilis\xE9 m\xEAme si sa pr\xE9sentation et le moyen d\u2019y acc\xE9der peut diff\xE9rer."
         ]
       },
-      wcag: [
-        "1.3.4 Orientation (AA)"
-      ],
+      wcag: ["1.3.4 Orientation (AA)"],
       techniques: [],
       particularCases: [
         "Il existe des interfaces pour lesquelles l\u2019orientation du p\xE9riph\xE9rique est essentielle \xE0 leur utilisation.",
@@ -3593,17 +2697,9 @@ var rgaa_default = {
           "Dans chaque page web, chaque fonctionnalit\xE9 utilisable ou disponible suite \xE0 un geste bas\xE9 sur le suivi d\u2019une trajectoire sur l\u2019\xE9cran est-elle \xE9galement utilisable ou disponible suite \xE0 un contact en un point unique de l\u2019\xE9cran (hors cas particuliers)."
         ]
       },
-      wcag: [
-        "2.5.1 Pointer Gestures (A)"
-      ],
-      techniques: [
-        "G215",
-        "G216"
-      ],
-      particularCases: [
-        "Il existe une gestion de cas particuliers dans deux types de situation\xA0:",
-        "[object Object]"
-      ],
+      wcag: ["2.5.1 Pointer Gestures (A)"],
+      techniques: ["G215", "G216"],
+      particularCases: ["Il existe une gestion de cas particuliers dans deux types de situation\xA0:", "[object Object]"],
       automatability: "judgment",
       ruleIds: []
     },
@@ -3620,9 +2716,7 @@ var rgaa_default = {
           "Un m\xE9canisme est disponible pour abandonner (avant ach\xE8vement de l\u2019action) ou annuler (apr\xE8s ach\xE8vement) l\u2019ex\xE9cution de l\u2019action."
         ]
       },
-      wcag: [
-        "2.5.2 Pointer Cancellation (A)"
-      ],
+      wcag: ["2.5.2 Pointer Cancellation (A)"],
       techniques: [],
       technicalNote: [
         "Deux exemples de m\xE9canisme mis en place pour annuler ou abandonner une action d\xE9clench\xE9e au moyen d\u2019un dispositif de pointage sur un point unique de l\u2019\xE9cran\xA0:",
@@ -3650,14 +2744,9 @@ var rgaa_default = {
           "L\u2019utilisateur a-t-il la possibilit\xE9 de d\xE9sactiver la d\xE9tection du mouvement pour \xE9viter un d\xE9clenchement accidentel de la fonctionnalit\xE9 (hors cas particuliers)\xA0?"
         ]
       },
-      wcag: [
-        "2.5.4 Motion Actuation (A)"
-      ],
+      wcag: ["2.5.4 Motion Actuation (A)"],
       techniques: [],
-      particularCases: [
-        "Il existe une gestion de cas particulier lorsque\xA0:",
-        "[object Object]"
-      ],
+      particularCases: ["Il existe une gestion de cas particulier lorsque\xA0:", "[object Object]"],
       automatability: "judgment",
       ruleIds: []
     }
@@ -6383,7 +5472,7 @@ function parseHtml(source, file, lossy = false) {
         end: dh.endIndex ?? start
       };
       elements.push(el);
-      const id = el.attribs["id"];
+      const id = el.attribs.id;
       if (id && !byId2.has(id)) byId2.set(id, el);
       for (const child of dh.children) {
         const c = convert(child, el);
@@ -6443,7 +5532,7 @@ function elementsByTag(doc, ...tags) {
 function allIds(doc) {
   const out = [];
   for (const el of doc.elements) {
-    const id = el.attribs["id"];
+    const id = el.attribs.id;
     if (id) out.push({ id, el });
   }
   return out;
@@ -6564,14 +5653,14 @@ function isFullDocument(doc) {
   return doc.elements.some((e) => e.tag === "html");
 }
 function selectorOf(el) {
-  const id = el.attribs["id"];
+  const id = el.attribs.id;
   if (id) return `${el.tag}#${id}`;
-  const type = el.attribs["type"];
+  const type = el.attribs.type;
   if (type && (el.tag === "input" || el.tag === "button")) return `${el.tag}[type=${type}]`;
-  const cls = el.attribs["class"];
+  const cls = el.attribs.class;
   if (cls) return `${el.tag}.${cls.trim().split(/\s+/)[0]}`;
-  if (el.tag === "a" && el.attribs["href"]) {
-    const h = el.attribs["href"];
+  if (el.tag === "a" && el.attribs.href) {
+    const h = el.attribs.href;
     return `a[href=${h.length > 30 ? h.slice(0, 30) + "\u2026" : h}]`;
   }
   return el.tag;
@@ -6640,7 +5729,7 @@ var decorativeAltMisuse = {
           message: `Image d\xE9corative (alt="") mais nomm\xE9e par aria-label/title \u2014 incoh\xE9rence d\xE9coratif/informatif.`,
           remediation: `Si l'image est d\xE9corative, retirez aria-label/title ; sinon donnez un alt descriptif.`
         });
-      } else if (["presentation", "none"].includes(role) && alt && alt.trim()) {
+      } else if (["presentation", "none"].includes(role) && alt?.trim()) {
         out.push({
           criteriaId: "1.2",
           el,
@@ -6702,7 +5791,22 @@ var iframeTitleMissing = {
 var framesRules = [iframeTitleMissing];
 
 // src/rules/scripts-aria.ts
-var INTERACTIVE_ROLES = ["button", "link", "checkbox", "radio", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "switch", "textbox", "combobox", "slider", "spinbutton"];
+var INTERACTIVE_ROLES = [
+  "button",
+  "link",
+  "checkbox",
+  "radio",
+  "tab",
+  "menuitem",
+  "menuitemcheckbox",
+  "menuitemradio",
+  "option",
+  "switch",
+  "textbox",
+  "combobox",
+  "slider",
+  "spinbutton"
+];
 function isInteractive(el) {
   if (el.tag === "a") return hasAttr(el, "href");
   if (["button", "select", "textarea"].includes(el.tag)) return true;
@@ -7006,7 +6110,15 @@ var nestedInteractive = {
     return out;
   }
 };
-var scriptsAriaRules = [invalidAriaRole, ariaRefMissingId, redundantAria, clickableNoninteractive, ariaRequiredChildren, ariaHiddenFocusable, nestedInteractive];
+var scriptsAriaRules = [
+  invalidAriaRole,
+  ariaRefMissingId,
+  redundantAria,
+  clickableNoninteractive,
+  ariaRequiredChildren,
+  ariaHiddenFocusable,
+  nestedInteractive
+];
 
 // src/rules/mandatory.ts
 var htmlLangMissing = {
@@ -7856,7 +6968,7 @@ import { execFileSync } from "child_process";
 import { join as join2, relative } from "path";
 
 // src/glob.ts
-import { readdirSync, statSync, existsSync } from "fs";
+import { existsSync, readdirSync, statSync } from "fs";
 import { join, sep } from "path";
 
 // src/util.ts
@@ -7932,7 +7044,7 @@ function makeFilter(opts = {}) {
     if (!exts.has(ext(file))) return false;
     const rel = toPosix(file);
     if (include && !include(rel)) return false;
-    if (exclude && exclude(rel)) return false;
+    if (exclude?.(rel)) return false;
     return true;
   };
 }
@@ -7943,7 +7055,7 @@ function inScopeMatcher(inputs) {
   const prefixes = scopes.filter((i) => !hasGlob(i)).map((p) => toPosix(p).replace(/\/+$/, ""));
   return (file) => {
     const rel = toPosix(file);
-    if (globMatch && globMatch(rel)) return true;
+    if (globMatch?.(rel)) return true;
     return prefixes.some((p) => rel === p || rel.startsWith(`${p}/`));
   };
 }
@@ -8009,7 +7121,7 @@ function gitChangedFiles(ref) {
   const top = git(["rev-parse", "--show-toplevel"]);
   if (top === null) return null;
   const repoRoot2 = top.trim();
-  const base = ref && ref.trim() ? ref.trim() : "HEAD";
+  const base = ref?.trim() ? ref.trim() : "HEAD";
   const out = /* @__PURE__ */ new Set();
   const add = (s) => {
     if (!s) return;
@@ -8177,7 +7289,9 @@ function runAudit(opts) {
     if (opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles) {
       const skipped = files.length - acc.fileCount;
       truncated = { limit: opts.maxFiles, total: files.length, skipped };
-      opts.onWarn?.(`ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`);
+      opts.onWarn?.(
+        `ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`
+      );
       break;
     }
     const file = files[i];
@@ -8472,10 +7586,7 @@ function renderReport(r, lang = "fr") {
   const na = r.criteria.filter((c) => c.status === "NA");
   out.push(na.length ? na.map((c) => `- ${critLabel(c.id)}${c.justification ? ` \u2014 _${c.justification}_` : ""}`).join("\n") : s.nothing, "");
   out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
-  out.push(
-    r.residualRisks.length ? r.residualRisks.map((rr) => `- ${critLabel(rr.criteriaId)} \u2014 _${rr.reason}_`).join("\n") : s.nothing,
-    ""
-  );
+  out.push(r.residualRisks.length ? r.residualRisks.map((rr) => `- ${critLabel(rr.criteriaId)} \u2014 _${rr.reason}_`).join("\n") : s.nothing, "");
   return out.join("\n");
 }
 function writeReport(r, opts) {
@@ -8498,7 +7609,9 @@ function formatCriterion(c, lang = "fr") {
   out.push(`${c.id} \u2014 ${c.titlePlain}`);
   const auto = AUTO_LABEL[c.automatability][lang];
   const theme = allThemes().find((t2) => t2.number === c.theme)?.name ?? "";
-  out.push(`${lang === "fr" ? "Th\xE9matique" : "Theme"} ${c.theme} (${theme}) \xB7 ${lang === "fr" ? "automatisabilit\xE9" : "automatability"} : ${auto}${c.ruleIds.length ? ` \xB7 ${lang === "fr" ? "r\xE8gles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`);
+  out.push(
+    `${lang === "fr" ? "Th\xE9matique" : "Theme"} ${c.theme} (${theme}) \xB7 ${lang === "fr" ? "automatisabilit\xE9" : "automatability"} : ${auto}${c.ruleIds.length ? ` \xB7 ${lang === "fr" ? "r\xE8gles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`
+  );
   if (c.wcag.length) out.push(`WCAG : ${c.wcag.join(" ; ")}`);
   if (c.techniques.length) out.push(`${lang === "fr" ? "Techniques" : "Techniques"} : ${c.techniques.join(", ")}`);
   const testKeys = Object.keys(c.tests);
@@ -8516,7 +7629,9 @@ function themeList(lang) {
   for (const t2 of allThemes()) {
     const crits = listTheme(t2.number);
     const stat = crits.filter((c) => c.automatability === "static").length;
-    out.push(`${String(t2.number).padStart(2)}. ${t2.name.padEnd(32).slice(0, 32)} ${String(t2.count).padStart(3)} ${lang === "fr" ? "crit\xE8res" : "criteria"} (${stat} ${lang === "fr" ? "auto" : "auto"})`);
+    out.push(
+      `${String(t2.number).padStart(2)}. ${t2.name.padEnd(32).slice(0, 32)} ${String(t2.count).padStart(3)} ${lang === "fr" ? "crit\xE8res" : "criteria"} (${stat} ${lang === "fr" ? "auto" : "auto"})`
+    );
   }
   return out.join("\n");
 }
@@ -8539,7 +7654,13 @@ function runCriteria(opts) {
         console.error(`ultra11y criteria: unknown WCAG success criterion "${opts.id}".`);
         return 2;
       }
-      console.log(opts.json ? JSON.stringify(wcagIndex().find((e) => e.sc === opts.id), null, 2) : txt);
+      console.log(
+        opts.json ? JSON.stringify(
+          wcagIndex().find((e) => e.sc === opts.id),
+          null,
+          2
+        ) : txt
+      );
       return 0;
     }
     console.log(opts.json ? JSON.stringify(wcagIndex(), null, 2) : wcagListText(opts.lang));
@@ -8742,33 +7863,33 @@ var AXE_RGAA = {
   "heading-order": "9.1",
   "empty-heading": "9.1",
   "page-has-heading-one": "9.1",
-  "list": "9.3",
-  "listitem": "9.3",
+  list: "9.3",
+  listitem: "9.3",
   "definition-list": "9.3",
-  "dlitem": "9.3",
+  dlitem: "9.3",
   "landmark-one-main": "12.6",
-  "region": "12.6",
+  region: "12.6",
   // presentation / zoom
   "meta-viewport": "10.4",
   "meta-viewport-large": "10.4",
   // forms
-  "label": "11.1",
+  label: "11.1",
   "form-field-multiple-labels": "11.1",
   "select-name": "11.1",
   "label-title-only": "11.1",
   "autocomplete-valid": "11.13",
-  "fieldset": "11.6",
+  fieldset: "11.6",
   // multimedia
   "audio-caption": "4.3",
   "video-caption": "4.3",
   "no-autoplay-audio": "4.10",
-  "blink": "13.8",
-  "marquee": "13.8",
+  blink: "13.8",
+  marquee: "13.8",
   // navigation
-  "tabindex": "12.8",
+  tabindex: "12.8",
   "skip-link": "12.7",
-  "bypass": "12.7",
-  "accesskeys": "12.10"
+  bypass: "12.7",
+  accesskeys: "12.10"
 };
 var FALLBACK_CRITERION = "7.1";
 function criterionFromRgaaTags(tags) {
@@ -9340,7 +8461,8 @@ function fixSummary(r, lang = "fr", write = false) {
     const fixable = ff.items.filter((i) => i.fixability !== "proposal");
     if (!fixable.length && !ff.items.length) continue;
     out.push(`### ${ff.file}${ff.lossy ? " (JSX/TSX \u2014 " + (lang === "fr" ? "proposition seule" : "proposal-only") + ")" : ""}`);
-    for (const it of ff.items) out.push(`- [${FIX_LABEL[it.fixability][lang]}] ${it.ruleId} (RGAA ${it.criteriaId}) \u2014 \`${it.selectorHint}\` @ ${ff.file}:${it.line}`);
+    for (const it of ff.items)
+      out.push(`- [${FIX_LABEL[it.fixability][lang]}] ${it.ruleId} (RGAA ${it.criteriaId}) \u2014 \`${it.selectorHint}\` @ ${ff.file}:${it.line}`);
     if (ff.diff) out.push("", "```diff", ff.diff, "```");
     if (ff.regression) out.push(`> \u26A0\uFE0F ${lang === "fr" ? "non \xE9crit : r\xE9gression d\xE9tect\xE9e" : "not written: regression detected"}`);
     out.push("");
@@ -9373,9 +8495,13 @@ function baselineSummary(diff, lang = "fr") {
   const out = [];
   const blocking = diff.newFindings.filter((f) => RANK[f.severity] <= RANK[diff.failOn]);
   if (diff.ok) {
-    out.push(lang === "fr" ? `\u2713 Aucune nouvelle non-conformit\xE9 \u2265 ${diff.failOn} (${diff.newFindings.length} nouvelle(s) au total, ${diff.fixedFindings.length} corrig\xE9e(s)).` : `\u2713 No new non-conformity \u2265 ${diff.failOn} (${diff.newFindings.length} new total, ${diff.fixedFindings.length} fixed).`);
+    out.push(
+      lang === "fr" ? `\u2713 Aucune nouvelle non-conformit\xE9 \u2265 ${diff.failOn} (${diff.newFindings.length} nouvelle(s) au total, ${diff.fixedFindings.length} corrig\xE9e(s)).` : `\u2713 No new non-conformity \u2265 ${diff.failOn} (${diff.newFindings.length} new total, ${diff.fixedFindings.length} fixed).`
+    );
   } else {
-    out.push(lang === "fr" ? `\u2717 ${blocking.length} nouvelle(s) non-conformit\xE9(s) \u2265 ${diff.failOn} introduite(s) :` : `\u2717 ${blocking.length} new non-conformity(ies) \u2265 ${diff.failOn} introduced:`);
+    out.push(
+      lang === "fr" ? `\u2717 ${blocking.length} nouvelle(s) non-conformit\xE9(s) \u2265 ${diff.failOn} introduite(s) :` : `\u2717 ${blocking.length} new non-conformity(ies) \u2265 ${diff.failOn} introduced:`
+    );
     for (const f of blocking) out.push(`  [${f.severity}] ${f.ruleId} (RGAA ${f.criteriaId}) \u2014 ${f.file}:${f.line} (${f.selectorHint})`);
   }
   return out.join("\n");
@@ -9592,7 +8718,30 @@ var COMMANDS = ["audit", "report", "criteria", "check", "verify", "scan", "fix",
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
-var VALUE_FLAGS = /* @__PURE__ */ new Set(["out", "in", "include", "exclude", "ext", "report", "theme", "apply", "max-verify", "lang", "merge", "sitemap", "crawl", "depth", "max", "since", "max-files", "dedup", "only", "standard", "baseline", "fail-on"]);
+var VALUE_FLAGS = /* @__PURE__ */ new Set([
+  "out",
+  "in",
+  "include",
+  "exclude",
+  "ext",
+  "report",
+  "theme",
+  "apply",
+  "max-verify",
+  "lang",
+  "merge",
+  "sitemap",
+  "crawl",
+  "depth",
+  "max",
+  "since",
+  "max-files",
+  "dedup",
+  "only",
+  "standard",
+  "baseline",
+  "fail-on"
+]);
 var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
 function valueFlagsFor(command) {
   return command === "init" ? INIT_VALUE_FLAGS : VALUE_FLAGS;
@@ -9617,7 +8766,7 @@ function parseArgs(argv) {
   return { command: command ?? "", positionals, flags };
 }
 function langOf(flags) {
-  return flags["lang"] === "en" ? "en" : "fr";
+  return flags.lang === "en" ? "en" : "fr";
 }
 function asList(v) {
   return typeof v === "string" && v ? [v] : void 0;
@@ -9629,28 +8778,28 @@ async function cmdAudit(p) {
     return 2;
   }
   const stdin = inputs.includes("-") ? await readStdin() : void 0;
-  const since = typeof p.flags["since"] === "string" ? p.flags["since"] : void 0;
-  const dedupFlag = p.flags["dedup"];
+  const since = typeof p.flags.since === "string" ? p.flags.since : void 0;
+  const dedupFlag = p.flags.dedup;
   const result = runAudit({
     inputs,
     stdin,
-    forceJsx: p.flags["jsx"] === true,
-    include: asList(p.flags["include"]),
-    exclude: asList(p.flags["exclude"]),
-    ext: asList(p.flags["ext"]),
-    changed: p.flags["changed"] === true || since !== void 0,
+    forceJsx: p.flags.jsx === true,
+    include: asList(p.flags.include),
+    exclude: asList(p.flags.exclude),
+    ext: asList(p.flags.ext),
+    changed: p.flags.changed === true || since !== void 0,
     since,
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : void 0,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : void 0,
     onWarn: (m) => console.error(m)
   });
-  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
+  const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
   try {
     mkdirSync4(out, { recursive: true });
     writeFileSync6(join7(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
   } catch {
   }
-  const baselineFlag = p.flags["baseline"];
+  const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
     if (existsSync4(baselineFlag)) {
@@ -9661,21 +8810,22 @@ async function cmdAudit(p) {
       }
     }
     const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
-    if (p.flags["json"]) console.log(JSON.stringify(diff, null, 2));
+    if (p.flags.json) console.log(JSON.stringify(diff, null, 2));
     else console.log(baselineSummary(diff, langOf(p.flags)));
     return diff.ok ? 0 : 1;
   }
   if (p.flags["fail-on"] !== void 0) {
     const failOn = parseFailOn(p.flags["fail-on"]);
     const failing = findingsAtOrAbove(result.findings, failOn);
-    if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+    if (p.flags.json) console.log(JSON.stringify(result, null, 2));
     else {
       console.log(auditSummary(result, langOf(p.flags)));
-      if (failing.length) console.error(langOf(p.flags) === "fr" ? `\u2717 ${failing.length} non-conformit\xE9(s) \u2265 ${failOn}.` : `\u2717 ${failing.length} non-conformity(ies) \u2265 ${failOn}.`);
+      if (failing.length)
+        console.error(langOf(p.flags) === "fr" ? `\u2717 ${failing.length} non-conformit\xE9(s) \u2265 ${failOn}.` : `\u2717 ${failing.length} non-conformity(ies) \u2265 ${failOn}.`);
     }
     return failing.length ? 1 : 0;
   }
-  if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+  if (p.flags.json) console.log(JSON.stringify(result, null, 2));
   else console.log(auditSummary(result, langOf(p.flags)));
   return 0;
 }
@@ -9688,7 +8838,7 @@ function cmdInit(p) {
   } catch {
   }
   const failOn = parseFailOn(p.flags["fail-on"]);
-  const want = { hook: p.flags["hook"] === true, ci: p.flags["ci"] === true, baseline: p.flags["baseline"] === true };
+  const want = { hook: p.flags.hook === true, ci: p.flags.ci === true, baseline: p.flags.baseline === true };
   if (!want.hook && !want.ci && !want.baseline) {
     want.hook = true;
     want.baseline = true;
@@ -9709,18 +8859,18 @@ function cmdInit(p) {
   return 0;
 }
 function cmdCriteria(p) {
-  const themeFlag = p.flags["theme"];
+  const themeFlag = p.flags.theme;
   return runCriteria({
     id: p.positionals[0],
     theme: typeof themeFlag === "string" && themeFlag ? Number(themeFlag) : void 0,
-    list: p.flags["list"] === true,
-    json: p.flags["json"] === true,
+    list: p.flags.list === true,
+    json: p.flags.json === true,
     lang: langOf(p.flags),
-    standard: parseStandard(p.flags["standard"])
+    standard: parseStandard(p.flags.standard)
   });
 }
 async function cmdReport(p) {
-  const inFlag = p.flags["in"];
+  const inFlag = p.flags.in;
   if (typeof inFlag !== "string" || !inFlag) {
     console.error("ultra11y report: --in <audit.json> is required ('-' for stdin).");
     return 2;
@@ -9737,28 +8887,28 @@ async function cmdReport(p) {
     console.error("ultra11y report: input is not an ultra11y AuditResult.");
     return 2;
   }
-  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
-  const path = writeReport(result, { out, lang: langOf(p.flags), standard: parseStandard(p.flags["standard"]) });
+  const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
+  const path = writeReport(result, { out, lang: langOf(p.flags), standard: parseStandard(p.flags.standard) });
   console.log(path);
   return 0;
 }
 function cmdCheck(p) {
-  const rep = p.flags["report"];
+  const rep = p.flags.report;
   if (typeof rep !== "string" || !rep) {
     console.error("ultra11y check: --report <md> is required.");
     return 2;
   }
   const res = checkReport(readText(rep));
-  if (p.flags["json"]) {
+  if (p.flags.json) {
     console.log(JSON.stringify(res, null, 2));
-  } else if (!p.flags["quiet"]) {
+  } else if (!p.flags.quiet) {
     if (res.ok) console.log("\u2713 Rapport valide : sections, crit\xE8res cit\xE9s et justifications NA coh\xE9rents.");
     else for (const i of res.issues) console.error(`\u2717 ${i}`);
   }
   return res.ok ? 0 : 1;
 }
 function cmdVerify(p) {
-  const apply = p.flags["apply"];
+  const apply = p.flags.apply;
   if (typeof apply === "string" && apply) {
     let raw;
     try {
@@ -9779,12 +8929,15 @@ function cmdVerify(p) {
       return 2;
     }
     const r = applyVerdicts(items2);
-    if (p.flags["json"]) console.log(JSON.stringify(r, null, 2));
+    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
     else if (r.ok) console.log(`\u2713 ${r.total} non-conformit\xE9s v\xE9rifi\xE9es, toutes \xE9tay\xE9es.`);
-    else console.error(`\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`);
+    else
+      console.error(
+        `\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
+      );
     return r.ok ? 0 : 1;
   }
-  const rep = p.flags["report"];
+  const rep = p.flags.report;
   if (typeof rep !== "string" || !rep) {
     console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
     return 2;
@@ -9800,17 +8953,17 @@ function cmdVerify(p) {
     max = n;
   }
   const items = buildWorklist(readText(rep), max);
-  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : ".";
-  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags["semantic"] === true);
+  const out = typeof p.flags.out === "string" ? p.flags.out : ".";
+  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true);
   console.log(`${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}`);
   return 0;
 }
 async function cmdFix(p) {
   const inputs = p.positionals.length ? p.positionals : ["."];
   const stdin = inputs.includes("-") ? await readStdin() : void 0;
-  const since = typeof p.flags["since"] === "string" ? p.flags["since"] : void 0;
-  const write = p.flags["write"] === true;
-  const onlyFlag = p.flags["only"];
+  const since = typeof p.flags.since === "string" ? p.flags.since : void 0;
+  const write = p.flags.write === true;
+  const onlyFlag = p.flags.only;
   if (onlyFlag === "" || typeof onlyFlag === "string" && !onlyFlag.trim()) {
     console.error("ultra11y fix: --only requires one or more rule ids (comma-separated).");
     return 2;
@@ -9818,33 +8971,33 @@ async function cmdFix(p) {
   const result = runFix({
     inputs,
     stdin,
-    forceJsx: p.flags["jsx"] === true,
-    include: asList(p.flags["include"]),
-    exclude: asList(p.flags["exclude"]),
-    ext: asList(p.flags["ext"]),
-    changed: p.flags["changed"] === true || since !== void 0,
+    forceJsx: p.flags.jsx === true,
+    include: asList(p.flags.include),
+    exclude: asList(p.flags.exclude),
+    ext: asList(p.flags.ext),
+    changed: p.flags.changed === true || since !== void 0,
     since,
     only: typeof onlyFlag === "string" ? onlyFlag.split(",").map((s) => s.trim()).filter(Boolean) : void 0,
     write,
     onWarn: (m) => console.error(m)
   });
-  if (p.flags["json"]) console.log(JSON.stringify(result, null, 2));
+  if (p.flags.json) console.log(JSON.stringify(result, null, 2));
   else console.log(fixSummary(result, langOf(p.flags), write));
   return 0;
 }
 async function cmdScan(p) {
-  if (p.flags["clean"]) {
+  if (p.flags.clean) {
     const r = cleanDynamic();
     console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprim\xE9e" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprim\xE9(s).`);
     return 0;
   }
-  const sitemap = typeof p.flags["sitemap"] === "string" ? p.flags["sitemap"] : void 0;
-  const crawl = typeof p.flags["crawl"] === "string" ? p.flags["crawl"] : void 0;
+  const sitemap = typeof p.flags.sitemap === "string" ? p.flags.sitemap : void 0;
+  const crawl = typeof p.flags.crawl === "string" ? p.flags.crawl : void 0;
   let dynamic;
   try {
     if (sitemap || crawl) {
-      const depth = typeof p.flags["depth"] === "string" ? Number(p.flags["depth"]) : void 0;
-      const max = typeof p.flags["max"] === "string" ? Number(p.flags["max"]) : void 0;
+      const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : void 0;
+      const max = typeof p.flags.max === "string" ? Number(p.flags.max) : void 0;
       dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
       const target = p.positionals.find((a) => a !== "-");
@@ -9858,18 +9011,31 @@ async function cmdScan(p) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
   }
-  const out = typeof p.flags["out"] === "string" ? p.flags["out"] : "audits";
-  const mergeIn = p.flags["merge"];
+  const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
+  const mergeIn = p.flags.merge;
   if (typeof mergeIn === "string" && mergeIn) {
-    const audit = JSON.parse(readText(mergeIn));
+    let audit;
+    try {
+      audit = JSON.parse(readText(mergeIn));
+    } catch {
+      console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
+      return 2;
+    }
+    if (audit.tool !== "ultra11y" || !Array.isArray(audit.criteria)) {
+      console.error("ultra11y scan: --merge input is not an ultra11y AuditResult.");
+      return 2;
+    }
     const merged = mergeDynamic(audit, dynamic);
     mkdirSync4(out, { recursive: true });
     writeFileSync6(join7(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
-    if (p.flags["json"]) console.log(JSON.stringify(merged, null, 2));
-    else console.log(`Audit statique + dynamique fusionn\xE9 \u2192 ${join7(out, "audit-latest.json")} (${merged.conformancePct}% conformit\xE9, ${merged.findings.length} findings).`);
+    if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
+    else
+      console.log(
+        `Audit statique + dynamique fusionn\xE9 \u2192 ${join7(out, "audit-latest.json")} (${merged.conformancePct}% conformit\xE9, ${merged.findings.length} findings).`
+      );
     return 0;
   }
-  if (p.flags["json"]) console.log(JSON.stringify(dynamic, null, 2));
+  if (p.flags.json) console.log(JSON.stringify(dynamic, null, 2));
   else {
     console.log(`Audit dynamique (${dynamic.engine}) de ${dynamic.target} \u2014 ${dynamic.findings.length} non-conformit\xE9(s) :`);
     for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} \u2014 ${f.message}`);
@@ -9891,7 +9057,7 @@ async function main(argv) {
     return 2;
   }
   const p = parseArgs(argv);
-  if (p.flags["help"] === true || p.flags["h"] === true) {
+  if (p.flags.help === true || p.flags.h === true) {
     console.log(HELP);
     return 0;
   }

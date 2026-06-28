@@ -70,6 +70,27 @@ else readFileSync(rootEngine).equals(readFileSync(pkgEngine))
   ? ok(`embedded engine skills/${name}/${engine} is byte-identical to ${engine}`)
   : bad(`skills/${name}/${engine} differs from ${engine} — run \`node scripts/copy-bundle.mjs\` and commit`);
 
+// 5. If a standalone `.agents/skills/<name>/` mirror is committed, it must be
+//    byte-identical to the canonical `skills/<name>/` skill — otherwise the two
+//    published copies drift (commit d1df691 trimmed the canonical SKILL.md but
+//    left the mirror at the old 1043-char description, over the 1024 matcher
+//    cap). Name-agnostic: repos with no `.agents` mirror skip this entirely.
+const mirrorDir = join(root, ".agents", "skills", name);
+if (existsSync(mirrorDir)) {
+  const sameFile = (rel) => {
+    const canon = join(skillDir, rel);
+    const mirror = join(mirrorDir, rel);
+    if (!existsSync(mirror)) return bad(`.agents/skills/${name}/${rel} is missing from the mirror — run \`node scripts/copy-bundle.mjs\` and commit`);
+    readFileSync(canon).equals(readFileSync(mirror))
+      ? ok(`.agents mirror ${rel} is byte-identical to skills/${name}/${rel}`)
+      : bad(`.agents/skills/${name}/${rel} differs from skills/${name}/${rel} — run \`node scripts/copy-bundle.mjs\` and commit`);
+  };
+  sameFile("SKILL.md");
+  sameFile(engine);
+  const refsDir = join(skillDir, "references");
+  if (existsSync(refsDir)) for (const f of readdirSync(refsDir).filter((f) => f.endsWith(".md"))) sameFile(`references/${f}`);
+}
+
 if (errors.length) {
   console.error(`\nverify-skill-bundle: ${errors.length} problem(s) — the published skill would not install correctly.`);
   process.exit(1);

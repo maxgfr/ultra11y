@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [2.2.1](https://github.com/maxgfr/ultra11y/compare/v2.2.0...v2.2.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* **rules:** drive confident-tier precision to 100% — kill component/dynamic/shell false positives ([d9a6e51](https://github.com/maxgfr/ultra11y/commit/d9a6e5166f03310a6c9bd65c24c44d8a349ae2e0)), closes [#app](https://github.com/maxgfr/ultra11y/issues/app)
+
 # [2.2.0](https://github.com/maxgfr/ultra11y/compare/v2.1.0...v2.2.0) (2026-06-29)
 
 

@@ -3,7 +3,7 @@ name: ultra11y
 description: "Use to AUDIT existing HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and a dated compliance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no npm install, no keys) runs 36 static checks across the 13 RGAA themes — missing alt/lang/title, unlabeled fields, empty links/buttons, iframes/tables, heading skips, invalid ARIA, positive tabindex — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports for component-level rules; `prd` emits a fix backlog (optionally GitHub issues). check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibilité / RGAA', 'check WCAG / a11y', 'make this component accessible', 'fix accessibility', 'générer des PRD / issues a11y', 'audit de ce composant'."
 license: MIT
 metadata:
-  version: 1.4.4
+  version: 2.0.0
 ---
 
 # ultra11y — auditer le RGAA 4.1.2 et écrire de l'accessible

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.0.0](https://github.com/maxgfr/ultra11y/compare/v1.4.4...v2.0.0) (2026-06-29)
+
+
+* feat!: cross-file graph audit, rendered-audit, PRD + judgment/correction loop; latest deps + Node 22 floor ([353cfa3](https://github.com/maxgfr/ultra11y/commit/353cfa35f5b6b649917e8c42b045dc75fa5108f6)), closes [--#issues](https://github.com/--/issues/issues)
+
+
+### BREAKING CHANGES
+
+* engines.node is now >=22.18 (was >=18). The bundled
+@babel/parser 8 requires Node ^22.18 || >=24.11, so Node 18 and 20 are no longer
+supported at runtime.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
 ## [1.4.4](https://github.com/maxgfr/ultra11y/compare/v1.4.3...v1.4.4) (2026-06-28)
 
 

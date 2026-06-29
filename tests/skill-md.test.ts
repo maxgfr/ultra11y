@@ -51,7 +51,7 @@ describe("SKILL.md is installable", () => {
   });
 });
 
-const CLI_COMMANDS = new Set(["audit", "report", "criteria", "check", "verify", "scan", "fix", "init"]);
+const CLI_COMMANDS = new Set(["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init"]);
 
 describe("skill docs stay in sync with the CLI", () => {
   const docs: [string, string][] = [["SKILL.md", body], ...Object.entries(refBodies)];
@@ -77,16 +77,21 @@ describe("skill docs stay in sync with the CLI", () => {
 });
 
 describe("SKILL.md routes to the references (progressive disclosure)", () => {
-  it("ships exactly the ten reference docs", () => {
+  it("ships exactly the fifteen reference docs", () => {
     expect(refFiles.sort()).toEqual([
       "audit.md",
       "authoring.md",
       "automation.md",
+      "correction.md",
       "criteria.md",
+      "cross-file.md",
       "dynamic.md",
       "fix.md",
       "forbidden-patterns.md",
+      "judgment.md",
       "methodology.md",
+      "prd.md",
+      "rendered.md",
       "scale.md",
       "verify.md",
     ]);

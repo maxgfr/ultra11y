@@ -3,8 +3,9 @@
 //   • placeholders insert a valid attribute with a TODO sentinel the agent fills;
 //   • proposals are judgment-only and never auto-written.
 // --dry-run (default) prints a unified diff; --write applies, but ONLY after a
-// re-audit proves no NEW non-conformity was introduced (regression gate), and
-// NEVER on lossy JSX/TSX (offsets index the transformed string, not the file).
+// re-audit proves no NEW non-conformity was introduced (regression gate). JSX/TSX
+// parsed to a real AST is editable (jsxSafe codemods only); the lossy JSX fallback
+// stays proposal-only (its offsets index the transformed string, not the file).
 import { writeFileSync } from "node:fs";
 import type { Finding, Lang } from "./types.js";
 import { discover } from "./discover.js";
@@ -62,15 +63,21 @@ function fixOne(file: string, source: string, opts: FixInput): FileFix {
   const items = findings.map(itemOf);
 
   const edits: Edit[] = [];
+  // Real-AST docs (HTML or jsx-ast) carry accurate file offsets, so codemods edit
+  // by range. On jsx-ast we apply only codemods marked jsxSafe (attribute removal /
+  // insertion of React-valid props); name-rewriting codemods stay off so we never
+  // turn tabIndex={5} into tabindex="0". The lossy fallback (jsx-lossy) edits nothing.
+  const isJsxAst = doc.kind === "jsx-ast";
   if (!doc.lossy) {
     for (const f of findings) {
       if (opts.only && !opts.only.includes(f.ruleId)) continue;
       const cm = CODEMODS[f.ruleId];
       if (!cm?.build || f.sourceStart === undefined) continue;
+      if (isJsxAst && !cm.jsxSafe) continue;
       edits.push(...cm.build(source, f.sourceStart));
     }
   } else if (opts.write && findings.some((f) => CODEMODS[f.ruleId]?.build)) {
-    opts.onWarn?.(`ultra11y fix: ${file} is JSX/TSX (lossy) — fixes are proposal-only here; edit the source by hand.`);
+    opts.onWarn?.(`ultra11y fix: ${file} is JSX/TSX (lossy parse fallback) — fixes are proposal-only here; edit the source by hand.`);
   }
 
   let diff = "";

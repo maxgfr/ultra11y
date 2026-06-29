@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # 20 is the dev-toolchain floor (vitest 4 needs ≥20.19); 24 is current.
-        # The published bundle's Node 18 floor is covered by runtime-node-floor.
-        node-version: [20, 24]
+        # 22 is the floor (engines.node >=22.18, what @babel/parser 8 requires);
+        # 24 is current. The published bundle's Node 22 floor is covered by runtime-node-floor.
+        node-version: [22, 24]
     steps:
       - uses: actions/checkout@v4
 
@@ -78,26 +78,31 @@ jobs:
           node "$DIR/scripts/ultra11y.mjs" --help > /dev/null || { echo "::error::installed engine does not run"; exit 1; }
           echo "install-bundle: skill installed whole and the engine runs."
 
-  # The shipped scripts/ultra11y.mjs is a dependency-free bundle declaring
-  # engines.node ">=18", but the dev toolchain (vitest 4) needs Node >=20. This
-  # job runs ONLY the committed bundle on Node 18, with no install, to guarantee
-  # the published ">=18" promise actually holds.
+  # The shipped scripts/ultra11y.mjs is an install-free bundle declaring
+  # engines.node ">=22.18" (the floor @babel/parser 8 requires). This job runs ONLY
+  # the committed bundle on that floor, with no install, to guarantee the published
+  # ">=22.18" promise actually holds.
   runtime-node-floor:
     runs-on: ubuntu-latest
-    name: runtime (Node 18 floor, zero-dep bundle)
+    name: runtime (Node 22 floor, install-free bundle)
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
 
-      - name: Audit / report / check / criteria on Node 18
+      - name: Audit / report / check / criteria on the floor Node
         run: |
-          node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out "$RUNNER_TEMP/u18" --json > /dev/null
-          node scripts/ultra11y.mjs report --in "$RUNNER_TEMP/u18/audit-latest.json" --out "$RUNNER_TEMP/u18"
-          node scripts/ultra11y.mjs check --report "$RUNNER_TEMP"/u18/rgaa-*.md
+          node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out "$RUNNER_TEMP/u" --json > /dev/null
+          node scripts/ultra11y.mjs report --in "$RUNNER_TEMP/u/audit-latest.json" --out "$RUNNER_TEMP/u"
+          node scripts/ultra11y.mjs check --report "$RUNNER_TEMP"/u/rgaa-*.md
           node scripts/ultra11y.mjs criteria --theme 1 | grep -q "1.1"
+
+      - name: JSX/TSX real-AST + cross-file audit runs on the floor (bundled @babel/parser)
+        run: |
+          node scripts/ultra11y.mjs audit "tests/fixtures/cross-file" --graph --dedup off --json > "$RUNNER_TEMP/jsx.json"
+          node -e 'const a=require(process.env.RUNNER_TEMP+"/jsx.json"); if(!a.findings.some(f=>f.ruleId==="cross-icon-only-unnamed")){console.error("::error::JSX cross-file audit produced no finding on the floor Node");process.exit(1)}'
 
       - name: The check gate blocks an invented criterion (exit 1)
         run: |

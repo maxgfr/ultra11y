@@ -1,0 +1,240 @@
+// Extract a compact, bounded per-file record for the cross-file dependency graph.
+// We keep ONLY what cross-file rules need — import bindings, the components a file
+// defines and the accessibility-relevant signals of the control each renders, the
+// ids it defines, and whether it declares <html lang>. The parsed AST/Doc are
+// discarded after extraction, so memory stays O(file count), never whole-repo.
+import { type AstNode, type AstFile, asNode, asNodes, walkAst } from "../parse/jsx-ast.js";
+import { jsxName, isIntrinsic, normAttrName } from "../parse/jsx-bridge.js";
+import type { Doc } from "../parse/html.js";
+import { hasAttr, attr } from "../parse/html.js";
+import { toPosix } from "../glob.js";
+
+export interface ImportRec {
+  source: string; // raw specifier, e.g. "./IconButton"
+  local: string; // local binding name
+  imported: string; // "default" | "*" | the named export
+}
+
+export interface ComponentDef {
+  name: string; // declared/export name ("default" for the default export)
+  file: string; // posix path of the defining file
+  line: number; // 1-based position of the control (or the component) in the file
+  col: number;
+  // Signals about the primary control (<button>/<a href>) the component renders.
+  rendersIconOnlyControl: boolean; // icon child, no literal text, no literal aria-name
+  acceptsName: boolean; // a name could be injected from props (spread / aria expr / {children})
+  spreadsProps: boolean; // control has {...props}
+  forwardsAria: boolean; // control has aria-label/labelledby set to an expression
+}
+
+export interface FileGraphNode {
+  file: string; // posix
+  imports: ImportRec[];
+  components: Map<string, ComponentDef>; // by local/export name, plus a "default" alias
+  definesIds: string[]; // literal id="…" anywhere in the file
+  providesHtmlLang: boolean; // an <html> with a lang attribute (literal or expression)
+}
+
+const NAME_PROPS = new Set(["aria-label", "aria-labelledby", "title", "label", "alt"]);
+const ICON_TAGS = new Set(["svg", "path", "use", "img", "i"]);
+
+function opening(jsxEl: AstNode): AstNode | undefined {
+  return asNode(jsxEl.openingElement);
+}
+
+function attrName(a: AstNode): string {
+  return normAttrName(jsxName(asNode(a.name)));
+}
+
+function attrIsExpr(a: AstNode): boolean {
+  return asNode(a.value)?.type === "JSXExpressionContainer";
+}
+
+function attrIsLiteral(a: AstNode): boolean {
+  return asNode(a.value)?.type === "StringLiteral";
+}
+
+function controlAttrs(jsxEl: AstNode): AstNode[] {
+  const op = opening(jsxEl);
+  return op ? asNodes(op.attributes).filter((a) => a.type === "JSXAttribute") : [];
+}
+
+function hasSpread(jsxEl: AstNode): boolean {
+  const op = opening(jsxEl);
+  return op ? asNodes(op.attributes).some((a) => a.type === "JSXSpreadAttribute") : false;
+}
+
+function tagOf(jsxEl: AstNode): string {
+  const op = opening(jsxEl);
+  return op ? jsxName(asNode(op.name)) : "";
+}
+
+// Does this JSX element subtree contain a non-whitespace literal text node?
+function hasLiteralText(jsxEl: AstNode): boolean {
+  let found = false;
+  walkAst(jsxEl, (n) => {
+    if (n.type === "JSXText" && typeof n.value === "string" && n.value.trim() !== "") found = true;
+  });
+  return found;
+}
+
+// Does the subtree render an icon-ish element (svg/img/i/… or a *Icon component)?
+function hasIconChild(jsxEl: AstNode): boolean {
+  let found = false;
+  walkAst(jsxEl, (n) => {
+    if (n.type !== "JSXElement" || n === jsxEl) return;
+    const name = tagOf(n);
+    const low = name.toLowerCase();
+    if (ICON_TAGS.has(low) || /icon|glyph/i.test(name)) found = true;
+  });
+  return found;
+}
+
+// A direct expression child like {children}/{label}/{title} that could carry a name.
+function rendersNameExpr(jsxEl: AstNode): boolean {
+  for (const c of asNodes(jsxEl.children)) {
+    if (c.type !== "JSXExpressionContainer") continue;
+    const expr = asNode(c.expression);
+    const id = expr && (expr.type === "Identifier" || expr.type === "JSXIdentifier") ? String(expr.name ?? "") : "";
+    if (/children|label|title|text|name/i.test(id)) return true;
+  }
+  return false;
+}
+
+// Find the component's primary control: the first intrinsic <button> or <a href>
+// anywhere in the function body's JSX.
+function findControl(fnNode: AstNode): AstNode | undefined {
+  let control: AstNode | undefined;
+  walkAst(fnNode, (n) => {
+    if (control || n.type !== "JSXElement") return;
+    const tag = tagOf(n);
+    if (!isIntrinsic(tag)) return;
+    const low = tag.toLowerCase();
+    if (low === "button") control = n;
+    else if (low === "a" && controlAttrs(n).some((a) => attrName(a) === "href")) control = n;
+  });
+  return control;
+}
+
+function posOf(node: AstNode): { line: number; col: number } {
+  return { line: node.loc?.start.line ?? 1, col: (node.loc?.start.column ?? 0) + 1 };
+}
+
+function analyzeComponent(name: string, file: string, fnNode: AstNode): ComponentDef {
+  const control = findControl(fnNode);
+  if (!control) {
+    const { line, col } = posOf(fnNode);
+    return { name, file, line, col, rendersIconOnlyControl: false, acceptsName: false, spreadsProps: false, forwardsAria: false };
+  }
+  const { line, col } = posOf(control);
+  const attrs = controlAttrs(control);
+  const spreadsProps = hasSpread(control);
+  const forwardsAria = attrs.some((a) => (attrName(a) === "aria-label" || attrName(a) === "aria-labelledby") && attrIsExpr(a));
+  const literalAriaName = attrs.some((a) => NAME_PROPS.has(attrName(a)) && attrIsLiteral(a));
+  const acceptsNameViaChildren = rendersNameExpr(control);
+  const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
+  const rendersIconOnlyControl = hasIconChild(control) && !hasLiteralText(control) && !literalAriaName;
+  return { name, file, line, col, rendersIconOnlyControl, acceptsName, spreadsProps, forwardsAria };
+}
+
+function isCapitalized(name: string): boolean {
+  const head = name.split(".")[0] ?? name;
+  const first = head[0] ?? "";
+  return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
+}
+
+function isComponentFn(init: AstNode | undefined): boolean {
+  return !!init && (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression" || init.type === "FunctionDeclaration");
+}
+
+// Collect component definitions from a top-level declaration node (already unwrapped
+// from export wrappers). Returns the entries to register.
+function declComponents(decl: AstNode, file: string): ComponentDef[] {
+  const out: ComponentDef[] = [];
+  if (decl.type === "FunctionDeclaration") {
+    const id = asNode(decl.id);
+    const name = id && typeof id.name === "string" ? id.name : "";
+    if (name && isCapitalized(name)) out.push(analyzeComponent(name, file, decl));
+  } else if (decl.type === "VariableDeclaration") {
+    for (const d of asNodes(decl.declarations)) {
+      const id = asNode(d.id);
+      const init = asNode(d.init);
+      const name = id && typeof id.name === "string" ? id.name : "";
+      if (name && isCapitalized(name) && isComponentFn(init)) out.push(analyzeComponent(name, file, init as AstNode));
+    }
+  }
+  return out;
+}
+
+export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): FileGraphNode {
+  const posix = toPosix(file);
+  const imports: ImportRec[] = [];
+  const components = new Map<string, ComponentDef>();
+
+  // ids + html-lang come from the Doc (works for HTML and JSX alike).
+  const definesIds: string[] = [];
+  let providesHtmlLang = false;
+  for (const el of doc.elements) {
+    const id = el.attribs.id;
+    if (id && !id.startsWith("{")) definesIds.push(id); // skip dynamic id={…}
+    if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
+  }
+
+  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang };
+
+  const body = asNodes((asNode(ast.program) ?? ast).body);
+  const register = (def: ComponentDef): void => {
+    if (!components.has(def.name)) components.set(def.name, def);
+  };
+
+  for (const stmt of body) {
+    if (stmt.type === "ImportDeclaration") {
+      const source = asNode(stmt.source);
+      const spec = source && typeof source.value === "string" ? source.value : "";
+      for (const s of asNodes(stmt.specifiers)) {
+        const local = asNode(s.local);
+        const localName = local && typeof local.name === "string" ? local.name : "";
+        if (!localName) continue;
+        if (s.type === "ImportDefaultSpecifier") imports.push({ source: spec, local: localName, imported: "default" });
+        else if (s.type === "ImportNamespaceSpecifier") imports.push({ source: spec, local: localName, imported: "*" });
+        else if (s.type === "ImportSpecifier") {
+          const imp = asNode(s.imported);
+          const impName = imp && typeof imp.name === "string" ? imp.name : localName;
+          imports.push({ source: spec, local: localName, imported: impName });
+        }
+      }
+    } else if (stmt.type === "FunctionDeclaration" || stmt.type === "VariableDeclaration") {
+      for (const def of declComponents(stmt, posix)) register(def);
+    } else if (stmt.type === "ExportNamedDeclaration") {
+      const decl = asNode(stmt.declaration);
+      if (decl) for (const def of declComponents(decl, posix)) register(def);
+      // export { Foo as default } / export { Foo } — alias names to existing defs.
+      for (const s of asNodes(stmt.specifiers)) {
+        const localN = asNode(s.local);
+        const exportedN = asNode(s.exported);
+        const localName = localN && typeof localN.name === "string" ? localN.name : "";
+        const exportedName = exportedN && typeof exportedN.name === "string" ? exportedN.name : "";
+        const def = components.get(localName);
+        if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
+      }
+    } else if (stmt.type === "ExportDefaultDeclaration") {
+      const decl = asNode(stmt.declaration);
+      if (!decl) continue;
+      if (decl.type === "FunctionDeclaration") {
+        const id = asNode(decl.id);
+        const name = id && typeof id.name === "string" ? id.name : "default";
+        const def = analyzeComponent(name === "default" ? "default" : name, posix, decl);
+        register(def);
+        if (!components.has("default")) components.set("default", def);
+      } else if (decl.type === "ArrowFunctionExpression" || decl.type === "FunctionExpression") {
+        const def = analyzeComponent("default", posix, decl);
+        if (!components.has("default")) components.set("default", def);
+      } else if (decl.type === "Identifier") {
+        const ref = typeof decl.name === "string" ? components.get(decl.name) : undefined;
+        if (ref && !components.has("default")) components.set("default", ref);
+      }
+    }
+  }
+
+  return { file: posix, imports, components, definesIds, providesHtmlLang };
+}

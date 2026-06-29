@@ -5,7 +5,7 @@ import type { Document, ChildNode, Element as DhElement } from "domhandler";
 
 export interface El {
   type: "element";
-  tag: string; // lowercased
+  tag: string; // lowercased intrinsic, or original-cased JSX component name
   attribs: Record<string, string>;
   children: HNode[];
   parent: El | null;
@@ -13,6 +13,9 @@ export interface El {
   col: number; // 1-based
   start: number; // source offset
   end: number;
+  // JSX only: the element carries a {...spread} attribute (props could inject a
+  // name/aria). Undefined for HTML. Used by the cross-file rules.
+  spread?: boolean;
 }
 export interface Txt {
   type: "text";
@@ -25,6 +28,15 @@ export interface Doc {
   file: string;
   source: string;
   lossy: boolean;
+  // How the Doc was produced: a real HTML parse, a real JSX/TSX AST (offsets index
+  // the original file — fix-safe), or the best-effort lossy JSX→HTML fallback.
+  // Optional/additive so existing AuditResult JSON and direct parseHtml callers stay valid.
+  kind?: "html" | "jsx-ast" | "jsx-lossy";
+  // JSX only: import specifiers of component-LIBRARY components rendered in this
+  // file (e.g. "@codegouvfr/react-dsfr/Button"). Their real HTML output lives in
+  // node_modules and is invisible to source analysis — a source verdict is
+  // therefore incomplete for them (surfaced as a scope caveat, never silent).
+  opaqueComponents?: string[];
   roots: HNode[];
   elements: El[];
   byId: Map<string, El>;
@@ -33,13 +45,15 @@ export interface Doc {
 
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
 
-function lineStartsOf(source: string): number[] {
+// Exported so the JSX-AST bridge (parse/jsx-bridge.ts) reuses the exact same
+// line/col arithmetic over the original source as the HTML path.
+export function lineStartsOf(source: string): number[] {
   const starts = [0];
   for (let i = 0; i < source.length; i++) if (source.charCodeAt(i) === 10) starts.push(i + 1);
   return starts;
 }
 
-function lineColAt(lineStarts: number[], offset: number): { line: number; col: number } {
+export function lineColAt(lineStarts: number[], offset: number): { line: number; col: number } {
   // binary search for the greatest lineStart <= offset
   let lo = 0;
   let hi = lineStarts.length - 1;
@@ -99,7 +113,7 @@ export function parseHtml(source: string, file: string, lossy = false): Doc {
     const c = convert(node, null);
     if (c) roots.push(c);
   }
-  return { file, source, lossy, roots, elements, byId, lineStarts };
+  return { file, source, lossy, kind: lossy ? "jsx-lossy" : "html", roots, elements, byId, lineStarts };
 }
 
 // ---- helpers used by rules

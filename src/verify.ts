@@ -5,6 +5,7 @@
 // fabricated non-conformities surviving into the final report.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { getCriterion } from "./rgaa.js";
 
 export const VERIFY_MAX = 40;
 
@@ -58,7 +59,27 @@ export function formatWorklist(items: VerifyItem[], semantic: boolean): string {
   out.push(`Puis : \`ultra11y verify --apply VERIFY.todo.json\` (échoue si un verdict est refuted/unsupported).`, "");
   for (const it of items) {
     out.push(`- [ ] #${it.n} **${it.criteriaId}** @ \`${it.file}:${it.line}\` (\`${it.selector}\`) — ${it.claim}`);
+    // Ground the judgment in the actual RGAA test procedures for this criterion
+    // (the etalab-style per-criterion grid), so the verdict is checked against the
+    // real conditions, not a guess.
+    const crit = getCriterion(it.criteriaId);
+    if (crit) {
+      const tests = Object.values(crit.tests).flat();
+      if (tests.length) {
+        out.push(`      Tests RGAA ${it.criteriaId} — ${crit.titlePlain} :`);
+        for (const test of tests.slice(0, 6)) out.push(`      - ${test}`);
+      }
+    }
   }
+  out.push("");
+  // Pre-completion validation checklist (imported from the SocialGouv review doctrine):
+  // never close the gate until each box holds.
+  out.push("## Liste de contrôle avant clôture", "");
+  out.push("- [ ] Chaque entrée porte un verdict (aucun `null`).");
+  out.push("- [ ] Aucune non-conformité inventée : chaque verdict `supported` cite un élément réel à la ligne indiquée.");
+  out.push("- [ ] Les critères « à évaluer » (rendu / jugement) du rapport ont été tranchés (ou laissés en risque résiduel explicite).");
+  out.push("- [ ] Pour un code rendu par une bibliothèque (DSFR…), le verdict s'appuie sur le HTML **produit** (build / `scan`), pas sur la source JSX.");
+  out.push("- [ ] `ultra11y verify --apply VERIFY.todo.json` repasse au vert.");
   out.push("");
   return out.join("\n");
 }

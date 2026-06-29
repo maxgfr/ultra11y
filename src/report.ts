@@ -38,6 +38,8 @@ const L = {
     duplicate: "doublon(s) identique(s) ignoré(s)",
     truncated: (l: number, t: number, s: number) =>
       `Périmètre tronqué : ${l}/${t} fichiers audités (priorité d'abord), ${s} ignoré(s). Élargir avec --max-files.`,
+    rendered: (n: number, libs: string) =>
+      `Verdict source préliminaire : ${n} fichier(s) rendent des composants de bibliothèque (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
   },
   en: {
     title: "Accessibility audit report — RGAA 4.1.2",
@@ -65,6 +67,8 @@ const L = {
     canonical: "canonical file(s) audited",
     duplicate: "identical duplicate(s) skipped",
     truncated: (l: number, t: number, s: number) => `Scope truncated: ${l}/${t} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`,
+    rendered: (n: number, libs: string) =>
+      `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
   },
 } as const;
 
@@ -88,6 +92,7 @@ export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> ⚠️ ${s.warn}`, "");
   if (r.scope.truncated) out.push(`> ✂️ ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
+  if (r.scope.rendered) out.push(`> 🧩 ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
 
   // 1. synthesis
   out.push(`## ${s.synthTitle}`, "");

@@ -4,6 +4,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./types.js";
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
+import { writePrd, prdUnits } from "./prd.js";
+import { ghAvailable, pushIssues } from "./gh.js";
+import { detectFrameworks, renderPlan, ssrHarness, type Detection } from "./render.js";
 import { runCriteria } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
@@ -18,17 +21,19 @@ import { readStdin, readText } from "./util.js";
 const HELP = `ultra11y v${VERSION}
 Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a
 dated compliance report, or author/review accessible markup (native-HTML-first).
-A deterministic zero-dependency static engine plus your judgment, with check/verify
+A deterministic, install-free static engine plus your judgment, with check/verify
 gates against hallucinated non-conformities.
 
 Usage:
-  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--json] [--lang fr|en]
+  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang fr|en]
   ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on bloquant|majeur|mineur]
   ultra11y report   --in <audit.json> [--out <dir>] [--standard rgaa|wcag] [--lang fr|en]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--gh-issues] [--lang fr|en]
+  ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang fr|en]
   ultra11y criteria [<id>] [--theme <N>] [--list] [--standard rgaa|wcag] [--json] [--lang fr|en]
   ultra11y check    --report <md> [--quiet] [--json]
   ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
-  ultra11y fix      <globs… | -> [--write] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang fr|en]
+  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang fr|en]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on bloquant|majeur|mineur]
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
@@ -42,6 +47,15 @@ Commands:
   report     Render an AuditResult into a dated RGAA compliance report
              (audits/rgaa-YYYY-MM-DD.md): metadata, per-theme synthesis table,
              non-conformities by priority, conforming + not-applicable lists.
+  prd        Turn an AuditResult into an actionable "fixes to do" backlog
+             (audits/prd-YYYY-MM-DD.md), grouped by criterion and sectioned by
+             priority; --split criterion writes one PRD file per criterion, and
+             --gh-issues files one de-duplicated GitHub issue per criterion (gh CLI).
+  render     Get RENDERED HTML to audit (so component libraries like DSFR are
+             checked as the HTML they emit, not their JSX sources): detect the
+             framework and print the build→audit recipe, or --scaffold a
+             react-dom/server SSR snapshot harness to fill in. Then audit the
+             produced HTML, and use scan for the needs-rendering criteria.
   criteria   Look up the RGAA reference offline: one criterion, a whole theme,
              or the 13-theme list. Carries WCAG cross-refs + automatability class.
   check      Integrity gate on a produced report: every cited criterion resolves,
@@ -52,7 +66,8 @@ Commands:
              codemods (tabindex, redundant role, viewport zoom), insert fill-in
              placeholders (alt/lang/title TODO) for the agent to complete, and list
              judgment-only proposals. --dry-run (default) prints a diff; --write
-             applies, but only after a re-audit proves no new NC, and never on JSX.
+             applies, but only after a re-audit proves no new NC; on real-AST JSX
+             only jsxSafe codemods apply (never name-rewriting). --iterate loops to a fixpoint.
   init       Wire ultra11y into the repo as a regression gate (zero-dep, no husky):
              a git pre-commit --hook (audit --changed, vs HEAD) and/or a GitHub
              Actions --ci job (audit --since the PR base ref), both gating against
@@ -72,13 +87,19 @@ Options:
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
   --ext <list>       audit/fix: extra file extensions to walk (e.g. .twig,.erb);
                      .html/.htm/.xhtml/.jsx/.tsx/.vue/.svelte/.astro are built-in
-  --jsx              audit/fix: force best-effort JSX/TSX parsing
+  --jsx              audit/fix: force JSX/TSX parsing for inputs of any extension
+  --graph            audit: also resolve imports + run cross-file rules (alias --cross-file)
+  --cross-file       audit: alias of --graph
   --changed          audit/fix: only files changed vs HEAD (git; for hooks/CI)
   --since <ref>      audit/fix: only files changed vs the given git ref
   --max-files <n>    audit: cap canonical files audited (logged truncation, no silent drop)
   --dedup <mode>     audit: collapse identical files — exact|normalized|off  (default: exact)
   --standard <std>   report/criteria: key the output by rgaa|wcag  (default: rgaa)
+  --split <mode>     prd: split the backlog — currently only 'criterion' (one file per criterion)
+  --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
+  --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
   --write            fix: apply fixes to disk (default is a dry-run diff)
+  --iterate          fix: with --write, re-audit + re-apply mechanical fixes until stable (bounded)
   --dry-run          fix: preview only — never write (this is the default)
   --only <ids>       fix: limit auto-fixes to these rule ids (comma-separated)
   --baseline <file>  audit/init: regression-gate vs / write this baseline AuditResult
@@ -106,7 +127,7 @@ Options:
 
 Data: RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
 
-const COMMANDS = ["audit", "report", "criteria", "check", "verify", "scan", "fix", "init"] as const;
+const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init"] as const;
 type Command = (typeof COMMANDS)[number];
 
 function isCommand(s: string | undefined): s is Command {
@@ -136,6 +157,7 @@ const VALUE_FLAGS = new Set([
   "standard",
   "baseline",
   "fail-on",
+  "split",
 ]);
 // `init` treats --baseline as a boolean selector ("write the baseline"), not a
 // path, so it must NOT consume the following token. audit/fix keep it as a value
@@ -201,6 +223,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     since,
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : undefined,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : undefined,
+    graph: p.flags.graph === true || p.flags["cross-file"] === true,
     onWarn: (m) => console.error(m),
   });
 
@@ -317,6 +340,79 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
   return 0;
 }
 
+async function cmdPrd(p: ParsedArgs): Promise<number> {
+  const inFlag = p.flags.in;
+  if (typeof inFlag !== "string" || !inFlag) {
+    console.error("ultra11y prd: --in <audit.json> is required ('-' for stdin).");
+    return 2;
+  }
+  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  let result: AuditResult;
+  try {
+    result = JSON.parse(raw) as AuditResult;
+  } catch {
+    console.error("ultra11y prd: --in is not valid JSON (expected an AuditResult).");
+    return 2;
+  }
+  if (result.tool !== "ultra11y" || !Array.isArray(result.criteria)) {
+    console.error("ultra11y prd: input is not an ultra11y AuditResult.");
+    return 2;
+  }
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
+  const lang = langOf(p.flags);
+  const split = p.flags.split === "criterion" ? "criterion" : undefined;
+  const paths = writePrd(result, { out, lang, split });
+  for (const path of paths) console.log(path);
+
+  // --gh-issues: always-written markdown above; GitHub is opt-in + best-effort.
+  if (p.flags["gh-issues"] === true) {
+    const units = prdUnits(result);
+    if (!ghAvailable()) {
+      console.error("ultra11y prd: --gh-issues skipped — `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
+    } else if (units.length === 0) {
+      console.error("ultra11y prd: --gh-issues skipped — no findings to file.");
+    } else {
+      const r = pushIssues(units, lang);
+      console.log(`ultra11y prd: GitHub issues — ${r.created} créée(s), ${r.skipped} déjà existante(s)${r.failed ? `, ${r.failed} en échec` : ""}.`);
+    }
+  }
+  return 0;
+}
+
+function cmdRender(p: ParsedArgs): number {
+  const root = p.positionals[0] ?? ".";
+  const lang = langOf(p.flags);
+  if (p.flags.scaffold === true) {
+    const out = typeof p.flags.out === "string" && p.flags.out ? p.flags.out : "ultra11y-render.tsx";
+    try {
+      writeFileSync(out, ssrHarness());
+    } catch (e) {
+      console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
+      return 1;
+    }
+    console.log(
+      lang === "fr"
+        ? `Harnais SSR écrit : ${out}\nComplétez COMPONENTS, exécutez-le (ex. npx tsx ${out}), puis : node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`
+        : `SSR harness written: ${out}\nFill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`,
+    );
+    return 0;
+  }
+  let deps: Record<string, string> = {};
+  const pkgPath = join(root, "package.json");
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readText(pkgPath)) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+      deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+    } catch {
+      /* not fatal — detection just sees no deps */
+    }
+  }
+  const detection: Detection = detectFrameworks(deps, (f) => existsSync(join(root, f)));
+  if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
+  else console.log(renderPlan(detection, lang));
+  return 0;
+}
+
 function cmdCheck(p: ParsedArgs): number {
   const rep = p.flags.report;
   if (typeof rep !== "string" || !rep) {
@@ -397,7 +493,7 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
     console.error("ultra11y fix: --only requires one or more rule ids (comma-separated).");
     return 2;
   }
-  const result = runFix({
+  const opts = {
     inputs,
     stdin,
     forceJsx: p.flags.jsx === true,
@@ -414,10 +510,36 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
             .filter(Boolean)
         : undefined,
     write,
-    onWarn: (m) => console.error(m),
-  });
-  if (p.flags.json) console.log(JSON.stringify(result, null, 2));
-  else console.log(fixSummary(result, langOf(p.flags), write));
+    onWarn: (m: string) => console.error(m),
+  };
+
+  // --iterate: re-audit and re-apply the mechanical fixes until a round writes
+  // nothing new (bounded). Each round re-reads files, so it converges quickly —
+  // a codemod removes the finding it fixed, so it is not re-applied. Round 1 holds
+  // the meaningful diff; later rounds just confirm stability (or catch cascades).
+  const result = runFix(opts);
+  let rounds = 1;
+  let totalWritten = result.totals.filesWritten;
+  if (write && p.flags.iterate === true) {
+    const MAX_ROUNDS = 5;
+    let last = result;
+    while (last.totals.filesWritten > 0 && rounds < MAX_ROUNDS) {
+      last = runFix(opts);
+      rounds++;
+      totalWritten += last.totals.filesWritten;
+    }
+  }
+
+  if (p.flags.json) console.log(JSON.stringify(p.flags.iterate === true ? { ...result, rounds, totalWritten } : result, null, 2));
+  else {
+    console.log(fixSummary(result, langOf(p.flags), write));
+    if (write && p.flags.iterate === true)
+      console.log(
+        langOf(p.flags) === "fr"
+          ? `\nItéré sur ${rounds} passe(s) jusqu'à stabilité — ${totalWritten} fichier(s) écrit(s) au total.`
+          : `\nIterated over ${rounds} round(s) to a fixpoint — ${totalWritten} file(s) written in total.`,
+      );
+  }
   return 0;
 }
 
@@ -508,6 +630,10 @@ export async function main(argv: string[]): Promise<number> {
       return cmdAudit(p);
     case "report":
       return cmdReport(p);
+    case "prd":
+      return cmdPrd(p);
+    case "render":
+      return cmdRender(p);
     case "criteria":
       return cmdCriteria(p);
     case "check":

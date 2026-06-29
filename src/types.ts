@@ -65,6 +65,10 @@ export interface Finding {
   // survives line drift). Absent for stdin/JSX findings where it would be unusable.
   sourceStart?: number;
   sourceEnd?: number;
+  // Cross-file context: the OTHER site that explains this finding — e.g. the
+  // component definition for a finding raised at a usage site. Optional/additive
+  // (cross-file rules only), so existing AuditResult JSON still parses.
+  related?: { file: string; line: number; col: number; selectorHint: string; note: string };
 }
 
 export interface CriterionResult {
@@ -102,6 +106,10 @@ export interface AuditResult {
     truncated?: { limit: number; total: number; skipped: number };
     // Set when content de-duplication collapsed identical files to one canonical audit.
     dedup?: { canonicalFiles: number; duplicateFiles: number };
+    // Set when source files render component-LIBRARY components whose real HTML
+    // output is invisible to static source analysis (e.g. DSFR). The source verdict
+    // is preliminary for them — audit the build output (`render`) or `scan`.
+    rendered?: { opaqueLibraries: string[]; files: number };
   };
   themes: ThemeTally[];
   criteria: CriterionResult[];

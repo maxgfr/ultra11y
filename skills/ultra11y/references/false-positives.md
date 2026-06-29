@@ -17,13 +17,23 @@ most of them; this page tells you (the agent) where it still cannot be sure, so 
   or a child component means the name/content/options may be supplied at runtime —
   `empty-heading`, `button-empty-name`, `link-empty-name`, `select-has-option`,
   `list-structure`, `data-table-no-headers` and `h1-missing` all bail instead of asserting.
-- **Dynamic bindings count as present.** `:aria-label`, `v-bind:aria-label`, `bind:value`,
-  `:alt` (Vue/Svelte/Alpine) are read as "named, value unknown" — no false missing-name.
+- **Dynamic bindings/values count as present, never invalid.** `:aria-label`,
+  `v-bind:aria-label`, `bind:value`, `:alt`, `:scope` (Vue/Svelte/Alpine) are read as
+  "present, value unknown"; a dynamic `role={…}` is skipped (not parsed as a bogus role);
+  a `v-bind="…"` / `{...rest}` / `{shorthand}` spread suppresses missing-name/label/alt.
 - **Cross-file references resolve under `--graph`.** An `aria-controls`/`for`/heading
   target defined in another file (including a `const X = "id"; id={X}`) is proven to exist
-  and the finding is suppressed. **Always run component code with `--graph`.**
-- **Conditional branches aren't crossed.** Headings in different arms of `{cond ? … : …}`
-  are mutually exclusive at runtime, so `heading-order-skip` won't compare across them.
+  and the finding is suppressed; an icon-only component whose definition supplies its own
+  `aria-label` is not flagged "unnamed". **Always run component code with `--graph`.**
+- **Conditional branches & interleaved components aren't crossed.** Headings in different
+  arms of `{cond ? … : …}` are mutually exclusive, and a child component between two
+  headings may inject an intermediate one — so `heading-order-skip` won't compare across them.
+- **Framework shell templates are recognized.** A SPA mount shell (`<div id="app"></div>`)
+  or a build placeholder (`%sveltekit.body%`/`%sveltekit.head%`, `{{ }}`, `<%= %>`) means
+  the real content/title is injected later — `h1-missing`/`title-missing-empty` don't fire.
+- **Slot-projected required content is not "missing".** A `<slot>`/`{@render children()}`
+  passthrough suppresses `fieldset-legend-missing` and `aria-required-children`; `<th>` in a
+  `<thead>` carries implicit column scope.
 - **Test/story markup is out of scope by default.** `*.test.*`, `*.spec.*`, `*.stories.*`
   and `__tests__/` are excluded (bad-by-design fixtures). Re-include with
   `--no-default-excludes` or by naming the file.

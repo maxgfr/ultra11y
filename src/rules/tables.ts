@@ -1,6 +1,6 @@
 // Theme 5 — Data tables (+ layout-table heuristic to avoid false positives).
 import type { Doc, El } from "../parse/html.js";
-import { attr, hasAttr, descendants } from "../parse/html.js";
+import { attr, hasAttr, hasBoundAttr, descendants, ancestors } from "../parse/html.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const declaredLayout = (t: El): boolean => ["presentation", "none"].includes((attr(t, "role") ?? "").trim());
@@ -33,9 +33,14 @@ const dataTableNoHeaders: Rule = {
       // ({children}/slot — e.g. a generic <table> wrapper component) or simply absent;
       // we cannot tell whether headers exist, so we do not assert a definite NC.
       if (!desc.some((d) => d.tag === "tr" || d.tag === "td" || d.tag === "th")) continue;
-      const hasTh = desc.some((d) => d.tag === "th");
-      const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasAttr(d, "scope") || hasAttr(d, "headers")));
-      if (hasTh && hasAssoc) continue;
+      const ths = desc.filter((d) => d.tag === "th");
+      const hasTh = ths.length > 0;
+      // hasBoundAttr also matches a dynamic :scope / v-bind:scope binding (Vue/Svelte).
+      const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasBoundAttr(d, "scope") || hasBoundAttr(d, "headers")));
+      // <th> inside <thead> has an implicit column scope per HTML — a simple table whose
+      // headers are all in <thead> needs no explicit scope=, so don't flag it.
+      const allThInThead = hasTh && ths.every((th) => ancestors(th).some((a) => a.tag === "thead"));
+      if (hasTh && (hasAssoc || allThInThead)) continue;
       if (!hasTh) {
         out.push({
           criteriaId: "1.3.1",

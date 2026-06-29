@@ -2,6 +2,7 @@
 import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, descendants, ancestors } from "../parse/html.js";
 import { isIntrinsic } from "../parse/jsx-bridge.js";
+import { mayInjectContent } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const INTERACTIVE_ROLES = [
@@ -134,6 +135,7 @@ const invalidAriaRole: Rule = {
       if (!isIntrinsic(el.tag)) continue; // a component's `role` is a prop, not the HTML role attr
       const role = (attr(el, "role") ?? "").trim();
       if (!role) continue;
+      if (role.includes("{")) continue; // dynamic role expression (role={…}) — value unknown, can't validate
       const tokens = role.split(/\s+/);
       const bad = tokens.filter((t) => !VALID_ROLES.has(t.toLowerCase()));
       if (bad.length) {
@@ -285,6 +287,7 @@ const ariaRequiredChildren: Rule = {
       if (!req) continue;
       if (hasAttr(el, "aria-owns")) continue; // children may be referenced elsewhere
       if (descendants(el).some((d) => satisfiesChild(d, req))) continue;
+      if (mayInjectContent(el)) continue; // required children injected via <slot>/component/{@render}
       out.push({
         criteriaId: "4.1.2",
         el,

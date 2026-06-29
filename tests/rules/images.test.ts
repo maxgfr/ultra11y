@@ -14,6 +14,12 @@ describe("img-alt-missing (1.1)", () => {
     expect(f[0]!.criteriaId).toBe("1.1.1");
     expect(f[0]!.severity).toBe("bloquant");
   });
+  it("conforming: <svg role=img> named by a <title> child", () => {
+    expect(findOf(`<svg role="img"><title>Astro</title><path /></svg>`, "img-alt-missing")).toHaveLength(0);
+  });
+  it("non-conforming: <svg role=img> with no title/name", () => {
+    expect(findOf(`<svg role="img"><path /></svg>`, "img-alt-missing")).toHaveLength(1);
+  });
 });
 
 describe("decorative-alt-misuse (1.2)", () => {

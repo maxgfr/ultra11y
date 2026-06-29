@@ -34,6 +34,11 @@ export default function L({ children }) { return (<html lang="fr"><head><link />
     const src = `export default function P() { return (<html lang="fr"><head><link /></head><body><h1>x</h1></body></html>); }`;
     expect(findOf(src, "title-missing-empty", "t.tsx")).toHaveLength(1);
   });
+  // SvelteKit/EJS shells inject the <title> via a head placeholder.
+  it("does not assert when <head> injects the title via a framework placeholder", () => {
+    const src = `<!doctype html><html lang="en"><head>%sveltekit.head%</head><body><h1>x</h1></body></html>`;
+    expect(findOf(src, "title-missing-empty")).toHaveLength(0);
+  });
 });
 
 describe("duplicate-id (8.2)", () => {

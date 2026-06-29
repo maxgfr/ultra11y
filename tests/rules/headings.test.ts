@@ -23,6 +23,40 @@ describe("heading-order-skip (9.1)", () => {
   it("still flags a skip in static top-level JSX", () => {
     expect(findOf(`<div><h2>A</h2><h4>B</h4></div>`, "heading-order-skip", "t.tsx")).toHaveLength(1);
   });
+  // A child component rendered between two headings may itself render an intermediate
+  // heading (invisible to source) — so a "skip" across it is not a definite violation.
+  it("does not flag a skip when a component sits between the headings (JSX)", () => {
+    expect(findOf(`<div><h1>A</h1><StepIndicator /><h3>B</h3></div>`, "heading-order-skip", "t.tsx")).toHaveLength(0);
+  });
+  it("still flags a skip when only intrinsic siblings sit between the headings", () => {
+    expect(findOf(`<div><h2>A</h2><p>x</p><h4>B</h4></div>`, "heading-order-skip", "t.tsx")).toHaveLength(1);
+  });
+});
+
+describe("h1-missing — framework shell templates", () => {
+  it("does not assert on a SPA mount shell (empty #app)", () => {
+    const src = `<!doctype html><html lang="en"><head><title>X</title></head><body><div id="app"></div><script src="/m.js"></script></body></html>`;
+    expect(findOf(src, "h1-missing")).toHaveLength(0);
+  });
+  it("does not assert on a SvelteKit shell with %sveltekit.body%", () => {
+    const src = `<!doctype html><html lang="en"><head><title>X</title></head><body><div>%sveltekit.body%</div></body></html>`;
+    expect(findOf(src, "h1-missing")).toHaveLength(0);
+  });
+  it("still asserts on a real content page with no h1 (unchanged)", () => {
+    expect(findOf(page("<main><p>x</p></main>"), "h1-missing")).toHaveLength(1);
+  });
+});
+
+describe("list-structure — slotted <li> (SFC named slots / component children)", () => {
+  it("does not flag a <li> inside a <template> slot definition", () => {
+    expect(findOf(`<template><li>a</li></template>`, "list-structure", "C.vue")).toHaveLength(0);
+  });
+  it("does not flag a <li> inside a component subtree (slotted into a parent <ul>)", () => {
+    expect(findOf(`<MenuList><li>a</li></MenuList>`, "list-structure", "C.vue")).toHaveLength(0);
+  });
+  it("still flags a genuinely orphaned <li> in plain HTML", () => {
+    expect(findOf(`<section><li>x</li></section>`, "list-structure")).toHaveLength(1);
+  });
 });
 
 describe("h1-missing (9.1)", () => {

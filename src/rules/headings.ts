@@ -3,7 +3,8 @@ import type { Doc, El, HNode } from "../parse/html.js";
 import { attr, elementsByTag } from "../parse/html.js";
 import { isIntrinsic } from "../parse/jsx-bridge.js";
 import { accessibleName, mayInjectContent } from "../name.js";
-import type { Rule, RuleFinding } from "./rule.js";
+import { type Rule, type RuleFinding, shellBodyInjected } from "./rule.js";
+import { ancestors } from "../parse/html.js";
 
 // JSX/SFC only: true when a required element/content may be injected at runtime in a
 // way static source analysis cannot see — a child component (non-intrinsic tag, which
@@ -50,15 +51,23 @@ const headingOrderSkip: Rule = {
   criteria: ["1.3.1"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
-    const hs = headings(doc);
     const out: RuleFinding[] = [];
     let prev = 0;
     let prevArm: string | undefined;
-    for (const { el, level } of hs) {
-      // Only compare two headings that are in the SAME branch context: headings in
-      // different JSX conditional arms are never both rendered, so a "skip" between
-      // them is a flattening artefact, not a real order violation.
-      if (prev !== 0 && el.branchArm === prevArm && level - prev > 1) {
+    let prevHeading: El | null = null;
+    let componentBetween = false;
+    // Walk elements in source order so interleaved child components are visible: a
+    // component rendered BETWEEN two headings may itself render an intermediate heading
+    // (invisible to source) — so a "skip" across it is not a definite order violation.
+    for (const el of doc.elements) {
+      const level = headingLevel(el);
+      if (level === null) {
+        if (el.tag !== "#fragment" && !isIntrinsic(el.tag) && (!prevHeading || !ancestors(el).includes(prevHeading))) componentBetween = true;
+        continue;
+      }
+      // Compare only headings in the SAME branch context (different JSX conditional arms
+      // are mutually exclusive) with no component injected between them.
+      if (prev !== 0 && el.branchArm === prevArm && !componentBetween && level - prev > 1) {
         out.push({
           criteriaId: "1.3.1",
           el,
@@ -68,6 +77,8 @@ const headingOrderSkip: Rule = {
       }
       prev = level;
       prevArm = el.branchArm;
+      prevHeading = el;
+      componentBetween = false;
     }
     return out;
   },
@@ -81,7 +92,9 @@ const h1Missing: Rule = {
   run(doc: Doc): RuleFinding[] {
     const hasH1 = headings(doc).some((h) => h.level === 1);
     if (hasH1) return [];
-    if (contentMaybeInjected(doc)) return []; // the h1 may be supplied by {children}/a child component
+    // The h1 may be supplied by {children}/a child component (JSX/SFC) or injected into
+    // a framework shell template (SPA mount point / `%sveltekit.body%`) at build/runtime.
+    if (contentMaybeInjected(doc) || shellBodyInjected(doc)) return [];
     const anchor = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
     if (!anchor) return [];
     return [
@@ -137,14 +150,17 @@ const listStructure: Rule = {
         }
       } else if (el.tag === "li") {
         const parent = el.parent;
-        if (parent && !["ul", "ol", "menu"].includes(parent.tag)) {
-          out.push({
-            criteriaId: "1.3.1",
-            el,
-            message: `<li> hors d'une liste (<${parent.tag}> parent) — structure de liste invalide.`,
-            remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`,
-          });
-        }
+        if (!parent || ["ul", "ol", "menu"].includes(parent.tag)) continue;
+        // A <li> inside a <template> (named-slot definition) or a component subtree is
+        // projected into a parent component's <ul> at render — its real parent is unknown
+        // to static analysis, so this is not a definite violation.
+        if (parent.tag === "template" || ancestors(el).some((a) => a.tag === "template" || (a.tag !== "#fragment" && !isIntrinsic(a.tag)))) continue;
+        out.push({
+          criteriaId: "1.3.1",
+          el,
+          message: `<li> hors d'une liste (<${parent.tag}> parent) — structure de liste invalide.`,
+          remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`,
+        });
       }
     }
     return out;

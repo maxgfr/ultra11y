@@ -1,7 +1,7 @@
 // Theme 8 — Mandatory elements (the statically-checkable slice).
 import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, visibleText, allIds, elementsByTag } from "../parse/html.js";
-import type { Rule, RuleFinding } from "./rule.js";
+import { type Rule, type RuleFinding, shellHeadInjected } from "./rule.js";
 
 // Next.js App Router sets the document <title> via `export const metadata = { title }`
 // or `generateMetadata`, not a literal <title> in JSX — invisible to source analysis.
@@ -43,7 +43,9 @@ const titleMissingEmpty: Rule = {
     const titles = elementsByTag(doc, "title");
     const hasNonEmpty = titles.some((t) => visibleText(t).length > 0);
     if (hasNonEmpty) return [];
-    if (titleSetByFramework(doc)) return []; // <title> injected by the Next.js metadata API
+    // <title> injected by the Next.js metadata API, or by a framework shell placeholder
+    // in <head> (e.g. SvelteKit `%sveltekit.head%`, `<%= title %>`).
+    if (titleSetByFramework(doc) || shellHeadInjected(doc)) return [];
     const anchor: El | undefined = elementsByTag(doc, "head")[0] ?? elementsByTag(doc, "html")[0] ?? doc.elements[0];
     if (!anchor) return [];
     return [
@@ -65,6 +67,7 @@ const duplicateId: Rule = {
     const seen = new Map<string, number>();
     const out: RuleFinding[] = [];
     for (const { id, el } of allIds(doc)) {
+      if (id.includes("{")) continue; // dynamic id (id={`x-${i}`}/id="x-{id}") — unique per instance at runtime
       const n = (seen.get(id) ?? 0) + 1;
       seen.set(id, n);
       if (n > 1) {

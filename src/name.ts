@@ -2,7 +2,7 @@
 // enough for the link/button/image/control naming rules. Not a full implementation
 // (no rendered CSS), so it stays conservative: it only claims a name it can see.
 import type { Doc, El, HNode } from "./parse/html.js";
-import { attr, boundAttr, hasBoundAttr, descendants, ancestors } from "./parse/html.js";
+import { attr, hasAttr, boundAttr, hasBoundAttr, descendants, ancestors } from "./parse/html.js";
 import { isIntrinsic } from "./parse/jsx-bridge.js";
 
 const collapse = (s: string): string => s.replace(/\s+/g, " ").trim();
@@ -89,6 +89,7 @@ const NON_LABELABLE_INPUT = new Set(["hidden", "submit", "reset", "button", "ima
 /** Is this a labelable form field (excludes buttons/hidden)? */
 export function isFormField(el: El): boolean {
   if (!FIELD_TAGS.has(el.tag)) return false;
+  if (hasAttr(el, "hidden")) return false; // a [hidden] field is not an exposed UI control
   if (el.tag === "input") {
     const type = (attr(el, "type") ?? "text").toLowerCase();
     return !NON_LABELABLE_INPUT.has(type);

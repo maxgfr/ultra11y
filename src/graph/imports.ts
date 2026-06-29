@@ -146,8 +146,12 @@ function analyzeComponent(name: string, file: string, fnNode: AstNode): Componen
   const literalAriaName = attrs.some((a) => NAME_PROPS.has(attrName(a)) && attrIsLiteral(a));
   const acceptsNameViaChildren = rendersNameExpr(control);
   const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
-  const controlHasName = literalAriaName || hasLiteralText(control);
-  const rendersIconOnlyControl = hasIconChild(control) && !hasLiteralText(control) && !literalAriaName;
+  // forwardsAria = the control carries aria-label/aria-labelledby={expr}; literalAriaName =
+  // a literal name. Either way the control IS named (the value may be dynamic but is
+  // present), so it is NOT an unnamed icon-only control — avoids flagging a self-named
+  // icon button like `aria-label={isPlus ? "…" : "…"}`.
+  const controlHasName = literalAriaName || forwardsAria || hasLiteralText(control);
+  const rendersIconOnlyControl = hasIconChild(control) && !hasLiteralText(control) && !literalAriaName && !forwardsAria;
   return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
 }
 

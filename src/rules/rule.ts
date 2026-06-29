@@ -2,7 +2,32 @@
 // Kept dependency-light (no value import of the registry) to avoid cycles.
 import type { Doc, El } from "../parse/html.js";
 import type { Finding, Severity } from "../types.js";
-import { snippet } from "../parse/html.js";
+import { snippet, textContent, elementsByTag } from "../parse/html.js";
+
+// A build-time / runtime content-injection placeholder left in a framework SHELL
+// template (SvelteKit `%sveltekit.body%`, Mustache/Vue `{{ }}`, EJS/ERB `<% %>`,
+// Jinja/Liquid `{% %}`, Razor `@RenderBody()`). Their real markup is injected later.
+const INJECT_MARKER = /%[a-zA-Z][\w.]*%|\{\{[\s\S]*?\}\}|<%[-=]?[\s\S]*?%>|\{%[\s\S]*?%\}|@RenderBody\b/;
+// SPA mount-point ids: an EMPTY element with one of these ids is a shell, not content.
+const MOUNT_IDS = new Set(["app", "root", "__next", "__nuxt", "svelte", "q-app", "app-root", "___gatsby"]);
+
+/** The document body is a framework shell whose real content (incl. any <h1>) is
+ *  injected at build/runtime — a placeholder marker, or an empty SPA mount point. */
+export function shellBodyInjected(doc: Doc): boolean {
+  const region = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
+  if (!region) return false;
+  if (INJECT_MARKER.test(textContent(region))) return true;
+  return doc.elements.some(
+    (el) => MOUNT_IDS.has((el.attribs.id ?? "").toLowerCase()) && !el.children.some((c) => (c.type === "element" ? c.tag !== "script" : c.data.trim() !== "")),
+  );
+}
+
+/** The document <head> injects its <title> via a framework placeholder
+ *  (e.g. SvelteKit `%sveltekit.head%`, `<%= title %>`, `{{ title }}`). */
+export function shellHeadInjected(doc: Doc): boolean {
+  const head = elementsByTag(doc, "head")[0];
+  return !!head && INJECT_MARKER.test(textContent(head));
+}
 
 export interface RuleFinding {
   /** the specific WCAG success criterion this finding evidences (e.g. "1.4.3") */

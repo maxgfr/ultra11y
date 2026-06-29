@@ -18,6 +18,10 @@ describe("data-table-no-headers (5.6/5.7)", () => {
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("1.3.1");
   });
+  it("conforming: a simple table whose <th> are all in <thead> (implicit col scope)", () => {
+    const html = `<table><caption>T</caption><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>`;
+    expect(findOf(html, "data-table-no-headers")).toHaveLength(0);
+  });
   it("skips a layout table (nested tables) — no false positive", () => {
     const html = `<table><tr><td><table><tr><td>x</td></tr></table></td><td>y</td></tr></table>`;
     expect(findOf(html, "data-table-no-headers")).toHaveLength(0);

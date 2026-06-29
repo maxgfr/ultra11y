@@ -60,6 +60,45 @@ describe("dynamic attribute bindings count as 'name present'", () => {
   it("input with v-bind:aria-label is treated as labelled", () => {
     expect(findOf(`<input v-bind:aria-label="lbl" />`, "control-label-missing", "C.vue")).toHaveLength(0);
   });
+  it('input with a v-bind="…" object spread is not flagged unlabelled (name may be spread in)', () => {
+    expect(findOf(`<input v-bind="$attrs" />`, "control-label-missing", "C.vue")).toHaveLength(0);
+  });
+});
+
+describe("dynamic-value / injected-content guards (SFC)", () => {
+  it("invalid-aria-role skips a dynamic role expression (role={…})", () => {
+    expect(findOf(`<button role={x ? "link" : undefined}>z</button>`, "invalid-aria-role", "C.svelte")).toHaveLength(0);
+  });
+  it("data-table accepts a dynamic :scope binding", () => {
+    expect(findOf(`<table><tr><th :scope="col">A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers", "C.vue")).toHaveLength(0);
+  });
+  it("aria-required-children skips when children are slotted", () => {
+    expect(findOf(`<div role="list"><slot></slot></div>`, "aria-required-children", "C.vue")).toHaveLength(0);
+  });
+  it("fieldset-legend skips when the legend is injected via {@render}", () => {
+    expect(findOf(`<fieldset>{@render children?.()}</fieldset>`, "fieldset-legend-missing", "C.svelte")).toHaveLength(0);
+  });
+  it("fieldset-legend STILL flags a fieldset that only contains component fields (no slot legend)", () => {
+    expect(findOf(`<fieldset><MyInput /><MyInput /></fieldset>`, "fieldset-legend-missing", "C.vue")).toHaveLength(1);
+  });
+  it("control-label skips a Svelte {...rest} spread on the field", () => {
+    expect(findOf(`<input {...rest} />`, "control-label-missing", "C.svelte")).toHaveLength(0);
+  });
+  it("img-alt skips a Svelte {alt} shorthand / spread", () => {
+    expect(findOf(`<img {alt} src={src} />`, "img-alt-missing", "C.svelte")).toHaveLength(0);
+  });
+  it("control-label skips a [hidden] form field (not an exposed control)", () => {
+    expect(findOf(`<input hidden value="x" name="dob" />`, "control-label-missing", "C.svelte")).toHaveLength(0);
+  });
+  it("canvas-fallback skips an aria-hidden canvas", () => {
+    expect(findOf(`<canvas aria-hidden="true"></canvas>`, "canvas-fallback-missing")).toHaveLength(0);
+  });
+  it('duplicate-id skips dynamic ids (id="x-{id}")', () => {
+    expect(findOf(`<div id="email-{id}"></div><div id="email-{id}"></div>`, "duplicate-id", "C.svelte")).toHaveLength(0);
+  });
+  it("select-has-option skips a {@render children()} snippet wrapper", () => {
+    expect(findOf(`<select>{@render children?.()}</select>`, "select-has-option", "C.svelte")).toHaveLength(0);
+  });
 });
 
 describe("no over-suppression: genuinely empty markup still flagged in SFCs", () => {
@@ -68,5 +107,11 @@ describe("no over-suppression: genuinely empty markup still flagged in SFCs", ()
   });
   it("an img with no alt is still flagged", () => {
     expect(findOf(`<img src="x" />`, "img-alt-missing", "C.vue")).toHaveLength(1);
+  });
+  it("a role=list with no children is still flagged", () => {
+    expect(findOf(`<div role="list"></div>`, "aria-required-children", "C.vue")).toHaveLength(1);
+  });
+  it("a dynamic role still flags nothing but a static invalid role does", () => {
+    expect(findOf(`<div role="notarole">x</div>`, "invalid-aria-role", "C.vue")).toHaveLength(1);
   });
 });

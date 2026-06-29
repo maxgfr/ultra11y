@@ -156,6 +156,15 @@ export function hasBoundAttr(el: El, name: string): boolean {
   return boundAttr(el, name) !== undefined;
 }
 
+/** The element carries a spread/shorthand that can inject arbitrary attributes at
+ *  runtime — React `{...props}`, Vue `v-bind="…"`, Svelte `{...rest}` / `{shorthand}`.
+ *  A "missing attribute/name" finding on such an element is unprovable, so rules skip it. */
+export function hasDynamicSpread(el: El): boolean {
+  if (el.spread) return true;
+  for (const k in el.attribs) if (k === "v-bind" || k.startsWith("{")) return true;
+  return false;
+}
+
 export function isVoid(tag: string): boolean {
   return VOID.has(tag);
 }

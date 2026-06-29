@@ -20,6 +20,11 @@ describe("cross-file rules (audit --graph)", () => {
     expect(find(graph, "cross-icon-only-unnamed", "page-good.tsx")).toBeUndefined();
   });
 
+  it("does not flag an icon button that is self-named by a dynamic aria-label in its definition", () => {
+    // QtyButton's <button> always has aria-label={kind ? "…" : "…"} — it is named, not unnamed.
+    expect(find(graph, "cross-icon-only-unnamed", "self-named-icon.tsx")).toBeUndefined();
+  });
+
   it("suppresses the single-file icon-only finding on a spread-props component definition", () => {
     // Without the graph the definition's <button> trips the single-file rule…
     expect(find(plain, "icon-only-control-unnamed", "IconButton.tsx")).toBeDefined();

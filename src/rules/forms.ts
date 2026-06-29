@@ -1,7 +1,15 @@
 // Theme 11 — Forms: every field has a programmatic label + group/structure checks.
-import type { Doc } from "../parse/html.js";
-import { attr, hasAttr, descendants, visibleText } from "../parse/html.js";
+import type { Doc, El } from "../parse/html.js";
+import { attr, hasAttr, hasDynamicSpread, descendants, visibleText } from "../parse/html.js";
 import { controlLabel, isFormField, mayInjectContent } from "../name.js";
+
+// The element's WHOLE content is a slot/snippet passthrough — a DIRECT `<slot>` child or
+// a `{@render …}`/`{children}` render-expression text node — so the legend the caller
+// provides is invisible here. (Must be a direct child: a fieldset that merely *contains*
+// component fields with no legend is a real violation, not a passthrough.)
+function contentInjected(el: El): boolean {
+  return el.children.some((c) => (c.type === "element" && c.tag === "slot") || (c.type === "text" && /\{@render|\{children/.test(c.data)));
+}
 import type { Rule, RuleFinding } from "./rule.js";
 
 // title/placeholder are NOT real labels for these rules
@@ -17,6 +25,9 @@ const controlLabelMissing: Rule = {
       if (!isFormField(el)) continue;
       const { via } = controlLabel(el, doc);
       if (via && REAL_LABEL.has(via)) continue;
+      // A spread (JSX {...props} / Vue v-bind="…" / Svelte {...rest}) may inject
+      // aria-label/aria-labelledby we can't see — don't assert a missing label.
+      if (hasDynamicSpread(el)) continue;
       if (hasAttr(el, "placeholder")) continue; // reported by placeholder-as-label
       out.push({
         criteriaId: "4.1.2",
@@ -62,6 +73,7 @@ const fieldsetLegendMissing: Rule = {
       const legend = el.children.find((c) => c.type === "element" && c.tag === "legend");
       if (legend && legend.type === "element" && visibleText(legend)) continue;
       if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
+      if (contentInjected(el)) continue; // legend supplied via slot/{@render children()}/a component
       out.push({
         criteriaId: "1.3.1",
         el,
@@ -110,7 +122,7 @@ const selectHasOption: Rule = {
     for (const el of doc.elements) {
       if (el.tag !== "select") continue;
       if (descendants(el).some((d) => d.tag === "option")) continue;
-      if (mayInjectContent(el)) continue; // options injected via <slot>/child component
+      if (mayInjectContent(el) || contentInjected(el)) continue; // options injected via <slot>/component/{@render}
       out.push({
         criteriaId: "4.1.2",
         el,

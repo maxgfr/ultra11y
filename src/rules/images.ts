@@ -1,6 +1,7 @@
 // Theme 1 — Images.
 import type { Doc, El } from "../parse/html.js";
-import { attr, hasAttr, hasBoundAttr, boundAttr, visibleText } from "../parse/html.js";
+import { attr, hasAttr, hasBoundAttr, boundAttr, hasDynamicSpread, visibleText } from "../parse/html.js";
+import { accessibleName } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const isHidden = (el: El): boolean => attr(el, "aria-hidden") === "true" || ["presentation", "none"].includes((attr(el, "role") ?? "").trim());
@@ -19,6 +20,10 @@ const imgAltMissing: Rule = {
       if (!isImg) continue;
       if (isHidden(el) && el.tag !== "area") continue;
       if (hasBoundAttr(el, "alt") || named(el)) continue; // alt="" / :alt="x" / aria-* → present
+      if (hasDynamicSpread(el)) continue; // {...props} / Svelte {alt} shorthand may carry alt
+      // role="img" on a non-<img> element (e.g. <svg role="img"><title>…) is named by its
+      // <title>/text content, not an alt attribute — accept that accessible name.
+      if (el.tag !== "img" && el.tag !== "area" && accessibleName(el, doc).trim() !== "") continue;
       out.push({
         criteriaId: "1.1.1",
         el,
@@ -70,6 +75,7 @@ const canvasFallbackMissing: Rule = {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
       if (el.tag !== "canvas") continue;
+      if (attr(el, "aria-hidden") === "true") continue; // explicitly removed from the a11y tree (named on a role=img wrapper)
       const hasFallback = el.children.some((c) => (c.type === "element" ? true : c.data.trim().length > 0));
       if (hasFallback || named(el) || visibleText(el)) continue;
       out.push({

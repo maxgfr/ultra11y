@@ -28,7 +28,7 @@ non-conformities. RGAA (France) and other country standards are pluggable packs
 (--standard <pack>); WCAG is the worldwide core.
 
 Usage:
-  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
+  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr] [--no-default-excludes]
   ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues] [--lang en|fr]
@@ -103,6 +103,8 @@ Options:
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
   --ext <list>       audit/fix: extra file extensions to walk (e.g. .twig,.erb);
                      .html/.htm/.xhtml/.jsx/.tsx/.vue/.svelte/.astro are built-in
+  --no-default-excludes  audit/fix: also audit test/spec/story/__tests__ markup
+                     (excluded by default; logged, never a silent drop)
   --jsx              audit/fix: force JSX/TSX parsing for inputs of any extension
   --graph            audit: also resolve imports + run cross-file rules (alias --cross-file)
   --cross-file       audit: alias of --graph
@@ -269,6 +271,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : undefined,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : undefined,
     graph: p.flags.graph === true || p.flags["cross-file"] === true,
+    noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m),
   });
 
@@ -396,7 +399,15 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const path = writeReport(result, { out, lang: langOf(p.flags), standard });
-  console.log(path);
+  if (p.flags.json)
+    console.log(
+      JSON.stringify(
+        { path, conformancePct: result.conformancePct, date: result.date, standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag" },
+        null,
+        2,
+      ),
+    );
+  else console.log(path);
   return 0;
 }
 
@@ -425,24 +436,29 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   const split = p.flags.split === "criterion" ? "criterion" : undefined;
   const format = p.flags.format === "doc" ? "doc" : undefined;
   const paths = writePrd(result, { out, lang, split, format, standard });
-  for (const path of paths) console.log(path);
+  const json = p.flags.json === true;
+  if (!json) for (const path of paths) console.log(path);
 
   // --gh-issues: always-written markdown above; GitHub is opt-in + best-effort.
+  let gh: { created: number; skipped: number; failed: number } | undefined;
   if (p.flags["gh-issues"] === true) {
     const units = prdUnits(result, standard, lang);
     if (!ghAvailable()) {
-      console.error("ultra11y prd: --gh-issues skipped — `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
+      if (!json)
+        console.error("ultra11y prd: --gh-issues skipped — `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
     } else if (units.length === 0) {
-      console.error("ultra11y prd: --gh-issues skipped — no findings to file.");
+      if (!json) console.error("ultra11y prd: --gh-issues skipped — no findings to file.");
     } else {
-      const r = pushIssues(units, lang, standard);
-      const msg =
-        lang === "fr"
-          ? `ultra11y prd : issues GitHub — ${r.created} créée(s), ${r.skipped} déjà existante(s)${r.failed ? `, ${r.failed} en échec` : ""}.`
-          : `ultra11y prd: GitHub issues — ${r.created} created, ${r.skipped} already existed${r.failed ? `, ${r.failed} failed` : ""}.`;
-      console.log(msg);
+      gh = pushIssues(units, lang, standard);
+      if (!json)
+        console.log(
+          lang === "fr"
+            ? `ultra11y prd : issues GitHub — ${gh.created} créée(s), ${gh.skipped} déjà existante(s)${gh.failed ? `, ${gh.failed} en échec` : ""}.`
+            : `ultra11y prd: GitHub issues — ${gh.created} created, ${gh.skipped} already existed${gh.failed ? `, ${gh.failed} failed` : ""}.`,
+        );
     }
   }
+  if (json) console.log(JSON.stringify({ paths, units: prdUnits(result, standard, lang), ...(gh ? { gh } : {}) }, null, 2));
   return 0;
 }
 
@@ -560,9 +576,11 @@ function cmdVerify(p: ParsedArgs): number {
   const items = buildWorklist(readText(rep), standard, max);
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
-  console.log(
-    lang === "fr" ? `${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify → ${mdPath}, ${todoPath}`,
-  );
+  if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
+  else
+    console.log(
+      lang === "fr" ? `${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify → ${mdPath}, ${todoPath}`,
+    );
   return 0;
 }
 
@@ -585,6 +603,7 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
     ext: asList(p.flags.ext),
     changed: p.flags.changed === true || since !== undefined,
     since,
+    noDefaultExcludes: p.flags["no-default-excludes"] === true,
     only:
       typeof onlyFlag === "string"
         ? onlyFlag

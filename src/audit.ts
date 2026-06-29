@@ -32,6 +32,7 @@ export interface AuditInput {
   dedup?: DedupMode; // collapse identical files to one canonical audit (default exact)
   maxFiles?: number; // hard cap on canonical files audited (logged truncation)
   graph?: boolean; // also run cross-file rules over a dependency graph (--graph)
+  noDefaultExcludes?: boolean; // also audit test/spec/story/__tests__ markup
   onWarn?: (msg: string) => void;
 }
 
@@ -66,6 +67,8 @@ interface Accum {
   fileCount: number;
   opaqueLibs: Set<string>; // component-library specifiers rendered but not source-analysable
   opaqueFiles: number; // count of source files that render such components
+  sfcFiles: number; // .vue/.svelte/.astro source templates audited (verdicts preliminary)
+  sfcExts: Set<string>; // which SFC extensions were seen
 }
 
 // Precompute the static success criteria + their applicability predicates once.
@@ -74,7 +77,16 @@ const STATIC_PREDS: ReadonlyArray<readonly [string, (d: Doc) => boolean]> = allS
   .map((c) => [c.sc, APPLICABLE[c.sc] ?? isFullDocument] as const);
 
 function newAccum(): Accum {
-  return { byCriterion: new Map(), applicable: new Map(), allFindings: [], fileCount: 0, opaqueLibs: new Set(), opaqueFiles: 0 };
+  return {
+    byCriterion: new Map(),
+    applicable: new Map(),
+    allFindings: [],
+    fileCount: 0,
+    opaqueLibs: new Set(),
+    opaqueFiles: 0,
+    sfcFiles: 0,
+    sfcExts: new Set(),
+  };
 }
 
 /** Fold one parsed document into the accumulator, then let it be GC'd. When a
@@ -104,6 +116,11 @@ export function foldDoc(acc: Accum, doc: Doc, graph?: DepGraph): void {
   if (doc.opaqueComponents?.length) {
     for (const lib of doc.opaqueComponents) acc.opaqueLibs.add(lib);
     acc.opaqueFiles++;
+  }
+  if (doc.kind === "sfc") {
+    acc.sfcFiles++;
+    const e = doc.file.toLowerCase().match(/\.[a-z]+$/)?.[0];
+    if (e) acc.sfcExts.add(e);
   }
   acc.fileCount++;
 }
@@ -171,6 +188,7 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
       ...(extra.truncated ? { truncated: extra.truncated } : {}),
       ...(extra.dedup ? { dedup: extra.dedup } : {}),
       ...(acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {}),
+      ...(acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {}),
     },
     guidelines,
     criteria,
@@ -210,6 +228,7 @@ export function runAudit(opts: AuditInput): AuditResult {
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn,
   });
 
@@ -218,7 +237,10 @@ export function runAudit(opts: AuditInput): AuditResult {
   // the audit loop below. Off by default — a plain audit is byte-identical.
   let graph: DepGraph | undefined;
   if (opts.graph) {
-    const graphFiles = opts.changed || opts.since ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext }).files : files;
+    const graphFiles =
+      opts.changed || opts.since
+        ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files
+        : files;
     graph = buildGraphStreaming(graphFiles);
   }
 

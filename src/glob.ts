@@ -23,6 +23,18 @@ function extSet(extra: string[] | undefined): Set<string> {
 }
 const SKIP_DIR = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
 
+// Test / spec / story / mock markup is bad-by-design (intentionally non-conformant
+// fixtures, never shipped UI). Excluded by default to keep the audit focused on real
+// product code; re-admit by naming the file/dir directly, with an `--include` glob, or
+// `--no-default-excludes`. NOT in SKIP_DIR (which prunes the walk unconditionally) so
+// the opt-outs can still reach these files.
+const TEST_DIR = new Set(["__tests__", "__mocks__", ".storybook"]);
+const TEST_FILE = /\.(test|spec|stories|story|cy)\.[^./]+$/i;
+export function isTestArtifact(rel: string): boolean {
+  if (TEST_FILE.test(rel)) return true;
+  return rel.split("/").some((seg) => TEST_DIR.has(seg));
+}
+
 // `**` crosses `/`, `*` runs within a segment, `?` is one non-`/` char.
 function globToRegExp(glob: string): RegExp {
   let re = "";
@@ -73,6 +85,8 @@ export function makeFilter(opts: ExpandOpts = {}): (file: string) => boolean {
     const rel = toPosix(file);
     if (include && !include(rel)) return false;
     if (exclude?.(rel)) return false;
+    // Default test-artifact exclusion (re-admitted by an explicit --include match).
+    if (!opts.noDefaultExcludes && isTestArtifact(rel) && !(include && include(rel))) return false;
     return true;
   };
 }
@@ -120,6 +134,8 @@ export interface ExpandOpts {
   include?: string[];
   exclude?: string[];
   ext?: string[];
+  noDefaultExcludes?: boolean; // audit test/spec/story/__tests__ markup too
+  onWarn?: (msg: string) => void;
 }
 
 /** Expand inputs (paths/dirs/globs) into a sorted, de-duplicated file list. */
@@ -128,6 +144,7 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
   const exclude = compileGlobs(opts.exclude);
   const exts = extSet(opts.ext);
   const files = new Set<string>();
+  const explicit = new Set<string>(); // files named directly — never auto-excluded
 
   for (const input of inputs) {
     if (input === "-") continue; // stdin handled by the caller
@@ -145,6 +162,7 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
         for (const f of acc) if (exts.has(ext(f))) files.add(f);
       } else if (exts.has(ext(input))) {
         files.add(input);
+        explicit.add(input);
       }
     }
   }
@@ -152,5 +170,16 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
   let list = [...files];
   if (include) list = list.filter((f) => include(toPosix(f)));
   if (exclude) list = list.filter((f) => !exclude(toPosix(f)));
+  // Default test-artifact exclusion — re-admitted when the file was named directly or
+  // matched by an explicit --include. Logged (never a silent drop).
+  if (!opts.noDefaultExcludes) {
+    const before = list.length;
+    list = list.filter((f) => {
+      const rel = toPosix(f);
+      return !isTestArtifact(rel) || explicit.has(f) || (include != null && include(rel));
+    });
+    const dropped = before - list.length;
+    if (dropped) opts.onWarn?.(`ultra11y: skipped ${dropped} test/spec/story file(s) — pass --no-default-excludes to audit them.`);
+  }
   return list.sort();
 }

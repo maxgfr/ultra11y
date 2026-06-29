@@ -2,7 +2,17 @@
 // summary (the --json path prints the AuditResult verbatim instead).
 import type { AuditResult, Lang, Severity } from "./types.js";
 
-type Key = "summaryTitle" | "files" | "autoConformance" | "guideline" | "findingsTitle" | "noFindings" | "residualTitle" | "manualNote" | "renderedNote";
+type Key =
+  | "summaryTitle"
+  | "files"
+  | "autoConformance"
+  | "guideline"
+  | "findingsTitle"
+  | "noFindings"
+  | "residualTitle"
+  | "manualNote"
+  | "renderedNote"
+  | "sfcNote";
 
 const STR: Record<Lang, Record<Key, string>> = {
   fr: {
@@ -15,6 +25,8 @@ const STR: Record<Lang, Record<Key, string>> = {
     residualTitle: "À évaluer manuellement (jugement / rendu)",
     manualNote: "critères non décidables par le moteur — à compléter par une revue humaine.",
     renderedNote: "fichier(s) rendent des composants de bibliothèque non analysés en source — auditez le build (render) ou scan",
+    sfcNote:
+      "composant(s) .vue/.svelte/.astro audité(s) en SOURCE (template) — slots et liaisons dynamiques invisibles : verdict préliminaire, auditez le rendu (render/scan)",
   },
   en: {
     summaryTitle: "WCAG 2.2 AA audit (ultra11y static engine)",
@@ -26,6 +38,8 @@ const STR: Record<Lang, Record<Key, string>> = {
     residualTitle: "To assess manually (judgment / rendering)",
     manualNote: "criteria the engine cannot decide — complete with a human review.",
     renderedNote: "file(s) render component-library output not analysed from source — audit the build (render) or scan",
+    sfcNote:
+      ".vue/.svelte/.astro file(s) audited as SOURCE (template) — slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)",
   },
 };
 
@@ -58,5 +72,6 @@ export function auditSummary(r: AuditResult, lang: Lang): string {
   lines.push("");
   lines.push(`${t(lang, "residualTitle")} : ${r.residualRisks.length} ${t(lang, "manualNote")}`);
   if (r.scope.rendered) lines.push(`🧩 ${r.scope.rendered.files} ${t(lang, "renderedNote")} (${r.scope.rendered.opaqueLibraries.join(", ")}).`);
+  if (r.scope.sourceTemplate) lines.push(`🧩 ${r.scope.sourceTemplate.files} ${t(lang, "sfcNote")} (${r.scope.sourceTemplate.extensions.join(", ")}).`);
   return lines.join("\n");
 }

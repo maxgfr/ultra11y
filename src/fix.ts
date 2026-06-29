@@ -27,6 +27,7 @@ export interface FixInput {
   since?: string;
   only?: string[]; // limit to these ruleIds
   write?: boolean; // default false → dry-run
+  noDefaultExcludes?: boolean; // also fix test/spec/story/__tests__ markup
   onWarn?: (m: string) => void;
 }
 
@@ -112,6 +113,7 @@ export function runFix(opts: FixInput): FixResult {
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn,
   });
 

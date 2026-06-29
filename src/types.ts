@@ -110,6 +110,11 @@ export interface Finding {
   // component definition for a finding raised at a usage site. Optional/additive
   // (cross-file rules only), so existing AuditResult JSON still parses.
   related?: { file: string; line: number; col: number; selectorHint: string; note: string };
+  // AI signal: this finding was raised on a .vue/.svelte/.astro SOURCE template, whose
+  // slot/dynamic-injected content is invisible to static analysis — so it is a
+  // PRELIMINARY verdict to confirm against the rendered output, not a certainty.
+  // Optional/additive (no schemaVersion bump); absent = full-confidence static finding.
+  preliminary?: boolean;
 }
 
 export interface CriterionResult {
@@ -152,6 +157,10 @@ export interface AuditResult {
     // output is invisible to static source analysis (e.g. DSFR). The source verdict
     // is preliminary for them — audit the build output (`render`) or `scan`.
     rendered?: { opaqueLibraries: string[]; files: number };
+    // Set when .vue/.svelte/.astro SOURCE templates were audited. Their slots,
+    // snippets and dynamic bindings are invisible to static analysis, so findings on
+    // them are PRELIMINARY — audit the rendered output (`render`/`scan`) to confirm.
+    sourceTemplate?: { files: number; extensions: string[] };
   };
   guidelines: GuidelineTally[];
   criteria: CriterionResult[];

@@ -3642,6 +3642,11 @@ function boundAttr(el, name) {
 function hasBoundAttr(el, name) {
   return boundAttr(el, name) !== void 0;
 }
+function hasDynamicSpread(el) {
+  if (el.spread) return true;
+  for (const k in el.attribs) if (k === "v-bind" || k.startsWith("{")) return true;
+  return false;
+}
 function textContent(node) {
   if (node.type === "text") return node.data;
   let out = "";
@@ -18135,6 +18140,20 @@ function parseSource(source, file, opts = {}) {
 }
 
 // src/rules/rule.ts
+var INJECT_MARKER = /%[a-zA-Z][\w.]*%|\{\{[\s\S]*?\}\}|<%[-=]?[\s\S]*?%>|\{%[\s\S]*?%\}|@RenderBody\b/;
+var MOUNT_IDS = /* @__PURE__ */ new Set(["app", "root", "__next", "__nuxt", "svelte", "q-app", "app-root", "___gatsby"]);
+function shellBodyInjected(doc) {
+  const region = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
+  if (!region) return false;
+  if (INJECT_MARKER.test(textContent(region))) return true;
+  return doc.elements.some(
+    (el) => MOUNT_IDS.has((el.attribs.id ?? "").toLowerCase()) && !el.children.some((c) => c.type === "element" ? c.tag !== "script" : c.data.trim() !== "")
+  );
+}
+function shellHeadInjected(doc) {
+  const head = elementsByTag(doc, "head")[0];
+  return !!head && INJECT_MARKER.test(textContent(head));
+}
 function isFullDocument(doc) {
   return doc.elements.some((e) => e.tag === "html");
 }
@@ -18172,6 +18191,92 @@ function toFinding(doc, ruleId, def, rf) {
   };
 }
 
+// src/name.ts
+var collapse = (s) => s.replace(/\s+/g, " ").trim();
+function mayInjectContent(el) {
+  return descendants(el).some((d) => d.tag === "slot" || d.tag !== "#fragment" && !isIntrinsic(d.tag));
+}
+function nameFromContent(el) {
+  let out = "";
+  const walk2 = (n) => {
+    if (n.type === "text") {
+      out += n.data;
+      return;
+    }
+    if (n.tag === "img") {
+      const a = attr(n, "alt");
+      if (a) out += " " + a;
+      return;
+    }
+    if (n.tag === "svg") {
+      const title2 = descendants(n).find((d) => d.tag === "title");
+      if (title2) out += " " + nameFromContent(title2);
+      return;
+    }
+    if (attr(n, "aria-hidden") === "true") return;
+    for (const c of n.children) walk2(c);
+  };
+  for (const c of el.children) walk2(c);
+  return collapse(out);
+}
+function ariaLabelledbyText(el, doc) {
+  const ids = attr(el, "aria-labelledby");
+  if (!ids) return "";
+  const parts = [];
+  for (const id of ids.split(/\s+/).filter(Boolean)) {
+    const ref = doc.byId.get(id);
+    if (ref) parts.push(nameFromContent(ref) || (attr(ref, "aria-label") ?? "").trim());
+  }
+  return collapse(parts.join(" "));
+}
+var BUTTON_INPUT = /* @__PURE__ */ new Set(["button", "submit", "reset"]);
+var NAMELESS_BY_DEFAULT = /* @__PURE__ */ new Set(["submit", "reset"]);
+function accessibleName(el, doc) {
+  const labelledby = ariaLabelledbyText(el, doc);
+  if (labelledby) return labelledby;
+  if (hasBoundAttr(el, "aria-labelledby") && !attr(el, "aria-labelledby")) return "\xA0";
+  const ariaLabel = (boundAttr(el, "aria-label") ?? "").trim();
+  if (ariaLabel) return ariaLabel;
+  if (el.tag === "img" || el.tag === "area") {
+    return (boundAttr(el, "alt") ?? "").trim();
+  }
+  if (el.tag === "input") {
+    const type = (attr(el, "type") ?? "text").toLowerCase();
+    if (BUTTON_INPUT.has(type)) {
+      const value = (attr(el, "value") ?? "").trim();
+      if (value) return value;
+      if (NAMELESS_BY_DEFAULT.has(type)) return type === "submit" ? "Submit" : "Reset";
+      return (attr(el, "title") ?? "").trim();
+    }
+  }
+  const content = nameFromContent(el);
+  if (content) return content;
+  return (attr(el, "title") ?? "").trim();
+}
+var FIELD_TAGS = /* @__PURE__ */ new Set(["input", "select", "textarea"]);
+var NON_LABELABLE_INPUT = /* @__PURE__ */ new Set(["hidden", "submit", "reset", "button", "image"]);
+function isFormField(el) {
+  if (!FIELD_TAGS.has(el.tag)) return false;
+  if (hasAttr(el, "hidden")) return false;
+  if (el.tag === "input") {
+    const type = (attr(el, "type") ?? "text").toLowerCase();
+    return !NON_LABELABLE_INPUT.has(type);
+  }
+  return true;
+}
+function controlLabel(el, doc) {
+  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc) || hasBoundAttr(el, "aria-labelledby")) return { hasLabel: true, via: "aria-labelledby" };
+  if ((boundAttr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
+  const id = attr(el, "id");
+  if (id) {
+    const lbl = doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id);
+    if (lbl) return { hasLabel: true, via: "for" };
+  }
+  if (ancestors(el).some((a) => a.tag === "label")) return { hasLabel: true, via: "wrapping" };
+  if ((attr(el, "title") ?? "").trim()) return { hasLabel: true, via: "title" };
+  return { hasLabel: false, via: null };
+}
+
 // src/rules/images.ts
 var isHidden = (el) => attr(el, "aria-hidden") === "true" || ["presentation", "none"].includes((attr(el, "role") ?? "").trim());
 var named = (el) => !!(boundAttr(el, "aria-label") ?? "").trim() || hasBoundAttr(el, "aria-labelledby");
@@ -18186,6 +18291,8 @@ var imgAltMissing = {
       if (!isImg) continue;
       if (isHidden(el) && el.tag !== "area") continue;
       if (hasBoundAttr(el, "alt") || named(el)) continue;
+      if (hasDynamicSpread(el)) continue;
+      if (el.tag !== "img" && el.tag !== "area" && accessibleName(el, doc).trim() !== "") continue;
       out.push({
         criteriaId: "1.1.1",
         el,
@@ -18235,6 +18342,7 @@ var canvasFallbackMissing = {
     const out = [];
     for (const el of doc.elements) {
       if (el.tag !== "canvas") continue;
+      if (attr(el, "aria-hidden") === "true") continue;
       const hasFallback = el.children.some((c) => c.type === "element" ? true : c.data.trim().length > 0);
       if (hasFallback || named(el) || visibleText(el)) continue;
       out.push({
@@ -18419,6 +18527,7 @@ var invalidAriaRole = {
       if (!isIntrinsic(el.tag)) continue;
       const role = (attr(el, "role") ?? "").trim();
       if (!role) continue;
+      if (role.includes("{")) continue;
       const tokens = role.split(/\s+/);
       const bad = tokens.filter((t2) => !VALID_ROLES.has(t2.toLowerCase()));
       if (bad.length) {
@@ -18559,6 +18668,7 @@ var ariaRequiredChildren = {
       if (!req) continue;
       if (hasAttr(el, "aria-owns")) continue;
       if (descendants(el).some((d) => satisfiesChild(d, req))) continue;
+      if (mayInjectContent(el)) continue;
       out.push({
         criteriaId: "4.1.2",
         el,
@@ -18653,7 +18763,7 @@ var titleMissingEmpty = {
     const titles = elementsByTag(doc, "title");
     const hasNonEmpty = titles.some((t2) => visibleText(t2).length > 0);
     if (hasNonEmpty) return [];
-    if (titleSetByFramework(doc)) return [];
+    if (titleSetByFramework(doc) || shellHeadInjected(doc)) return [];
     const anchor = elementsByTag(doc, "head")[0] ?? elementsByTag(doc, "html")[0] ?? doc.elements[0];
     if (!anchor) return [];
     return [
@@ -18674,6 +18784,7 @@ var duplicateId = {
     const seen = /* @__PURE__ */ new Map();
     const out = [];
     for (const { id, el } of allIds(doc)) {
+      if (id.includes("{")) continue;
       const n = (seen.get(id) ?? 0) + 1;
       seen.set(id, n);
       if (n > 1) {
@@ -18732,91 +18843,6 @@ var langInvalid = {
 };
 var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing, langInvalid];
 
-// src/name.ts
-var collapse = (s) => s.replace(/\s+/g, " ").trim();
-function mayInjectContent(el) {
-  return descendants(el).some((d) => d.tag === "slot" || d.tag !== "#fragment" && !isIntrinsic(d.tag));
-}
-function nameFromContent(el) {
-  let out = "";
-  const walk2 = (n) => {
-    if (n.type === "text") {
-      out += n.data;
-      return;
-    }
-    if (n.tag === "img") {
-      const a = attr(n, "alt");
-      if (a) out += " " + a;
-      return;
-    }
-    if (n.tag === "svg") {
-      const title2 = descendants(n).find((d) => d.tag === "title");
-      if (title2) out += " " + nameFromContent(title2);
-      return;
-    }
-    if (attr(n, "aria-hidden") === "true") return;
-    for (const c of n.children) walk2(c);
-  };
-  for (const c of el.children) walk2(c);
-  return collapse(out);
-}
-function ariaLabelledbyText(el, doc) {
-  const ids = attr(el, "aria-labelledby");
-  if (!ids) return "";
-  const parts = [];
-  for (const id of ids.split(/\s+/).filter(Boolean)) {
-    const ref = doc.byId.get(id);
-    if (ref) parts.push(nameFromContent(ref) || (attr(ref, "aria-label") ?? "").trim());
-  }
-  return collapse(parts.join(" "));
-}
-var BUTTON_INPUT = /* @__PURE__ */ new Set(["button", "submit", "reset"]);
-var NAMELESS_BY_DEFAULT = /* @__PURE__ */ new Set(["submit", "reset"]);
-function accessibleName(el, doc) {
-  const labelledby = ariaLabelledbyText(el, doc);
-  if (labelledby) return labelledby;
-  if (hasBoundAttr(el, "aria-labelledby") && !attr(el, "aria-labelledby")) return "\xA0";
-  const ariaLabel = (boundAttr(el, "aria-label") ?? "").trim();
-  if (ariaLabel) return ariaLabel;
-  if (el.tag === "img" || el.tag === "area") {
-    return (boundAttr(el, "alt") ?? "").trim();
-  }
-  if (el.tag === "input") {
-    const type = (attr(el, "type") ?? "text").toLowerCase();
-    if (BUTTON_INPUT.has(type)) {
-      const value = (attr(el, "value") ?? "").trim();
-      if (value) return value;
-      if (NAMELESS_BY_DEFAULT.has(type)) return type === "submit" ? "Submit" : "Reset";
-      return (attr(el, "title") ?? "").trim();
-    }
-  }
-  const content = nameFromContent(el);
-  if (content) return content;
-  return (attr(el, "title") ?? "").trim();
-}
-var FIELD_TAGS = /* @__PURE__ */ new Set(["input", "select", "textarea"]);
-var NON_LABELABLE_INPUT = /* @__PURE__ */ new Set(["hidden", "submit", "reset", "button", "image"]);
-function isFormField(el) {
-  if (!FIELD_TAGS.has(el.tag)) return false;
-  if (el.tag === "input") {
-    const type = (attr(el, "type") ?? "text").toLowerCase();
-    return !NON_LABELABLE_INPUT.has(type);
-  }
-  return true;
-}
-function controlLabel(el, doc) {
-  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc) || hasBoundAttr(el, "aria-labelledby")) return { hasLabel: true, via: "aria-labelledby" };
-  if ((boundAttr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
-  const id = attr(el, "id");
-  if (id) {
-    const lbl = doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id);
-    if (lbl) return { hasLabel: true, via: "for" };
-  }
-  if (ancestors(el).some((a) => a.tag === "label")) return { hasLabel: true, via: "wrapping" };
-  if ((attr(el, "title") ?? "").trim()) return { hasLabel: true, via: "title" };
-  return { hasLabel: false, via: null };
-}
-
 // src/rules/headings.ts
 function contentMaybeInjected(doc) {
   if (doc.kind === "html") return false;
@@ -18855,12 +18881,18 @@ var headingOrderSkip = {
   criteria: ["1.3.1"],
   severity: "majeur",
   run(doc) {
-    const hs = headings(doc);
     const out = [];
     let prev = 0;
     let prevArm;
-    for (const { el, level } of hs) {
-      if (prev !== 0 && el.branchArm === prevArm && level - prev > 1) {
+    let prevHeading = null;
+    let componentBetween = false;
+    for (const el of doc.elements) {
+      const level = headingLevel(el);
+      if (level === null) {
+        if (el.tag !== "#fragment" && !isIntrinsic(el.tag) && (!prevHeading || !ancestors(el).includes(prevHeading))) componentBetween = true;
+        continue;
+      }
+      if (prev !== 0 && el.branchArm === prevArm && !componentBetween && level - prev > 1) {
         out.push({
           criteriaId: "1.3.1",
           el,
@@ -18870,6 +18902,8 @@ var headingOrderSkip = {
       }
       prev = level;
       prevArm = el.branchArm;
+      prevHeading = el;
+      componentBetween = false;
     }
     return out;
   }
@@ -18882,7 +18916,7 @@ var h1Missing = {
   run(doc) {
     const hasH1 = headings(doc).some((h) => h.level === 1);
     if (hasH1) return [];
-    if (contentMaybeInjected(doc)) return [];
+    if (contentMaybeInjected(doc) || shellBodyInjected(doc)) return [];
     const anchor = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
     if (!anchor) return [];
     return [
@@ -18931,14 +18965,14 @@ var listStructure = {
         }
       } else if (el.tag === "li") {
         const parent = el.parent;
-        if (parent && !["ul", "ol", "menu"].includes(parent.tag)) {
-          out.push({
-            criteriaId: "1.3.1",
-            el,
-            message: `<li> hors d'une liste (<${parent.tag}> parent) \u2014 structure de liste invalide.`,
-            remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`
-          });
-        }
+        if (!parent || ["ul", "ol", "menu"].includes(parent.tag)) continue;
+        if (parent.tag === "template" || ancestors(el).some((a) => a.tag === "template" || a.tag !== "#fragment" && !isIntrinsic(a.tag))) continue;
+        out.push({
+          criteriaId: "1.3.1",
+          el,
+          message: `<li> hors d'une liste (<${parent.tag}> parent) \u2014 structure de liste invalide.`,
+          remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`
+        });
       }
     }
     return out;
@@ -18988,9 +19022,11 @@ var dataTableNoHeaders = {
       if (t2.tag !== "table" || isLayoutTable(t2)) continue;
       const desc = descendants(t2);
       if (!desc.some((d) => d.tag === "tr" || d.tag === "td" || d.tag === "th")) continue;
-      const hasTh = desc.some((d) => d.tag === "th");
-      const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasAttr(d, "scope") || hasAttr(d, "headers")));
-      if (hasTh && hasAssoc) continue;
+      const ths = desc.filter((d) => d.tag === "th");
+      const hasTh = ths.length > 0;
+      const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasBoundAttr(d, "scope") || hasBoundAttr(d, "headers")));
+      const allThInThead = hasTh && ths.every((th) => ancestors(th).some((a) => a.tag === "thead"));
+      if (hasTh && (hasAssoc || allThInThead)) continue;
       if (!hasTh) {
         out.push({
           criteriaId: "1.3.1",
@@ -19145,6 +19181,9 @@ var iconOnlyControlUnnamed = {
 var linksRules = [linkEmptyName, buttonEmptyName, iconOnlyControlUnnamed];
 
 // src/rules/forms.ts
+function contentInjected(el) {
+  return el.children.some((c) => c.type === "element" && c.tag === "slot" || c.type === "text" && /\{@render|\{children/.test(c.data));
+}
 var REAL_LABEL = /* @__PURE__ */ new Set(["for", "wrapping", "aria-label", "aria-labelledby"]);
 var controlLabelMissing = {
   id: "control-label-missing",
@@ -19156,6 +19195,7 @@ var controlLabelMissing = {
       if (!isFormField(el)) continue;
       const { via } = controlLabel(el, doc);
       if (via && REAL_LABEL.has(via)) continue;
+      if (hasDynamicSpread(el)) continue;
       if (hasAttr(el, "placeholder")) continue;
       out.push({
         criteriaId: "4.1.2",
@@ -19199,6 +19239,7 @@ var fieldsetLegendMissing = {
       const legend = el.children.find((c) => c.type === "element" && c.tag === "legend");
       if (legend && legend.type === "element" && visibleText(legend)) continue;
       if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
+      if (contentInjected(el)) continue;
       out.push({
         criteriaId: "1.3.1",
         el,
@@ -19245,7 +19286,7 @@ var selectHasOption = {
     for (const el of doc.elements) {
       if (el.tag !== "select") continue;
       if (descendants(el).some((d) => d.tag === "option")) continue;
-      if (mayInjectContent(el)) continue;
+      if (mayInjectContent(el) || contentInjected(el)) continue;
       out.push({
         criteriaId: "4.1.2",
         el,
@@ -20222,8 +20263,8 @@ function analyzeComponent(name, file, fnNode) {
   const literalAriaName = attrs.some((a) => NAME_PROPS2.has(attrName(a)) && attrIsLiteral(a));
   const acceptsNameViaChildren = rendersNameExpr(control);
   const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
-  const controlHasName = literalAriaName || hasLiteralText(control);
-  const rendersIconOnlyControl = hasIconChild2(control) && !hasLiteralText(control) && !literalAriaName;
+  const controlHasName = literalAriaName || forwardsAria || hasLiteralText(control);
+  const rendersIconOnlyControl = hasIconChild2(control) && !hasLiteralText(control) && !literalAriaName && !forwardsAria;
   return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
 }
 function isCapitalized(name) {

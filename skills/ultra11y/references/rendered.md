@@ -14,6 +14,15 @@ specifier, e.g. `@codegouvfr/react-dsfr`), it does not invent a verdict: it adds
 risk** to the report ("preliminary source verdict — audit the build or `scan`") and names the
 library(ies). A source verdict is therefore never silently "complete".
 
+**`.vue`/`.svelte`/`.astro` single-file components are the same case.** They are parsed as
+SOURCE templates (the HTML path with component case preserved), so `<slot>`/`{@render}`,
+`v-for`/`{#each}`, dynamic bindings (`:aria-label`) and child components are invisible to
+static analysis. Every finding raised on them is flagged **`preliminary: true`** and the run
+adds a **`scope.sourceTemplate`** caveat ("audited SOURCE template only — audit the rendered
+output"). Treat those verdicts as provisional: audit the rendered HTML (a static Storybook
+build is ideal for SFCs) or `scan` a live page before concluding, and refute any source
+finding the rendered DOM disproves (`verify --apply`). See `references/false-positives.md`.
+
 ## Get rendered HTML
 
 `node scripts/ultra11y.mjs render [<dir>]` detects the framework and prints the

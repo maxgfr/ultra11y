@@ -8,7 +8,13 @@ any hallucinated non-conformity.
 
 1. **Scope it.** Which files / components? HTML, JSX/TSX and Vue/Svelte/Astro components
    (`.vue`/`.svelte`/`.astro`) are walked by default; add server templates (Twig, ERB,
-   Handlebars…) with `--ext .twig,.erb`.
+   Handlebars…) with `--ext .twig,.erb`. **Test/spec/story markup** (`*.test.*`,
+   `*.spec.*`, `*.stories.*`, `__tests__/`) is excluded by default — it is bad-by-design
+   and never shipped; pass `--no-default-excludes` (or name the file) to audit it anyway.
+   **`.vue`/`.svelte`/`.astro` are audited as SOURCE templates**: slots, snippets and
+   dynamic bindings are invisible, so their findings are flagged `preliminary` and the run
+   carries a `scope.sourceTemplate` caveat — audit the rendered output to confirm (step 3,
+   and `references/rendered.md`).
 2. **Run the engine:**
    ```
    node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
@@ -31,7 +37,9 @@ any hallucinated non-conformity.
    node scripts/ultra11y.mjs report --in audit.json --out audits
    ```
    → `audits/wcag-YYYY-MM-DD.md` (5 sections, see `references/methodology.md`). For a
-   country standard, add `--standard rgaa` (see `references/standards.md`).
+   country standard, add `--standard rgaa` (see `references/standards.md`). Add `--json`
+   to `report` for a machine summary (`{path, conformancePct, date, standard}`) instead of
+   just the path.
 6. **Check integrity:**
    ```
    node scripts/ultra11y.mjs check --report audits/wcag-YYYY-MM-DD.md

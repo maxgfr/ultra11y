@@ -7,7 +7,11 @@ and you **focus** it. Recommended loop:
 ## The loop
 
 1. **Map without loading everything.** The engine ignores `node_modules`, `.git`, `dist`,
-   `build`, `.next`, `out`, `coverage`, `audits` by default. Narrow further:
+   `build`, `.next`, `out`, `coverage`, `audits` by default, and skips **test/spec/story
+   markup** (`*.test.*`, `*.spec.*`, `*.stories.*`, `__tests__/`, `__mocks__/`,
+   `.storybook/`) — bad-by-design fixtures, never shipped UI (the drop count is logged).
+   Pass `--no-default-excludes` to include them, or name a file / `--include` it directly to
+   re-admit. Narrow further:
    ```
    node scripts/ultra11y.mjs audit "apps/web/**/*.{html,tsx}" --json > audit.json
    ```

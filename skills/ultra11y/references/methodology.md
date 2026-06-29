@@ -40,6 +40,12 @@ ultra11y is honest about what a static analyzer can decide:
 
 See the full table of the 55 WCAG 2.2 AA success criteria in `references/criteria.md`.
 
+**Preliminary findings.** A finding raised on a `.vue`/`.svelte`/`.astro` source template (or
+library-rendered JSX) carries `preliminary: true` in the `--json` output, and the run adds a
+`scope.sourceTemplate` (or `scope.rendered`) caveat: the static parse cannot see slot/dynamic
+content, so the verdict is provisional — confirm against the rendered DOM or refute it
+(`references/rendered.md`, `references/false-positives.md`). It is never silently treated as final.
+
 ## Report format (`report`)
 
 `audits/wcag-YYYY-MM-DD.md` has 5 sections: (1) synthesis by WCAG guideline

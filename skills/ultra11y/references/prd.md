@@ -29,6 +29,9 @@ node scripts/ultra11y.mjs prd --in audit.json --format doc        # product-requ
 - **`--split criterion`**: a `prd-<criterion>-YYYY-MM-DD.md` file per criterion with
   non-conformities (handy for batching).
 - The markdown is **always** written, even with `--gh-issues`.
+- **`--json`**: emits a machine-readable object instead of the file paths —
+  `{paths, units, gh?}` where `units` is the structured per-criterion backlog (title,
+  severity, occurrences, before/after) an agent can consume directly.
 
 ## GitHub issues (`--gh-issues`, opt-in)
 

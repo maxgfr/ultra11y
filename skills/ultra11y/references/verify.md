@@ -28,6 +28,9 @@ entry, open the cited code and assign a verdict in `VERIFY.todo.json`:
 - `unsupported` — the cited element is not enough to decide.
 
 In `--semantic` mode, explicitly confirm the cited snippet **supports** the non-conformity.
+The worklist-generation step also accepts `--json` (emits `{mdPath, todoPath, count, items}`
+so an agent can fill verdicts in-memory). **Prioritise `preliminary` findings** (SFC/library
+source, see `references/false-positives.md`): refute the ones the rendered DOM disproves.
 Then apply the gate:
 ```
 node scripts/ultra11y.mjs verify --apply VERIFY.todo.json

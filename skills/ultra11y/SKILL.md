@@ -36,10 +36,15 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 
 - **"Audit / compliance report"** → `node scripts/ultra11y.mjs audit … --json`, then
   `report`, then `check`; read **`references/audit.md`**.
-- **"Code rendered by a library (DSFR, MUI…) / avoid false negatives"** → audit the
-  **produced HTML**, not the JSX source: `render` (build→audit recipe or SSR snapshot
-  `--scaffold`) then `audit` on the output, and `scan` for computed rendering; read
-  **`references/rendered.md`**.
+- **"Code rendered by a library (DSFR, MUI…) or a `.vue`/`.svelte`/`.astro` SFC / avoid
+  false negatives"** → audit the **produced HTML**, not the source template: `render`
+  (build→audit recipe or SSR snapshot `--scaffold`) then `audit` on the output, and `scan`
+  for computed rendering. SFC-source findings are flagged `preliminary` (a
+  `scope.sourceTemplate` caveat); read **`references/rendered.md`**.
+- **"A finding looks wrong / false positive on a component"** → the engine auto-suppresses
+  most component false positives (slot/prop-injected names, component children, dynamic
+  bindings, conditional headings) and marks SFC/library-source findings `preliminary`;
+  confirm or refute the rest with `verify --apply`; read **`references/false-positives.md`**.
 - **"Large repo / audit smartly"** → focus: `--changed` (git diff), template
   prioritization, dedup, `--max-files`; read **`references/scale.md`**.
 - **"Cross-file analysis (tree + dependencies), JSX/TSX as a real AST"** →
@@ -88,6 +93,7 @@ node scripts/ultra11y.mjs audit - < component.html          # HTML via stdin
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx        # JSX/TSX as a real AST
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph      # + imports & cross-file rules
 node scripts/ultra11y.mjs audit --changed --json            # only the git diff (large repo)
+node scripts/ultra11y.mjs audit "src/**" --no-default-excludes   # also audit test/spec/story markup
 node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md
 node scripts/ultra11y.mjs report --in audit.json --standard rgaa       # derived RGAA report (France pack)
 node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # fix backlog (+ GitHub issues)
@@ -115,10 +121,13 @@ drive the judgment and content stages:
 1. **Audit** the source (`audit … --graph`) for a first map; on library-rendered code,
    **audit the render** (`render` → build/SSR → `audit`) for reliable verdicts (otherwise
    the scope-risk note reminds you).
-2. **Judge** the rendering/judgment criteria with `verify` (W3C Understanding grounding)
-   and decide each entry — including **focus & interaction logic** (read the full component
-   source: keyboard operability, focus order/visibility, traps, on-focus/on-input changes;
-   see `references/focus-and-logic.md`).
+2. **Judge & refute** with `verify` (W3C Understanding grounding): rule on each
+   rendering/judgment criterion, AND **refute any `preliminary`/SFC/library-source finding**
+   that the rendered DOM disproves — fill the `VERIFY.todo.json` verdicts, then
+   `verify --apply` drops the refuted/unsupported ones (the anti-hallucination gate). This
+   includes **focus & interaction logic** (read the full component source: keyboard
+   operability, focus order/visibility, traps, on-focus/on-input changes; see
+   `references/focus-and-logic.md`) and the per-rule traps in `references/false-positives.md`.
 3. **Fix** by priority: `fix --write --iterate` for the mechanical part (anti-regression
    gate), then hand-apply the judgment/content fixes (alt, labels, structure) guided by
    `references/correction.md`.
@@ -131,10 +140,15 @@ re-run this cycle.)
 ## Combining engine, judgment and residual risk
 
 The `audit` output classes each success criterion: `C`/`NC`/`NA` for the static subset;
-`manual` for the rendering/judgment criteria (listed in `residualRisks`). The engine's
-`NC`s are **confirmed candidates** (cited `file:line`). You rule on the `manual` criteria
-and mark the rendering criteria "to verify manually". The report is complete only when
-every applicable criterion is a justified `C`/`NC`/`NA` and every residual risk is named.
+`manual` for the rendering/judgment criteria (listed in `residualRisks`). Each SC carries an
+`automatability` class — **`static`** (the engine can decide), **`needs-rendering`** (decide
+via `scan`/the rendered DOM, never source), or **`judgment`** (you decide from source +
+context) — which tells you *why* a criterion is `manual` and how to close it. The engine's
+`NC`s are **confirmed candidates** (cited `file:line`); a finding marked `preliminary: true`
+(SFC/library source) is provisional — confirm against the render or refute it. You rule on
+the `manual` criteria and mark the rendering criteria "to verify manually". The report is
+complete only when every applicable criterion is a justified `C`/`NC`/`NA` and every residual
+risk is named.
 
 ## Do not
 

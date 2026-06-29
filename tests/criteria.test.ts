@@ -1,51 +1,61 @@
 import { describe, it, expect } from "vitest";
-import { queryCriteria, formatCriterion, renderCriteriaReference } from "../src/criteria.js";
-import type { Criterion } from "../src/types.js";
+import { formatSC, formatPackCriterion, runCriteria, renderCriteriaReference } from "../src/criteria.js";
+import { getSC } from "../src/wcag.js";
+import { loadPack, getCriterion as getPackCriterion } from "../src/standards/index.js";
 
-describe("queryCriteria", () => {
-  it("looks up a single criterion", () => {
-    const q = queryCriteria({ id: "1.1", lang: "fr" });
-    expect(q?.kind).toBe("one");
-    expect((q!.result as Criterion).theme).toBe(1);
+describe("formatSC (WCAG core)", () => {
+  it("renders id, title, level, guideline, automatability and rules", () => {
+    const text = formatSC(getSC("1.1.1")!, "en");
+    expect(text).toContain("1.1.1 — Non-text Content (A");
+    expect(text).toContain("Guideline 1.1");
+    expect(text).toContain("img-alt-missing");
+    expect(text).toContain("Understanding");
   });
-
-  it("lists a theme's criteria", () => {
-    const q = queryCriteria({ theme: 8, lang: "fr" });
-    expect(q?.kind).toBe("theme");
-    expect((q!.result as Criterion[]).length).toBe(10);
-  });
-
-  it("lists all 13 themes by default", () => {
-    const q = queryCriteria({ lang: "fr" });
-    expect(q?.kind).toBe("list");
-    expect((q!.result as unknown[]).length).toBe(13);
-  });
-
-  it("returns null for an unknown id or theme", () => {
-    expect(queryCriteria({ id: "42.1", lang: "fr" })).toBeNull();
-    expect(queryCriteria({ theme: 99, lang: "fr" })).toBeNull();
+  it("shows the pack cross-reference (RGAA) for a mapped SC", () => {
+    const text = formatSC(getSC("1.4.3")!, "en");
+    expect(text).toContain("1.4.3 — Contrast (Minimum)");
+    expect(text).toMatch(/RGAA 3\.2/);
   });
 });
 
-describe("formatCriterion", () => {
-  it("renders title, WCAG, automatability and rules", () => {
-    const q = queryCriteria({ id: "1.1", lang: "fr" })!;
-    const text = formatCriterion(q.result as Criterion, "fr");
-    expect(text).toContain("1.1 —");
-    expect(text).toContain("WCAG : 1.1.1");
-    expect(text).toContain("img-alt-missing");
-    expect(text).toContain("automatisabilité : automatisable");
+describe("formatPackCriterion (RGAA pack)", () => {
+  it("renders the pack criterion with its WCAG mapping", () => {
+    const pack = loadPack("rgaa");
+    const text = formatPackCriterion(pack, getPackCriterion(pack, "8.3")!, "fr");
+    expect(text).toContain("RGAA 8.3 —");
+    expect(text).toContain("WCAG : 3.1.1");
+  });
+});
+
+describe("runCriteria", () => {
+  it("looks up a single WCAG success criterion (core)", () => {
+    expect(runCriteria({ id: "1.4.3", lang: "en", standard: "wcag" })).toBe(0);
+  });
+  it("errors on an unknown SC", () => {
+    expect(runCriteria({ id: "9.9.9", lang: "en", standard: "wcag" })).toBe(2);
+  });
+  it("rejects --theme on the WCAG core (themes are pack-scoped)", () => {
+    expect(runCriteria({ theme: 1, lang: "en", standard: "wcag" })).toBe(2);
+  });
+  it("lists a pack theme and a pack criterion (--standard rgaa)", () => {
+    expect(runCriteria({ theme: 8, lang: "fr", standard: "rgaa" })).toBe(0);
+    expect(runCriteria({ id: "8.3", lang: "fr", standard: "rgaa" })).toBe(0);
+    expect(runCriteria({ theme: 99, lang: "fr", standard: "rgaa" })).toBe(2);
+  });
+  it("lists the full WCAG reference by default", () => {
+    expect(runCriteria({ list: true, lang: "en", standard: "wcag" })).toBe(0);
   });
 });
 
 describe("renderCriteriaReference", () => {
   const md = renderCriteriaReference();
-  it("is a generated doc covering all 13 themes", () => {
+  it("is a generated doc grouped by WCAG guideline", () => {
     expect(md).toContain("do not edit by hand");
-    expect(md).toContain("## 1. Images");
-    expect(md).toContain("## 13. Consultation");
+    expect(md).toContain("GENERATED from src/data/wcag.json");
+    expect(md).toContain("## 1.1 Text Alternatives");
+    expect(md).toContain("## 4.1 Compatible");
   });
-  it("includes a row for criterion 1.1 with its rule", () => {
-    expect(md).toMatch(/\| 1\.1 \|.*\| static \|.*\| img-alt-missing/);
+  it("includes a row for SC 1.1.1 with its rule and RGAA cross-ref", () => {
+    expect(md).toMatch(/\| 1\.1\.1 \|.*\| A \|.*\| img-alt-missing/);
   });
 });

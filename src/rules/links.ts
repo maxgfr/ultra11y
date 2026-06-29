@@ -28,7 +28,7 @@ const isButton = (el: El): boolean => {
 
 const linkEmptyName: Rule = {
   id: "link-empty-name",
-  criteria: ["6.2"],
+  criteria: ["2.4.4"],
   parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
@@ -39,7 +39,7 @@ const linkEmptyName: Rule = {
       if (accessibleName(el, doc) !== "") continue;
       if (hasIconChild(el)) continue; // handled by icon-only-control-unnamed
       out.push({
-        criteriaId: "6.2",
+        criteriaId: "2.4.4",
         el,
         message: `Lien sans intitulé — aucun nom accessible.`,
         remediation: `Donnez un intitulé textuel au lien (texte visible, ou aria-label si vraiment nécessaire).`,
@@ -51,7 +51,7 @@ const linkEmptyName: Rule = {
 
 const buttonEmptyName: Rule = {
   id: "button-empty-name",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
@@ -62,7 +62,7 @@ const buttonEmptyName: Rule = {
       if (accessibleName(el, doc) !== "") continue;
       if (hasIconChild(el)) continue; // handled by icon-only-control-unnamed
       out.push({
-        criteriaId: "7.1",
+        criteriaId: "4.1.2",
         el,
         message: `Bouton sans intitulé — aucun nom accessible.`,
         remediation: `Donnez un intitulé au bouton (texte, value, ou aria-label).`,
@@ -74,7 +74,7 @@ const buttonEmptyName: Rule = {
 
 const iconOnlyControlUnnamed: Rule = {
   id: "icon-only-control-unnamed",
-  criteria: ["1.1", "6.2", "7.1"],
+  criteria: ["2.4.4", "4.1.2"],
   parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
@@ -87,7 +87,7 @@ const iconOnlyControlUnnamed: Rule = {
       if (accessibleName(el, doc) !== "") continue;
       if (!hasIconChild(el)) continue;
       out.push({
-        criteriaId: link ? "6.2" : "7.1",
+        criteriaId: link ? "2.4.4" : "4.1.2",
         el,
         message: `${link ? "Lien" : "Bouton"} avec une icône seule (img/svg/i) sans nom accessible.`,
         remediation: `Ajoutez un alt/aria-label sur l'icône ou un texte masqué visuellement (classe visually-hidden).`,

@@ -87,7 +87,7 @@ function hasDirectText(el: El): boolean {
 
 const contrastLiteral: Rule = {
   id: "contrast-literal",
-  criteria: ["3.2"],
+  criteria: ["1.4.3"],
   parser: ["html", "jsx", "css"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -102,7 +102,7 @@ const contrastLiteral: Rule = {
       const min = large ? 3 : 4.5;
       if (ratio >= min) continue;
       out.push({
-        criteriaId: "3.2",
+        criteriaId: "1.4.3",
         el,
         message: `Contraste insuffisant : ratio ${ratio.toFixed(2)}:1 entre le texte et son fond (minimum ${min}:1 pour du texte ${large ? "large" : "normal"}).`,
         remediation: `Assombrissez le texte ou éclaircissez le fond pour atteindre au moins ${min}:1 (contraste calculé sur des couleurs inline littérales).`,

@@ -7,7 +7,7 @@ import type { Rule, RuleFinding } from "./rule.js";
 
 const metaViewportZoomBlock: Rule = {
   id: "meta-viewport-zoom-block",
-  criteria: ["10.4"],
+  criteria: ["1.4.4"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -25,7 +25,7 @@ const metaViewportZoomBlock: Rule = {
       const blocked = userScalable === "no" || userScalable === "0" || (maxScale !== undefined && Number(maxScale) < 2);
       if (!blocked) continue;
       out.push({
-        criteriaId: "10.4",
+        criteriaId: "1.4.4",
         el,
         message: `<meta viewport> bloque le zoom (${userScalable === "no" || userScalable === "0" ? "user-scalable=no" : `maximum-scale=${maxScale}`}) — agrandissement à 200% empêché.`,
         remediation: `Retirez user-scalable=no et maximum-scale (ou maximum-scale ≥ 2) du content du viewport.`,

@@ -5,7 +5,7 @@ import type { Rule, RuleFinding } from "./rule.js";
 
 const iframeTitleMissing: Rule = {
   id: "iframe-title-missing",
-  criteria: ["2.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
@@ -17,7 +17,7 @@ const iframeTitleMissing: Rule = {
       const aria = (attr(el, "aria-label") ?? "").trim();
       if (title || aria) continue;
       out.push({
-        criteriaId: "2.1",
+        criteriaId: "4.1.2",
         el: el as El,
         message: `<iframe> sans attribut title — le cadre n'a pas de titre.`,
         remediation: `Ajoutez un title décrivant le contenu du cadre, ex. title="Carte de localisation".`,

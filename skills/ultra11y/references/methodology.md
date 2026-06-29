@@ -1,61 +1,61 @@
-# Méthodologie & format du rapport
+# Methodology & report format
 
-## Statuts par critère
+## Per-criterion statuses
 
-- **C** — conforme (tous les tests applicables passent).
-- **NC** — non conforme (au moins un test échoue ; un finding cite `fichier:ligne`).
-- **NA** — non applicable (aucun élément concerné dans le périmètre — justifié).
-- **À évaluer (manual)** — critère que le moteur ne peut pas trancher seul
-  (rendu ou jugement) ; à compléter par une revue humaine.
+- **C** — conforming (every applicable test passes).
+- **NC** — non-conforming (at least one test fails; a finding cites `file:line`).
+- **NA** — not applicable (no element in scope is concerned — justified).
+- **To assess (manual)** — a criterion the engine cannot decide on its own (rendering or
+  judgment); to be completed by a human review.
 
-## Taux de conformité
+## Pass rate
 
-Taux de conformité = **critères conformes ÷ critères applicables × 100**.
+Conformance rate = **conforming criteria ÷ applicable criteria × 100**.
 
-Le moteur ne calcule que le **taux de conformité automatique**, sur le seul
-sous-ensemble statique qu'il décide : `C ÷ (C + NC)`. La conformité RGAA complète
-(seuil de 50 % / 100 % pour la déclaration d'accessibilité) exige de compléter
-les critères « à évaluer ».
+The engine only computes the **automatic static-check pass rate**, over the small
+machine-decidable subset it can actually decide: `C ÷ (C + NC)`. Because WCAG success
+criteria are coarser than the engine's rules, that denominator is deliberately small —
+it is **not** a full conformance rate. Full WCAG 2.2 AA conformance requires completing
+the "to assess" criteria by hand.
 
-## Priorités des non-conformités
+## Non-conformity priorities
 
-- 🔴 **Bloquant** — empêche l'accès au contenu/à une fonction (ex. alt manquant,
-  champ non étiqueté, lien vide).
-- 🟠 **Majeur** — fort impact mais contournable (ordre de titres, contraste,
-  focus invisible).
-- 🟡 **Mineur** — gêne légère (caption absent, ARIA redondant).
+- 🔴 **Blocking** — prevents access to content/function (e.g. missing alt, unlabeled
+  field, empty link).
+- 🟠 **Major** — high impact but workaroundable (heading order, contrast, invisible focus).
+- 🟡 **Minor** — light friction (missing caption, redundant ARIA).
 
-## Le partage du travail (statique / rendu / jugement)
+## The division of labour (static / rendering / judgment)
 
-ultra11y est honnête sur ce qu'un analyseur statique peut décider :
+ultra11y is honest about what a static analyzer can decide:
 
-- **Automatisable (statique)** — décidé par le moteur : alt/lang/title manquants,
-  champs sans label, `iframe` sans titre, liens/boutons vides, tables sans en-têtes,
-  sauts de titres, `id` dupliqués, ARIA invalide/cassé, `tabindex` positif, autoplay…
-- **Nécessite un rendu** — contraste calculé (3.2/3.3), focus visible (10.7),
-  zoom/reflow (10.4/10.11/10.12), contenus au survol/focus (10.13). **Hors moteur** :
-  à vérifier dans un navigateur, signalé en risque résiduel.
-- **Jugement humain** — pertinence de l'alt (1.3), intitulé de lien en contexte (6.1),
-  ordre de lecture/tabulation, cohérence de navigation, exactitude des sous-titres…
+- **Automatable (static)** — decided by the engine: missing alt/lang/title, unlabeled
+  fields, `iframe` without a title, empty links/buttons, tables without headers, heading
+  skips, duplicate `id`s, invalid/broken ARIA, positive `tabindex`, autoplay…
+- **Needs rendering** — computed contrast (1.4.3), focus visible (2.4.7), zoom/reflow
+  (1.4.4/1.4.10), content on hover/focus (1.4.13). **Out of the engine**: verify in a
+  browser, flagged as residual risk.
+- **Human judgment** — alt relevance (1.1.1), link purpose in context (2.4.4), reading/tab
+  order, navigation consistency, caption accuracy…
 
-Voir la table complète des 106 critères dans `references/criteria.md`.
+See the full table of the 55 WCAG 2.2 AA success criteria in `references/criteria.md`.
 
-## Format du rapport (`report`)
+## Report format (`report`)
 
-`audits/rgaa-AAAA-MM-JJ.md` contient 5 sections : (1) synthèse par thématique
-(C/NC/NA/à évaluer), (2) non-conformités par priorité, (3) critères conformes,
-(4) critères non applicables justifiés, (5) critères à évaluer manuellement.
+`audits/wcag-YYYY-MM-DD.md` has 5 sections: (1) synthesis by WCAG guideline
+(C/NC/NA/to assess), (2) non-conformities by priority, (3) conforming criteria,
+(4) justified not-applicable criteria, (5) criteria to assess manually.
 
-## Mondial : RGAA primaire, WCAG visible
+## Worldwide: WCAG core, country standards as packs
 
-Le RGAA reste la clé interne du moteur. Pour une lecture **internationale**,
-`report --standard wcag` (et `criteria --standard wcag`) ré-affiche l'audit **par
-critère de succès WCAG 2.1 niveau AA**, à partir des correspondances que chaque
-critère RGAA porte déjà (`wcag-AAAA-MM-JJ.md`). C'est une **vue de présentation** :
-elle n'est jamais passée par `check`/`verify` (ces gates raisonnent sur les
-identifiants RGAA à 2 segments du rapport canonique).
+WCAG 2.2 Level AA is the engine's canonical key — the worldwide standard. A country
+standard (France's RGAA, the US Section 508, the EU's EN 301 549) is a pluggable in-repo
+**pack** that maps its criteria onto WCAG success criteria; `report --standard rgaa` (and
+`criteria`/`check`/`verify`/`prd --standard <pack>`) re-key the deliverable for that
+standard (`rgaa-YYYY-MM-DD.md`). The WCAG report is the canonical, gated one; a pack report
+is a derived view. See `references/standards.md`.
 
-**Équivalence** : EN 301 549 §9 (Union européenne) et la Section 508 révisée
-(États-Unis) intègrent WCAG 2.1 niveau AA par référence ; la vue WCAG couvre donc les
-exigences « web » de ces référentiels. Le jeu de données ne contient pas de critère
-propre à WCAG 2.2 — la vue est annoncée comme **2.1 AA**.
+**International equivalence (version-accurate)**: Section 508 incorporates WCAG 2.0 AA;
+EN 301 549 v3.2.1 references WCAG 2.1 and v4 references WCAG 2.2; AODA references WCAG 2.0
+AA. A WCAG 2.2 AA audit therefore covers these standards' web requirements at their
+respective WCAG versions.

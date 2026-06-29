@@ -14,8 +14,12 @@ export function findingId(f: Finding): string {
   return `${f.ruleId}|${f.criteriaId}|${f.file}|${pos}`;
 }
 
+// Accept English aliases (blocking|major|minor) on input — the tool is English-first —
+// while the internal Severity union stays fr (bloquant|majeur|mineur).
 export function parseFailOn(v: string | boolean | undefined): Severity {
-  return v === "majeur" || v === "mineur" ? v : "bloquant";
+  if (v === "majeur" || v === "major") return "majeur";
+  if (v === "mineur" || v === "minor") return "mineur";
+  return "bloquant"; // also "blocking"
 }
 
 /** Findings at or above a severity threshold — the standalone `audit --fail-on`
@@ -61,7 +65,7 @@ export function baselineSummary(diff: BaselineDiff, lang: "fr" | "en" = "fr"): s
         ? `✗ ${blocking.length} nouvelle(s) non-conformité(s) ≥ ${diff.failOn} introduite(s) :`
         : `✗ ${blocking.length} new non-conformity(ies) ≥ ${diff.failOn} introduced:`,
     );
-    for (const f of blocking) out.push(`  [${f.severity}] ${f.ruleId} (RGAA ${f.criteriaId}) — ${f.file}:${f.line} (${f.selectorHint})`);
+    for (const f of blocking) out.push(`  [${f.severity}] ${f.ruleId} (WCAG ${f.criteriaId}) — ${f.file}:${f.line} (${f.selectorHint})`);
   }
   return out.join("\n");
 }

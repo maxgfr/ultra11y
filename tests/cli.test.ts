@@ -95,17 +95,21 @@ describe("main — command wiring", () => {
   it("check without --report exits 2", async () => {
     expect((await run(["check"])).code).toBe(2);
   });
-  it("criteria --list returns the 13 themes", async () => {
+  it("criteria --list returns the WCAG success criteria (English by default)", async () => {
     const r = await run(["criteria", "--list"]);
     expect(r.code).toBe(0);
-    expect(r.out).toContain("13 thématiques");
+    expect(r.out).toContain("55 success criteria");
   });
-  it("criteria with an unknown theme exits 2", async () => {
-    expect((await run(["criteria", "--theme", "99"])).code).toBe(2);
+  it("criteria --theme on the WCAG core exits 2 (themes are pack-scoped)", async () => {
+    expect((await run(["criteria", "--theme", "1"])).code).toBe(2);
   });
-  it("--lang en switches the criteria list language", async () => {
-    const r = await run(["criteria", "--list", "--lang", "en"]);
-    expect(r.out).toContain("13 themes");
+  it("criteria --standard rgaa --theme lists a pack theme", async () => {
+    const r = await run(["criteria", "--standard", "rgaa", "--theme", "1"]);
+    expect(r.code).toBe(0);
+  });
+  it("--lang fr switches the criteria list language", async () => {
+    const r = await run(["criteria", "--list", "--lang", "fr"]);
+    expect(r.out).toContain("critères de succès");
   });
 });
 
@@ -163,7 +167,7 @@ describe("verify — input validation hardening", () => {
   it("--apply on a missing file reports not-found and exits 2", async () => {
     const r = await run(["verify", "--apply", join(tmpdir(), "u11y-nope.json")]);
     expect(r.code).toBe(2);
-    expect(r.err.toLowerCase()).toContain("introuvable");
+    expect(r.err.toLowerCase()).toContain("not found");
   });
   it("--apply on non-array JSON exits 2 cleanly (no TypeError)", async () => {
     const f = join(tmpdir(), "u11y-apply-obj.json");

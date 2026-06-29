@@ -36,7 +36,7 @@ function isNameableControl(el: El): boolean {
 //    used without a name → flag at the usage, point at the definition.
 const crossIconOnlyUnnamed: CrossRule = {
   id: "cross-icon-only-unnamed",
-  criteria: ["1.1", "6.2", "7.1"],
+  criteria: ["4.1.2"],
   severity: "bloquant",
   run(doc, graph) {
     const findings = [];
@@ -46,7 +46,7 @@ const crossIconOnlyUnnamed: CrossRule = {
       if (!def?.rendersIconOnlyControl || !def.acceptsName) continue;
       if (usageHasName(el)) continue;
       findings.push({
-        criteriaId: "7.1",
+        criteriaId: "4.1.2",
         el,
         message: `<${el.tag}> rend un contrôle à icône seule mais est utilisé sans nom accessible (aucun aria-label/title/texte passé).`,
         remediation: `Passez un nom au composant à cet endroit, p. ex. <${el.tag} aria-label="…" /> (le composant ${def.name} rend une icône sans texte).`,
@@ -61,7 +61,7 @@ const crossIconOnlyUnnamed: CrossRule = {
 //    one → suppress the missing-lang false positive.
 const crossPageLang: CrossRule = {
   id: "cross-page-lang",
-  criteria: ["8.3"],
+  criteria: ["3.1.1"],
   severity: "bloquant",
   run(doc, graph) {
     const suppress: Suppression[] = [];
@@ -78,7 +78,7 @@ const crossPageLang: CrossRule = {
 const SUPPRESSIBLE_BY_SPREAD = ["icon-only-control-unnamed", "button-empty-name", "link-empty-name", "control-label-missing", "img-alt-missing"];
 const crossAriaForwarding: CrossRule = {
   id: "cross-aria-forwarding",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   severity: "bloquant",
   run(doc) {
     const suppress: Suppression[] = [];
@@ -96,7 +96,7 @@ const crossAriaForwarding: CrossRule = {
 //    left to the single-file rule (true positive).
 const crossSkipLinkTarget: CrossRule = {
   id: "cross-skip-link-target",
-  criteria: ["12.7"],
+  criteria: ["2.4.1"],
   severity: "majeur",
   run(doc, graph) {
     const suppress: Suppression[] = [];

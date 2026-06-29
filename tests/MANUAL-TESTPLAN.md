@@ -34,12 +34,13 @@ Copier-coller dans une session fraîche, au racine du dépôt. Le moteur tourne 
 >    `--dedup exact|normalized|off` ; `--include`/`--exclude`/`--ext` ; `--baseline <file>`
 >    (gate vs baseline) ; **`--fail-on bloquant|majeur|mineur` doit gater l'audit seul
 >    (exit≠0) même sans `--baseline`** ; `--lang en`.
-> 2. **report** — `--in audit.json` et `--in -` (stdin) ; `--out` ; `--standard rgaa`
->    puis `--standard wcag` (présentation, doit différer) ; `--lang en` ; fichier daté
->    `rgaa-YYYY-MM-DD.md` avec ses 5 sections.
-> 3. **criteria** — `criteria 1.1` ; `--theme 1` ; `--list` ; `--standard wcag` ; `--json` ;
->    `--lang en` ; `criteria 99.9` / `--theme 99` → erreur propre.
-> 4. **check** — rapport valide → exit 0 ; critère inventé (`99.9`) → exit 1 ;
+> 2. **report** — `--in audit.json` et `--in -` (stdin) ; `--out` ; défaut = WCAG
+>    (`wcag-YYYY-MM-DD.md`) ; `--standard rgaa` (vue dérivée, doit différer,
+>    `rgaa-YYYY-MM-DD.md`) ; `--standard nope` → exit 2 ; `--lang fr` ; 5 sections.
+> 3. **criteria** — `criteria 1.4.3` (SC WCAG) ; `--list` (par règle) ; core `--theme 1`
+>    → erreur (exit 2) ; `--standard rgaa --theme 1` / `--standard rgaa 8.3` ; `--json` ;
+>    `--lang fr` ; `criteria 9.9.9` → erreur propre.
+> 4. **check** — rapport valide → exit 0 ; critère inventé (`9.9.9`) → exit 1 ;
 >    **taux de conformité hors [0..100] (ex. `999 %`) → exit 1** ; `--quiet` ; `--json`.
 > 5. **verify** — `--report` génère `VERIFY.md` + `VERIFY.todo.json` ; `--max-verify N`
 >    (cap) — **valeur non numérique → exit 2** ; `--semantic` ; `--apply` : verdict
@@ -56,13 +57,13 @@ Copier-coller dans une session fraîche, au racine du dépôt. Le moteur tourne 
 >    hook = `.git/hooks/pre-commit` (sh POSIX, bypass `SKIP_A11Y`, chemin moteur quoté) ;
 >    **`init --help` n'écrit RIEN (pas d'effet de bord)**.
 > 8. **scan** — statique : `scan` sans args / **fichier inexistant → erreur propre
->    "Fichier introuvable", SANS build Docker** ; `--clean` idempotent ; sync des fichiers
+>    "File not found", SANS build Docker** ; `--clean` idempotent ; sync des fichiers
 >    embarqués (`pnpm test -- docker-sync`). Docker : `scan low-contrast.html` (NC
 >    contraste), `scan <url>`, `--merge` dans un audit statique, `--sitemap`, `--crawl
 >    --depth --max`.
 >
 > **Transverse** : `-h/--help` ; **`<cmd> --help` / `<cmd> -h` affiche l'aide sans rien
-> exécuter** ; `-v/--version` = 1.4.0 ; commande inconnue + flag requis manquant → erreur
+> exécuter** ; `-v/--version` (= version de `package.json`) ; commande inconnue + flag requis manquant → erreur
 > propre (exit 2).
 >
 > Rends un tableau : commande/flag → statut (ok/bug) → fix appliqué → test ajouté.

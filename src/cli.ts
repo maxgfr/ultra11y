@@ -7,7 +7,7 @@ import { writeReport } from "./report.js";
 import { writePrd, prdUnits } from "./prd.js";
 import { ghAvailable, pushIssues } from "./gh.js";
 import { detectFrameworks, renderPlan, ssrHarness, type Detection } from "./render.js";
-import { runCriteria } from "./criteria.js";
+import { runCriteria, renderCriteriaReference } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
 import { runScan, runCrawlScan, mergeDynamic, cleanDynamic } from "./scan.js";
@@ -15,38 +15,42 @@ import { runFix, fixSummary } from "./fix.js";
 import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } from "./baseline.js";
 import { repoRoot, writeHook, writeCi } from "./init.js";
 import { auditSummary } from "./output.js";
-import { parseStandard } from "./standard.js";
+import { resolveStandard, type StandardId } from "./standards/index.js";
 import { readStdin, readText } from "./util.js";
 
 const HELP = `ultra11y v${VERSION}
-Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a
-dated compliance report, or author/review accessible markup (native-HTML-first).
-A deterministic, install-free static engine plus your judgment, with check/verify
-gates against hallucinated non-conformities.
+Audit HTML/CSS/JSX against WCAG 2.2 AA and produce a dated compliance report, or
+author/review accessible markup (native-HTML-first). A deterministic, install-free
+static engine plus your judgment, with check/verify gates against hallucinated
+non-conformities. RGAA (France) and other country standards are pluggable packs
+(--standard <pack>); WCAG is the worldwide core.
 
 Usage:
-  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang fr|en]
-  ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on bloquant|majeur|mineur]
-  ultra11y report   --in <audit.json> [--out <dir>] [--standard rgaa|wcag] [--lang fr|en]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--gh-issues] [--lang fr|en]
-  ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang fr|en]
-  ultra11y criteria [<id>] [--theme <N>] [--list] [--standard rgaa|wcag] [--json] [--lang fr|en]
-  ultra11y check    --report <md> [--quiet] [--json]
-  ultra11y verify   --report <md> [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
-  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang fr|en]
-  ultra11y init     [--hook] [--ci] [--baseline] [--fail-on bloquant|majeur|mineur]
+  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
+  ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+  ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--standard <pack>] [--gh-issues] [--lang en|fr]
+  ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang en|fr]
+  ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
+  ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
+  ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
+  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
+  ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
-             and emit an AuditResult JSON (consumed by 'report'). Without --json,
-             prints a French summary. The engine decides the machine-detectable
-             criteria; you supply the judgment + needs-rendering ones.
-  report     Render an AuditResult into a dated RGAA compliance report
-             (audits/rgaa-YYYY-MM-DD.md): metadata, per-theme synthesis table,
+             and emit an AuditResult JSON keyed by WCAG 2.2 success criteria
+             (consumed by 'report'). Without --json, prints an English summary. The
+             engine decides the machine-detectable criteria; you supply the judgment
+             + needs-rendering ones.
+  report     Render an AuditResult into a dated WCAG 2.2 AA compliance report
+             (audits/wcag-YYYY-MM-DD.md): metadata, per-guideline synthesis table,
              non-conformities by priority, conforming + not-applicable lists.
+             --standard <pack> writes a derived report for a country standard
+             (e.g. --standard rgaa → audits/rgaa-YYYY-MM-DD.md).
   prd        Turn an AuditResult into an actionable "fixes to do" backlog
              (audits/prd-YYYY-MM-DD.md), grouped by criterion and sectioned by
              priority; --split criterion writes one PRD file per criterion, and
@@ -56,10 +60,13 @@ Commands:
              framework and print the build→audit recipe, or --scaffold a
              react-dom/server SSR snapshot harness to fill in. Then audit the
              produced HTML, and use scan for the needs-rendering criteria.
-  criteria   Look up the RGAA reference offline: one criterion, a whole theme,
-             or the 13-theme list. Carries WCAG cross-refs + automatability class.
+  criteria   Look up the reference offline. Core: one WCAG success criterion
+             (criteria 1.4.3) or the full list grouped by guideline (--list).
+             --standard <pack>: a pack criterion, a pack theme (--theme N), or its
+             theme list. Carries the WCAG↔pack cross-refs + automatability class.
   check      Integrity gate on a produced report: every cited criterion resolves,
-             every NA is justified, sections + conformance maths are well-formed.
+             every NA is justified, sections + pass-rate maths are well-formed.
+             --standard tells it which id grammar/registry to validate against.
   verify     Adversarial claim↔criterion worklist for the report's non-conformities,
              then (--apply) gate on refuted/unsupported findings.
   fix        Put the fixes in place (hybrid, native-first): apply deterministic
@@ -75,7 +82,7 @@ Commands:
              audits/baseline.json (the committed reference).
   scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
              decide the needs-rendering criteria the static engine can't — computed
-             contrast (3.2/3.3), 320px reflow (10.11) — over a URL or HTML file.
+             contrast (1.4.3), 320px reflow (1.4.10) — over a URL or HTML file.
              --merge folds the findings into a static AuditResult (manual → C/NC).
              --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
              links BFS-crawled from a start URL) and aggregate the findings.
@@ -94,7 +101,8 @@ Options:
   --since <ref>      audit/fix: only files changed vs the given git ref
   --max-files <n>    audit: cap canonical files audited (logged truncation, no silent drop)
   --dedup <mode>     audit: collapse identical files — exact|normalized|off  (default: exact)
-  --standard <std>   report/criteria: key the output by rgaa|wcag  (default: rgaa)
+  --standard <pack>  report/prd/criteria/check/verify: WCAG core (default) or a pack
+                     key (rgaa, …); contribute a country via a pack (see CONTRIBUTING.md)
   --split <mode>     prd: split the backlog — currently only 'criterion' (one file per criterion)
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
@@ -103,12 +111,13 @@ Options:
   --dry-run          fix: preview only — never write (this is the default)
   --only <ids>       fix: limit auto-fixes to these rule ids (comma-separated)
   --baseline <file>  audit/init: regression-gate vs / write this baseline AuditResult
-  --fail-on <sev>    audit/init: gate severity — bloquant|majeur|mineur  (default: bloquant)
+  --fail-on <sev>    audit/init: gate severity — blocking|major|minor (fr aliases accepted)  (default: blocking)
   --hook             init: write a git pre-commit accessibility gate
   --ci               init: write a GitHub Actions accessibility gate
   --report <file>    check/verify: the report markdown to gate
-  --theme <N>        criteria: list the criteria of theme N (1..13)
-  --list             criteria: print the 13-theme table
+  --theme <N>        criteria: with --standard <pack>, list the pack's theme N
+  --list             criteria: print the WCAG success criteria grouped by guideline
+  --generate         criteria: emit the bundled references/criteria.md (WCAG 2.2 AA)
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
   --max-verify <n>   verify: cap the worklist size                       (default: 40)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
@@ -119,13 +128,13 @@ Options:
   --docker           scan: run the dynamic tier in Docker (default; built on first use)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
-  --lang fr|en       output language                                     (default: fr)
+  --lang en|fr       output language                                     (default: en)
   --json             machine-readable output
   --quiet            check: exit code only, no output
   -h, --help         show this help
   -v, --version      print version
 
-Data: RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
+Data: WCAG 2.2 © W3C (W3C Document License). RGAA 4.1.2 pack © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
 
 const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init"] as const;
 type Command = (typeof COMMANDS)[number];
@@ -196,11 +205,28 @@ export function parseArgs(argv: string[]): ParsedArgs {
 }
 
 function langOf(flags: Record<string, string | boolean>): Lang {
-  return flags.lang === "en" ? "en" : "fr";
+  return flags.lang === "fr" ? "fr" : "en";
 }
 
 function asList(v: string | boolean | undefined): string[] | undefined {
   return typeof v === "string" && v ? [v] : undefined;
+}
+
+/** Resolve `--standard`; prints the error and returns null on an unknown standard. */
+function stdOf(p: ParsedArgs, cmd: string): StandardId | null {
+  try {
+    return resolveStandard(p.flags.standard);
+  } catch (e) {
+    console.error(`ultra11y ${cmd}: ${e instanceof Error ? e.message : String(e)}`);
+    return null;
+  }
+}
+
+/** Current ultra11y AuditResult: WCAG-keyed, schema v2+. Rejects stale (pre-v2,
+ *  RGAA-keyed) JSON so it is never silently mis-processed against the WCAG engine. */
+function isCurrentAudit(r: unknown): r is AuditResult {
+  const a = r as Partial<AuditResult> | null;
+  return !!a && a.tool === "ultra11y" && a.standard === "wcag" && typeof a.schemaVersion === "number" && a.schemaVersion >= 2 && Array.isArray(a.criteria);
 }
 
 async function cmdAudit(p: ParsedArgs): Promise<number> {
@@ -239,10 +265,15 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   // baseline and exit non-zero only on NEW non-conformities at/above --fail-on.
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
-    let baseline = null;
+    let baseline: AuditResult | null = null;
     if (existsSync(baselineFlag)) {
       try {
-        baseline = JSON.parse(readText(baselineFlag)) as AuditResult;
+        const parsed: unknown = JSON.parse(readText(baselineFlag));
+        if (isCurrentAudit(parsed)) baseline = parsed;
+        else
+          console.error(
+            `ultra11y audit: --baseline ${baselineFlag} is stale (pre-v2 / not WCAG-keyed); treating as empty. Regenerate with \`init --baseline\`.`,
+          );
       } catch {
         console.error(`ultra11y audit: --baseline ${baselineFlag} is not valid JSON; treating as empty.`);
       }
@@ -305,6 +336,14 @@ function cmdInit(p: ParsedArgs): number {
 }
 
 function cmdCriteria(p: ParsedArgs): number {
+  // --generate: emit the bundled WCAG references/criteria.md (no trailing newline; the
+  // shell redirect / committed file owns that). Used by `pnpm run build:criteria`.
+  if (p.flags.generate === true) {
+    process.stdout.write(renderCriteriaReference());
+    return 0;
+  }
+  const standard = stdOf(p, "criteria");
+  if (standard === null) return 2;
   const themeFlag = p.flags.theme;
   return runCriteria({
     id: p.positionals[0],
@@ -312,7 +351,7 @@ function cmdCriteria(p: ParsedArgs): number {
     list: p.flags.list === true,
     json: p.flags.json === true,
     lang: langOf(p.flags),
-    standard: parseStandard(p.flags.standard),
+    standard,
   });
 }
 
@@ -322,20 +361,22 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
     console.error("ultra11y report: --in <audit.json> is required ('-' for stdin).");
     return 2;
   }
+  const standard = stdOf(p, "report");
+  if (standard === null) return 2;
   const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
-  let result: AuditResult;
+  let result: unknown;
   try {
-    result = JSON.parse(raw) as AuditResult;
+    result = JSON.parse(raw);
   } catch {
     console.error("ultra11y report: --in is not valid JSON (expected an AuditResult).");
     return 2;
   }
-  if (result.tool !== "ultra11y" || !Array.isArray(result.criteria)) {
-    console.error("ultra11y report: input is not an ultra11y AuditResult.");
+  if (!isCurrentAudit(result)) {
+    console.error("ultra11y report: input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
     return 2;
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
-  const path = writeReport(result, { out, lang: langOf(p.flags), standard: parseStandard(p.flags.standard) });
+  const path = writeReport(result, { out, lang: langOf(p.flags), standard });
   console.log(path);
   return 0;
 }
@@ -346,34 +387,40 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
     console.error("ultra11y prd: --in <audit.json> is required ('-' for stdin).");
     return 2;
   }
+  const standard = stdOf(p, "prd");
+  if (standard === null) return 2;
   const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
-  let result: AuditResult;
+  let result: unknown;
   try {
-    result = JSON.parse(raw) as AuditResult;
+    result = JSON.parse(raw);
   } catch {
     console.error("ultra11y prd: --in is not valid JSON (expected an AuditResult).");
     return 2;
   }
-  if (result.tool !== "ultra11y" || !Array.isArray(result.criteria)) {
-    console.error("ultra11y prd: input is not an ultra11y AuditResult.");
+  if (!isCurrentAudit(result)) {
+    console.error("ultra11y prd: input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
     return 2;
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const lang = langOf(p.flags);
   const split = p.flags.split === "criterion" ? "criterion" : undefined;
-  const paths = writePrd(result, { out, lang, split });
+  const paths = writePrd(result, { out, lang, split, standard });
   for (const path of paths) console.log(path);
 
   // --gh-issues: always-written markdown above; GitHub is opt-in + best-effort.
   if (p.flags["gh-issues"] === true) {
-    const units = prdUnits(result);
+    const units = prdUnits(result, standard, lang);
     if (!ghAvailable()) {
       console.error("ultra11y prd: --gh-issues skipped — `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
     } else if (units.length === 0) {
       console.error("ultra11y prd: --gh-issues skipped — no findings to file.");
     } else {
-      const r = pushIssues(units, lang);
-      console.log(`ultra11y prd: GitHub issues — ${r.created} créée(s), ${r.skipped} déjà existante(s)${r.failed ? `, ${r.failed} en échec` : ""}.`);
+      const r = pushIssues(units, lang, standard);
+      const msg =
+        lang === "fr"
+          ? `ultra11y prd : issues GitHub — ${r.created} créée(s), ${r.skipped} déjà existante(s)${r.failed ? `, ${r.failed} en échec` : ""}.`
+          : `ultra11y prd: GitHub issues — ${r.created} created, ${r.skipped} already existed${r.failed ? `, ${r.failed} failed` : ""}.`;
+      console.log(msg);
     }
   }
   return 0;
@@ -419,17 +466,26 @@ function cmdCheck(p: ParsedArgs): number {
     console.error("ultra11y check: --report <md> is required.");
     return 2;
   }
-  const res = checkReport(readText(rep));
+  const standard = stdOf(p, "check");
+  if (standard === null) return 2;
+  const lang = langOf(p.flags);
+  const res = checkReport(readText(rep), standard, lang);
   if (p.flags.json) {
     console.log(JSON.stringify(res, null, 2));
   } else if (!p.flags.quiet) {
-    if (res.ok) console.log("✓ Rapport valide : sections, critères cités et justifications NA cohérents.");
+    if (res.ok)
+      console.log(
+        lang === "fr"
+          ? "✓ Rapport valide : sections, critères cités et justifications NA cohérents."
+          : "✓ Report valid: sections, cited criteria and NA justifications are consistent.",
+      );
     else for (const i of res.issues) console.error(`✗ ${i}`);
   }
   return res.ok ? 0 : 1;
 }
 
 function cmdVerify(p: ParsedArgs): number {
+  const lang = langOf(p.flags);
   const apply = p.flags.apply;
   if (typeof apply === "string" && apply) {
     // Read and parse separately so a missing file is not mislabeled as bad JSON.
@@ -437,7 +493,7 @@ function cmdVerify(p: ParsedArgs): number {
     try {
       raw = readText(apply);
     } catch {
-      console.error(`ultra11y verify: --apply file introuvable : ${apply}.`);
+      console.error(`ultra11y verify: --apply file not found: ${apply}.`);
       return 2;
     }
     let items: VerifyItem[];
@@ -453,10 +509,13 @@ function cmdVerify(p: ParsedArgs): number {
     }
     const r = applyVerdicts(items);
     if (p.flags.json) console.log(JSON.stringify(r, null, 2));
-    else if (r.ok) console.log(`✓ ${r.total} non-conformités vérifiées, toutes étayées.`);
+    else if (r.ok)
+      console.log(lang === "fr" ? `✓ ${r.total} non-conformités vérifiées, toutes étayées.` : `✓ ${r.total} non-conformities verified, all supported.`);
     else
       console.error(
-        `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`,
+        lang === "fr"
+          ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
+          : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
       );
     return r.ok ? 0 : 1;
   }
@@ -466,6 +525,8 @@ function cmdVerify(p: ParsedArgs): number {
     console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
     return 2;
   }
+  const standard = stdOf(p, "verify");
+  if (standard === null) return 2;
   let max = VERIFY_MAX;
   const mvFlag = p.flags["max-verify"];
   if (typeof mvFlag === "string" && mvFlag !== "") {
@@ -476,10 +537,12 @@ function cmdVerify(p: ParsedArgs): number {
     }
     max = n;
   }
-  const items = buildWorklist(readText(rep), max);
+  const items = buildWorklist(readText(rep), standard, max);
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
-  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true);
-  console.log(`${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}`);
+  const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
+  console.log(
+    lang === "fr" ? `${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify → ${mdPath}, ${todoPath}`,
+  );
   return 0;
 }
 
@@ -544,9 +607,14 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
 }
 
 async function cmdScan(p: ParsedArgs): Promise<number> {
+  const lang = langOf(p.flags);
   if (p.flags.clean) {
     const r = cleanDynamic();
-    console.log(`Nettoyage : image dynamique ${r.imageRemoved ? "supprimée" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprimé(s).`);
+    console.log(
+      lang === "fr"
+        ? `Nettoyage : image dynamique ${r.imageRemoved ? "supprimée" : "absente"}, ${r.tempContextsRemoved} contexte(s) temporaire(s) supprimé(s).`
+        : `Cleanup: dynamic image ${r.imageRemoved ? "removed" : "absent"}, ${r.tempContextsRemoved} temp context(s) removed.`,
+    );
     return 0;
   }
   const sitemap = typeof p.flags.sitemap === "string" ? (p.flags.sitemap as string) : undefined;
@@ -572,30 +640,36 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const mergeIn = p.flags.merge;
   if (typeof mergeIn === "string" && mergeIn) {
-    let audit: AuditResult;
+    let audit: unknown;
     try {
-      audit = JSON.parse(readText(mergeIn)) as AuditResult;
+      audit = JSON.parse(readText(mergeIn));
     } catch {
       console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
       return 2;
     }
-    if (audit.tool !== "ultra11y" || !Array.isArray(audit.criteria)) {
-      console.error("ultra11y scan: --merge input is not an ultra11y AuditResult.");
+    if (!isCurrentAudit(audit)) {
+      console.error("ultra11y scan: --merge input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
       return 2;
     }
-    const merged = mergeDynamic(audit, dynamic);
+    const merged = mergeDynamic(audit, dynamic, lang);
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
     if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
     else
       console.log(
-        `Audit statique + dynamique fusionné → ${join(out, "audit-latest.json")} (${merged.conformancePct}% conformité, ${merged.findings.length} findings).`,
+        lang === "fr"
+          ? `Audit statique + dynamique fusionné → ${join(out, "audit-latest.json")} (${merged.conformancePct}% réussite, ${merged.findings.length} findings).`
+          : `Static + dynamic audit merged → ${join(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`,
       );
     return 0;
   }
   if (p.flags.json) console.log(JSON.stringify(dynamic, null, 2));
   else {
-    console.log(`Audit dynamique (${dynamic.engine}) de ${dynamic.target} — ${dynamic.findings.length} non-conformité(s) :`);
+    console.log(
+      lang === "fr"
+        ? `Audit dynamique (${dynamic.engine}) de ${dynamic.target} — ${dynamic.findings.length} non-conformité(s) :`
+        : `Dynamic audit (${dynamic.engine}) of ${dynamic.target} — ${dynamic.findings.length} non-conformity(ies):`,
+    );
     for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} — ${f.message}`);
   }
   return 0;

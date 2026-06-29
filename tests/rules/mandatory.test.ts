@@ -8,7 +8,7 @@ describe("html-lang-missing (8.3)", () => {
   it("non-conforming: <html> without lang", () => {
     const f = findOf(page("<p>x</p>", "<title>T</title>", ""), "html-lang-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("8.3");
+    expect(f[0]!.criteriaId).toBe("3.1.1");
   });
   it("does not fire on a fragment (page-scoped)", () => {
     expect(findOf(`<p>fragment</p>`, "html-lang-missing")).toHaveLength(0);
@@ -32,7 +32,7 @@ describe("duplicate-id (8.2)", () => {
   it("non-conforming: a repeated id reports the extra occurrences", () => {
     const f = findOf(`<div id="x"></div><span id="x"></span><p id="x"></p>`, "duplicate-id");
     expect(f).toHaveLength(2);
-    expect(f[0]!.criteriaId).toBe("8.2");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });
 
@@ -44,10 +44,10 @@ describe("lang-invalid (8.4/8.8)", () => {
   it("non-conforming: invalid html lang → 8.4, invalid inline lang → 8.8", () => {
     const h = findOf(page("<p>x</p>", "<title>T</title>", ' lang="francais"'), "lang-invalid");
     expect(h).toHaveLength(1);
-    expect(h[0]!.criteriaId).toBe("8.4");
+    expect(h[0]!.criteriaId).toBe("3.1.1");
     const s = findOf(`<span lang="abcdefghij">x</span>`, "lang-invalid");
     expect(s).toHaveLength(1);
-    expect(s[0]!.criteriaId).toBe("8.8");
+    expect(s[0]!.criteriaId).toBe("3.1.2");
   });
 });
 

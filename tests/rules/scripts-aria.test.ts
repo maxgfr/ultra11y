@@ -8,7 +8,7 @@ describe("invalid-aria-role (7.1)", () => {
   it("non-conforming: made-up role", () => {
     const f = findOf(`<div role="navbar">x</div>`, "invalid-aria-role");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("7.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });
 
@@ -42,7 +42,7 @@ describe("clickable-noninteractive (7.1/7.3)", () => {
   it("non-conforming: clickable div without keyboard/role", () => {
     const f = findOf(`<div onClick={f}>Valider</div>`, "clickable-noninteractive", "C.tsx");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("7.3");
+    expect(f[0]!.criteriaId).toBe("2.1.1");
   });
 });
 
@@ -54,7 +54,7 @@ describe("aria-required-children (7.1)", () => {
   it("non-conforming: tablist without any tab", () => {
     const f = findOf(`<div role="tablist"><span>A</span></div>`, "aria-required-children");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("7.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });
 
@@ -65,7 +65,7 @@ describe("aria-hidden-focusable (7.1)", () => {
   it("non-conforming: aria-hidden wrapping a focusable link", () => {
     const f = findOf(`<div aria-hidden="true"><a href="/">Lien</a></div>`, "aria-hidden-focusable");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("7.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });
 
@@ -76,6 +76,6 @@ describe("nested-interactive (7.1)", () => {
   it("non-conforming: a button inside a link", () => {
     const f = findOf(`<a href="/"><button>X</button></a>`, "nested-interactive");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("7.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });

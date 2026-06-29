@@ -2,13 +2,29 @@ ultra11y
 Copyright (c) 2026 maxgfr — MIT License (see LICENSE).
 
 ================================================================================
-Bundled RGAA dataset
+Bundled WCAG 2.2 dataset (the worldwide core)
 ================================================================================
 
-The files src/data/rgaa.json and src/data/glossary.json are derived from the
-official Référentiel Général d'Amélioration de l'Accessibilité (RGAA), version
-4.1.2, published by the Direction interministérielle du numérique (DINUM /
-DISIC) of the French government.
+The file src/data/wcag.json is derived from the official Web Content Accessibility
+Guidelines (WCAG) 2.2 source published by the World Wide Web Consortium (W3C).
+
+Source: https://github.com/w3c/wcag  (guidelines/ success-criterion fragments)
+Spec:   https://www.w3.org/TR/WCAG22/
+
+WCAG 2.2 is © W3C and is reused here under the W3C Document License
+(https://www.w3.org/copyright/document-license/). ultra11y reproduces only the
+success-criterion ids, titles and conformance levels (the Level A + AA subset),
+adding its own engine-specific fields (rule coverage, automatability class). It
+does not reproduce the normative prose. Attribution: « WCAG 2.2 — W3C ».
+
+================================================================================
+Bundled RGAA standards pack (France)
+================================================================================
+
+The files src/data/standards/rgaa.json and src/data/standards/rgaa.glossary.json
+are the RGAA standards pack, derived from the official Référentiel Général
+d'Amélioration de l'Accessibilité (RGAA), version 4.1.2, published by the
+Direction interministérielle du numérique (DINUM / DISIC) of the French government.
 
 Source: https://github.com/DISIC/accessibilite.numerique.gouv.fr
         (RGAA/criteres.json, RGAA/glossaire.json)
@@ -16,9 +32,10 @@ Source: https://github.com/DISIC/accessibilite.numerique.gouv.fr
 The RGAA content is published under the Licence Ouverte / Open License 2.0
 (Etalab): https://www.etalab.gouv.fr/licence-ouverte-open-licence/
 
-ultra11y restructures this content (composing dotted criterion ids, deriving
-plain-text titles, flattening WCAG/technique references, stripping glossary
-HTML) but does not alter its meaning. Attribution: « RGAA 4.1.2 — DINUM ».
+ultra11y restructures this content into a standards pack (composing dotted
+criterion ids, deriving plain-text titles, mapping each criterion to bare WCAG
+success-criterion ids, stripping glossary HTML) but does not alter its meaning.
+Attribution: « RGAA 4.1.2 — DINUM ».
 
 ================================================================================
 Inspiration

@@ -8,7 +8,7 @@ describe("skip-link-target-missing (12.7)", () => {
   it("non-conforming: anchor with no matching id", () => {
     const f = findOf(page(`<a href="#main">Aller au contenu</a><main>x</main>`), "skip-link-target-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("12.7");
+    expect(f[0]!.criteriaId).toBe("2.4.1");
   });
 });
 
@@ -19,6 +19,6 @@ describe("positive-tabindex (12.8)", () => {
   it("non-conforming: tabindex > 0", () => {
     const f = findOf(`<button tabindex="3">x</button>`, "positive-tabindex");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("12.8");
+    expect(f[0]!.criteriaId).toBe("2.4.3");
   });
 });

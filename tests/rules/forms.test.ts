@@ -10,7 +10,7 @@ describe("control-label-missing (11.1)", () => {
   it("non-conforming: unlabeled field (no placeholder)", () => {
     const f = findOf(`<input type="text">`, "control-label-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("11.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
     expect(f[0]!.severity).toBe("bloquant");
   });
   it("does not double-report a placeholder-only field", () => {
@@ -36,7 +36,7 @@ describe("fieldset-legend-missing (11.6)", () => {
   it("non-conforming: fieldset without legend", () => {
     const f = findOf(`<fieldset><input></fieldset>`, "fieldset-legend-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("11.6");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
 });
 
@@ -47,7 +47,7 @@ describe("form-field-multiple-labels (11.1)", () => {
   it("non-conforming: two labels for the same field", () => {
     const f = findOf(`<label for="n">A</label><label for="n">B</label><input id="n">`, "form-field-multiple-labels");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("11.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });
 

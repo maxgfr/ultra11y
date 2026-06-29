@@ -1,42 +1,42 @@
-# Gates `check` et `verify`
+# `check` and `verify` gates
 
-Deux niveaux d'assurance avant de livrer un rapport.
+Two assurance levels before shipping a report.
 
-## `check` — intégrité structurelle
-
-```
-node scripts/ultra11y.mjs check --report audits/rgaa-AAAA-MM-JJ.md
-```
-Échoue (code ≠ 0) si : une des 5 sections manque, un identifiant de critère cité
-n'existe pas dans le RGAA, un critère `NA` n'a pas de justification, ou le taux de
-conformité est absent. C'est le garde-fou anti-hallucination de base. `--quiet`
-n'émet que le code de sortie ; `--json` la liste structurée des problèmes.
-
-## `verify` — vérification adversariale des non-conformités
+## `check` — structural integrity
 
 ```
-node scripts/ultra11y.mjs verify --report audits/rgaa-AAAA-MM-JJ.md --semantic
+node scripts/ultra11y.mjs check --report audits/wcag-YYYY-MM-DD.md
 ```
-Génère une **worklist** `VERIFY.md` + `VERIFY.todo.json` : une entrée par
-non-conformité (critère ↔ `fichier:ligne` ↔ intitulé cité), plafonnée par
-`--max-verify` (défaut 40). Pour chaque entrée, ouvrez le code cité et attribuez
-un verdict dans `VERIFY.todo.json` :
+Fails (non-zero) if: one of the 5 sections is missing, a cited criterion id does not exist in
+the active standard, an `NA` criterion has no justification, or the pass rate is absent. This
+is the baseline anti-hallucination guard. `--quiet` emits only the exit code; `--json` the
+structured list of problems. For a country pack report, add `--standard <pack>` so the right
+id grammar/registry is validated.
 
-- `supported` — la non-conformité est réelle ;
-- `partial` — réelle mais critère/formulation imprécis ;
-- `refuted` — fausse (l'élément cité est en réalité conforme) ;
-- `unsupported` — l'élément cité ne permet pas de trancher.
+## `verify` — adversarial verification of non-conformities
 
-En mode `--semantic`, vérifiez explicitement que l'extrait cité **étaye** la
-non-conformité. Puis appliquez le gate :
+```
+node scripts/ultra11y.mjs verify --report audits/wcag-YYYY-MM-DD.md --semantic
+```
+Generates a **worklist** `VERIFY.md` + `VERIFY.todo.json`: one entry per non-conformity
+(criterion ↔ `file:line` ↔ cited claim), capped by `--max-verify` (default 40). For each
+entry, open the cited code and assign a verdict in `VERIFY.todo.json`:
+
+- `supported` — the non-conformity is real;
+- `partial` — real but the criterion/wording is imprecise;
+- `refuted` — false (the cited element is actually conforming);
+- `unsupported` — the cited element is not enough to decide.
+
+In `--semantic` mode, explicitly confirm the cited snippet **supports** the non-conformity.
+Then apply the gate:
 ```
 node scripts/ultra11y.mjs verify --apply VERIFY.todo.json
 ```
-Le gate échoue (code ≠ 0) si une entrée est `refuted`, `unsupported`, ou non
-statuée. Objectif : aucune non-conformité fabriquée ne survit dans le rapport final.
+The gate fails (non-zero) if any entry is `refuted`, `unsupported`, or unadjudicated. Goal: no
+fabricated non-conformity survives into the final report.
 
-## Risque résiduel
+## Residual risk
 
-`verify` ne couvre que les non-conformités déclarées. Les critères *needs-rendering*
-et *judgment* non tranchés restent dans la section « à évaluer manuellement » du
-rapport — ne les marquez jamais conformes sans vérification humaine.
+`verify` only covers the declared non-conformities. The undecided *needs-rendering* and
+*judgment* criteria stay in the report's "to assess manually" section — never mark them
+conforming without a human check.

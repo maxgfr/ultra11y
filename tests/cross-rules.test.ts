@@ -13,7 +13,7 @@ describe("cross-file rules (audit --graph)", () => {
     const f = find(graph, "cross-icon-only-unnamed", "page-bad.tsx");
     expect(f).toBeDefined();
     expect(f?.related?.file).toMatch(/IconButton\.tsx$/);
-    expect(f?.criteriaId).toBe("7.1");
+    expect(f?.criteriaId).toBe("4.1.2");
   });
 
   it("does not flag a usage that passes an accessible name", () => {

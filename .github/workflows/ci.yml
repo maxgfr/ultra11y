@@ -42,7 +42,7 @@ jobs:
         run: pnpm run demo # audit -> report -> check -> criteria
 
       - name: Assert a report was produced
-        run: ls /tmp/ultra11y-demo/rgaa-*.md
+        run: ls /tmp/ultra11y-demo/wcag-*.md
 
   install-bundle:
     runs-on: ubuntu-latest
@@ -96,8 +96,8 @@ jobs:
         run: |
           node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out "$RUNNER_TEMP/u" --json > /dev/null
           node scripts/ultra11y.mjs report --in "$RUNNER_TEMP/u/audit-latest.json" --out "$RUNNER_TEMP/u"
-          node scripts/ultra11y.mjs check --report "$RUNNER_TEMP"/u/rgaa-*.md
-          node scripts/ultra11y.mjs criteria --theme 1 | grep -q "1.1"
+          node scripts/ultra11y.mjs check --report "$RUNNER_TEMP"/u/wcag-*.md
+          node scripts/ultra11y.mjs criteria 1.1.1 | grep -q "Non-text Content"
 
       - name: JSX/TSX real-AST + cross-file audit runs on the floor (bundled @babel/parser)
         run: |
@@ -106,7 +106,7 @@ jobs:
 
       - name: The check gate blocks an invented criterion (exit 1)
         run: |
-          printf '## 1.\n## 2.\n- **99.9 — faux** — `x:1` (`d`)\n## 3.\n## 4.\n## 5.\n50%%\n' > "$RUNNER_TEMP/bad.md"
+          printf '## 1.\n## 2.\n- **9.9.9 — fake** — `x:1` (`d`)\n## 3.\n## 4.\n## 5.\n- **Rate** : 50%%\n' > "$RUNNER_TEMP/bad.md"
           if node scripts/ultra11y.mjs check --report "$RUNNER_TEMP/bad.md"; then
             echo "expected non-zero exit for an invented criterion"; exit 1
           fi

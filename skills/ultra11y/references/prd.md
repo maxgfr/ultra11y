@@ -1,39 +1,40 @@
-# PRD / backlog de correction (`prd`) + issues GitHub
+# PRD / fix backlog (`prd`) + GitHub issues
 
-`prd` transforme un `AuditResult` en **markdown des correctifs à faire**, groupé
-par critère RGAA. C'est le pendant « action » du `report` (qui, lui, est le
-document de conformité).
+`prd` turns an `AuditResult` into the **markdown of fixes to do**, grouped by WCAG success
+criterion (or, with `--standard <pack>`, by a country standard's criteria). It is the
+"action" counterpart of `report` (which is the compliance document).
 
 ```
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --json > audit.json
-node scripts/ultra11y.mjs prd --in audit.json                     # backlog unique (par défaut)
-node scripts/ultra11y.mjs prd --in audit.json --split criterion   # un PRD par critère
-node scripts/ultra11y.mjs prd --in audit.json --gh-issues         # + une issue GitHub par critère
+node scripts/ultra11y.mjs prd --in audit.json                     # single backlog (default)
+node scripts/ultra11y.mjs prd --in audit.json --split criterion   # one PRD per criterion
+node scripts/ultra11y.mjs prd --in audit.json --gh-issues         # + one GitHub issue per criterion
+node scripts/ultra11y.mjs prd --in audit.json --standard rgaa     # backlog keyed by the RGAA pack
 ```
 
-## Sortie
+## Output
 
-- **Par défaut** : un seul document `audits/prd-AAAA-MM-JJ.md`, sectionné par
-  priorité (🔴 bloquant → 🟠 majeur → 🟡 mineur). Chaque critère devient un bloc :
-  intitulé + WCAG, correction(s), puis une **checklist** des occurrences
-  (`fichier:ligne`), avec le **site de définition** (`related`) quand un
-  signalement inter-fichiers le porte.
-- **`--split criterion`** : un fichier `prd-<critère>-AAAA-MM-JJ.md` par critère
-  ayant des non-conformités (pratique pour découper en lots).
-- Le markdown est **toujours** écrit, même avec `--gh-issues`.
+- **Default**: one document `audits/prd-YYYY-MM-DD.md`, sectioned by priority (🔴 blocking →
+  🟠 major → 🟡 minor). Each criterion becomes a block: title + WCAG ref, fix(es), then a
+  **checklist** of occurrences (`file:line`), with the **definition site** (`related`) when a
+  cross-file flag carries one.
+- **`--split criterion`**: a `prd-<criterion>-YYYY-MM-DD.md` file per criterion with
+  non-conformities (handy for batching).
+- The markdown is **always** written, even with `--gh-issues`.
 
-## Issues GitHub (`--gh-issues`, opt-in)
+## GitHub issues (`--gh-issues`, opt-in)
 
-- S'appuie sur le **CLI `gh`** (qui gère son auth) — **aucune** dépendance npm,
-  aucune clé dans ultra11y.
-- **Une issue par critère** (quel que soit `--split`), titre stable
-  `"[a11y] RGAA <id> — <intitulé>"`, labels `accessibility`, `rgaa`, sévérité.
-  Le corps reprend correction + occurrences `fichier:ligne` + site de définition.
-- **Déduplication par titre** : une issue déjà présente (ouverte ou fermée) est
-  ignorée, donc relancer ne crée pas de doublon.
-- **Dégradation propre** : si `gh` est absent / non authentifié, la commande
-  l'indique et sort en `0` — le markdown a quand même été produit.
+- Uses the **`gh` CLI** (which handles its own auth) — **no** npm dependency, no key in
+  ultra11y.
+- **One issue per criterion** (regardless of `--split`), stable title
+  `"[a11y] WCAG <sc> — <title>"` (or `"[a11y] <PACK> <id> — …"` under `--standard`), labels
+  `accessibility`, `wcag` (or the pack key), severity. The body carries fix + `file:line`
+  occurrences + definition site.
+- **De-dupe by title**: an existing issue (open or closed) is skipped, so re-running never
+  creates duplicates.
+- **Graceful degradation**: if `gh` is absent / unauthenticated, the command says so and exits
+  `0` — the markdown was still produced.
 
-> `prd` lit le `AuditResult` produit par `audit` (idéalement `--graph` pour la
-> couverture inter-fichiers) ; il réutilise intitulés de critères, sévérités,
-> messages, remédiations et `fichier:ligne` déjà calculés.
+> `prd` reads the `AuditResult` produced by `audit` (ideally `--graph` for cross-file
+> coverage); it reuses the criterion titles, severities, messages, remediations and
+> `file:line` already computed.

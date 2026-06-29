@@ -11,7 +11,7 @@ describe("img-alt-missing (1.1)", () => {
   it("non-conforming: img without alt", () => {
     const f = findOf(`<img src="a">`, "img-alt-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("1.1");
+    expect(f[0]!.criteriaId).toBe("1.1.1");
     expect(f[0]!.severity).toBe("bloquant");
   });
 });

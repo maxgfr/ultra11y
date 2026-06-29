@@ -17,16 +17,17 @@ afterEach(() => {
 
 const AUDIT: AuditResult = {
   tool: "ultra11y",
+  standard: "wcag",
   version: "9.9.9",
-  schemaVersion: 1,
+  schemaVersion: 2,
   date: "2026-06-29",
   scope: { inputs: ["src"], files: 3 },
-  themes: [],
+  guidelines: [],
   criteria: [],
   findings: [
     {
       ruleId: "positive-tabindex",
-      criteriaId: "12.8",
+      criteriaId: "2.4.3",
       file: "src/a.html",
       line: 9,
       col: 1,
@@ -38,7 +39,7 @@ const AUDIT: AuditResult = {
     },
     {
       ruleId: "img-alt-missing",
-      criteriaId: "1.1",
+      criteriaId: "1.1.1",
       file: "src/a.html",
       line: 3,
       col: 1,
@@ -50,7 +51,7 @@ const AUDIT: AuditResult = {
     },
     {
       ruleId: "cross-icon-only-unnamed",
-      criteriaId: "7.1",
+      criteriaId: "4.1.2",
       file: "src/page.tsx",
       line: 5,
       col: 7,
@@ -67,12 +68,12 @@ const AUDIT: AuditResult = {
 };
 
 describe("prdUnits", () => {
-  it("groups findings by criterion, ordered by severity then criterion id", () => {
+  it("groups findings by WCAG SC, ordered by severity then SC id", () => {
     const units = prdUnits(AUDIT);
-    expect(units.map((u) => u.criteriaId)).toEqual(["1.1", "7.1", "12.8"]);
+    expect(units.map((u) => u.criteriaId)).toEqual(["1.1.1", "4.1.2", "2.4.3"]);
     expect(units[0]!.severity).toBe("bloquant");
     expect(units[2]!.severity).toBe("majeur");
-    expect(units[0]!.label).toMatch(/^1\.1 — /); // criterion label resolved from the registry
+    expect(units[0]!.label).toMatch(/^1\.1\.1 — /); // SC label resolved from the WCAG dataset
   });
 });
 
@@ -80,6 +81,7 @@ describe("renderBacklog", () => {
   const md = renderBacklog(AUDIT, "fr");
   it("is a single doc sectioned by priority with occurrences and remediation", () => {
     expect(md).toContain("# Plan de correction");
+    expect(md).toContain("WCAG 2.2 AA");
     expect(md).toContain("## 🔴 Bloquant (2)");
     expect(md).toContain("## 🟠 Majeur (1)");
     expect(md).toContain("`src/a.html:3`");
@@ -96,23 +98,23 @@ describe("renderBacklog", () => {
 });
 
 describe("renderPerCriterion + writePrd", () => {
-  it("produces one PRD doc per criterion", () => {
+  it("produces one PRD doc per SC", () => {
     const files = renderPerCriterion(AUDIT, "fr");
-    expect(files.map((f) => f.name)).toEqual(["prd-1.1-2026-06-29.md", "prd-7.1-2026-06-29.md", "prd-12.8-2026-06-29.md"]);
-    expect(files[0]!.content).toContain("# PRD — 1.1");
+    expect(files.map((f) => f.name)).toEqual(["prd-1.1.1-2026-06-29.md", "prd-4.1.2-2026-06-29.md", "prd-2.4.3-2026-06-29.md"]);
+    expect(files[0]!.content).toContain("# PRD — 1.1.1");
   });
 
   it("writes a single backlog file by default", () => {
     const out = tmp();
-    const paths = writePrd(AUDIT, { out, lang: "fr" });
+    const paths = writePrd(AUDIT, { out, lang: "fr", standard: "wcag" });
     expect(paths).toEqual([join(out, "prd-2026-06-29.md")]);
     expect(readFileSync(paths[0]!, "utf8")).toContain("Plan de correction");
   });
 
-  it("writes one file per criterion with --split criterion", () => {
+  it("writes one file per SC with --split criterion", () => {
     const out = tmp();
-    const paths = writePrd(AUDIT, { out, lang: "fr", split: "criterion" });
+    const paths = writePrd(AUDIT, { out, lang: "fr", split: "criterion", standard: "wcag" });
     expect(paths.length).toBe(3);
-    expect(readdirSync(out).sort()).toEqual(["prd-1.1-2026-06-29.md", "prd-12.8-2026-06-29.md", "prd-7.1-2026-06-29.md"]);
+    expect(readdirSync(out).sort()).toEqual(["prd-1.1.1-2026-06-29.md", "prd-2.4.3-2026-06-29.md", "prd-4.1.2-2026-06-29.md"]);
   });
 });

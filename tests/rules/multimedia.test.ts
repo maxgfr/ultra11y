@@ -9,11 +9,11 @@ describe("autoplay-media (4.10/13.8)", () => {
   it("non-conforming: audio autoplay → 4.10", () => {
     const f = findOf(`<audio src="a" autoplay></audio>`, "autoplay-media");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("4.10");
+    expect(f[0]!.criteriaId).toBe("1.4.2");
   });
   it("non-conforming: muted video autoplay → 13.8 (moving content)", () => {
     const f = findOf(`<video src="v" autoplay muted></video>`, "autoplay-media");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("13.8");
+    expect(f[0]!.criteriaId).toBe("2.2.2");
   });
 });

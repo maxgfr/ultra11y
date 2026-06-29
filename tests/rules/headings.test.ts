@@ -8,7 +8,7 @@ describe("heading-order-skip (9.1)", () => {
   it("non-conforming: h2 → h4 skips h3", () => {
     const f = findOf(`<h2>A</h2><h4>B</h4>`, "heading-order-skip");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("9.1");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
 });
 
@@ -42,7 +42,7 @@ describe("list-structure (9.3)", () => {
   it("non-conforming: a div directly inside a ul", () => {
     const f = findOf(`<ul><div>a</div></ul>`, "list-structure");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("9.3");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
   it("non-conforming: an li outside any list", () => {
     expect(findOf(`<section><li>x</li></section>`, "list-structure")).toHaveLength(1);

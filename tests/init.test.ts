@@ -24,7 +24,7 @@ describe("pre-commit hook", () => {
     // `sh -n` parses without executing — proves the generated script is valid.
     expect(() => execFileSync("sh", ["-n", path])).not.toThrow();
     expect(script).toContain("SKIP_A11Y");
-    expect(script).toContain("audit --changed --baseline audits/baseline.json --fail-on bloquant");
+    expect(script).toContain("audit --changed --baseline audits/baseline.json --fail-on blocking");
     expect(script).toContain('node "$ULTRA11Y"');
   });
 
@@ -32,7 +32,7 @@ describe("pre-commit hook", () => {
     const d = tmp();
     const path = writeHook(d, "x.mjs", "majeur");
     expect(statSync(path).mode & 0o111).not.toBe(0); // has an execute bit
-    expect(hookScript("x.mjs", "majeur")).toContain("--fail-on majeur");
+    expect(hookScript("x.mjs", "majeur")).toContain("--fail-on major");
   });
 });
 
@@ -44,7 +44,7 @@ describe("CI workflow", () => {
     expect(doc.jobs.ultra11y).toBeDefined();
     const run = doc.jobs.ultra11y.steps.map((s) => s.run ?? "").join("\n");
     expect(run).toContain("--baseline audits/baseline.json");
-    expect(run).toContain("--fail-on bloquant");
+    expect(run).toContain("--fail-on blocking");
     expect(ciWorkflow("x", "bloquant")).toContain("pull_request");
   });
 });

@@ -14,7 +14,7 @@ describe("buildWorklist", () => {
     const items = buildWorklist(report);
     expect(items.length).toBeGreaterThan(5);
     const first = items[0]!;
-    expect(first.criteriaId).toMatch(/^\d+\.\d+$/);
+    expect(first.criteriaId).toMatch(/^\d+\.\d+\.\d+$/); // WCAG success-criterion id
     expect(first.file).toContain("bad.html");
     expect(first.line).toBeGreaterThan(0);
     expect(first.claim.length).toBeGreaterThan(0);
@@ -22,12 +22,12 @@ describe("buildWorklist", () => {
   });
 
   it("respects --max-verify", () => {
-    expect(buildWorklist(report, 2)).toHaveLength(2);
+    expect(buildWorklist(report, "wcag", 2)).toHaveLength(2);
   });
 });
 
 describe("applyVerdicts", () => {
-  const base = (): VerifyItem[] => buildWorklist(report, 3);
+  const base = (): VerifyItem[] => buildWorklist(report, "wcag", 3);
 
   it("passes when every claim is supported", () => {
     const items = base().map((i) => ({ ...i, verdict: "supported" as const }));
@@ -68,17 +68,17 @@ describe("applyVerdicts", () => {
 });
 
 describe("formatWorklist (judgment grounding)", () => {
-  it("inlines the RGAA test conditions per criterion and a pre-completion validation checklist", () => {
-    const md = formatWorklist(buildWorklist(report, 3), false);
-    expect(md).toContain("Tests RGAA");
-    expect(md).toContain("Liste de contrôle avant clôture");
+  it("grounds each SC on its W3C Understanding doc and a pre-completion validation checklist", () => {
+    const md = formatWorklist(buildWorklist(report, "wcag", 3), false);
+    expect(md).toContain("Understanding");
+    expect(md).toContain("Pre-completion checklist");
   });
 });
 
 describe("writeWorklist", () => {
   it("writes VERIFY.todo.json + VERIFY.md", () => {
     const out = join(tmpdir(), "ultra11y-verify");
-    const { todoPath, mdPath, count } = writeWorklist(buildWorklist(report, 5), out, true);
+    const { todoPath, mdPath, count } = writeWorklist(buildWorklist(report, "wcag", 5), out, true);
     expect(existsSync(todoPath)).toBe(true);
     expect(existsSync(mdPath)).toBe(true);
     expect(count).toBe(5);

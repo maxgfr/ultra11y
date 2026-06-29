@@ -9,7 +9,7 @@ describe("contrast-literal (3.2)", () => {
   it("non-conforming: #999 on #fff is below 4.5:1", () => {
     const f = findOf(`<p style="color:#999;background:#fff">Texte gris</p>`, "contrast-literal");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("3.2");
+    expect(f[0]!.criteriaId).toBe("1.4.3");
   });
 
   it("resolves the background from the nearest ancestor with an inline background", () => {

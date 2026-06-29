@@ -2,14 +2,14 @@
 // summary (the --json path prints the AuditResult verbatim instead).
 import type { AuditResult, Lang, Severity } from "./types.js";
 
-type Key = "summaryTitle" | "files" | "autoConformance" | "theme" | "findingsTitle" | "noFindings" | "residualTitle" | "manualNote" | "renderedNote";
+type Key = "summaryTitle" | "files" | "autoConformance" | "guideline" | "findingsTitle" | "noFindings" | "residualTitle" | "manualNote" | "renderedNote";
 
 const STR: Record<Lang, Record<Key, string>> = {
   fr: {
-    summaryTitle: "Audit RGAA 4.1.2 (moteur statique ultra11y)",
+    summaryTitle: "Audit WCAG 2.2 AA (moteur statique ultra11y)",
     files: "fichiers analysés",
-    autoConformance: "conformité automatique (sous-ensemble statique)",
-    theme: "Thématique",
+    autoConformance: "réussite automatique (vérifications statiques)",
+    guideline: "Règle WCAG",
     findingsTitle: "Non-conformités détectées",
     noFindings: "Aucune non-conformité détectée par le moteur statique.",
     residualTitle: "À évaluer manuellement (jugement / rendu)",
@@ -17,10 +17,10 @@ const STR: Record<Lang, Record<Key, string>> = {
     renderedNote: "fichier(s) rendent des composants de bibliothèque non analysés en source — auditez le build (render) ou scan",
   },
   en: {
-    summaryTitle: "RGAA 4.1.2 audit (ultra11y static engine)",
+    summaryTitle: "WCAG 2.2 AA audit (ultra11y static engine)",
     files: "files analysed",
-    autoConformance: "automatic conformance (static subset)",
-    theme: "Theme",
+    autoConformance: "automatic static-check pass rate",
+    guideline: "WCAG guideline",
     findingsTitle: "Non-conformities detected",
     noFindings: "No non-conformity detected by the static engine.",
     residualTitle: "To assess manually (judgment / rendering)",
@@ -40,10 +40,10 @@ export function auditSummary(r: AuditResult, lang: Lang): string {
   lines.push(`${t(lang, "summaryTitle")} — ${r.date}`);
   lines.push(`${r.scope.files} ${t(lang, "files")} · ${r.conformancePct}% ${t(lang, "autoConformance")}`);
   lines.push("");
-  lines.push(`${t(lang, "theme")}            C  NC  NA  ⏳`);
-  for (const th of r.themes) {
-    const name = `${th.number}. ${th.title}`.padEnd(28).slice(0, 28);
-    lines.push(`${name} ${String(th.c).padStart(2)}  ${String(th.nc).padStart(2)}  ${String(th.na).padStart(2)}  ${String(th.manual).padStart(2)}`);
+  lines.push(`${t(lang, "guideline")}        C  NC  NA  ⏳`);
+  for (const g of r.guidelines) {
+    const name = `${g.key} ${g.title}`.padEnd(28).slice(0, 28);
+    lines.push(`${name} ${String(g.c).padStart(2)}  ${String(g.nc).padStart(2)}  ${String(g.na).padStart(2)}  ${String(g.manual).padStart(2)}`);
   }
   lines.push("");
   if (r.findings.length === 0) {

@@ -8,7 +8,7 @@ const named = (el: El): boolean => !!(attr(el, "aria-label") ?? "").trim() || ha
 
 const imgAltMissing: Rule = {
   id: "img-alt-missing",
-  criteria: ["1.1"],
+  criteria: ["1.1.1"],
   parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
@@ -19,7 +19,7 @@ const imgAltMissing: Rule = {
       if (isHidden(el) && el.tag !== "area") continue;
       if (hasAttr(el, "alt") || named(el)) continue;
       out.push({
-        criteriaId: "1.1",
+        criteriaId: "1.1.1",
         el,
         message: `<${el.tag}> sans attribut alt ni nom accessible — alternative textuelle manquante.`,
         remediation: `Ajoutez alt="…" (description si l'image porte de l'information, alt="" si elle est décorative).`,
@@ -31,7 +31,7 @@ const imgAltMissing: Rule = {
 
 const decorativeAltMisuse: Rule = {
   id: "decorative-alt-misuse",
-  criteria: ["1.2"],
+  criteria: ["1.1.1"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -44,14 +44,14 @@ const decorativeAltMisuse: Rule = {
       const title = (attr(el, "title") ?? "").trim();
       if (alt === "" && (ariaLabel || title)) {
         out.push({
-          criteriaId: "1.2",
+          criteriaId: "1.1.1",
           el,
           message: `Image décorative (alt="") mais nommée par aria-label/title — incohérence décoratif/informatif.`,
           remediation: `Si l'image est décorative, retirez aria-label/title ; sinon donnez un alt descriptif.`,
         });
       } else if (["presentation", "none"].includes(role) && alt?.trim()) {
         out.push({
-          criteriaId: "1.2",
+          criteriaId: "1.1.1",
           el,
           message: `Image en role="${role}" mais porteuse d'un alt non vide — déclarée décorative pourtant nommée.`,
           remediation: `Retirez role="${role}" si l'image est informative, ou videz l'alt si elle est décorative.`,
@@ -64,7 +64,7 @@ const decorativeAltMisuse: Rule = {
 
 const canvasFallbackMissing: Rule = {
   id: "canvas-fallback-missing",
-  criteria: ["1.1"],
+  criteria: ["1.1.1"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -74,7 +74,7 @@ const canvasFallbackMissing: Rule = {
       const hasFallback = el.children.some((c) => (c.type === "element" ? true : c.data.trim().length > 0));
       if (hasFallback || named(el) || visibleText(el)) continue;
       out.push({
-        criteriaId: "1.1",
+        criteriaId: "1.1.1",
         el,
         message: `<canvas> sans contenu alternatif ni nom accessible.`,
         remediation: `Placez un contenu de repli entre <canvas>…</canvas> ou ajoutez role="img" + aria-label.`,

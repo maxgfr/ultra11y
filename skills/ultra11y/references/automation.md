@@ -1,41 +1,41 @@
-# Automatiser dans le repo — `init` (hook / CI)
+# Automate in the repo — `init` (hook / CI)
 
-ultra11y peut rester un skill **à la demande**, ou devenir une **garde de régression**
-qui tourne toute seule. `init` câble les deux (zéro-dépendance, pas de husky) :
+ultra11y can stay an **on-demand** skill, or become a **regression gate** that runs on its own.
+`init` wires both (zero-dependency, no husky):
 
 ```
-node scripts/ultra11y.mjs init --baseline      # écrit audits/baseline.json (référence)
+node scripts/ultra11y.mjs init --baseline      # writes audits/baseline.json (the reference)
 node scripts/ultra11y.mjs init --hook          # .git/hooks/pre-commit
 node scripts/ultra11y.mjs init --ci            # .github/workflows/a11y.yml
-node scripts/ultra11y.mjs init                 # défaut : --hook + --baseline
+node scripts/ultra11y.mjs init                 # default: --hook + --baseline
 ```
 
-## Le principe : ne bloquer que les régressions
+## The principle: only block regressions
 
-Le hook et la CI lancent en réalité :
+The hook and CI actually run:
 
 ```
-node scripts/ultra11y.mjs audit --changed --baseline audits/baseline.json --fail-on bloquant
+node scripts/ultra11y.mjs audit --changed --baseline audits/baseline.json --fail-on blocking
 ```
 
-- `--changed` (ou `--since <ref>` en CI) restreint l'audit au **diff** — proportionnel
-  au changement, pas au dépôt.
-- `--baseline audits/baseline.json` est la photo (commitée) de l'état connu. Le gate ne
-  **échoue que sur les NOUVELLES** non-conformités introduites par le diff, jamais sur le
-  backlog existant. Identité stable d'un finding : `(règle, critère, fichier, plage source)`
-  — robuste aux décalages de lignes.
-- `--fail-on bloquant|majeur|mineur` règle le seuil de blocage (défaut : `bloquant`).
+- `--changed` (or `--since <ref>` in CI) restricts the audit to the **diff** — proportional to
+  the change, not the repo.
+- `--baseline audits/baseline.json` is the committed snapshot of the known state. The gate
+  **only fails on NEW** non-conformities introduced by the diff, never on the existing backlog.
+  Stable finding identity: `(rule, criterion, file, source range)` — robust to line drift.
+- `--fail-on blocking|major|minor` sets the blocking threshold (default: `blocking`; the French
+  aliases `bloquant|majeur|mineur` are also accepted).
 
-## Mise en place
+## Setup
 
-1. `init --baseline` puis **commitez `audits/baseline.json`** (sinon, sans référence,
-   toute non-conformité du diff au seuil bloque).
-2. `init --hook` pour la garde locale (pre-commit). Contournement ponctuel :
-   `SKIP_A11Y=1 git commit …`. Quand le hook signale, ouvrez le code cité, complétez le
-   jugement, ou lancez `fix --changed --write` (voir `references/fix.md`).
-3. `init --ci` pour la garde de PR (GitHub Actions, sur le diff vs la branche cible).
-4. Rafraîchissez la baseline quand vous résorbez du backlog : `init --baseline` à nouveau.
+1. `init --baseline` then **commit `audits/baseline.json`** (without a reference, any diff
+   non-conformity at the threshold blocks).
+2. `init --hook` for the local gate (pre-commit). One-off bypass: `SKIP_A11Y=1 git commit …`.
+   When the hook flags, open the cited code, complete the judgment, or run `fix --changed
+   --write` (see `references/fix.md`).
+3. `init --ci` for the PR gate (GitHub Actions, on the diff vs the target branch).
+4. Refresh the baseline as you burn down backlog: `init --baseline` again.
 
-> Le gate s'appuie sur le moteur statique. Les critères de **rendu** (contraste, focus,
-> zoom) et de **jugement** restent à vérifier dans l'audit complet — la garde empêche les
-> régressions mécaniques, elle ne remplace pas la revue humaine.
+> The gate relies on the static engine. The **rendering** (contrast, focus, zoom) and
+> **judgment** criteria still need checking in the full audit — the gate stops mechanical
+> regressions, it does not replace human review.

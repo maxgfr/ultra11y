@@ -5,7 +5,7 @@ import type { Finding, Severity, ParserKind } from "../types.js";
 import { snippet } from "../parse/html.js";
 
 export interface RuleFinding {
-  /** the specific RGAA criterion this finding evidences */
+  /** the specific WCAG success criterion this finding evidences (e.g. "1.4.3") */
   criteriaId: string;
   /** element the finding is anchored to (for line/col/snippet/selector) */
   el: El;
@@ -17,7 +17,7 @@ export interface RuleFinding {
 
 export interface Rule {
   id: string;
-  /** every RGAA criterion this rule may contribute to (registry cross-check) */
+  /** every WCAG success criterion this rule may contribute to (registry cross-check) */
   criteria: string[];
   parser: ParserKind[];
   severity: Severity; // default severity for findings

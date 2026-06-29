@@ -10,7 +10,7 @@ describe("iframe-title-missing (2.1)", () => {
   it("non-conforming: iframe without a title", () => {
     const f = findOf(`<iframe src="x"></iframe>`, "iframe-title-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("2.1");
+    expect(f[0]!.criteriaId).toBe("4.1.2");
     expect(f[0]!.severity).toBe("bloquant");
   });
 });

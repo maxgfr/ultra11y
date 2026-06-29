@@ -125,7 +125,7 @@ const IDREF_SINGLE = ["aria-activedescendant"];
 
 const invalidAriaRole: Rule = {
   id: "invalid-aria-role",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -137,7 +137,7 @@ const invalidAriaRole: Rule = {
       const bad = tokens.filter((t) => !VALID_ROLES.has(t.toLowerCase()));
       if (bad.length) {
         out.push({
-          criteriaId: "7.1",
+          criteriaId: "4.1.2",
           el,
           message: `Rôle ARIA invalide : "${bad.join(" ")}" n'est pas un rôle WAI-ARIA valide.`,
           remediation: `Utilisez un rôle ARIA valide ou un élément HTML natif équivalent.`,
@@ -150,7 +150,7 @@ const invalidAriaRole: Rule = {
 
 const ariaRefMissingId: Rule = {
   id: "aria-ref-missing-id",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
@@ -169,7 +169,7 @@ const ariaRefMissingId: Rule = {
         const missing = ids.filter((id) => !doc.byId.has(id));
         if (missing.length) {
           out.push({
-            criteriaId: "7.1",
+            criteriaId: "4.1.2",
             el,
             message: `${a} référence un id inexistant : ${missing.map((m) => `#${m}`).join(", ")}.`,
             remediation: `Corrigez la référence ou ajoutez l'élément cible avec l'id attendu.`,
@@ -205,7 +205,7 @@ const IMPLICIT_ROLE: Record<string, string> = {
 
 const redundantAria: Rule = {
   id: "redundant-aria",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
@@ -217,7 +217,7 @@ const redundantAria: Rule = {
       if (el.tag === "a" && hasAttr(el, "href")) implicit = "link";
       if (implicit && implicit === role) {
         out.push({
-          criteriaId: "7.1",
+          criteriaId: "4.1.2",
           el,
           message: `role="${role}" est redondant : <${el.tag}> a déjà ce rôle implicite.`,
           remediation: `Retirez l'attribut role redondant et laissez la sémantique native.`,
@@ -232,7 +232,7 @@ const NONINTERACTIVE = new Set(["div", "span"]);
 
 const clickableNoninteractive: Rule = {
   id: "clickable-noninteractive",
-  criteria: ["7.1", "7.3"],
+  criteria: ["4.1.2", "2.1.1"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -246,7 +246,7 @@ const clickableNoninteractive: Rule = {
       if (interactiveRole && hasTab) continue; // properly upgraded
       const noKeyboard = !hasTab;
       out.push({
-        criteriaId: noKeyboard ? "7.3" : "7.1",
+        criteriaId: noKeyboard ? "2.1.1" : "4.1.2",
         el,
         message: `<${el.tag}> avec onClick mais ${noKeyboard ? "non focalisable (tabindex absent)" : "sans rôle interactif"} — contrôle non accessible au clavier/AT.`,
         remediation: `Utilisez <button>/<a> natif, ou ajoutez role + tabindex="0" + gestion clavier (Enter/Espace).`,
@@ -275,7 +275,7 @@ function satisfiesChild(d: El, reqRoles: string[]): boolean {
 
 const ariaRequiredChildren: Rule = {
   id: "aria-required-children",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -287,7 +287,7 @@ const ariaRequiredChildren: Rule = {
       if (hasAttr(el, "aria-owns")) continue; // children may be referenced elsewhere
       if (descendants(el).some((d) => satisfiesChild(d, req))) continue;
       out.push({
-        criteriaId: "7.1",
+        criteriaId: "4.1.2",
         el,
         message: `role="${role}" sans enfant requis (${req.join("/")}) — structure ARIA incomplète.`,
         remediation: `Ajoutez les éléments enfants au rôle approprié, ou utilisez les éléments HTML natifs.`,
@@ -299,7 +299,7 @@ const ariaRequiredChildren: Rule = {
 
 const ariaHiddenFocusable: Rule = {
   id: "aria-hidden-focusable",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -309,7 +309,7 @@ const ariaHiddenFocusable: Rule = {
       const focusableHere = isFocusable(el) || descendants(el).some(isFocusable);
       if (!focusableHere) continue;
       out.push({
-        criteriaId: "7.1",
+        criteriaId: "4.1.2",
         el,
         message: `aria-hidden="true" sur (ou contenant) un élément focalisable — piège pour les technologies d'assistance.`,
         remediation: `Retirez aria-hidden, ou rendez l'élément non focalisable (tabindex="-1", disabled).`,
@@ -321,7 +321,7 @@ const ariaHiddenFocusable: Rule = {
 
 const nestedInteractive: Rule = {
   id: "nested-interactive",
-  criteria: ["7.1"],
+  criteria: ["4.1.2"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -330,7 +330,7 @@ const nestedInteractive: Rule = {
       if (!isInteractive(el)) continue;
       if (!ancestors(el).some(isInteractive)) continue;
       out.push({
-        criteriaId: "7.1",
+        criteriaId: "4.1.2",
         el,
         message: `Élément interactif <${el.tag}> imbriqué dans un autre élément interactif — non restitué correctement.`,
         remediation: `Ne pas imbriquer des contrôles interactifs (lien/bouton) ; mettez-les côte à côte.`,

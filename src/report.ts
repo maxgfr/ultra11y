@@ -1,28 +1,36 @@
-// `report` — render an AuditResult into a dated RGAA compliance report (Markdown,
-// etalab-style): metadata, per-theme synthesis, non-conformities by priority,
-// conforming + not-applicable lists, and the manual worklist (never silently C).
+// `report` — render an AuditResult into a dated compliance report (Markdown). The
+// CANONICAL, gated report is WCAG 2.2 Level AA (renderReport). A country standards
+// pack (RGAA, …) gets a DERIVED report (renderPackReport) projected from the same
+// WCAG-keyed result. Both keep the honest structure: per-guideline/theme synthesis,
+// non-conformities, conforming + not-applicable lists, and the manual worklist
+// (never silently C).
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AuditResult, Finding, Lang, Severity } from "./types.js";
-import { getCriterion } from "./rgaa.js";
-import { renderWcagReport, type Standard } from "./standard.js";
+import type { AuditResult, Finding, Lang, Severity, Status } from "./types.js";
+import { getSC } from "./wcag.js";
+import { type StandardId, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
 
 const L = {
   fr: {
-    title: "Rapport d'audit d'accessibilité — RGAA 4.1.2",
+    title: (std: string) => `Rapport d'audit d'accessibilité — ${std}`,
+    wcagStd: "WCAG 2.2 niveau AA",
     date: "Date",
     tool: "Outil",
     toolNote: "moteur statique — audit préliminaire à compléter par une revue humaine",
     scope: "Périmètre",
     files: "fichier(s)",
-    rate: "Taux de conformité automatique",
-    rateNote: "sous-ensemble statique : C ÷ (C + NC)",
+    rate: "Taux de réussite automatique (vérifications statiques)",
+    rateNote: "sous-ensemble décidable par la machine : C ÷ (C + NC)",
     warn: "Ce rapport couvre le sous-ensemble de critères vérifiables automatiquement. Les critères « à évaluer » (rendu / jugement) doivent être complétés par une revue humaine (voir la dernière section).",
-    synthTitle: "1. Synthèse par thématique",
-    th: ["Thématique", "C", "NC", "NA", "À évaluer"],
+    derived: (std: string) =>
+      `Vue dérivée du ${std} : projection des critères de succès WCAG audités sur le référentiel. La vérification d'intégrité (\`check\`/\`verify\`) opère sur le rapport WCAG canonique.`,
+    synthTitle: (by: string) => `1. Synthèse par ${by}`,
+    byGuideline: "règle WCAG",
+    byTheme: "thématique",
+    th: (head: string) => [head, "C", "NC", "NA", "À évaluer"],
     total: "Total",
     ncTitle: "2. Non-conformités (par priorité)",
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" } as Record<Severity, string>,
@@ -42,17 +50,22 @@ const L = {
       `Verdict source préliminaire : ${n} fichier(s) rendent des composants de bibliothèque (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
   },
   en: {
-    title: "Accessibility audit report — RGAA 4.1.2",
+    title: (std: string) => `Accessibility audit report — ${std}`,
+    wcagStd: "WCAG 2.2 Level AA",
     date: "Date",
     tool: "Tool",
     toolNote: "static engine — preliminary audit to be completed by a human review",
     scope: "Scope",
     files: "file(s)",
-    rate: "Automatic conformance rate",
-    rateNote: "static subset: C ÷ (C + NC)",
+    rate: "Automatic static-check pass rate",
+    rateNote: "machine-decidable subset: C ÷ (C + NC)",
     warn: "This report covers the subset of criteria checkable automatically. The “to assess” criteria (rendering / judgment) must be completed by a human review (see the last section).",
-    synthTitle: "1. Per-theme synthesis",
-    th: ["Theme", "C", "NC", "NA", "To assess"],
+    derived: (std: string) =>
+      `Derived view of ${std}: the audited WCAG success criteria projected onto this standard. The integrity gates (\`check\`/\`verify\`) operate on the canonical WCAG report.`,
+    synthTitle: (by: string) => `1. Synthesis by ${by}`,
+    byGuideline: "WCAG guideline",
+    byTheme: "theme",
+    th: (head: string) => [head, "C", "NC", "NA", "To assess"],
     total: "Total",
     ncTitle: "2. Non-conformities (by priority)",
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" } as Record<Severity, string>,
@@ -72,92 +85,150 @@ const L = {
   },
 } as const;
 
-function critLabel(id: string): string {
-  const c = getCriterion(id);
-  return c ? `${id} — ${c.titlePlain}` : id;
+// A normalized row the renderer is agnostic about: one labelled criterion + its status/findings.
+interface Row {
+  id: string;
+  label: string; // "1.4.3 — Contrast (Minimum)" or "RGAA 1.1 — …"
+  status: Status;
+  findings: Finding[];
+  justification?: string;
 }
 
-function ncEntry(f: Finding, fixLabel: string): string {
-  return `- **${critLabel(f.criteriaId)}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${f.message}\n  - _${fixLabel} :_ ${f.remediation}`;
+interface Group {
+  key: string;
+  title: string;
+  rows: Row[];
 }
 
-export function renderReport(r: AuditResult, lang: Lang = "fr"): string {
+function ncEntry(label: string, f: Finding, fixLabel: string): string {
+  return `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${f.message}\n  - _${fixLabel} :_ ${f.remediation}`;
+}
+
+// Shared renderer over normalized groups/rows — keeps the WCAG and pack reports identical
+// in shape. `groupHead` labels the synthesis column ("WCAG guideline" / "theme").
+function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: string; groups: Group[]; derivedOf?: string }): string {
   const s = L[lang];
   const out: string[] = [];
-  out.push(`# ${s.title}`, "");
+  out.push(`# ${s.title(opts.std)}`, "");
   out.push(`- **${s.date}** : ${r.date}`);
   out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
   out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} — ${r.scope.inputs.join(", ")}`);
   out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> ⚠️ ${s.warn}`, "");
+  if (opts.derivedOf) out.push(`> ↪️ ${s.derived(opts.derivedOf)}`, "");
   if (r.scope.truncated) out.push(`> ✂️ ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> 🧩 ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
 
+  const rows = opts.groups.flatMap((g) => g.rows);
+  const labelOf = new Map(rows.map((row) => [row.id, row.label]));
+
   // 1. synthesis
-  out.push(`## ${s.synthTitle}`, "");
-  out.push(`| ${s.th.join(" | ")} |`);
-  out.push(`|${"---|".repeat(s.th.length)}`);
+  const th = s.th(opts.groupHead);
+  out.push(`## ${s.synthTitle(opts.groupHead)}`, "");
+  out.push(`| ${th.join(" | ")} |`);
+  out.push(`|${"---|".repeat(th.length)}`);
   const tot = { c: 0, nc: 0, na: 0, manual: 0 };
-  for (const th of r.themes) {
-    out.push(`| ${th.number}. ${th.title} | ${th.c} | ${th.nc} | ${th.na} | ${th.manual} |`);
-    tot.c += th.c;
-    tot.nc += th.nc;
-    tot.na += th.na;
-    tot.manual += th.manual;
+  for (const g of opts.groups) {
+    const c = g.rows.filter((x) => x.status === "C").length;
+    const nc = g.rows.filter((x) => x.status === "NC").length;
+    const na = g.rows.filter((x) => x.status === "NA").length;
+    const manual = g.rows.filter((x) => x.status === "manual").length;
+    out.push(`| ${g.key} ${g.title} | ${c} | ${nc} | ${na} | ${manual} |`);
+    tot.c += c;
+    tot.nc += nc;
+    tot.na += na;
+    tot.manual += manual;
   }
   out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
 
   // 2. non-conformities by priority
   out.push(`## ${s.ncTitle}`, "");
-  if (r.findings.length === 0) {
+  const ncFindings = rows.filter((x) => x.status === "NC").flatMap((x) => x.findings.map((f) => ({ f, label: labelOf.get(x.id) ?? x.id })));
+  if (ncFindings.length === 0) {
     out.push(s.none, "");
   } else {
-    const sorted = [...r.findings].sort(
+    const sorted = ncFindings.sort(
       (a, b) =>
-        SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity) ||
-        a.criteriaId.localeCompare(b.criteriaId, undefined, { numeric: true }) ||
-        a.line - b.line,
+        SEV_ORDER.indexOf(a.f.severity) - SEV_ORDER.indexOf(b.f.severity) ||
+        a.f.criteriaId.localeCompare(b.f.criteriaId, undefined, { numeric: true }) ||
+        a.f.line - b.f.line,
     );
     for (const sev of SEV_ORDER) {
-      const group = sorted.filter((f) => f.severity === sev);
+      const group = sorted.filter((x) => x.f.severity === sev);
       if (!group.length) continue;
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const f of group) out.push(ncEntry(f, s.fix));
+      for (const { f, label } of group) out.push(ncEntry(label, f, s.fix));
       out.push("");
     }
   }
 
   // 3. conforming
   out.push(`## ${s.cTitle}`, "");
-  const conform = r.criteria.filter((c) => c.status === "C");
-  out.push(conform.length ? conform.map((c) => `- ${critLabel(c.id)}`).join("\n") : s.nothing, "");
+  const conform = rows.filter((x) => x.status === "C");
+  out.push(conform.length ? conform.map((x) => `- ${x.label}`).join("\n") : s.nothing, "");
 
   // 4. not applicable
   out.push(`## ${s.naTitle}`, "");
-  const na = r.criteria.filter((c) => c.status === "NA");
-  out.push(na.length ? na.map((c) => `- ${critLabel(c.id)}${c.justification ? ` — _${c.justification}_` : ""}`).join("\n") : s.nothing, "");
+  const na = rows.filter((x) => x.status === "NA");
+  out.push(na.length ? na.map((x) => `- ${x.label}${x.justification ? ` — _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
 
   // 5. manual worklist
   out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
-  out.push(r.residualRisks.length ? r.residualRisks.map((rr) => `- ${critLabel(rr.criteriaId)} — _${rr.reason}_`).join("\n") : s.nothing, "");
+  const manual = rows.filter((x) => x.status === "manual");
+  out.push(manual.length ? manual.map((x) => `- ${x.label}`).join("\n") : s.nothing, "");
 
   return out.join("\n");
+}
+
+/** The canonical, gated WCAG 2.2 AA report. */
+export function renderReport(r: AuditResult, lang: Lang = "en"): string {
+  const s = L[lang];
+  const byGuideline = new Map<string, Row[]>();
+  for (const c of r.criteria) {
+    const sc = getSC(c.id);
+    const row: Row = { id: c.id, label: sc ? `${c.id} — ${sc.title}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
+    (byGuideline.get(c.guideline) ?? byGuideline.set(c.guideline, []).get(c.guideline)!).push(row);
+  }
+  const groups: Group[] = r.guidelines.map((g) => ({ key: g.key, title: g.title, rows: byGuideline.get(g.key) ?? [] }));
+  return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups });
+}
+
+/** A derived report for a country standards pack (RGAA, …), projected from the WCAG audit. */
+export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang = "en"): string {
+  const derived = derivePackResults(r, pack.key);
+  const std = `${pack.name} ${pack.baseVersion}`;
+  const naReason =
+    lang === "fr" ? "Aucun critère de succès WCAG mappé n'est applicable dans le périmètre." : "No mapped WCAG success criterion is applicable in scope.";
+  const byTheme = new Map<number, Row[]>();
+  for (const pr of derived) {
+    const pc = pack.criteria.find((c) => c.id === pr.id)!;
+    const row: Row = {
+      id: pr.id,
+      label: `${pack.name} ${pr.id} — ${packTitle(pack, pc, lang)}`,
+      status: pr.status,
+      findings: pr.findings,
+      ...(pr.status === "NA" ? { justification: naReason } : {}),
+    };
+    (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)!).push(row);
+  }
+  const groups: Group[] = pack.themes.map((t) => ({ key: `${t.number}.`, title: themeName(pack, t.number, lang) ?? "", rows: byTheme.get(t.number) ?? [] }));
+  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std });
 }
 
 export interface ReportOpts {
   out: string;
   lang: Lang;
-  standard?: Standard;
+  standard: StandardId;
 }
 
-/** Render and write the report; returns the written path. The WCAG view is a
- *  separate `wcag-<date>.md` artifact (presentation-only; never gated). */
+/** Render and write the report; returns the written path. The WCAG report is canonical
+ *  (`wcag-<date>.md`); a pack report is a derived `<pack>-<date>.md`. */
 export function writeReport(r: AuditResult, opts: ReportOpts): string {
-  const wcag = opts.standard === "wcag";
-  const md = wcag ? renderWcagReport(r, opts.lang) : renderReport(r, opts.lang);
+  const core = isCore(opts.standard);
+  const md = core ? renderReport(r, opts.lang) : renderPackReport(r, loadPack(opts.standard), opts.lang);
   mkdirSync(opts.out, { recursive: true });
-  const path = join(opts.out, `${wcag ? "wcag" : "rgaa"}-${r.date}.md`);
+  const path = join(opts.out, `${core ? "wcag" : opts.standard}-${r.date}.md`);
   writeFileSync(path, md);
   return path;
 }

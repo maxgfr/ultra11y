@@ -22,7 +22,7 @@ function isLayoutTable(t: El): boolean {
 
 const dataTableNoHeaders: Rule = {
   id: "data-table-no-headers",
-  criteria: ["5.6", "5.7"],
+  criteria: ["1.3.1"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -35,14 +35,14 @@ const dataTableNoHeaders: Rule = {
       if (hasTh && hasAssoc) continue;
       if (!hasTh) {
         out.push({
-          criteriaId: "5.6",
+          criteriaId: "1.3.1",
           el: t,
           message: `Tableau de données sans <th> — en-têtes de colonne/ligne non déclarés.`,
           remediation: `Déclarez les en-têtes avec <th>, et associez-les via scope="col"/"row" (ou headers/id).`,
         });
       } else if (!hasAssoc) {
         out.push({
-          criteriaId: "5.7",
+          criteriaId: "1.3.1",
           el: t,
           message: `Tableau de données avec <th> mais sans scope/headers — association cellule↔en-tête absente.`,
           remediation: `Ajoutez scope="col"/"row" sur les <th> (ou headers="…"/id sur cellules complexes).`,
@@ -55,7 +55,7 @@ const dataTableNoHeaders: Rule = {
 
 const tableCaptionMissing: Rule = {
   id: "table-caption-missing",
-  criteria: ["5.4"],
+  criteria: ["1.3.1"],
   parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
@@ -65,7 +65,7 @@ const tableCaptionMissing: Rule = {
       const hasCaption = t.children.some((c) => c.type === "element" && c.tag === "caption");
       if (hasCaption || named(t)) continue;
       out.push({
-        criteriaId: "5.4",
+        criteriaId: "1.3.1",
         el: t,
         message: `Tableau de données sans <caption> ni nom accessible — titre du tableau absent.`,
         remediation: `Ajoutez un <caption> en première position du <table> (ou aria-label/aria-labelledby).`,
@@ -77,7 +77,7 @@ const tableCaptionMissing: Rule = {
 
 const layoutTableDataMarkup: Rule = {
   id: "layout-table-data-markup",
-  criteria: ["5.8"],
+  criteria: ["1.3.1"],
   parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
@@ -91,7 +91,7 @@ const layoutTableDataMarkup: Rule = {
         desc.some((d) => hasAttr(d, "scope") || hasAttr(d, "headers"));
       if (!dataMarkup) continue;
       out.push({
-        criteriaId: "5.8",
+        criteriaId: "1.3.1",
         el: t,
         message: `Tableau de mise en forme (role="${attr(t, "role")}") utilisant du balisage de données (th/caption/scope).`,
         remediation: `Retirez th/caption/scope/headers d'un tableau de présentation, ou faites-en un vrai tableau de données.`,

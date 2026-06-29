@@ -9,9 +9,9 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, existsSync, statSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { AuditResult, DynamicFinding, DynamicResult, Severity } from "./types.js";
-import { allThemes } from "./rgaa.js";
-import { criterionForAxe, severityFromImpact } from "./axe-map.js";
+import type { AuditResult, DynamicFinding, DynamicResult, Lang, Severity } from "./types.js";
+import { allGuidelines } from "./wcag.js";
+import { scForAxe, severityFromImpact } from "./axe-map.js";
 import { parseSitemapUrls, crawlUrls } from "./crawl.js";
 import { today } from "./util.js";
 
@@ -142,11 +142,11 @@ function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {
   return JSON.parse(line) as RunnerOutput;
 }
 
-export function toDynamicResult(out: RunnerOutput, target: string): DynamicResult {
+export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = "en"): DynamicResult {
   const page = out.url || target;
   const findings: DynamicFinding[] = [];
   for (const v of out.violations) {
-    const criteriaId = criterionForAxe(v.id, v.tags);
+    const criteriaId = scForAxe(v.id, v.tags);
     const severity: Severity = severityFromImpact(v.impact);
     for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
       findings.push({
@@ -164,11 +164,14 @@ export function toDynamicResult(out: RunnerOutput, target: string): DynamicResul
   }
   if (out.reflow?.horizontalScroll) {
     findings.push({
-      criteriaId: "10.11",
+      criteriaId: "1.4.10",
       axeRule: "reflow",
       impact: "serious",
       severity: "majeur",
-      message: "Défilement horizontal à 320px de large — le contenu ne se redistribue pas (reflow).",
+      message:
+        lang === "fr"
+          ? "Défilement horizontal à 320px de large — le contenu ne se redistribue pas (reflow)."
+          : "Horizontal scrolling at 320px width — content does not reflow.",
       selector: "document",
       snippet: "",
       engine: "reflow",
@@ -190,10 +193,10 @@ export function runScan(opts: ScanOpts): DynamicResult {
   // inside `docker run`, leaking the raw command).
   const isUrl = /^https?:\/\//i.test(opts.target);
   if (!isUrl && !existsSync(opts.target)) {
-    throw new Error(`Fichier introuvable : ${opts.target}. Donnez une URL http(s):// ou un fichier HTML existant.`);
+    throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   if (!dockerAvailable()) {
-    throw new Error("Docker n'est pas disponible. Démarrez Docker puis relancez `scan --docker`.");
+    throw new Error("Docker is not available. Start Docker, then re-run `scan --docker`.");
   }
   const tag = opts.tag ?? IMAGE_TAG;
   if (!imageExists(tag)) buildImage(tag);
@@ -237,7 +240,7 @@ export async function discoverUrls(opts: DiscoverOpts): Promise<string[]> {
  *  single-page runner. Findings keep the page they came from. */
 export function runScanMany(urls: string[], tag = IMAGE_TAG): DynamicResult {
   if (!dockerAvailable()) {
-    throw new Error("Docker n'est pas disponible. Démarrez Docker puis relancez `scan`.");
+    throw new Error("Docker is not available. Start Docker, then re-run `scan`.");
   }
   if (!imageExists(tag)) buildImage(tag);
   const findings: DynamicFinding[] = [];
@@ -252,7 +255,7 @@ export function runScanMany(urls: string[], tag = IMAGE_TAG): DynamicResult {
 export async function runCrawlScan(opts: DiscoverOpts & { tag?: string }): Promise<DynamicResult> {
   const urls = await discoverUrls(opts);
   if (urls.length === 0) {
-    throw new Error("Aucune URL à scanner (sitemap vide/inaccessible, ou page d'entrée sans lien same-origin).");
+    throw new Error("No URL to scan (empty/unreachable sitemap, or entry page with no same-origin link).");
   }
   return runScanMany(urls, opts.tag ?? IMAGE_TAG);
 }
@@ -261,9 +264,11 @@ const sevRank: Record<Severity, number> = { bloquant: 3, majeur: 2, mineur: 1 };
 
 /** Fold dynamic findings into a static AuditResult: a needs-rendering/manual or
  *  clean criterion that axe flags becomes NC; tallies + conformance recompute. */
-export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult): AuditResult {
+export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: Lang = "en"): AuditResult {
   const merged: AuditResult = JSON.parse(JSON.stringify(audit)) as AuditResult;
   const byId = new Map(merged.criteria.map((c) => [c.id, c]));
+  const remediation =
+    lang === "fr" ? "Vérifié au rendu par axe-core ; corrigez l'élément cité." : "Verified at render time by axe-core; fix the cited element.";
 
   for (const df of dynamic.findings) {
     const c = byId.get(df.criteriaId);
@@ -277,7 +282,7 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult): AuditR
       selectorHint: df.selector,
       severity: df.severity,
       message: df.message,
-      remediation: "Vérifié au rendu par axe-core ; corrigez l'élément cité.",
+      remediation,
       snippet: df.snippet,
     };
     c.findings.push(finding);
@@ -290,16 +295,16 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult): AuditR
   const nowNc = new Set(dynamic.findings.map((d) => d.criteriaId));
   merged.residualRisks = merged.residualRisks.filter((r) => !nowNc.has(r.criteriaId));
 
-  // recompute tallies + conformance
-  merged.themes = allThemes().map((t) => {
-    const inTheme = merged.criteria.filter((c) => c.theme === t.number);
+  // recompute tallies + conformance (by WCAG guideline)
+  merged.guidelines = allGuidelines().map((g) => {
+    const inG = merged.criteria.filter((c) => c.guideline === g.number);
     return {
-      number: t.number,
-      title: t.name,
-      c: inTheme.filter((c) => c.status === "C").length,
-      nc: inTheme.filter((c) => c.status === "NC").length,
-      na: inTheme.filter((c) => c.status === "NA").length,
-      manual: inTheme.filter((c) => c.status === "manual").length,
+      key: g.number,
+      title: g.title,
+      c: inG.filter((c) => c.status === "C").length,
+      nc: inG.filter((c) => c.status === "NC").length,
+      na: inG.filter((c) => c.status === "NA").length,
+      manual: inG.filter((c) => c.status === "manual").length,
     };
   });
   const decided = merged.criteria.filter((c) => c.status === "C" || c.status === "NC");

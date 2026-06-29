@@ -11,12 +11,12 @@ describe("data-table-no-headers (5.6/5.7)", () => {
   it("non-conforming: data table with no th → 5.6", () => {
     const f = findOf(`<table><tr><td>A</td></tr><tr><td>1</td></tr></table>`, "data-table-no-headers");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("5.6");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
   it("non-conforming: th without scope/headers → 5.7", () => {
     const f = findOf(`<table><tr><th>A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("5.7");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
   it("skips a layout table (nested tables) — no false positive", () => {
     const html = `<table><tr><td><table><tr><td>x</td></tr></table></td><td>y</td></tr></table>`;
@@ -31,7 +31,7 @@ describe("layout-table-data-markup (5.8)", () => {
   it("non-conforming: presentation table using th/caption", () => {
     const f = findOf(`<table role="presentation"><caption>x</caption><tr><th>A</th></tr></table>`, "layout-table-data-markup");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("5.8");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
 });
 
@@ -42,6 +42,6 @@ describe("table-caption-missing (5.4)", () => {
   it("non-conforming: data table without caption", () => {
     const f = findOf(`<table><tr><th scope="col">A</th></tr></table>`, "table-caption-missing");
     expect(f).toHaveLength(1);
-    expect(f[0]!.criteriaId).toBe("5.4");
+    expect(f[0]!.criteriaId).toBe("1.3.1");
   });
 });

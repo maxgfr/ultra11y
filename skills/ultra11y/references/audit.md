@@ -1,51 +1,50 @@
-# Auditer du code existant → rapport RGAA
+# Audit existing code → WCAG report
 
-Objectif : produire un rapport de conformité RGAA 4.1.2 daté et fiable. Le moteur
-décide le sous-ensemble automatisable ; **vous** complétez les critères de
-jugement et de rendu ; les gates empêchent toute non-conformité hallucinée.
+Goal: produce a dated, reliable WCAG 2.2 AA compliance report. The engine decides the
+automatable subset; **you** complete the judgment and rendering criteria; the gates stop
+any hallucinated non-conformity.
 
-## La boucle
+## The loop
 
-1. **Délimiter le périmètre.** Quels fichiers / composants ? HTML, JSX/TSX et les
-   composants Vue/Svelte/Astro (`.vue`/`.svelte`/`.astro`) sont parcourus par défaut ;
-   ajoutez des gabarits serveur (Twig, ERB, Handlebars…) avec `--ext .twig,.erb`.
-2. **Lancer le moteur :**
+1. **Scope it.** Which files / components? HTML, JSX/TSX and Vue/Svelte/Astro components
+   (`.vue`/`.svelte`/`.astro`) are walked by default; add server templates (Twig, ERB,
+   Handlebars…) with `--ext .twig,.erb`.
+2. **Run the engine:**
    ```
    node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
    ```
-   ou sur un extrait : `node scripts/ultra11y.mjs audit - < page.html --json`.
-   La sortie `AuditResult` classe chaque critère en `C` / `NC` / `NA` (statique)
-   ou `manual` (rendu / jugement, listé dans `residualRisks`).
-3. **Trier les résultats :**
-   - `NC` du moteur = candidats confirmés (chaque finding cite `fichier:ligne`) ;
-   - critères `manual` *needs-rendering* (contraste 3.2/3.3, focus 10.7, zoom 10.11…)
-     → marquez « à vérifier manuellement », **jamais** `C` en silence. Note : le
-     contraste sur **couleurs inline littérales** est désormais tranché en statique
-     (3.2 passe en `NC` pour ce sous-ensemble) ; le contraste via CSS externe ou
-     variables reste résiduel (→ tier dynamique) ;
-   - critères `manual` *judgment* (pertinence de l'alt 1.3, intitulé de lien 6.1,
-     ordre de lecture/tabulation…) → évaluez-les avec le contexte.
-4. **Décider chaque critère applicable** : `C`, `NC` ou `NA` (avec justification).
-   Pour le détail d'un critère et ses tests : `node scripts/ultra11y.mjs criteria 1.1`.
-5. **Rendre le rapport :**
+   or on a snippet: `node scripts/ultra11y.mjs audit - < page.html --json`.
+   The `AuditResult` classes each success criterion as `C` / `NC` / `NA` (static) or
+   `manual` (rendering / judgment, listed in `residualRisks`).
+3. **Triage the results:**
+   - engine `NC` = confirmed candidates (each finding cites `file:line`);
+   - `manual` *needs-rendering* criteria (contrast 1.4.3, focus visible 2.4.7, reflow
+     1.4.10…) → mark "to verify manually", **never** silently `C`. Note: contrast on
+     **inline literal colours** is now decided statically (1.4.3 turns `NC` for that
+     subset); contrast via external CSS or variables stays residual (→ dynamic tier);
+   - `manual` *judgment* criteria (alt relevance under 1.1.1, link purpose 2.4.4, reading
+     / tab order…) → assess them with context.
+4. **Decide each applicable criterion**: `C`, `NC` or `NA` (with a justification). For a
+   criterion's detail and grounding: `node scripts/ultra11y.mjs criteria 1.1.1`.
+5. **Render the report:**
    ```
    node scripts/ultra11y.mjs report --in audit.json --out audits
    ```
-   → `audits/rgaa-AAAA-MM-JJ.md` (5 sections, voir `references/methodology.md`).
-6. **Contrôler l'intégrité :**
+   → `audits/wcag-YYYY-MM-DD.md` (5 sections, see `references/methodology.md`). For a
+   country standard, add `--standard rgaa` (see `references/standards.md`).
+6. **Check integrity:**
    ```
-   node scripts/ultra11y.mjs check --report audits/rgaa-AAAA-MM-JJ.md
+   node scripts/ultra11y.mjs check --report audits/wcag-YYYY-MM-DD.md
    ```
-   Échec si une section manque, un critère cité n'existe pas, ou un `NA` n'est pas
-   justifié.
-7. **Haute assurance (optionnel)** : `references/verify.md` — prouver que chaque
-   non-conformité est réelle avant de livrer.
+   Fails if a section is missing, a cited criterion does not exist, or an `NA` is unjustified.
+7. **High assurance (optional)**: `references/verify.md` — prove every non-conformity is
+   real before you ship.
 
-## Règles d'or
+## Golden rules
 
-- **Ne jamais inventer de non-conformité** : chaque `NC` doit citer un élément réel
-  et résoluble (`check` le vérifie).
-- **Le résidu est explicite** : tout critère *needs-rendering* / *judgment* non prouvé
-  figure dans la section « à évaluer manuellement », jamais passé en `C`.
-- Le **taux de conformité automatique** du rapport ne couvre que le sous-ensemble
-  statique ; la conformité RGAA complète exige votre revue manuelle.
+- **Never invent a non-conformity**: every `NC` must cite a real, resolvable element
+  (`check` verifies it).
+- **Residual is explicit**: any *needs-rendering* / *judgment* criterion not proven goes in
+  the "to assess manually" section, never passed to `C`.
+- The report's **automatic static-check pass rate** covers only the machine-decidable
+  subset; full WCAG conformance requires your manual review (it is not a conformance rate).

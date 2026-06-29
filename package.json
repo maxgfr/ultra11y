@@ -1,7 +1,7 @@
 {
   "name": "ultra11y",
   "version": "2.0.0",
-  "description": "Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, or author/review accessible markup (native-HTML-first). A skills.sh agent skill: an install-free static engine (bundled, no npm install) plus Claude's judgment, with check/verify gates against hallucinated non-conformities.",
+  "description": "Audit HTML/CSS/JSX against WCAG 2.2 AA and produce a dated compliance report, or author/review accessible markup (native-HTML-first). A skills.sh agent skill: an install-free static engine (bundled, no npm install) plus the agent's judgment, with check/verify gates against hallucinated non-conformities, and pluggable in-repo standards packs (RGAA France first; Section 508 & EN 301 549 next).",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "bin": {
@@ -27,8 +27,10 @@
     "format": "biome format --write .",
     "verify:bundle": "node scripts/verify-skill-bundle.mjs",
     "check:build": "tsup && node scripts/copy-bundle.mjs && git diff --exit-code -- scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs && node scripts/verify-skill-bundle.mjs",
-    "fetch:rgaa": "node scripts/fetch-rgaa.mjs",
-    "demo": "node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out /tmp/ultra11y-demo --json > /dev/null && node scripts/ultra11y.mjs report --in /tmp/ultra11y-demo/audit-latest.json --out /tmp/ultra11y-demo && node scripts/ultra11y.mjs check --report /tmp/ultra11y-demo/rgaa-*.md && node scripts/ultra11y.mjs criteria --list",
+    "build:wcag": "node scripts/build-standards.mjs",
+    "build:pack:rgaa": "node scripts/build-pack-rgaa.mjs",
+    "build:criteria": "node scripts/ultra11y.mjs criteria --generate > skills/ultra11y/references/criteria.md",
+    "demo": "node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out /tmp/ultra11y-demo --json > /dev/null && node scripts/ultra11y.mjs report --in /tmp/ultra11y-demo/audit-latest.json --out /tmp/ultra11y-demo && node scripts/ultra11y.mjs check --report /tmp/ultra11y-demo/wcag-*.md && node scripts/ultra11y.mjs criteria --list",
     "release": "semantic-release"
   },
   "license": "MIT",

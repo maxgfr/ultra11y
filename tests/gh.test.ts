@@ -15,7 +15,7 @@ function unit(criteriaId: string, title: string): PrdUnit {
     criteriaId,
     title,
     label: `${criteriaId} — ${title}`,
-    wcag: ["1.1.1 Non-text Content (A)"],
+    refs: ["1.1.1"],
     severity: "bloquant",
     findings: [
       {
@@ -36,12 +36,14 @@ function unit(criteriaId: string, title: string): PrdUnit {
 }
 
 describe("gh helpers", () => {
-  it("builds a stable, criterion-keyed issue title", () => {
-    expect(issueTitle(unit("7.1", "Intitulé pertinent"))).toBe("[a11y] RGAA 7.1 — Intitulé pertinent");
+  it("builds a stable, criterion-keyed issue title (WCAG core by default)", () => {
+    expect(issueTitle(unit("4.1.2", "Name, Role, Value"))).toBe("[a11y] WCAG 4.1.2 — Name, Role, Value");
+    expect(issueTitle(unit("8.3", "Langue de page"), "RGAA")).toBe("[a11y] RGAA 8.3 — Langue de page");
   });
 
-  it("issueBody includes occurrences, remediation, and the related definition site", () => {
-    const body = issueBody(unit("7.1", "X"), "fr");
+  it("issueBody includes the WCAG refs, occurrences, remediation, and the related definition site", () => {
+    const body = issueBody(unit("4.1.2", "X"), "fr");
+    expect(body).toContain("**WCAG** : 1.1.1");
     expect(body).toContain("`src/page.tsx:5`");
     expect(body).toContain("Passez aria-label");
     expect(body).toContain("`src/IconButton.tsx:2`");
@@ -57,8 +59,8 @@ describe("gh helpers", () => {
   });
 
   it("existingIssueTitles parses gh JSON and is empty on failure", () => {
-    mock.mockReturnValueOnce(JSON.stringify([{ title: "[a11y] RGAA 7.1 — X" }, { title: "other" }]));
-    expect(existingIssueTitles().has("[a11y] RGAA 7.1 — X")).toBe(true);
+    mock.mockReturnValueOnce(JSON.stringify([{ title: "[a11y] WCAG 4.1.2 — X" }, { title: "other" }]));
+    expect(existingIssueTitles().has("[a11y] WCAG 4.1.2 — X")).toBe(true);
     mock.mockImplementationOnce(() => {
       throw new Error("no repo");
     });
@@ -67,7 +69,7 @@ describe("gh helpers", () => {
 
   it("createIssue passes labels, and retries without them if the labelled call fails", () => {
     mock.mockReturnValueOnce(""); // labelled call succeeds
-    expect(createIssue("t", "b", ["accessibility", "rgaa", "bloquant"])).toBe(true);
+    expect(createIssue("t", "b", ["accessibility", "wcag", "bloquant"])).toBe(true);
     expect(argv(mock.mock.calls[0]!)).toContain("--label");
 
     mock.mockReset();
@@ -80,15 +82,29 @@ describe("gh helpers", () => {
     expect(argv(mock.mock.calls[1]!)).not.toContain("--label");
   });
 
-  it("pushIssues skips titles that already exist and creates the rest", () => {
+  it("pushIssues skips titles that already exist and creates the rest (WCAG labels)", () => {
     mock.mockImplementation((...callArgs: unknown[]) => {
       const args = (callArgs[1] as string[] | undefined) ?? [];
-      if (args.includes("list")) return JSON.stringify([{ title: "[a11y] RGAA 7.1 — Already" }]);
+      if (args.includes("list")) return JSON.stringify([{ title: "[a11y] WCAG 4.1.2 — Already" }]);
       return ""; // create
     });
-    const r = pushIssues([unit("7.1", "Already"), unit("1.1", "New")], "fr");
+    const r = pushIssues([unit("4.1.2", "Already"), unit("1.1.1", "New")], "en");
     expect(r.skipped).toBe(1);
     expect(r.created).toBe(1);
-    expect(r.createdTitles).toEqual(["[a11y] RGAA 1.1 — New"]);
+    expect(r.createdTitles).toEqual(["[a11y] WCAG 1.1.1 — New"]);
+  });
+
+  it("pushIssues labels by the active pack when --standard is a pack", () => {
+    const seen: string[][] = [];
+    mock.mockImplementation((...callArgs: unknown[]) => {
+      const args = (callArgs[1] as string[] | undefined) ?? [];
+      if (args.includes("list")) return JSON.stringify([]);
+      seen.push(args);
+      return "";
+    });
+    const r = pushIssues([unit("8.3", "Langue")], "fr", "rgaa");
+    expect(r.createdTitles).toEqual(["[a11y] RGAA 8.3 — Langue"]);
+    const labelArg = seen.find((a) => a.includes("--label"));
+    expect(labelArg?.join(",")).toContain("rgaa");
   });
 });

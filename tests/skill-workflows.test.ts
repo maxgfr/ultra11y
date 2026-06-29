@@ -12,7 +12,7 @@ describe("audit.md teaches the audit → report → check loop", () => {
     expect(t).toMatch(/ultra11y\.mjs audit/);
     expect(t).toMatch(/ultra11y\.mjs report/);
     expect(t).toMatch(/ultra11y\.mjs check/);
-    expect(t).toMatch(/résidu/i);
+    expect(t).toMatch(/residual|résidu/i);
   });
 });
 
@@ -37,9 +37,9 @@ describe("methodology.md states the formula and the static/rendering/judgment sp
     expect(t).toContain("÷");
   });
   it("names the three automatability tiers", () => {
-    expect(t).toMatch(/statique/i);
-    expect(t).toMatch(/rendu/i);
-    expect(t).toMatch(/jugement/i);
+    expect(t).toMatch(/static|statique/i);
+    expect(t).toMatch(/rendering|rendu/i);
+    expect(t).toMatch(/judgment|jugement/i);
   });
 });
 
@@ -79,7 +79,7 @@ describe("judgment.md teaches the judgment phase", () => {
     expect(t).toMatch(/ultra11y\.mjs verify/);
     expect(t).toMatch(/supported/);
     expect(t).toMatch(/refuted/);
-    expect(t).toMatch(/RGAA/);
+    expect(t).toMatch(/WCAG|RGAA/);
   });
 });
 
@@ -89,7 +89,7 @@ describe("correction.md teaches the correction phase", () => {
     expect(t).toMatch(/ultra11y\.mjs fix/);
     expect(t).toContain("--write");
     expect(t).toContain("--iterate");
-    expect(t).toMatch(/[Bb]loquant/);
+    expect(t).toMatch(/blocking|bloquant/i);
   });
 });
 

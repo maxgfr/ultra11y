@@ -5,7 +5,7 @@ import type { Rule, RuleFinding } from "./rule.js";
 
 const skipLinkTargetMissing: Rule = {
   id: "skip-link-target-missing",
-  criteria: ["12.7"],
+  criteria: ["2.4.1"],
   parser: ["html"],
   severity: "majeur",
   scope: "page",
@@ -24,7 +24,7 @@ const skipLinkTargetMissing: Rule = {
       }
       if (hasName(id)) continue;
       out.push({
-        criteriaId: "12.7",
+        criteriaId: "2.4.1",
         el,
         message: `Lien interne href="${href}" — la cible #${id} n'existe pas dans la page (lien d'évitement/ancre cassé).`,
         remediation: `Ajoutez un élément avec id="${id}" (ex. <main id="${id}">) ou corrigez l'ancre.`,
@@ -36,7 +36,7 @@ const skipLinkTargetMissing: Rule = {
 
 const positiveTabindex: Rule = {
   id: "positive-tabindex",
-  criteria: ["12.8"],
+  criteria: ["2.4.3"],
   parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
@@ -46,7 +46,7 @@ const positiveTabindex: Rule = {
       const ti = Number((attr(el, "tabindex") ?? "").trim());
       if (Number.isInteger(ti) && ti > 0) {
         out.push({
-          criteriaId: "12.8",
+          criteriaId: "2.4.3",
           el,
           message: `tabindex="${ti}" positif — force un ordre de tabulation incohérent avec l'ordre du DOM.`,
           remediation: `Utilisez tabindex="0" (ou pas de tabindex) et ordonnez via le DOM ; réservez les valeurs >0.`,

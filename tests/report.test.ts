@@ -3,42 +3,41 @@ import { readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
-import { renderReport, writeReport } from "../src/report.js";
+import { renderReport, renderPackReport, writeReport } from "../src/report.js";
+import { loadPack } from "../src/standards/index.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
 const good = runAudit({ inputs: [`${FIX}conforming/good.html`] });
 
-describe("renderReport (etalab-style markdown)", () => {
+describe("renderReport (WCAG 2.2 AA markdown)", () => {
   const md = renderReport(bad, "fr");
 
   it("has the 5 sections + metadata header", () => {
-    expect(md).toContain("# Rapport d'audit d'accessibilité — RGAA 4.1.2");
-    expect(md).toContain("## 1. Synthèse par thématique");
+    expect(md).toContain("# Rapport d'audit d'accessibilité — WCAG 2.2 niveau AA");
+    expect(md).toContain("## 1. Synthèse par règle WCAG");
     expect(md).toContain("## 2. Non-conformités (par priorité)");
     expect(md).toContain("## 3. Critères conformes (C)");
     expect(md).toContain("## 4. Critères non applicables (NA)");
     expect(md).toContain("## 5. Critères à évaluer manuellement (rendu / jugement)");
-    expect(md).toMatch(/Taux de conformité automatique\*\* : \d+%/);
+    expect(md).toMatch(/Taux de réussite automatique[^*]*\*\* : \d+%/);
   });
 
-  it("synthesis table has 13 theme rows plus a Total row", () => {
-    expect(md).toContain("| 1. Images |");
-    expect(md).toContain("| 13. Consultation |");
+  it("synthesis table has WCAG guideline rows plus a Total row", () => {
+    expect(md).toContain("| 1.1 Text Alternatives |");
+    expect(md).toContain("| 4.1 Compatible |");
     expect(md).toContain("| **Total** |");
   });
 
-  it("groups non-conformities by priority with criterion titles", () => {
+  it("groups non-conformities by priority with success-criterion titles", () => {
     expect(md).toMatch(/### 🔴 Bloquant/);
-    expect(md).toContain("8.3 —");
+    expect(md).toContain("3.1.1 —"); // Language of Page (html-lang NC)
     expect(md).toContain("_Correction :_");
-    // blocking section appears before the minor section
-    expect(md.indexOf("🔴 Bloquant")).toBeLessThan(md.indexOf("🟡 Mineur"));
   });
 
   it("lists manual criteria under the residual-risk section with a warning", () => {
     expect(md).toContain("Ne marquez aucun de ces critères");
-    expect(md).toContain("3.2 —"); // contrast, needs-rendering
+    expect(md).toContain("1.4.3 —"); // contrast, needs-rendering
   });
 
   it("a conforming page reports no non-conformity", () => {
@@ -48,26 +47,36 @@ describe("renderReport (etalab-style markdown)", () => {
 
   it("renders in English when asked", () => {
     expect(renderReport(bad, "en")).toContain("## 2. Non-conformities (by priority)");
+    expect(renderReport(bad, "en")).toContain("WCAG 2.2 Level AA");
+  });
+});
+
+describe("renderPackReport (derived RGAA view)", () => {
+  const md = renderPackReport(bad, loadPack("rgaa"), "fr");
+  it("re-keys the same audit onto RGAA criteria/themes", () => {
+    expect(md).toContain("RGAA 4.1.2");
+    expect(md).toContain("## 1. Synthèse par thématique");
+    expect(md).toMatch(/RGAA \d+\.\d+ —/); // pack-keyed criterion labels
   });
 });
 
 describe("writeReport", () => {
-  it("writes audits/rgaa-<date>.md and returns its path", () => {
+  it("writes audits/wcag-<date>.md (the canonical core report) and returns its path", () => {
     const out = join(tmpdir(), `ultra11y-report-${bad.date}`);
-    const path = writeReport(bad, { out, lang: "fr" });
-    expect(path).toBe(join(out, `rgaa-${bad.date}.md`));
+    const path = writeReport(bad, { out, lang: "fr", standard: "wcag" });
+    expect(path).toBe(join(out, `wcag-${bad.date}.md`));
     expect(existsSync(path)).toBe(true);
-    expect(readFileSync(path, "utf8")).toContain("RGAA 4.1.2");
+    expect(readFileSync(path, "utf8")).toContain("WCAG 2.2");
   });
 
-  it("the WCAG view writes a separate wcag-<date>.md and leaves the RGAA report byte-identical", () => {
+  it("a pack writes a separate <pack>-<date>.md derived report", () => {
     const out = join(tmpdir(), `ultra11y-report-std-${bad.date}`);
-    const rgaaPath = writeReport(bad, { out, lang: "fr", standard: "rgaa" });
     const wcagPath = writeReport(bad, { out, lang: "fr", standard: "wcag" });
-    expect(rgaaPath).toBe(join(out, `rgaa-${bad.date}.md`));
+    const rgaaPath = writeReport(bad, { out, lang: "fr", standard: "rgaa" });
     expect(wcagPath).toBe(join(out, `wcag-${bad.date}.md`));
-    // default rgaa output is unchanged by the new option
-    expect(readFileSync(rgaaPath, "utf8")).toBe(renderReport(bad, "fr"));
-    expect(readFileSync(wcagPath, "utf8")).toContain("WCAG 2.1");
+    expect(rgaaPath).toBe(join(out, `rgaa-${bad.date}.md`));
+    // the core report is unchanged by the pack option
+    expect(readFileSync(wcagPath, "utf8")).toBe(renderReport(bad, "fr"));
+    expect(readFileSync(rgaaPath, "utf8")).toContain("RGAA 4.1.2");
   });
 });

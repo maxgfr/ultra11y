@@ -1,137 +1,135 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and a dated compliance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no npm install, no keys) runs 36 static checks across the 13 RGAA themes — missing alt/lang/title, unlabeled fields, empty links/buttons, iframes/tables, heading skips, invalid ARIA, positive tabindex — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports for component-level rules; `prd` emits a fix backlog (optionally GitHub issues). check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibilité / RGAA', 'check WCAG / a11y', 'make this component accessible', 'fix accessibility', 'générer des PRD / issues a11y', 'audit de ce composant'."
+description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no install, no keys) runs 36 static checks across WCAG success criteria — missing alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA (France) and other country standards are pluggable in-repo packs (`--standard rgaa`). JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports; `prd` emits a fix backlog; check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibility / WCAG / a11y', 'compliance report', 'make this accessible', 'fix accessibility', 'audit RGAA'."
 license: MIT
 metadata:
   version: 2.0.0
 ---
 
-# ultra11y — auditer le RGAA 4.1.2 et écrire de l'accessible
+# ultra11y — audit WCAG 2.2 AA and write accessible markup
 
-Sur l'accessibilité, un outil automatique ne voit qu'une partie des problèmes.
-`ultra11y` l'assume par une **division du travail** : le moteur déterministe et
-sans installation (`node scripts/ultra11y.mjs <commande>` — pas de `npm install`,
-pas de clé ; le parseur JSX/TSX est embarqué dans le bundle) fait le travail
-*mécanique* — détecter les non-conformités
-machine-vérifiables et les rattacher au bon critère RGAA ; **vous** faites le
-*jugement* — pertinence des alternatives, intitulés en contexte, ordre de lecture
-— et les critères qui exigent un **rendu** (contraste, focus, zoom). Des gates
-empêchent toute non-conformité hallucinée de survivre.
+On accessibility, an automated tool only sees part of the problem. `ultra11y` owns
+that with a **division of labour**: the deterministic, install-free engine
+(`node scripts/ultra11y.mjs <command>` — no `npm install`, no key; the JSX/TSX parser
+is embedded in the bundle) does the *mechanical* work — detect the machine-checkable
+non-conformities and tie each to the right **WCAG success criterion** — and **you** do
+the *judgment* — alt relevance, link purpose in context, reading order — plus the
+criteria that need a **rendered DOM** (contrast, focus, zoom). Gates stop any
+hallucinated non-conformity from surviving.
 
-> **Règles cœur :**
-> 1. **Ne jamais inventer de non-conformité** : chaque `NC` cite un élément réel
->    et résoluble (`check` le vérifie).
-> 2. **HTML natif d'abord, ARIA en dernier** ; ne dupliquez pas une sémantique implicite.
-> 3. **Le résidu est explicite** : tout critère *rendu*/*jugement* non prouvé va dans
->    « à évaluer manuellement », jamais marqué conforme en silence.
+**WCAG 2.2 Level AA is the worldwide core.** Country standards — France's **RGAA**, the
+US **Section 508**, the EU **EN 301 549** — are pluggable in-repo *standards packs* that
+map their criteria onto WCAG; add `--standard rgaa` to re-key reports/criteria, or
+contribute your country (see `references/standards.md`).
 
-## Choisir selon la situation
+> **Core rules:**
+> 1. **Never invent a non-conformity**: every `NC` cites a real, resolvable element (`check` verifies it).
+> 2. **Native HTML first, ARIA last**; never duplicate implicit semantics.
+> 3. **Residual is explicit**: any *rendering*/*judgment* criterion not proven goes to
+>    "to assess manually", never silently marked conforming.
 
-- **« Auditer / rapport de conformité »** → `node scripts/ultra11y.mjs audit … --json`,
-  puis `report`, puis `check` ; lire **`references/audit.md`**.
-- **« Code rendu par une bibliothèque (DSFR, MUI…) / éviter les faux négatifs »** →
-  auditer le **HTML produit**, pas la source JSX : `render` (recette build→audit ou
-  snapshot SSR `--scaffold`) puis `audit` sur le rendu, et `scan` pour le rendu
-  calculé ; lire **`references/rendered.md`**.
-- **« Sur un gros dépôt / auditer malin »** → se focaliser : `--changed` (diff git),
-  priorisation des gabarits, dédup, `--max-files` ; lire **`references/scale.md`**.
-- **« Analyse inter-fichiers (arbre + dépendances), JSX/TSX en vrai AST »** →
-  `audit --graph` résout les imports et applique les règles inter-fichiers (composant
-  à icône seule utilisé sans nom, cible d'ancre dans un autre fichier…), sans
-  navigateur ; lire **`references/cross-file.md`**.
-- **« Générer le markdown des correctifs / des PRD (→ issues GitHub) »** → `prd`
-  (backlog par défaut, `--split criterion`, `--gh-issues` via le CLI `gh`) ; lire
-  **`references/prd.md`**.
-- **« Trancher les critères de jugement / rendu (phase de jugement) »** → `verify`
-  produit une liste de contrôle ancrée sur les **tests RGAA** de chaque critère ;
-  statuez, puis `verify --apply` ; lire **`references/judgment.md`**.
-- **« Mettre en place les fix »** → `fix` (dry-run par défaut, `--write` applique les
-  correctifs sûrs, propose le reste sans rien inventer) ; lire **`references/fix.md`**.
-- **« Corriger par priorité, sans régression (phase de correction) »** → `fix`
-  (`--write`, `--iterate`) + le backlog `prd`, dans l'ordre bloquant→majeur→mineur ;
-  lire **`references/correction.md`**.
-- **« Garde automatique dans le repo (hook / CI) »** → `init --hook`/`--ci`/`--baseline`
-  (n'échoue que sur les nouvelles non-conformités) ; lire **`references/automation.md`**.
-- **« Rendre ce code accessible / le revoir »** → auditer l'extrait
-  (`audit - < composant.html`) en suivant le natif-d'abord ; lire
-  **`references/authoring.md`** et **`references/forbidden-patterns.md`**.
-- **« Que signifie le critère X / quelle thématique »** → `criteria` ; voir
-  **`references/criteria.md`**.
-- **« Lecture internationale (WCAG / EN 301 549 / Section 508) »** → `--standard wcag`
-  sur `report`/`criteria` ; voir **`references/methodology.md`**.
-- **« Audit à haute assurance »** → `verify --report … --semantic` ; voir
-  **`references/verify.md`**. Méthodologie & format : **`references/methodology.md`**.
-- **« Vérifier le contraste / le rendu (tier optionnel Docker) »** → `scan <url> --merge …`
-  (axe-core dans un navigateur headless) ; voir **`references/dynamic.md`**.
+## Choose by situation
 
-## Aide-mémoire des commandes
+- **"Audit / compliance report"** → `node scripts/ultra11y.mjs audit … --json`, then
+  `report`, then `check`; read **`references/audit.md`**.
+- **"Code rendered by a library (DSFR, MUI…) / avoid false negatives"** → audit the
+  **produced HTML**, not the JSX source: `render` (build→audit recipe or SSR snapshot
+  `--scaffold`) then `audit` on the output, and `scan` for computed rendering; read
+  **`references/rendered.md`**.
+- **"Large repo / audit smartly"** → focus: `--changed` (git diff), template
+  prioritization, dedup, `--max-files`; read **`references/scale.md`**.
+- **"Cross-file analysis (tree + dependencies), JSX/TSX as a real AST"** →
+  `audit --graph` resolves imports and applies cross-file rules (an icon-only component
+  used without a name, an anchor target in another file…), no browser; read
+  **`references/cross-file.md`**.
+- **"Generate the fix markdown / PRDs (→ GitHub issues)"** → `prd` (backlog by default,
+  `--split criterion`, `--gh-issues` via the `gh` CLI); read **`references/prd.md`**.
+- **"Decide the judgment / rendering criteria (judgment phase)"** → `verify` produces a
+  checklist grounded in each SC's W3C Understanding reference; rule on each, then
+  `verify --apply`; read **`references/judgment.md`**.
+- **"Put the fixes in place"** → `fix` (dry-run by default, `--write` applies the safe
+  codemods, proposes the rest without inventing anything); read **`references/fix.md`**.
+- **"Fix by priority, no regressions (correction phase)"** → `fix` (`--write`,
+  `--iterate`) + the `prd` backlog, blocking→major→minor; read **`references/correction.md`**.
+- **"Automatic repo gate (hook / CI)"** → `init --hook`/`--ci`/`--baseline` (fails only
+  on NEW non-conformities); read **`references/automation.md`**.
+- **"Make this code accessible / review it"** → audit the snippet
+  (`audit - < component.html`) native-first; read **`references/authoring.md`** and
+  **`references/forbidden-patterns.md`**.
+- **"What does criterion X mean"** → `criteria` (e.g. `criteria 1.4.3`, or
+  `criteria --standard rgaa 8.3`); see **`references/criteria.md`**.
+- **"Country standard (RGAA, Section 508, EN 301 549)"** → `--standard <pack>` on
+  `report`/`prd`/`criteria`/`check`/`verify`; see **`references/standards.md`** and
+  **`references/methodology.md`**.
+- **"High-assurance audit"** → `verify --report … --semantic`; see **`references/verify.md`**.
+- **"Check contrast / rendering (optional Docker tier)"** → `scan <url> --merge …`
+  (axe-core in a headless browser); see **`references/dynamic.md`**.
+
+## Command cheat sheet
 
 ```
 node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
-node scripts/ultra11y.mjs audit - < composant.html        # HTML via stdin
-node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx       # JSX/TSX en vrai AST
-node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph     # + imports & règles inter-fichiers
-node scripts/ultra11y.mjs audit --changed --json           # seulement le diff git (gros dépôt)
-node scripts/ultra11y.mjs report --in audit.json --out audits
-node scripts/ultra11y.mjs report --in audit.json --standard wcag   # vue WCAG (présentation)
-node scripts/ultra11y.mjs prd    --in audit.json --gh-issues       # backlog des fix (+ issues GitHub)
-node scripts/ultra11y.mjs criteria 11.1                    # un critère + ses tests
-node scripts/ultra11y.mjs criteria --theme 8 --list        # une thématique / la liste
-node scripts/ultra11y.mjs check  --report audits/rgaa-AAAA-MM-JJ.md
-node scripts/ultra11y.mjs verify --report audits/rgaa-AAAA-MM-JJ.md --semantic
-node scripts/ultra11y.mjs render                           # recette build→audit du projet (ou --scaffold SSR)
-node scripts/ultra11y.mjs audit "dist/**/*.html"           # auditer le HTML RENDU (fiable pour DSFR/MUI…)
-node scripts/ultra11y.mjs verify --report audits/rgaa-AAAA-MM-JJ.md  # liste de jugement (tests RGAA inline)
-node scripts/ultra11y.mjs fix "src/**/*.html" --write --iterate      # corrige et ré-applique jusqu'à stabilité
-node scripts/ultra11y.mjs init --hook --baseline           # garde de régression (hook + baseline)
-node scripts/ultra11y.mjs scan https://exemple.fr --merge audits/audit-latest.json  # tier Docker
+node scripts/ultra11y.mjs audit - < component.html          # HTML via stdin
+node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx        # JSX/TSX as a real AST
+node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph      # + imports & cross-file rules
+node scripts/ultra11y.mjs audit --changed --json            # only the git diff (large repo)
+node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md
+node scripts/ultra11y.mjs report --in audit.json --standard rgaa       # derived RGAA report (France pack)
+node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # fix backlog (+ GitHub issues)
+node scripts/ultra11y.mjs criteria 1.4.3                    # one WCAG success criterion
+node scripts/ultra11y.mjs criteria --list                   # all SCs grouped by guideline
+node scripts/ultra11y.mjs criteria --standard rgaa --theme 8   # a pack theme
+node scripts/ultra11y.mjs check  --report audits/wcag-YYYY-MM-DD.md
+node scripts/ultra11y.mjs verify --report audits/wcag-YYYY-MM-DD.md --semantic
+node scripts/ultra11y.mjs render                            # build→audit recipe (or --scaffold SSR)
+node scripts/ultra11y.mjs audit "dist/**/*.html"            # audit the RENDERED HTML (reliable for DSFR/MUI…)
+node scripts/ultra11y.mjs fix "src/**/*.html" --write --iterate    # fix and re-apply to a fixpoint
+node scripts/ultra11y.mjs init --hook --baseline            # regression gate (hook + baseline)
+node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # Docker tier
 ```
-Sortie machine partout avec `--json`. Rapport en français par défaut, `--lang en` disponible.
+Machine output everywhere with `--json`. Reports default to English; `--lang fr` available.
 
-## La boucle : auditer → rendre → juger → corriger → ré-auditer
+## The loop: audit → render → judge → fix → re-audit
 
-Pour converger vers la conformité (et non un seul passage), enchaînez, en
-laissant l'agent piloter les étapes de jugement et de contenu :
+To converge on conformance (not a single pass), chain the steps, letting the agent
+drive the judgment and content stages:
 
-1. **Auditer** la source (`audit … --graph`) pour une première carte ; sur du code
-   rendu par une bibliothèque, **auditer le rendu** (`render` → build/SSR → `audit`)
-   pour des verdicts fiables (sinon le risque de périmètre vous le rappelle).
-2. **Juger** les critères de rendu/jugement avec `verify` (grille RGAA inline) et
-   trancher chaque entrée.
-3. **Corriger** par priorité : `fix --write --iterate` pour le mécanique (garde
-   anti-régression), puis appliquer à la main les corrections de jugement/contenu
-   (alt, intitulés, structure) guidées par `references/correction.md`.
-4. **Ré-auditer** (sur le rendu si pertinent) et répéter.
+1. **Audit** the source (`audit … --graph`) for a first map; on library-rendered code,
+   **audit the render** (`render` → build/SSR → `audit`) for reliable verdicts (otherwise
+   the scope-risk note reminds you).
+2. **Judge** the rendering/judgment criteria with `verify` (W3C Understanding grounding)
+   and decide each entry.
+3. **Fix** by priority: `fix --write --iterate` for the mechanical part (anti-regression
+   gate), then hand-apply the judgment/content fixes (alt, labels, structure) guided by
+   `references/correction.md`.
+4. **Re-audit** (on the render where relevant) and repeat.
 
-**Arrêt** : `check` et `verify --apply` repassent au vert, et il ne reste que des
-risques résiduels explicitement nommés. (Pour automatiser la cadence externe, la
-commande `/loop` du harness peut relancer ce cycle.)
+**Stop** when `check` and `verify --apply` are green again and only explicitly-named
+residual risks remain. (To automate the outer cadence, the harness `/loop` command can
+re-run this cycle.)
 
-## Combiner moteur, jugement et risque résiduel
+## Combining engine, judgment and residual risk
 
-La sortie `audit` classe chaque critère : `C`/`NC`/`NA` pour le sous-ensemble
-statique ; `manual` pour les critères de rendu/jugement (listés en
-`residualRisks`). Les `NC` du moteur sont des **candidats confirmés** (cités
-`fichier:ligne`). À vous de trancher les critères `manual`, et de marquer les
-critères de rendu « à vérifier manuellement ». Le rapport n'est complet que
-lorsque chaque critère applicable est `C`/`NC`/`NA` justifié et que chaque risque
-résiduel est nommé.
+The `audit` output classes each success criterion: `C`/`NC`/`NA` for the static subset;
+`manual` for the rendering/judgment criteria (listed in `residualRisks`). The engine's
+`NC`s are **confirmed candidates** (cited `file:line`). You rule on the `manual` criteria
+and mark the rendering criteria "to verify manually". The report is complete only when
+every applicable criterion is a justified `C`/`NC`/`NA` and every residual risk is named.
 
-## À ne pas faire
+## Do not
 
-- Inventer une non-conformité que le moteur n'a pas trouvée et que vous ne pouvez
-  pas voir (le contraste sur **couleurs inline littérales** est tranché en statique ;
-  le contraste **calculé** — CSS externe, variables — passe par `scan` (tier Docker)
-  ou se vérifie au rendu avant d'être déclaré).
-- Ajouter de l'ARIA qui double la sémantique native.
-- Marquer un critère de rendu/jugement « conforme » sans vérification humaine.
-- Éditer à la main `references/criteria.md` (généré depuis le référentiel).
+- Invent a non-conformity the engine did not find and you cannot see (contrast on
+  **inline literal colours** is decided statically; **computed** contrast — external CSS,
+  variables — goes through `scan` (Docker tier) or is verified at render before being declared).
+- Add ARIA that duplicates native semantics.
+- Mark a rendering/judgment criterion "conforming" without a human check.
+- Hand-edit `references/criteria.md` (generated from the WCAG dataset via `criteria --generate`).
 
-## Portée
+## Scope
 
-Moteur statique : hors-ligne, déterministe, sans installation ; entrées HTML +
-JSX/TSX (vrai AST, analyse inter-fichiers via `--graph`) + stdin. Les critères de **rendu** (contraste calculé,
-reflow) sont couverts par le tier optionnel `scan` (axe-core dans Docker) ; le
-**focus visible**, le zoom texte 200% et les contenus au survol restent en revue
-humaine (risque résiduel). Données : RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab
-2.0 (voir `NOTICE`).
+Static engine: offline, deterministic, install-free; inputs are HTML + JSX/TSX (real AST,
+cross-file analysis via `--graph`) + stdin. The **rendering** criteria (computed contrast,
+reflow) are covered by the optional `scan` tier (axe-core in Docker); **focus visible**,
+200% text zoom and content-on-hover stay in human review (residual risk). Data: WCAG 2.2 ©
+W3C (W3C Document License); the RGAA pack is RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab
+2.0 (see `NOTICE`).

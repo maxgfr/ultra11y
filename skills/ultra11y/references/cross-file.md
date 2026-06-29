@@ -1,57 +1,50 @@
-# Analyse inter-fichiers (`audit --graph`)
+# Cross-file analysis (`audit --graph`)
 
-Par défaut, le moteur audite **chaque fichier isolément**. `--graph` (alias
-`--cross-file`) ajoute une passe qui **résout les imports entre fichiers**,
-construit un graphe de dépendances + de composants, et applique des règles que
-seul le contexte inter-fichiers rend visibles — **sans navigateur** (pas de
-Playwright). C'est complémentaire du moteur statique par fichier et du tier
-dynamique optionnel (`scan`) : les trois alimentent le **même** `AuditResult`.
+By default the engine audits **each file in isolation**. `--graph` (alias `--cross-file`)
+adds a pass that **resolves imports between files**, builds a dependency + component graph,
+and applies rules only the cross-file context makes visible — **without a browser** (no
+Playwright). It complements the per-file static engine and the optional dynamic tier
+(`scan`): all three feed the **same** `AuditResult`.
 
 ```
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --json > audit.json
-node scripts/ultra11y.mjs audit --changed --graph     # diff git, graphe sur tout le périmètre
+node scripts/ultra11y.mjs audit --changed --graph     # git diff, graph over the whole scope
 ```
 
-## Comment ça marche (et pourquoi ça passe à l'échelle)
+## How it works (and why it scales)
 
-- **Vrai AST** : les `.jsx/.tsx` sont analysés via un vrai parseur JS/TS/JSX
-  (`@babel/parser`, embarqué dans le bundle — toujours « no install »), pas par
-  l'ancienne normalisation regex. Les composants `PascalCase` gardent leur casse
-  (les règles par-fichier les ignorent ; seules les règles inter-fichiers les
-  résolvent) ; les éléments natifs restent en minuscules.
-- **Deux passes, mémoire bornée** : passe 1 — lire chaque fichier, en extraire un
-  petit *nœud de graphe* (imports, composants + signaux du contrôle rendu, ids,
-  `<html lang>`), puis **jeter** l'AST/Doc. Passe 2 — la boucle d'audit habituelle,
-  qui exécute aussi les règles inter-fichiers avec le graphe en main. On ne garde
-  jamais tout le dépôt en mémoire : O(nombre de fichiers) de petits nœuds.
-- **`--changed --graph`** : le graphe est indexé sur **tout** le périmètre (pour
-  résoudre une référence vers une définition non modifiée), mais seuls les
-  fichiers du diff sont audités.
+- **Real AST**: `.jsx/.tsx` are parsed by a real JS/TS/JSX parser (`@babel/parser`, embedded
+  in the bundle — still "no install"), not regex normalization. `PascalCase` components keep
+  their case (per-file rules ignore them; only cross-file rules resolve them); native
+  elements stay lowercase.
+- **Two passes, bounded memory**: pass 1 — read each file, extract a small *graph node*
+  (imports, components + render-control signals, ids, `<html lang>`), then **drop** the
+  AST/Doc. Pass 2 — the usual audit loop, which also runs the cross-file rules with the graph
+  in hand. The whole repo is never held in memory: O(number of files) small nodes.
+- **`--changed --graph`**: the graph indexes the **whole** scope (to resolve a reference into
+  an unchanged definition), but only the diffed files are audited.
 
-## Les règles inter-fichiers
+## The cross-file rules
 
-- **`cross-icon-only-unnamed`** (1.1/6.2/7.1, *signalement*) : un composant qui
-  rend un contrôle à **icône seule** et qui *peut* recevoir un nom
-  (`{...props}` / `aria-label={…}` / `{children}`) est utilisé **sans nom**. Le
-  signalement est posé **au point d'utilisation**, avec la **définition** du
-  composant en `related`.
-- **`cross-aria-forwarding`** (7.1, *suppression*) : un contrôle natif qui
-  diffuse `{...props}` est nommable par son parent → on **supprime** le faux
-  positif `button-empty-name`/`icon-only-control-unnamed`… sur la **définition**.
-- **`cross-skip-link-target`** (12.7, *suppression*) : une ancre `href="#id"`
-  dont la cible vit dans un **autre** fichier (layout/composant importé) → on
-  supprime le faux « ancre cassée ». Cible introuvable partout = vrai positif
-  laissé en place.
-- **`cross-page-lang`** (8.3, *suppression*) : un `<html>` sans `lang` dont un
-  layout/wrapper importé déclare la langue → suppression du faux positif.
+- **`cross-icon-only-unnamed`** (WCAG 2.4.4/4.1.2, *flag*): a component that renders an
+  **icon-only** control and *can* receive a name (`{...props}` / `aria-label={…}` /
+  `{children}`) is used **without a name**. The flag is placed **at the usage site**, with the
+  component **definition** in `related`.
+- **`cross-aria-forwarding`** (WCAG 4.1.2, *suppression*): a native control that forwards
+  `{...props}` is nameable by its parent → it **suppresses** the false
+  `button-empty-name`/`icon-only-control-unnamed` on the **definition**.
+- **`cross-skip-link-target`** (WCAG 2.4.1, *suppression*): an `href="#id"` anchor whose
+  target lives in **another** file (imported layout/component) → suppresses the false "broken
+  anchor". A target missing everywhere stays a true positive.
+- **`cross-page-lang`** (WCAG 3.1.1, *suppression*): an `<html>` without `lang` whose imported
+  layout/wrapper declares the language → suppresses the false positive.
 
-## Bénéfice pour `fix`
+## Benefit for `fix`
 
-Comme l'AST indexe le **fichier réel** (offsets exacts, `Doc` non *lossy*), `fix`
-peut désormais appliquer ses codemods *sûrs* sur du JSX/TSX (suppression d'ARIA
-redondant, insertion de `alt`/`lang`/`title`/`aria-label`), toujours derrière le
-garde anti-régression. Les codemods qui **réécrivent** un nom d'attribut restent
-désactivés sur JSX (pour ne pas transformer `tabIndex={5}` en `tabindex="0"`).
+Because the AST indexes the **real file** (exact offsets, non-*lossy* `Doc`), `fix` can apply
+its *safe* codemods on JSX/TSX (remove redundant ARIA, insert `alt`/`lang`/`title`/
+`aria-label`), always behind the anti-regression gate. Codemods that **rewrite** an attribute
+name stay disabled on JSX (so `tabIndex={5}` is never turned into `tabindex="0"`).
 
-> Les signalements inter-fichiers se fondent dans le même `AuditResult` :
-> `report`, `prd`, `check` et `verify` les consomment sans changement.
+> Cross-file flags merge into the same `AuditResult`: `report`, `prd`, `check` and `verify`
+> consume them unchanged.

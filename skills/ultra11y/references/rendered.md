@@ -1,49 +1,46 @@
-# Auditer le HTML RENDU (bibliothèques de composants : DSFR, MUI…)
+# Audit the RENDERED HTML (component libraries: DSFR, MUI…)
 
-Auditer les **sources** JSX d'une bibliothèque de composants donne des **faux
-négatifs** : `<Button iconId="fr-icon-add-line" />` (DSFR) rend en réalité
-`<button class="fr-btn fr-icon-add-line">` où l'icône est un pseudo-élément CSS
-(décoratif) et le **nom accessible vient uniquement de `title`**. Ce HTML vit dans
-`node_modules` à l'exécution — aucune analyse de source ne le voit. Conclusion :
-pour ces composants, **auditez ce que le JS produit**, pas la source.
+Auditing a component library's **JSX sources** gives **false negatives**:
+`<Button iconId="fr-icon-add-line" />` (DSFR) actually renders
+`<button class="fr-btn fr-icon-add-line">` where the icon is a CSS pseudo-element
+(decorative) and the **accessible name comes only from `title`**. That HTML lives in
+`node_modules` at runtime — no source analysis sees it. So for those components, **audit
+what the JS produces**, not the source.
 
-## Honnêteté par défaut
+## Honest by default
 
-Quand `audit` voit un fichier JSX/TSX qui rend des composants importés d'une
-**bibliothèque** (spécificateur de paquet, ex. `@codegouvfr/react-dsfr`), il
-n'invente pas un verdict : il ajoute un **risque de périmètre** au rapport
-(« verdict source préliminaire — auditez le build ou `scan` ») et nomme la/les
-bibliothèque(s). Un verdict source n'est donc jamais silencieusement « complet ».
+When `audit` sees a JSX/TSX file rendering components imported from a **library** (a package
+specifier, e.g. `@codegouvfr/react-dsfr`), it does not invent a verdict: it adds a **scope
+risk** to the report ("preliminary source verdict — audit the build or `scan`") and names the
+library(ies). A source verdict is therefore never silently "complete".
 
-## Obtenir du HTML rendu
+## Get rendered HTML
 
-`node scripts/ultra11y.mjs render [<dir>]` détecte le framework et imprime la
-recette « build → audit » adaptée au projet (et signale les bibliothèques
-détectées). Trois voies, de la plus simple à la plus fidèle :
+`node scripts/ultra11y.mjs render [<dir>]` detects the framework and prints the
+"build → audit" recipe for the project (and flags the libraries it detects). Three routes,
+simplest to most faithful:
 
-1. **Sortie de build** (recommandé) : construisez le site/les pages, puis auditez
-   le HTML émis avec le moteur statique — c'est du vrai HTML, audité avec pleine
-   fidélité :
+1. **Build output** (recommended): build the site/pages, then audit the emitted HTML with the
+   static engine — it is real HTML, audited at full fidelity:
    ```
-   npx astro build   # ou next build (output:'export'), vite build, storybook build…
+   npx astro build   # or next build (output:'export'), vite build, storybook build…
    node scripts/ultra11y.mjs audit "dist/**/*.html"
    ```
-   Pour un design-system, un **build Storybook statique** est souvent le plus
-   simple : chaque story devient une page rendue à auditer.
-2. **Snapshot SSR** : `render --scaffold` écrit `ultra11y-render.tsx`, un harnais
-   `react-dom/server` (`renderToStaticMarkup`) qui importe **vos** composants et
-   écrit du HTML dans `audits/rendered/`. Complétez la liste, exécutez-le avec
-   votre toolchain (`npx tsx ultra11y-render.tsx`), puis auditez `audits/rendered`.
-   ultra11y n'embarque pas React : c'est votre projet qui rend.
-3. **Navigateur headless** : `scan <url>` (tier Docker, axe-core) sur l'app en
-   marche — le plus fidèle, et indispensable pour les critères de **rendu**
-   (contraste calculé 3.2/3.3, reflow 10.11). `--merge` fond le résultat dans un
-   AuditResult statique.
+   For a design system, a **static Storybook build** is often simplest: each story becomes a
+   rendered page to audit.
+2. **SSR snapshot**: `render --scaffold` writes `ultra11y-render.tsx`, a `react-dom/server`
+   harness (`renderToStaticMarkup`) that imports **your** components and writes HTML into
+   `audits/rendered/`. Fill in the list, run it with your toolchain (`npx tsx
+   ultra11y-render.tsx`), then audit `audits/rendered`. ultra11y does not embed React — your
+   project renders.
+3. **Headless browser**: `scan <url>` (Docker tier, axe-core) against the running app — the
+   most faithful, and required for the **rendering** criteria (computed contrast 1.4.3, reflow
+   1.4.10). `--merge` folds the result into a static AuditResult.
 
-## Choisir
+## Choosing
 
-- Composants / design-system → build Storybook **ou** snapshot SSR, puis `audit`.
-- Pages complètes / SSG → sortie de build (`dist`/`out`), puis `audit`.
-- Critères de rendu (contraste, focus, zoom) → `scan` (navigateur).
-- Dans tous les cas, ne concluez pas « conforme » sur un composant de bibliothèque
-  depuis la source : c'est ce que le risque de périmètre vous rappelle.
+- Components / design system → static Storybook **or** SSR snapshot, then `audit`.
+- Full pages / SSG → build output (`dist`/`out`), then `audit`.
+- Rendering criteria (contrast, focus, zoom) → `scan` (browser).
+- In all cases, do not conclude "conforming" on a library component from the source: that is
+  what the scope risk reminds you.

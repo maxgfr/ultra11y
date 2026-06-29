@@ -1,109 +1,112 @@
-// Curated axe-core rule → RGAA 4.1.2 criterion mapping. axe gained in-tree RGAA
-// tags (late 2025) but doesn't expose a machine-readable mapping, so we ship our
-// own. The headline win is color-contrast → 3.2/3.3 (the needs-rendering criterion
-// the static engine cannot decide). Unknown axe rules fall back to 7.1.
+// Curated axe-core rule → WCAG 2.2 success-criterion mapping. axe emits native
+// `wcag<abc>` tags per rule, so this curated map only carries deliberate choices
+// (e.g. color-contrast → 1.4.3, the needs-rendering SC the static engine can't
+// decide); everything else falls back to axe's own wcag tags, then to 4.1.2.
 import type { Severity } from "./types.js";
+import { hasSC } from "./wcag.js";
 
-export const AXE_RGAA: Record<string, string> = {
+export const AXE_WCAG: Record<string, string> = {
   // images
-  "image-alt": "1.1",
-  "input-image-alt": "1.1",
-  "area-alt": "1.1",
-  "role-img-alt": "1.1",
-  "image-redundant-alt": "1.2",
-  "svg-img-alt": "1.1",
+  "image-alt": "1.1.1",
+  "input-image-alt": "1.1.1",
+  "area-alt": "1.1.1",
+  "role-img-alt": "1.1.1",
+  "image-redundant-alt": "1.1.1",
+  "svg-img-alt": "1.1.1",
   // frames
-  "frame-title": "2.1",
-  "frame-title-unique": "2.2",
+  "frame-title": "4.1.2",
+  "frame-title-unique": "4.1.2",
   // colour (the headline dynamic win)
-  "color-contrast": "3.2",
-  "color-contrast-enhanced": "3.2",
-  "link-in-text-block": "3.1",
-  // tables
-  "td-headers-attr": "5.7",
-  "th-has-data-cells": "5.7",
-  "scope-attr-valid": "5.7",
-  "table-fake-caption": "5.4",
-  "td-has-header": "5.6",
-  "empty-table-header": "5.6",
+  "color-contrast": "1.4.3",
+  "color-contrast-enhanced": "1.4.3",
+  "link-in-text-block": "1.4.1",
+  // tables / structure
+  "td-headers-attr": "1.3.1",
+  "th-has-data-cells": "1.3.1",
+  "scope-attr-valid": "1.3.1",
+  "table-fake-caption": "1.3.1",
+  "td-has-header": "1.3.1",
+  "empty-table-header": "1.3.1",
   // links & buttons
-  "link-name": "6.2",
-  "button-name": "7.1",
-  "input-button-name": "7.1",
+  "link-name": "2.4.4",
+  "button-name": "4.1.2",
+  "input-button-name": "4.1.2",
   // scripts / ARIA
-  "aria-allowed-attr": "7.1",
-  "aria-allowed-role": "7.1",
-  "aria-command-name": "7.1",
-  "aria-hidden-body": "7.1",
-  "aria-hidden-focus": "7.1",
-  "aria-input-field-name": "11.1",
-  "aria-required-attr": "7.1",
-  "aria-required-children": "7.1",
-  "aria-required-parent": "7.1",
-  "aria-roles": "7.1",
-  "aria-toggle-field-name": "11.1",
-  "aria-valid-attr": "7.1",
-  "aria-valid-attr-value": "7.1",
-  "nested-interactive": "7.1",
-  "aria-tooltip-name": "7.1",
-  "aria-meter-name": "7.1",
-  "aria-progressbar-name": "7.1",
-  "aria-dialog-name": "7.1",
-  "presentation-role-conflict": "7.1",
-  "duplicate-id-aria": "8.2",
+  "aria-allowed-attr": "4.1.2",
+  "aria-allowed-role": "4.1.2",
+  "aria-command-name": "4.1.2",
+  "aria-hidden-body": "4.1.2",
+  "aria-hidden-focus": "4.1.2",
+  "aria-input-field-name": "4.1.2",
+  "aria-required-attr": "4.1.2",
+  "aria-required-children": "4.1.2",
+  "aria-required-parent": "4.1.2",
+  "aria-roles": "4.1.2",
+  "aria-toggle-field-name": "4.1.2",
+  "aria-valid-attr": "4.1.2",
+  "aria-valid-attr-value": "4.1.2",
+  "nested-interactive": "4.1.2",
+  "aria-tooltip-name": "4.1.2",
+  "aria-meter-name": "4.1.2",
+  "aria-progressbar-name": "4.1.2",
+  "aria-dialog-name": "4.1.2",
+  "presentation-role-conflict": "4.1.2",
+  "duplicate-id-aria": "4.1.2",
   // mandatory elements / language
-  "duplicate-id": "8.2",
-  "duplicate-id-active": "8.2",
-  "html-has-lang": "8.3",
-  "html-xml-lang-mismatch": "8.3",
-  "html-lang-valid": "8.4",
-  "valid-lang": "8.8",
-  "document-title": "8.5",
+  "duplicate-id": "4.1.2",
+  "duplicate-id-active": "4.1.2",
+  "html-has-lang": "3.1.1",
+  "html-xml-lang-mismatch": "3.1.1",
+  "html-lang-valid": "3.1.1",
+  "valid-lang": "3.1.2",
+  "document-title": "2.4.2",
   // structure
-  "heading-order": "9.1",
-  "empty-heading": "9.1",
-  "page-has-heading-one": "9.1",
-  list: "9.3",
-  listitem: "9.3",
-  "definition-list": "9.3",
-  dlitem: "9.3",
-  "landmark-one-main": "12.6",
-  region: "12.6",
+  "heading-order": "1.3.1",
+  "empty-heading": "1.3.1",
+  "page-has-heading-one": "1.3.1",
+  list: "1.3.1",
+  listitem: "1.3.1",
+  "definition-list": "1.3.1",
+  dlitem: "1.3.1",
+  "landmark-one-main": "1.3.1",
+  region: "1.3.1",
   // presentation / zoom
-  "meta-viewport": "10.4",
-  "meta-viewport-large": "10.4",
+  "meta-viewport": "1.4.4",
+  "meta-viewport-large": "1.4.4",
   // forms
-  label: "11.1",
-  "form-field-multiple-labels": "11.1",
-  "select-name": "11.1",
-  "label-title-only": "11.1",
-  "autocomplete-valid": "11.13",
-  fieldset: "11.6",
+  label: "4.1.2",
+  "form-field-multiple-labels": "4.1.2",
+  "select-name": "4.1.2",
+  "label-title-only": "4.1.2",
+  "autocomplete-valid": "1.3.5",
+  fieldset: "1.3.1",
   // multimedia
-  "audio-caption": "4.3",
-  "video-caption": "4.3",
-  "no-autoplay-audio": "4.10",
-  blink: "13.8",
-  marquee: "13.8",
+  "audio-caption": "1.2.2",
+  "video-caption": "1.2.2",
+  "no-autoplay-audio": "1.4.2",
+  blink: "2.2.2",
+  marquee: "2.2.2",
   // navigation
-  tabindex: "12.8",
-  "skip-link": "12.7",
-  bypass: "12.7",
-  accesskeys: "12.10",
+  tabindex: "2.4.3",
+  "skip-link": "2.4.1",
+  bypass: "2.4.1",
+  accesskeys: "2.1.1",
 };
 
-export const FALLBACK_CRITERION = "7.1";
+export const FALLBACK_SC = "4.1.2";
 
-/** Collapse axe's per-test RGAA tag (e.g. "RGAA-3.2.1") to its criterion ("3.2").
- *  axe tags each rule with an `RGAAv4` umbrella tag plus per-test
- *  `RGAA-<theme>.<criterion>.<test>` tags; we read the first concrete one to fill
- *  the gaps the curated map doesn't cover, instead of dumping to 7.1. The umbrella
- *  `RGAAv4` tag carries no criterion and is skipped. */
-export function criterionFromRgaaTags(tags: string[] | undefined): string | null {
+/** Read a WCAG SC from axe's native rule tags. axe tags each rule with `wcag<abc>`
+ *  (e.g. "wcag111" → 1.1.1, "wcag1410" → 1.4.10) plus level umbrellas ("wcag2aa",
+ *  "wcag22aa", "best-practice") that carry no SC and are skipped. Returns the first
+ *  tag that resolves to a real SC in the WCAG 2.2 AA core (so AAA tags are ignored). */
+export function scFromWcagTags(tags: string[] | undefined): string | null {
   if (!tags) return null;
   for (const t of tags) {
-    const m = /^RGAA-(\d+\.\d+)\.\d+$/.exec(t);
-    if (m) return m[1]!;
+    const m = /^wcag(\d)(\d)(\d+)$/.exec(t);
+    if (m) {
+      const sc = `${m[1]}.${m[2]}.${m[3]}`;
+      if (hasSC(sc)) return sc;
+    }
   }
   return null;
 }
@@ -121,12 +124,12 @@ export function severityFromImpact(impact: string | null | undefined): Severity 
   }
 }
 
-export function criterionForAxeRule(ruleId: string): string {
-  return AXE_RGAA[ruleId] ?? FALLBACK_CRITERION;
+export function scForAxeRule(ruleId: string): string {
+  return AXE_WCAG[ruleId] ?? FALLBACK_SC;
 }
 
-/** Resolve an axe rule to an RGAA criterion: the curated map first (deliberate,
- *  e.g. color-contrast → 3.2), then axe's own RGAA tags, then the 7.1 fallback. */
-export function criterionForAxe(ruleId: string, tags?: string[]): string {
-  return AXE_RGAA[ruleId] ?? criterionFromRgaaTags(tags) ?? FALLBACK_CRITERION;
+/** Resolve an axe rule to a WCAG SC: the curated map first (deliberate, e.g.
+ *  color-contrast → 1.4.3), then axe's own wcag tags, then the 4.1.2 fallback. */
+export function scForAxe(ruleId: string, tags?: string[]): string {
+  return AXE_WCAG[ruleId] ?? scFromWcagTags(tags) ?? FALLBACK_SC;
 }

@@ -1,37 +1,37 @@
-# Écrire / revoir du HTML/CSS accessible (sans régression)
+# Write / review accessible HTML/CSS (without regressions)
 
-Doctrine : **HTML natif sémantique d'abord, ARIA en dernier** (native-first,
-ARIA last). N'ajoutez ARIA que lorsqu'aucun élément natif ne convient, et ne
-dupliquez jamais une sémantique implicite (voir `references/forbidden-patterns.md`).
+Doctrine: **semantic native HTML first, ARIA last** (native-first, ARIA last). Add ARIA
+only when no native element fits, and never duplicate implicit semantics (see
+`references/forbidden-patterns.md`).
 
-## Boucle de revue (inspirée du workflow RGAA)
+## Review loop
 
-1. **Structure & landmarks** — un seul `<main>`, `<header>/<nav>/<footer>`, titres
-   `h1…h6` sans saut de niveau, listes réelles (`ul/ol/dl`).
-2. **Noms accessibles** — chaque lien/bouton a un intitulé ; chaque champ a un
-   `<label>` associé (pas un simple `placeholder`).
-3. **Images & icônes** — `alt` pertinent si informatif, `alt=""` si décoratif,
-   nom sur les contrôles icône-seule.
-4. **Tableaux** — `<caption>`, `<th scope>`, association cellule↔en-tête.
-5. **Clavier** — tout est atteignable et activable au clavier ; pas de `tabindex`
-   positif ; focus visible (à vérifier au rendu) ; lien d'évitement fonctionnel.
-6. **Langue & titre** — `<html lang>`, `<title>` pertinent, changements de langue indiqués.
+1. **Structure & landmarks** — a single `<main>`, `<header>/<nav>/<footer>`, `h1…h6`
+   headings without level skips, real lists (`ul/ol/dl`).
+2. **Accessible names** — every link/button has a label; every field has an associated
+   `<label>` (not just a `placeholder`).
+3. **Images & icons** — relevant `alt` if informative, `alt=""` if decorative, a name on
+   icon-only controls.
+4. **Tables** — `<caption>`, `<th scope>`, cell↔header association.
+5. **Keyboard** — everything reachable and operable by keyboard; no positive `tabindex`;
+   visible focus (verify at render); a working skip link.
+6. **Language & title** — `<html lang>`, a relevant `<title>`, language changes marked.
 
-## Détecter les régressions tôt
+## Catch regressions early
 
-Avant de rendre le code, auditez l'extrait :
+Before shipping the code, audit the snippet:
 ```
-node scripts/ultra11y.mjs audit - < composant.html
+node scripts/ultra11y.mjs audit - < component.html
 node scripts/ultra11y.mjs audit "src/components/**/*.tsx" --jsx
 ```
-Corrigez par ordre de priorité : sémantique native → noms/labels → clavier →
-focus → sens non porté par la seule couleur/forme → médias.
+Fix by priority: native semantics → names/labels → keyboard → focus → meaning not carried
+by colour/shape alone → media.
 
 ## Definition of Done
 
-Une modification est « terminée » quand : la sémantique native est correcte, les
-noms accessibles sont présents, l'accès clavier est préservé, aucune régression
-n'est introduite, et les points non vérifiables statiquement (contraste, focus
-visible, zoom) sont **signalés comme risques résiduels** plutôt que supposés OK.
+A change is "done" when: native semantics are correct, accessible names are present,
+keyboard access is preserved, no regression is introduced, and the points not statically
+verifiable (contrast, visible focus, zoom) are **flagged as residual risks** rather than
+assumed OK.
 
-Pour le sens exact d'un critère : `node scripts/ultra11y.mjs criteria <id>`.
+For the exact meaning of a criterion: `node scripts/ultra11y.mjs criteria <sc>`.

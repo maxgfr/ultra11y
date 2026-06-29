@@ -24,9 +24,9 @@ const sampleOut = {
 
 describe("toDynamicResult", () => {
   const dyn = toDynamicResult(sampleOut, "https://exemple.fr");
-  it("maps axe color-contrast → 3.2 and reflow → 10.11", () => {
-    expect(dyn.findings.find((f) => f.axeRule === "color-contrast")?.criteriaId).toBe("3.2");
-    expect(dyn.findings.find((f) => f.engine === "reflow")?.criteriaId).toBe("10.11");
+  it("maps axe color-contrast → 1.4.3 and reflow → 1.4.10", () => {
+    expect(dyn.findings.find((f) => f.axeRule === "color-contrast")?.criteriaId).toBe("1.4.3");
+    expect(dyn.findings.find((f) => f.engine === "reflow")?.criteriaId).toBe("1.4.10");
   });
   it("derives severity from axe impact", () => {
     expect(dyn.findings.find((f) => f.axeRule === "button-name")?.severity).toBe("bloquant");
@@ -34,16 +34,14 @@ describe("toDynamicResult", () => {
   it("tags each finding with the page it came from", () => {
     expect(dyn.findings.find((f) => f.axeRule === "color-contrast")?.page).toBe("https://exemple.fr");
   });
-  it("maps an axe rule absent from the curated map via its RGAA tag, not the 7.1 fallback", () => {
+  it("maps an axe rule absent from the curated map via its native wcag tag, not the 4.1.2 fallback", () => {
     const out = {
       url: "https://exemple.fr",
-      violations: [
-        { id: "some-future-rule", impact: "moderate", help: "X", tags: ["wcag2aa", "RGAA-13.9.1"], nodes: [{ target: ["div"], html: "<div></div>" }] },
-      ],
+      violations: [{ id: "some-future-rule", impact: "moderate", help: "X", tags: ["wcag2aa", "wcag131"], nodes: [{ target: ["div"], html: "<div></div>" }] }],
       reflow: { horizontalScroll: false },
     };
     const r = toDynamicResult(out, "https://exemple.fr");
-    expect(r.findings.find((f) => f.axeRule === "some-future-rule")?.criteriaId).toBe("13.9");
+    expect(r.findings.find((f) => f.axeRule === "some-future-rule")?.criteriaId).toBe("1.3.1");
   });
 });
 
@@ -60,19 +58,19 @@ describe("cleanTempContexts", () => {
 });
 
 describe("mergeDynamic", () => {
-  it("upgrades a needs-rendering 'manual' criterion to NC and drops it from residual risks", () => {
+  it("upgrades a needs-rendering 'manual' SC to NC and drops it from residual risks", () => {
     const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
-    expect(audit.criteria.find((c) => c.id === "3.2")?.status).toBe("manual");
+    expect(audit.criteria.find((c) => c.id === "1.4.3")?.status).toBe("manual");
     const dyn = toDynamicResult(sampleOut, "https://exemple.fr");
     const merged = mergeDynamic(audit, dyn);
-    expect(merged.criteria.find((c) => c.id === "3.2")?.status).toBe("NC");
-    expect(merged.criteria.find((c) => c.id === "10.11")?.status).toBe("NC");
-    expect(merged.residualRisks.some((r) => r.criteriaId === "3.2")).toBe(false);
+    expect(merged.criteria.find((c) => c.id === "1.4.3")?.status).toBe("NC");
+    expect(merged.criteria.find((c) => c.id === "1.4.10")?.status).toBe("NC");
+    expect(merged.residualRisks.some((r) => r.criteriaId === "1.4.3")).toBe(false);
     expect(merged.findings.some((f) => f.ruleId === "axe:color-contrast")).toBe(true);
-    // theme tallies stay consistent
-    for (const t of merged.themes) {
-      const inTheme = merged.criteria.filter((c) => c.theme === t.number).length;
-      expect(t.c + t.nc + t.na + t.manual).toBe(inTheme);
+    // guideline tallies stay consistent
+    for (const g of merged.guidelines) {
+      const inGuideline = merged.criteria.filter((c) => c.guideline === g.key).length;
+      expect(g.c + g.nc + g.na + g.manual).toBe(inGuideline);
     }
   });
   it("uses each finding's page as its file when merging multi-page (crawl) results", () => {
@@ -84,7 +82,7 @@ describe("mergeDynamic", () => {
       date: "2026-06-17",
       findings: [
         {
-          criteriaId: "3.2",
+          criteriaId: "1.4.3",
           axeRule: "color-contrast",
           impact: "serious",
           severity: "majeur" as const,

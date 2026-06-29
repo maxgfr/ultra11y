@@ -1,7 +1,7 @@
 // Single source of truth for shared types + the embedded version. sync-version.mjs
 // rewrites VERSION at release time (kept in lockstep with package.json + SKILL.md).
 export const VERSION = "2.0.0";
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export type Lang = "fr" | "en";
 export type Severity = "bloquant" | "majeur" | "mineur";
@@ -47,6 +47,47 @@ export interface GlossaryEntry {
 }
 export type Glossary = Record<string, GlossaryEntry>;
 
+// ---- WCAG 2.2 canonical core (src/data/wcag.json, produced by scripts/build-standards.mjs)
+// The engine's canonical key. Success-criterion ids/titles/levels are derived from the
+// official W3C source (https://github.com/w3c/wcag); rule coverage + automatability are
+// engine-specific. RGAA and other country standards are derived packs (see src/standards/).
+export type WcagLevel = "A" | "AA";
+
+export interface Sc {
+  sc: string; // dotted SC id, "<principle>.<guideline>.<n>", e.g. "1.4.3"
+  principle: number; // 1..4
+  guideline: string; // "1.4"
+  title: string; // authoritative W3C English title
+  level: WcagLevel;
+  addedIn: string; // "2.0" | "2.1" | "2.2"
+  automatability: Automatability;
+  ruleIds: string[]; // engine rules contributing to this SC
+  understanding: string; // W3C Understanding doc URL (manual-check grounding)
+  techniques?: string[]; // language-neutral W3C technique codes
+  tests?: string[]; // optional manual-check lines
+  notes?: string;
+}
+
+export interface WcagPrinciple {
+  number: number;
+  title: string;
+}
+export interface WcagGuideline {
+  number: string; // "1.4"
+  title: string;
+}
+
+export interface WcagData {
+  wcagVersion: string; // "2.2"
+  level: string; // "AA"
+  source: string;
+  license: string;
+  criteriaSource: string;
+  principles: WcagPrinciple[];
+  guidelines: WcagGuideline[];
+  criteria: Sc[];
+}
+
 // ---- engine findings + audit result
 export interface Finding {
   ruleId: string;
@@ -72,15 +113,15 @@ export interface Finding {
 }
 
 export interface CriterionResult {
-  id: string;
-  theme: number;
+  id: string; // WCAG success-criterion id, e.g. "1.4.3"
+  guideline: string; // WCAG guideline this SC belongs to, e.g. "1.4"
   status: Status;
   findings: Finding[];
   justification?: string;
 }
 
-export interface ThemeTally {
-  number: number;
+export interface GuidelineTally {
+  key: string; // WCAG guideline number, e.g. "1.4"
   title: string;
   c: number;
   nc: number;
@@ -96,6 +137,7 @@ export interface ResidualRisk {
 
 export interface AuditResult {
   tool: "ultra11y";
+  standard: "wcag"; // self-describing: the engine keys on WCAG 2.2 SCs (packs are derived views)
   version: string;
   schemaVersion: number;
   date: string; // YYYY-MM-DD
@@ -111,10 +153,13 @@ export interface AuditResult {
     // is preliminary for them — audit the build output (`render`) or `scan`.
     rendered?: { opaqueLibraries: string[]; files: number };
   };
-  themes: ThemeTally[];
+  guidelines: GuidelineTally[];
   criteria: CriterionResult[];
   findings: Finding[];
   residualRisks: ResidualRisk[];
+  // Automatic static-check pass rate over the machine-DECIDABLE SCs only (the small
+  // static set + any judgment SC that fired a definite NC). NOT a full conformance
+  // rate — most SCs are needs-rendering/judgment and stay manual (residual risk).
   conformancePct: number;
 }
 

@@ -1,64 +1,60 @@
-# Tier dynamique (Docker + axe-core) — optionnel
+# Dynamic tier (Docker + axe-core) — optional
 
-Le moteur statique laisse certains critères en « à évaluer » parce qu'ils exigent
-un **rendu** : contraste calculé (3.2/3.3), focus visible (10.7), reflow/zoom
-(10.4/10.11). Le tier dynamique les décide en lançant **axe-core dans un vrai
-navigateur headless** (Playwright), packagé dans une image Docker auto-construite
-au premier usage — le skill reste un bundle unique (runner + Dockerfile embarqués).
+The static engine leaves some criteria "to assess" because they need a **render**: computed
+contrast (1.4.3), focus visible (2.4.7), reflow/zoom (1.4.4/1.4.10). The dynamic tier decides
+them by running **axe-core in a real headless browser** (Playwright), packaged in a Docker image
+auto-built on first use — the skill stays a single bundle (runner + Dockerfile embedded).
 
-## Prérequis
+## Prerequisites
 
-Docker doit tourner. Sans Docker, `scan` échoue avec un message explicite ; le
-reste du skill (audit statique) fonctionne sans Docker.
+Docker must be running. Without Docker, `scan` fails with an explicit message; the rest of the
+skill (static audit) works without Docker.
 
-## Utilisation
+## Usage
 
 ```
-# audit dynamique seul (URL ou fichier HTML)
-node scripts/ultra11y.mjs scan https://exemple.fr --json
+# dynamic audit alone (URL or HTML file)
+node scripts/ultra11y.mjs scan https://example.com --json
 
-# fusion avec un audit statique : les critères "à évaluer" passent en C/NC
+# merge with a static audit: the "to assess" criteria turn C/NC
 node scripts/ultra11y.mjs audit "src/**/*.html" --out audits --json > /dev/null
-node scripts/ultra11y.mjs scan https://exemple.fr --merge audits/audit-latest.json --out audits
+node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json --out audits
 node scripts/ultra11y.mjs report --in audits/audit-latest.json --out audits
 ```
 
-La première exécution construit l'image (`node:22` + Playwright/Chromium + axe-core)
-— quelques minutes ; les suivantes sont immédiates.
+The first run builds the image (`node:22` + Playwright/Chromium + axe-core) — a few minutes;
+later runs are immediate.
 
-### Couvrir plusieurs pages (crawl)
+### Cover many pages (crawl)
 
-`scan` peut balayer tout un site rendu, pas une seule URL :
+`scan` can sweep a whole rendered site, not a single URL:
 
 ```
-# toutes les URL listées dans un sitemap.xml
-node scripts/ultra11y.mjs scan --sitemap https://exemple.fr/sitemap.xml --json
+# every URL listed in a sitemap.xml
+node scripts/ultra11y.mjs scan --sitemap https://example.com/sitemap.xml --json
 
-# BFS des liens same-origin servis, depuis une page d'entrée
-node scripts/ultra11y.mjs scan --crawl https://exemple.fr --depth 2 --max 50 --json
+# BFS of served same-origin links, from an entry page
+node scripts/ultra11y.mjs scan --crawl https://example.com --depth 2 --max 50 --json
 ```
 
-Chaque finding garde la **page** d'où il provient (`--merge` reporte cette URL comme
-`fichier`). `--crawl` suit les liens présents dans le **HTML servi** (SSR/MPA) ; pour
-une SPA pure (routes rendues côté client), passez par `--sitemap`. Une page = un
-conteneur (un navigateur par page) : `--max` borne le nombre de pages scannées.
+Each finding keeps the **page** it came from (`--merge` reports that URL as `file`). `--crawl`
+follows links in the **served HTML** (SSR/MPA); for a pure SPA (client-rendered routes), use
+`--sitemap`. One page = one container (a browser per page): `--max` bounds the page count.
 
-## Ce que le tier dynamique apporte
+## What the dynamic tier adds
 
-- **Contraste réel (3.2/3.3)** — axe calcule les couleurs rendues (le gain principal).
-- **Reflow (10.11)** — vérifie l'absence de défilement horizontal à 320px de large.
-- **Cross-check** — axe revalide au rendu les critères structurels (alt, labels,
-  ARIA, titres…) ; un finding au rendu est **autoritatif** et passe le critère en NC.
+- **Real contrast (1.4.3)** — axe computes the rendered colours (the main win).
+- **Reflow (1.4.10)** — checks there is no horizontal scroll at 320px wide.
+- **Cross-check** — axe re-validates the structural criteria (alt, labels, ARIA, headings…) at
+  render; a render finding is **authoritative** and turns the criterion NC.
 
-Les findings axe sont mappés aux critères RGAA via une table curée
-(`axe-rule → critère`), complétée par les **tags RGAA natifs d'axe** (`RGAA-x.y.z`)
-pour les règles hors table — au lieu d'un repli générique en 7.1. À la fusion
-(`--merge`), un critère `manual` que le tier décide sort des risques résiduels et
-devient `C`/`NC`.
+axe findings map to WCAG success criteria via a curated table (`axe-rule → SC`), completed by
+axe's **native WCAG tags** (`wcag<abc>`) for rules outside the table — instead of a generic
+fallback. On merge (`--merge`), a `manual` criterion the tier decides leaves the residual risks
+and becomes `C`/`NC`.
 
-## Limites
+## Limits
 
-axe ne couvre pas tout le « rendu » : la **visibilité du focus** (10.7), le zoom
-texte 200% (10.4 au-delà du blocage viewport) et certains contenus au survol
-restent à vérifier manuellement (toujours signalés en risque résiduel). pa11y peut
-être ajouté comme seconde source si besoin.
+axe does not cover all of "render": **focus visibility** (2.4.7), 200% text zoom (1.4.4 beyond
+the viewport block) and some content-on-hover stay manual (always flagged as residual risk).
+pa11y can be added as a second source if needed.

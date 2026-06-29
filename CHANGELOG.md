@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.1.0](https://github.com/maxgfr/ultra11y/compare/v2.0.0...v2.1.0) (2026-06-29)
+
+
+### Features
+
+* map rules to WCAG success criteria ([607133f](https://github.com/maxgfr/ultra11y/commit/607133f832d4ae6cda437d4e9213d3eb255259b4))
+
 # [2.0.0](https://github.com/maxgfr/ultra11y/compare/v1.4.4...v2.0.0) (2026-06-29)
 
 

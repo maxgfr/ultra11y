@@ -6,7 +6,6 @@ import type { Rule, RuleFinding } from "./rule.js";
 const iframeTitleMissing: Rule = {
   id: "iframe-title-missing",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

@@ -1,7 +1,7 @@
 // Theme 6 / 7 — Links & buttons: accessible-name presence (empty-name + icon-only).
 import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, descendants, visibleText } from "../parse/html.js";
-import { accessibleName } from "../name.js";
+import { accessibleName, mayInjectContent } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 function hasIconChild(el: El): boolean {
@@ -29,7 +29,6 @@ const isButton = (el: El): boolean => {
 const linkEmptyName: Rule = {
   id: "link-empty-name",
   criteria: ["2.4.4"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -37,6 +36,7 @@ const linkEmptyName: Rule = {
       if (el.tag !== "a" || !hasAttr(el, "href")) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc) !== "") continue;
+      if (mayInjectContent(el)) continue; // name supplied by a <slot>/child component
       if (hasIconChild(el)) continue; // handled by icon-only-control-unnamed
       out.push({
         criteriaId: "2.4.4",
@@ -52,7 +52,6 @@ const linkEmptyName: Rule = {
 const buttonEmptyName: Rule = {
   id: "button-empty-name",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -60,6 +59,7 @@ const buttonEmptyName: Rule = {
       if (!isButton(el)) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc) !== "") continue;
+      if (mayInjectContent(el)) continue; // name supplied by a <slot>/child component
       if (hasIconChild(el)) continue; // handled by icon-only-control-unnamed
       out.push({
         criteriaId: "4.1.2",
@@ -75,7 +75,6 @@ const buttonEmptyName: Rule = {
 const iconOnlyControlUnnamed: Rule = {
   id: "icon-only-control-unnamed",
   criteria: ["2.4.4", "4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -85,6 +84,7 @@ const iconOnlyControlUnnamed: Rule = {
       if (!link && !button) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc) !== "") continue;
+      if (mayInjectContent(el)) continue; // name supplied by a <slot>/child component
       if (!hasIconChild(el)) continue;
       out.push({
         criteriaId: link ? "2.4.4" : "4.1.2",

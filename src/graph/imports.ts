@@ -185,12 +185,36 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): F
   const imports: ImportRec[] = [];
   const components = new Map<string, ComponentDef>();
 
+  // Top-level `const X = "literal"` string bindings, so a dynamic id={X} (common for
+  // shared modal/dialog ids) can be resolved to its literal and counted as a defined id
+  // — otherwise a cross-file aria-controls="X" reference looks dangling (false NC).
+  const constStrings = new Map<string, string>();
+  if (ast) {
+    for (const stmt of asNodes((asNode(ast.program) ?? ast).body)) {
+      const vd = stmt.type === "VariableDeclaration" ? stmt : stmt.type === "ExportNamedDeclaration" ? asNode(stmt.declaration) : undefined;
+      if (!vd || vd.type !== "VariableDeclaration") continue;
+      for (const d of asNodes(vd.declarations)) {
+        const idn = asNode(d.id);
+        const init = asNode(d.init);
+        if (idn?.type === "Identifier" && typeof idn.name === "string" && init?.type === "StringLiteral" && typeof init.value === "string") {
+          constStrings.set(idn.name, init.value);
+        }
+      }
+    }
+  }
+
   // ids + html-lang come from the Doc (works for HTML and JSX alike).
   const definesIds: string[] = [];
   let providesHtmlLang = false;
   for (const el of doc.elements) {
     const id = el.attribs.id;
-    if (id && !id.startsWith("{")) definesIds.push(id); // skip dynamic id={…}
+    if (id && !id.startsWith("{")) definesIds.push(id);
+    else if (id) {
+      // id={X} → resolve X via a top-level const string binding (conservative).
+      const m = /^\{\s*([A-Za-z_$][\w$]*)\s*\}$/.exec(id);
+      const resolved = m ? constStrings.get(m[1] as string) : undefined;
+      if (resolved) definesIds.push(resolved);
+    }
     if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
   }
 

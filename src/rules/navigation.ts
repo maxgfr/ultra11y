@@ -6,7 +6,6 @@ import type { Rule, RuleFinding } from "./rule.js";
 const skipLinkTargetMissing: Rule = {
   id: "skip-link-target-missing",
   criteria: ["2.4.1"],
-  parser: ["html"],
   severity: "majeur",
   scope: "page",
   run(doc: Doc): RuleFinding[] {
@@ -37,7 +36,6 @@ const skipLinkTargetMissing: Rule = {
 const positiveTabindex: Rule = {
   id: "positive-tabindex",
   criteria: ["2.4.3"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

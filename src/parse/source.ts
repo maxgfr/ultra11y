@@ -8,11 +8,14 @@ import { jsxToHtml } from "./jsx.js";
 import { parseJsxAst } from "./jsx-ast.js";
 import { jsxAstToDoc } from "./jsx-bridge.js";
 
-export type SourceKind = "html" | "jsx";
+export type SourceKind = "html" | "jsx" | "sfc";
 
 export function detectKind(file: string, forceJsx = false): SourceKind {
   if (forceJsx) return "jsx";
   if (/\.(jsx|tsx)$/i.test(file)) return "jsx";
+  // Single-file components: parsed via the HTML path but with component case
+  // preserved (so PascalCase components keep their identity and rules skip them).
+  if (/\.(vue|svelte|astro)$/i.test(file)) return "sfc";
   return "html"; // .html/.htm/.xhtml, stdin, and unknown extensions default to HTML
 }
 
@@ -24,5 +27,7 @@ export function parseSource(source: string, file: string, opts: { forceJsx?: boo
     // Catastrophic parse failure → lossy fallback (flagged lossy in the Doc).
     return parseHtml(jsxToHtml(source), file, true);
   }
-  return parseHtml(source, file, false);
+  // SFC templates parse as HTML but keep component case (preserveCase) and a
+  // distinct kind so the injected-content guards treat them like JSX, not HTML.
+  return parseHtml(source, file, false, kind === "sfc");
 }

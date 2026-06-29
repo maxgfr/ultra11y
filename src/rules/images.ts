@@ -1,15 +1,16 @@
 // Theme 1 — Images.
 import type { Doc, El } from "../parse/html.js";
-import { attr, hasAttr, visibleText } from "../parse/html.js";
+import { attr, hasAttr, hasBoundAttr, boundAttr, visibleText } from "../parse/html.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const isHidden = (el: El): boolean => attr(el, "aria-hidden") === "true" || ["presentation", "none"].includes((attr(el, "role") ?? "").trim());
-const named = (el: El): boolean => !!(attr(el, "aria-label") ?? "").trim() || hasAttr(el, "aria-labelledby");
+// A dynamically-bound name (`:aria-label`, `v-bind:aria-labelledby`) names the element
+// even though we cannot resolve its value — treat it as present, not missing.
+const named = (el: El): boolean => !!(boundAttr(el, "aria-label") ?? "").trim() || hasBoundAttr(el, "aria-labelledby");
 
 const imgAltMissing: Rule = {
   id: "img-alt-missing",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -17,7 +18,7 @@ const imgAltMissing: Rule = {
       const isImg = el.tag === "img" || el.tag === "area" || (attr(el, "role") ?? "") === "img";
       if (!isImg) continue;
       if (isHidden(el) && el.tag !== "area") continue;
-      if (hasAttr(el, "alt") || named(el)) continue;
+      if (hasBoundAttr(el, "alt") || named(el)) continue; // alt="" / :alt="x" / aria-* → present
       out.push({
         criteriaId: "1.1.1",
         el,
@@ -32,7 +33,6 @@ const imgAltMissing: Rule = {
 const decorativeAltMisuse: Rule = {
   id: "decorative-alt-misuse",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -65,7 +65,6 @@ const decorativeAltMisuse: Rule = {
 const canvasFallbackMissing: Rule = {
   id: "canvas-fallback-missing",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -87,13 +86,12 @@ const canvasFallbackMissing: Rule = {
 const inputImageAltMissing: Rule = {
   id: "input-image-alt-missing",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
       if (el.tag !== "input" || (attr(el, "type") ?? "").toLowerCase() !== "image") continue;
-      const alt = (attr(el, "alt") ?? "").trim();
+      const alt = (boundAttr(el, "alt") ?? "").trim();
       if (alt || named(el) || (attr(el, "title") ?? "").trim()) continue;
       out.push({
         criteriaId: "1.1.1",

@@ -8,7 +8,6 @@ import type { Rule, RuleFinding } from "./rule.js";
 const metaViewportZoomBlock: Rule = {
   id: "meta-viewport-zoom-block",
   criteria: ["1.4.4"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

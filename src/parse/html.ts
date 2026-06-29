@@ -16,6 +16,11 @@ export interface El {
   // JSX only: the element carries a {...spread} attribute (props could inject a
   // name/aria). Undefined for HTML. Used by the cross-file rules.
   spread?: boolean;
+  // JSX only: identity of the conditional arm this element was lowered from
+  // (`{cond ? <A/> : <B/>}` / `{cond && <A/>}`). Elements in different arms of the same
+  // conditional are mutually exclusive at runtime, so order-sensitive rules
+  // (heading-order-skip) must not compare across arms. Undefined = unconditional.
+  branchArm?: string;
 }
 export interface Txt {
   type: "text";
@@ -29,9 +34,11 @@ export interface Doc {
   source: string;
   lossy: boolean;
   // How the Doc was produced: a real HTML parse, a real JSX/TSX AST (offsets index
-  // the original file — fix-safe), or the best-effort lossy JSX→HTML fallback.
+  // the original file — fix-safe), the best-effort lossy JSX→HTML fallback, or a
+  // single-file component (.vue/.svelte/.astro) template — parsed as HTML but with
+  // component case PRESERVED (so PascalCase components are skipped like in JSX).
   // Optional/additive so existing AuditResult JSON and direct parseHtml callers stay valid.
-  kind?: "html" | "jsx-ast" | "jsx-lossy";
+  kind?: "html" | "jsx-ast" | "jsx-lossy" | "sfc";
   // JSX only: import specifiers of component-LIBRARY components rendered in this
   // file (e.g. "@codegouvfr/react-dsfr/Button"). Their real HTML output lives in
   // node_modules and is invisible to source analysis — a source verdict is
@@ -65,11 +72,14 @@ export function lineColAt(lineStarts: number[], offset: number): { line: number;
   return { line: lo + 1, col: offset - lineStarts[lo]! + 1 };
 }
 
-export function parseHtml(source: string, file: string, lossy = false): Doc {
+export function parseHtml(source: string, file: string, lossy = false, sfc = false): Doc {
   const dom: Document = parseDocument(source, {
     withStartIndices: true,
     withEndIndices: true,
-    lowerCaseTags: true,
+    // SFC: keep tag case so PascalCase components stay non-intrinsic (rules skip
+    // them). Attribute names stay lowercased (HTML attrs are case-insensitive, and
+    // the dynamic-binding prefixes `:`/`v-bind:`/`bind:` are already lowercase).
+    lowerCaseTags: !sfc,
     lowerCaseAttributeNames: true,
     recognizeSelfClosing: true,
   });
@@ -87,7 +97,7 @@ export function parseHtml(source: string, file: string, lossy = false): Doc {
       const { line, col } = lineColAt(lineStarts, start);
       const el: El = {
         type: "element",
-        tag: dh.name.toLowerCase(),
+        tag: sfc ? dh.name : dh.name.toLowerCase(),
         attribs: { ...dh.attribs },
         children: [],
         parent,
@@ -113,7 +123,7 @@ export function parseHtml(source: string, file: string, lossy = false): Doc {
     const c = convert(node, null);
     if (c) roots.push(c);
   }
-  return { file, source, lossy, kind: lossy ? "jsx-lossy" : "html", roots, elements, byId, lineStarts };
+  return { file, source, lossy, kind: sfc ? "sfc" : lossy ? "jsx-lossy" : "html", roots, elements, byId, lineStarts };
 }
 
 // ---- helpers used by rules
@@ -124,6 +134,26 @@ export function attr(el: El, name: string): string | undefined {
 
 export function hasAttr(el: El, name: string): boolean {
   return name.toLowerCase() in el.attribs;
+}
+
+// Framework dynamic-binding prefixes: Vue `:x`/`v-bind:x`, Alpine `x-bind:x`,
+// Svelte `bind:x`. The HTML parser keeps these as literal attribute keys.
+const BIND_PREFIXES = ["", ":", "v-bind:", "x-bind:", "bind:"];
+
+/** Like `attr`, but also matches a dynamically-bound spelling (`:name`, `v-bind:name`,
+ *  …). Returns the (possibly expression) value; the caller treats it as "present but
+ *  value-unknown" so a missing-name/alt finding is suppressed rather than hallucinated. */
+export function boundAttr(el: El, name: string): string | undefined {
+  const lower = name.toLowerCase();
+  for (const p of BIND_PREFIXES) {
+    const k = p + lower;
+    if (k in el.attribs) return el.attribs[k];
+  }
+  return undefined;
+}
+
+export function hasBoundAttr(el: El, name: string): boolean {
+  return boundAttr(el, name) !== undefined;
 }
 
 export function isVoid(tag: string): boolean {

@@ -3,10 +3,19 @@ import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, visibleText, allIds, elementsByTag } from "../parse/html.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
+// Next.js App Router sets the document <title> via `export const metadata = { title }`
+// or `generateMetadata`, not a literal <title> in JSX — invisible to source analysis.
+// When that API is present in a JSX/TSX file, the title is managed by the framework, so
+// title-missing-empty must not assert a (false) non-conformity.
+const NEXT_METADATA = /export\s+(const\s+metadata\b|(async\s+)?function\s+generateMetadata\b)/;
+function titleSetByFramework(doc: Doc): boolean {
+  if (doc.kind === "html") return false;
+  return NEXT_METADATA.test(doc.source) && /\btitle\s*:/.test(doc.source);
+}
+
 const htmlLangMissing: Rule = {
   id: "html-lang-missing",
   criteria: ["3.1.1"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   scope: "page",
   run(doc: Doc): RuleFinding[] {
@@ -28,13 +37,13 @@ const htmlLangMissing: Rule = {
 const titleMissingEmpty: Rule = {
   id: "title-missing-empty",
   criteria: ["2.4.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   scope: "page",
   run(doc: Doc): RuleFinding[] {
     const titles = elementsByTag(doc, "title");
     const hasNonEmpty = titles.some((t) => visibleText(t).length > 0);
     if (hasNonEmpty) return [];
+    if (titleSetByFramework(doc)) return []; // <title> injected by the Next.js metadata API
     const anchor: El | undefined = elementsByTag(doc, "head")[0] ?? elementsByTag(doc, "html")[0] ?? doc.elements[0];
     if (!anchor) return [];
     return [
@@ -51,7 +60,6 @@ const titleMissingEmpty: Rule = {
 const duplicateId: Rule = {
   id: "duplicate-id",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const seen = new Map<string, number>();
@@ -75,7 +83,6 @@ const duplicateId: Rule = {
 const inlineLangChangeMissing: Rule = {
   id: "inline-lang-change-missing",
   criteria: ["3.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -101,7 +108,6 @@ const BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
 const langInvalid: Rule = {
   id: "lang-invalid",
   criteria: ["3.1.1", "3.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

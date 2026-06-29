@@ -1,6 +1,7 @@
 // Theme 7 — Scripts / ARIA correctness (the statically-checkable slice).
 import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, descendants, ancestors } from "../parse/html.js";
+import { isIntrinsic } from "../parse/jsx-bridge.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const INTERACTIVE_ROLES = [
@@ -126,11 +127,11 @@ const IDREF_SINGLE = ["aria-activedescendant"];
 const invalidAriaRole: Rule = {
   id: "invalid-aria-role",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue; // a component's `role` is a prop, not the HTML role attr
       const role = (attr(el, "role") ?? "").trim();
       if (!role) continue;
       const tokens = role.split(/\s+/);
@@ -151,7 +152,6 @@ const invalidAriaRole: Rule = {
 const ariaRefMissingId: Rule = {
   id: "aria-ref-missing-id",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -208,7 +208,6 @@ const IMPLICIT_ROLE: Record<string, string> = {
 const redundantAria: Rule = {
   id: "redundant-aria",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -235,7 +234,6 @@ const NONINTERACTIVE = new Set(["div", "span"]);
 const clickableNoninteractive: Rule = {
   id: "clickable-noninteractive",
   criteria: ["4.1.2", "2.1.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -278,7 +276,6 @@ function satisfiesChild(d: El, reqRoles: string[]): boolean {
 const ariaRequiredChildren: Rule = {
   id: "aria-required-children",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -302,7 +299,6 @@ const ariaRequiredChildren: Rule = {
 const ariaHiddenFocusable: Rule = {
   id: "aria-hidden-focusable",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -324,7 +320,6 @@ const ariaHiddenFocusable: Rule = {
 const nestedInteractive: Rule = {
   id: "nested-interactive",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

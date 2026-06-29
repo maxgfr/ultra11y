@@ -77,23 +77,46 @@ function attribsOf(opening: AstNode, source: string): Record<string, string> {
   return attribs;
 }
 
+// A JSX node collected from inside an expression, tagged with the conditional arm it
+// belongs to (mutually-exclusive arms get distinct tags; "" = unconditional).
+interface Collected {
+  node: AstNode;
+  arm: string;
+}
+
 // Collect JSXElement/JSXFragment nodes nested inside an arbitrary expression
 // (e.g. {cond && <img/>} or {items.map(i => <li/>)}) without descending into the
-// matched node (convert() handles its subtree).
-function collectJsx(node: unknown, out: AstNode[]): void {
-  const n = asNode(node);
+// matched node (convert() handles its subtree). Ternary consequent/alternate and the
+// right operand of `&&`/`||` are tagged as distinct arms so order-sensitive rules can
+// tell two elements are mutually exclusive (never both rendered). `seq` mints unique
+// conditional ids across the whole doc so arms from different conditionals never collide.
+function collectJsx(node: unknown, out: Collected[], arm: string, seq: { n: number }): void {
   if (Array.isArray(node)) {
-    for (const item of node) collectJsx(item, out);
+    for (const item of node) collectJsx(item, out, arm, seq);
     return;
   }
+  const n = asNode(node);
   if (!n || typeof n.type !== "string") return;
   if (n.type === "JSXElement" || n.type === "JSXFragment") {
-    out.push(n);
+    out.push({ node: n, arm });
+    return;
+  }
+  if (n.type === "ConditionalExpression") {
+    const id = seq.n++;
+    collectJsx(n.test, out, arm, seq);
+    collectJsx(n.consequent, out, `${arm}/c${id}T`, seq);
+    collectJsx(n.alternate, out, `${arm}/c${id}F`, seq);
+    return;
+  }
+  if (n.type === "LogicalExpression") {
+    const id = seq.n++;
+    collectJsx(n.left, out, arm, seq);
+    collectJsx(n.right, out, `${arm}/c${id}R`, seq);
     return;
   }
   for (const key in n) {
     if (key === "loc" || key === "start" || key === "end" || key === "range" || key === "type") continue;
-    collectJsx(n[key], out);
+    collectJsx(n[key], out, arm, seq);
   }
 }
 
@@ -102,8 +125,9 @@ export function jsxAstToDoc(ast: AstFile, source: string, file: string): Doc {
   const elements: El[] = [];
   const byId = new Map<string, El>();
   const roots: HNode[] = [];
+  const seq = { n: 0 }; // doc-wide counter for unique conditional-arm ids
 
-  const convert = (node: AstNode, parent: El | null): El => {
+  const convert = (node: AstNode, parent: El | null, arm = ""): El => {
     let tag = "#fragment";
     let attribs: Record<string, string> = {};
     let spread = false;
@@ -127,6 +151,7 @@ export function jsxAstToDoc(ast: AstFile, source: string, file: string): Doc {
       start: node.start ?? 0,
       end: node.end ?? 0,
       ...(spread ? { spread: true } : {}),
+      ...(arm ? { branchArm: arm } : {}),
     };
     elements.push(el);
     const id = attribs.id;
@@ -137,14 +162,15 @@ export function jsxAstToDoc(ast: AstFile, source: string, file: string): Doc {
         const data = typeof c.value === "string" ? c.value : "";
         if (data.trim() !== "") el.children.push({ type: "text", data, parent: el });
       } else if (c.type === "JSXElement" || c.type === "JSXFragment") {
-        el.children.push(convert(c, el));
+        el.children.push(convert(c, el, arm));
       } else if (c.type === "JSXExpressionContainer" || c.type === "JSXSpreadChild") {
         // Keep the raw `{…}` as text (non-empty content for name/empty rules)…
         el.children.push({ type: "text", data: source.slice(c.start ?? 0, c.end ?? 0), parent: el });
-        // …and surface any JSX rendered inside the expression as real children.
-        const nested: AstNode[] = [];
-        collectJsx(c.expression ?? c, nested);
-        for (const j of nested) el.children.push(convert(j, el));
+        // …and surface any JSX rendered inside the expression as real children, tagged
+        // with the conditional arm they came from (so heading-order won't cross arms).
+        const nested: Collected[] = [];
+        collectJsx(c.expression ?? c, nested, arm, seq);
+        for (const j of nested) el.children.push(convert(j.node, el, j.arm));
       }
     }
     return el;

@@ -1,7 +1,7 @@
 // Rule contract + helpers shared by every rule module and the registry.
 // Kept dependency-light (no value import of the registry) to avoid cycles.
 import type { Doc, El } from "../parse/html.js";
-import type { Finding, Severity, ParserKind } from "../types.js";
+import type { Finding, Severity } from "../types.js";
 import { snippet } from "../parse/html.js";
 
 export interface RuleFinding {
@@ -19,7 +19,6 @@ export interface Rule {
   id: string;
   /** every WCAG success criterion this rule may contribute to (registry cross-check) */
   criteria: string[];
-  parser: ParserKind[];
   severity: Severity; // default severity for findings
   /** "page" rules only run on a full document (skip fragments/components) */
   scope?: "page" | "any";
@@ -62,5 +61,7 @@ export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFindi
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
     // edit by range and baseline diffing falls back to line/selector identity.
     ...(doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end }),
+    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human verification.
+    ...(doc.kind === "sfc" ? { preliminary: true } : {}),
   };
 }

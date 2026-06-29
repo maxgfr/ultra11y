@@ -62,6 +62,13 @@ describe("cross-file suppressors for id-ref rules (audit --graph)", () => {
     expect(has(graph, "aria-ref-missing-id")).toBe(false);
   });
 
+  it("suppresses aria-ref-missing-id when the target is a const-bound id={X} in another file", () => {
+    // consumer.tsx: <button aria-controls="cse-modal">; defs.tsx: const MODAL_ID="cse-modal"; <dialog id={MODAL_ID}>
+    const plainBtn = plain.find((f) => f.ruleId === "aria-ref-missing-id" && /cse-modal/.test(f.message));
+    expect(plainBtn).toBeDefined();
+    expect(graph.find((f) => f.ruleId === "aria-ref-missing-id" && /cse-modal/.test(f.message))).toBeUndefined();
+  });
+
   it("suppresses label-for-dangling when the field lives in an imported component", () => {
     expect(has(plain, "label-for-dangling")).toBe(true);
     expect(has(graph, "label-for-dangling")).toBe(false);

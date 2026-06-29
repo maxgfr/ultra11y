@@ -1,7 +1,7 @@
 // Theme 11 — Forms: every field has a programmatic label + group/structure checks.
 import type { Doc } from "../parse/html.js";
 import { attr, hasAttr, descendants, visibleText } from "../parse/html.js";
-import { controlLabel, isFormField } from "../name.js";
+import { controlLabel, isFormField, mayInjectContent } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 // title/placeholder are NOT real labels for these rules
@@ -10,7 +10,6 @@ const REAL_LABEL = new Set(["for", "wrapping", "aria-label", "aria-labelledby"])
 const controlLabelMissing: Rule = {
   id: "control-label-missing",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -33,7 +32,6 @@ const controlLabelMissing: Rule = {
 const placeholderAsLabel: Rule = {
   id: "placeholder-as-label",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -56,7 +54,6 @@ const placeholderAsLabel: Rule = {
 const fieldsetLegendMissing: Rule = {
   id: "fieldset-legend-missing",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -79,7 +76,6 @@ const fieldsetLegendMissing: Rule = {
 const formFieldMultipleLabels: Rule = {
   id: "form-field-multiple-labels",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const counts = new Map<string, number>();
@@ -108,13 +104,13 @@ const formFieldMultipleLabels: Rule = {
 const selectHasOption: Rule = {
   id: "select-has-option",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
       if (el.tag !== "select") continue;
       if (descendants(el).some((d) => d.tag === "option")) continue;
+      if (mayInjectContent(el)) continue; // options injected via <slot>/child component
       out.push({
         criteriaId: "4.1.2",
         el,
@@ -132,7 +128,6 @@ const selectHasOption: Rule = {
 const labelForDangling: Rule = {
   id: "label-for-dangling",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

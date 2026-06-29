@@ -88,7 +88,6 @@ function hasDirectText(el: El): boolean {
 const contrastLiteral: Rule = {
   id: "contrast-literal",
   criteria: ["1.4.3"],
-  parser: ["html", "jsx", "css"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

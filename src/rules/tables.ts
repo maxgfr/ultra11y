@@ -23,13 +23,16 @@ function isLayoutTable(t: El): boolean {
 const dataTableNoHeaders: Rule = {
   id: "data-table-no-headers",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
     for (const t of doc.elements) {
       if (t.tag !== "table" || isLayoutTable(t)) continue;
       const desc = descendants(t);
+      // No statically-visible rows/cells means the body is injected dynamically
+      // ({children}/slot — e.g. a generic <table> wrapper component) or simply absent;
+      // we cannot tell whether headers exist, so we do not assert a definite NC.
+      if (!desc.some((d) => d.tag === "tr" || d.tag === "td" || d.tag === "th")) continue;
       const hasTh = desc.some((d) => d.tag === "th");
       const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasAttr(d, "scope") || hasAttr(d, "headers")));
       if (hasTh && hasAssoc) continue;
@@ -56,7 +59,6 @@ const dataTableNoHeaders: Rule = {
 const tableCaptionMissing: Rule = {
   id: "table-caption-missing",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -78,7 +80,6 @@ const tableCaptionMissing: Rule = {
 const layoutTableDataMarkup: Rule = {
   id: "layout-table-data-markup",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

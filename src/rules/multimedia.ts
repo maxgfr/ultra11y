@@ -16,7 +16,6 @@ function mutedStatically(el: El): boolean {
 const autoplayMedia: Rule = {
   id: "autoplay-media",
   criteria: ["1.4.2", "2.2.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -50,7 +49,6 @@ const autoplayMedia: Rule = {
 const mediaNoTrack: Rule = {
   id: "media-no-track",
   criteria: ["1.2.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

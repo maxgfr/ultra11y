@@ -10,6 +10,19 @@ describe("heading-order-skip (9.1)", () => {
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("1.3.1");
   });
+  // Headings in mutually-exclusive JSX conditional arms are NOT both rendered, so the
+  // engine must not compare their levels across the branch boundary (egapro FP).
+  it("does not flag a skip across mutually-exclusive ternary branches (JSX)", () => {
+    const src = `<div>{j ? <h2>A</h2> : <h1>B</h1>}{j ? <h3>C</h3> : <h2>D</h2>}</div>`;
+    expect(findOf(src, "heading-order-skip", "t.tsx")).toHaveLength(0);
+  });
+  it("still flags a real skip WITHIN a single branch (JSX)", () => {
+    const src = `<div>{j ? (<><h2>A</h2><h4>B</h4></>) : null}</div>`;
+    expect(findOf(src, "heading-order-skip", "t.tsx")).toHaveLength(1);
+  });
+  it("still flags a skip in static top-level JSX", () => {
+    expect(findOf(`<div><h2>A</h2><h4>B</h4></div>`, "heading-order-skip", "t.tsx")).toHaveLength(1);
+  });
 });
 
 describe("h1-missing (9.1)", () => {
@@ -46,5 +59,35 @@ describe("list-structure (9.3)", () => {
   });
   it("non-conforming: an li outside any list", () => {
     expect(findOf(`<section><li>x</li></section>`, "list-structure")).toHaveLength(1);
+  });
+  // A PascalCase component child of a list may render an <li> (invisible to source
+  // analysis) — asserting a definite NC there is a false positive (egapro: <ul>{items
+  // .map(i => <HistoryEntry/>)}</ul>, HistoryEntry renders <li>).
+  it("does not flag a component child of <ul> (may render <li>)", () => {
+    expect(findOf(`<ul>{items.map((i) => <Row key={i} />)}</ul>`, "list-structure", "t.tsx")).toHaveLength(0);
+  });
+  it("still flags an intrinsic non-li child in JSX", () => {
+    expect(findOf(`<ul><div>x</div></ul>`, "list-structure", "t.tsx")).toHaveLength(1);
+  });
+  it("does not flag a <slot> child of <ul> (slotted list items)", () => {
+    expect(findOf(`<ul><li>a</li><slot></slot></ul>`, "list-structure")).toHaveLength(0);
+  });
+});
+
+describe("h1-missing — component-composed pages (JSX)", () => {
+  // A Next.js root layout renders {children}; the <h1> is supplied by the page. A
+  // child component can also render the h1. The static parse can't see through either,
+  // so 1.3.1 must stay a residual risk, never a false NC.
+  it("does not assert when the body content is injected via {children}", () => {
+    expect(findOf(`<html lang="fr"><head><title>T</title></head><body>{children}</body></html>`, "h1-missing", "t.tsx")).toHaveLength(0);
+  });
+  it("does not assert when the body renders a child component", () => {
+    expect(findOf(`<html lang="fr"><head><title>T</title></head><body><ErrorPage /></body></html>`, "h1-missing", "t.tsx")).toHaveLength(0);
+  });
+  it("still asserts on a fully static JSX page with no h1", () => {
+    expect(findOf(`<html lang="fr"><head><title>T</title></head><body><div>static</div></body></html>`, "h1-missing", "t.tsx")).toHaveLength(1);
+  });
+  it("still asserts on a static HTML page with no h1 (unchanged)", () => {
+    expect(findOf(page("<h2>Sous-titre</h2>"), "h1-missing")).toHaveLength(1);
   });
 });

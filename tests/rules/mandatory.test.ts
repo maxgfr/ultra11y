@@ -23,6 +23,17 @@ describe("title-missing-empty (8.5)", () => {
     expect(findOf(page("<p>x</p>", ""), "title-missing-empty")).toHaveLength(1);
     expect(findOf(page("<p>x</p>", "<title>  </title>"), "title-missing-empty")).toHaveLength(1);
   });
+  // Next.js App Router sets <title> via `export const metadata = { title }`, not a
+  // literal <title> in JSX (egapro: layout.tsx). Flagging that is a false positive.
+  it("does not assert when a Next.js metadata export sets the title (JSX)", () => {
+    const src = `export const metadata = { title: "Egapro" };
+export default function L({ children }) { return (<html lang="fr"><head><link /></head><body>{children}</body></html>); }`;
+    expect(findOf(src, "title-missing-empty", "t.tsx")).toHaveLength(0);
+  });
+  it("still asserts on a JSX page with a literal head, no title and no metadata", () => {
+    const src = `export default function P() { return (<html lang="fr"><head><link /></head><body><h1>x</h1></body></html>); }`;
+    expect(findOf(src, "title-missing-empty", "t.tsx")).toHaveLength(1);
+  });
 });
 
 describe("duplicate-id (8.2)", () => {

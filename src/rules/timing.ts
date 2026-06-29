@@ -7,7 +7,6 @@ import type { Rule, RuleFinding } from "./rule.js";
 const metaRefreshRedirect: Rule = {
   id: "meta-refresh-redirect",
   criteria: ["2.2.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
@@ -31,7 +30,6 @@ const metaRefreshRedirect: Rule = {
 const blinkMarquee: Rule = {
   id: "blink-marquee",
   criteria: ["2.2.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];

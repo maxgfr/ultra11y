@@ -6,6 +6,7 @@ export default function Consumer() {
       <label htmlFor="remote-field">Email</label>
       <input aria-describedby="remote-hint" />
       <h2 aria-labelledby="remote-heading"></h2>
+      <button type="button" aria-controls="cse-modal">Ouvrir</button>
     </form>
   );
 }

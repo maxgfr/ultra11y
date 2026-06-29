@@ -1,8 +1,30 @@
 // Theme 9 — Information structure (headings).
-import type { Doc, El } from "../parse/html.js";
+import type { Doc, El, HNode } from "../parse/html.js";
 import { attr, elementsByTag } from "../parse/html.js";
-import { accessibleName } from "../name.js";
+import { isIntrinsic } from "../parse/jsx-bridge.js";
+import { accessibleName, mayInjectContent } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
+
+// JSX/SFC only: true when a required element/content may be injected at runtime in a
+// way static source analysis cannot see — a child component (non-intrinsic tag, which
+// can render anything), a <slot>, or a {…}/{@render} expression child. Rules that
+// assert "the page is missing X" must bail on these so a residual risk is never turned
+// into a false non-conformity (e.g. a Next.js layout supplies its <h1> via {children}).
+function contentMaybeInjected(doc: Doc): boolean {
+  if (doc.kind === "html") return false; // plain HTML has no slots/components/expressions
+  for (const el of doc.elements) {
+    if (el.tag === "slot") return true;
+    if (el.tag !== "#fragment" && !isIntrinsic(el.tag)) return true;
+  }
+  const stack: HNode[] = [...doc.roots];
+  while (stack.length) {
+    const n = stack.pop()!;
+    if (n.type === "text") {
+      if (n.data.includes("{")) return true; // {children}/{expr} — injected markup
+    } else stack.push(...n.children);
+  }
+  return false;
+}
 
 function headingLevel(el: El): number | null {
   const m = /^h([1-6])$/.exec(el.tag);
@@ -26,14 +48,17 @@ function headings(doc: Doc): { el: El; level: number }[] {
 const headingOrderSkip: Rule = {
   id: "heading-order-skip",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const hs = headings(doc);
     const out: RuleFinding[] = [];
     let prev = 0;
+    let prevArm: string | undefined;
     for (const { el, level } of hs) {
-      if (prev !== 0 && level - prev > 1) {
+      // Only compare two headings that are in the SAME branch context: headings in
+      // different JSX conditional arms are never both rendered, so a "skip" between
+      // them is a flattening artefact, not a real order violation.
+      if (prev !== 0 && el.branchArm === prevArm && level - prev > 1) {
         out.push({
           criteriaId: "1.3.1",
           el,
@@ -42,6 +67,7 @@ const headingOrderSkip: Rule = {
         });
       }
       prev = level;
+      prevArm = el.branchArm;
     }
     return out;
   },
@@ -50,12 +76,12 @@ const headingOrderSkip: Rule = {
 const h1Missing: Rule = {
   id: "h1-missing",
   criteria: ["1.3.1"],
-  parser: ["html"],
   severity: "majeur",
   scope: "page",
   run(doc: Doc): RuleFinding[] {
     const hasH1 = headings(doc).some((h) => h.level === 1);
     if (hasH1) return [];
+    if (contentMaybeInjected(doc)) return []; // the h1 may be supplied by {children}/a child component
     const anchor = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
     if (!anchor) return [];
     return [
@@ -72,7 +98,6 @@ const h1Missing: Rule = {
 const h1Multiple: Rule = {
   id: "h1-multiple",
   criteria: ["1.3.1"],
-  parser: ["html"],
   severity: "mineur",
   scope: "page",
   run(doc: Doc): RuleFinding[] {
@@ -87,18 +112,21 @@ const h1Multiple: Rule = {
   },
 };
 
-const ALLOWED_IN_LIST = new Set(["li", "script", "template"]);
+// <slot> is allowed: it projects slotted <li>s (web components / SFC templates).
+const ALLOWED_IN_LIST = new Set(["li", "script", "template", "slot"]);
 
 const listStructure: Rule = {
   id: "list-structure",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
       if (el.tag === "ul" || el.tag === "ol") {
-        const bad = el.children.find((c) => c.type === "element" && !ALLOWED_IN_LIST.has(c.tag));
+        // Only intrinsic (HTML) children are a definite violation; a PascalCase
+        // component child may itself render an <li>, so it is left to the cross-file
+        // graph / human, never asserted here.
+        const bad = el.children.find((c) => c.type === "element" && isIntrinsic(c.tag) && !ALLOWED_IN_LIST.has(c.tag));
         if (bad && bad.type === "element") {
           out.push({
             criteriaId: "1.3.1",
@@ -126,13 +154,13 @@ const listStructure: Rule = {
 const emptyHeading: Rule = {
   id: "empty-heading",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const out: RuleFinding[] = [];
     for (const { el, level } of headings(doc)) {
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc)) continue;
+      if (mayInjectContent(el)) continue; // text supplied by a <slot>/child component
       out.push({
         criteriaId: "1.3.1",
         el,

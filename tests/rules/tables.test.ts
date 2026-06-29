@@ -22,6 +22,15 @@ describe("data-table-no-headers (5.6/5.7)", () => {
     const html = `<table><tr><td><table><tr><td>x</td></tr></table></td><td>y</td></tr></table>`;
     expect(findOf(html, "data-table-no-headers")).toHaveLength(0);
   });
+  // A generic table wrapper injects its rows/headers via {children} (egapro: DsfrTable)
+  // — no <th> is statically visible, but the headers exist at runtime. Asserting a
+  // definite NC there is a false positive.
+  it("does not assert when rows/cells are injected via {children} (JSX wrapper)", () => {
+    expect(findOf(`<table><caption>T</caption>{children}</table>`, "data-table-no-headers", "t.tsx")).toHaveLength(0);
+  });
+  it("does not assert on a table with no static row/cell markup", () => {
+    expect(findOf(`<table><caption>T</caption></table>`, "data-table-no-headers")).toHaveLength(0);
+  });
 });
 
 describe("layout-table-data-markup (5.8)", () => {

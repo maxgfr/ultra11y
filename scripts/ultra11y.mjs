@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync4 } from "fs";
-import { join as join9, relative as relative2, sep as sep2 } from "path";
+import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync7 } from "fs";
+import { join as join11, relative as relative3, sep as sep2 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -100,7 +100,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse"],
+      ruleIds: ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
       techniques: [
         "ARIA10",
@@ -177,7 +177,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: ["media-no-track"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
       techniques: ["F74", "F75", "F8", "G58", "G87", "G93", "H95", "SM11", "SM12"]
     },
@@ -232,7 +232,9 @@ var wcag_default = {
         "heading-order-skip",
         "h1-missing",
         "h1-multiple",
-        "list-structure"
+        "list-structure",
+        "empty-heading",
+        "label-for-dangling"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       techniques: [
@@ -504,7 +506,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: ["meta-refresh-redirect"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html",
       techniques: [
         "F16",
@@ -547,7 +549,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["autoplay-media"],
+      ruleIds: ["autoplay-media", "blink-marquee"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html",
       techniques: [
         "F16",
@@ -1120,6 +1122,9 @@ function scsByGuideline() {
   const m = /* @__PURE__ */ new Map();
   for (const c of data.criteria) (m.get(c.guideline) ?? m.set(c.guideline, []).get(c.guideline)).push(c);
   return m;
+}
+function techniques(id) {
+  return byId.get(id)?.techniques ?? [];
 }
 function meta() {
   return {
@@ -18212,7 +18217,28 @@ var canvasFallbackMissing = {
     return out;
   }
 };
-var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing];
+var inputImageAltMissing = {
+  id: "input-image-alt-missing",
+  criteria: ["1.1.1"],
+  parser: ["html", "jsx"],
+  severity: "bloquant",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "input" || (attr(el, "type") ?? "").toLowerCase() !== "image") continue;
+      const alt = (attr(el, "alt") ?? "").trim();
+      if (alt || named(el) || (attr(el, "title") ?? "").trim()) continue;
+      out.push({
+        criteriaId: "1.1.1",
+        el,
+        message: `<input type="image"> sans alt ni nom accessible \u2014 le bouton image n'a pas d'alternative textuelle.`,
+        remediation: `Ajoutez alt="\u2026" d\xE9crivant l'action du bouton (ex. alt="Rechercher").`
+      });
+    }
+    return out;
+  }
+};
+var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing];
 
 // src/rules/frames.ts
 var iframeTitleMissing = {
@@ -18390,11 +18416,11 @@ var ariaRefMissingId = {
       const refs = [];
       for (const a of IDREF_ATTRS) {
         const v = attr(el, a);
-        if (v) refs.push({ attr: a, ids: v.split(/\s+/).filter(Boolean) });
+        if (v && !v.includes("{")) refs.push({ attr: a, ids: v.split(/\s+/).filter(Boolean) });
       }
       for (const a of IDREF_SINGLE) {
         const v = (attr(el, a) ?? "").trim();
-        if (v) refs.push({ attr: a, ids: [v] });
+        if (v && !v.includes("{")) refs.push({ attr: a, ids: [v] });
       }
       for (const { attr: a, ids } of refs) {
         const missing = ids.filter((id) => !doc.byId.has(id));
@@ -18683,6 +18709,87 @@ var langInvalid = {
 };
 var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLangChangeMissing, langInvalid];
 
+// src/name.ts
+var collapse = (s) => s.replace(/\s+/g, " ").trim();
+function nameFromContent(el) {
+  let out = "";
+  const walk2 = (n) => {
+    if (n.type === "text") {
+      out += n.data;
+      return;
+    }
+    if (n.tag === "img") {
+      const a = attr(n, "alt");
+      if (a) out += " " + a;
+      return;
+    }
+    if (n.tag === "svg") {
+      const title2 = descendants(n).find((d) => d.tag === "title");
+      if (title2) out += " " + nameFromContent(title2);
+      return;
+    }
+    if (attr(n, "aria-hidden") === "true") return;
+    for (const c of n.children) walk2(c);
+  };
+  for (const c of el.children) walk2(c);
+  return collapse(out);
+}
+function ariaLabelledbyText(el, doc) {
+  const ids = attr(el, "aria-labelledby");
+  if (!ids) return "";
+  const parts = [];
+  for (const id of ids.split(/\s+/).filter(Boolean)) {
+    const ref = doc.byId.get(id);
+    if (ref) parts.push(nameFromContent(ref) || (attr(ref, "aria-label") ?? "").trim());
+  }
+  return collapse(parts.join(" "));
+}
+var BUTTON_INPUT = /* @__PURE__ */ new Set(["button", "submit", "reset"]);
+var NAMELESS_BY_DEFAULT = /* @__PURE__ */ new Set(["submit", "reset"]);
+function accessibleName(el, doc) {
+  const labelledby = ariaLabelledbyText(el, doc);
+  if (labelledby) return labelledby;
+  const ariaLabel = (attr(el, "aria-label") ?? "").trim();
+  if (ariaLabel) return ariaLabel;
+  if (el.tag === "img" || el.tag === "area") {
+    return (attr(el, "alt") ?? "").trim();
+  }
+  if (el.tag === "input") {
+    const type = (attr(el, "type") ?? "text").toLowerCase();
+    if (BUTTON_INPUT.has(type)) {
+      const value = (attr(el, "value") ?? "").trim();
+      if (value) return value;
+      if (NAMELESS_BY_DEFAULT.has(type)) return type === "submit" ? "Submit" : "Reset";
+      return (attr(el, "title") ?? "").trim();
+    }
+  }
+  const content = nameFromContent(el);
+  if (content) return content;
+  return (attr(el, "title") ?? "").trim();
+}
+var FIELD_TAGS = /* @__PURE__ */ new Set(["input", "select", "textarea"]);
+var NON_LABELABLE_INPUT = /* @__PURE__ */ new Set(["hidden", "submit", "reset", "button", "image"]);
+function isFormField(el) {
+  if (!FIELD_TAGS.has(el.tag)) return false;
+  if (el.tag === "input") {
+    const type = (attr(el, "type") ?? "text").toLowerCase();
+    return !NON_LABELABLE_INPUT.has(type);
+  }
+  return true;
+}
+function controlLabel(el, doc) {
+  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc)) return { hasLabel: true, via: "aria-labelledby" };
+  if ((attr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
+  const id = attr(el, "id");
+  if (id) {
+    const lbl = doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id);
+    if (lbl) return { hasLabel: true, via: "for" };
+  }
+  if (ancestors(el).some((a) => a.tag === "label")) return { hasLabel: true, via: "wrapping" };
+  if ((attr(el, "title") ?? "").trim()) return { hasLabel: true, via: "title" };
+  return { hasLabel: false, via: null };
+}
+
 // src/rules/headings.ts
 function headingLevel(el) {
   const m = /^h([1-6])$/.exec(el.tag);
@@ -18796,7 +18903,27 @@ var listStructure = {
     return out;
   }
 };
-var headingsRules = [headingOrderSkip, h1Missing, h1Multiple, listStructure];
+var emptyHeading = {
+  id: "empty-heading",
+  criteria: ["1.3.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const { el, level } of headings(doc)) {
+      if (attr(el, "aria-hidden") === "true") continue;
+      if (accessibleName(el, doc)) continue;
+      out.push({
+        criteriaId: "1.3.1",
+        el,
+        message: `Titre <${el.tag}> de niveau ${level} vide \u2014 un titre sans intitul\xE9 d\xE9soriente la navigation au clavier/lecteur d'\xE9cran.`,
+        remediation: `Donnez un intitul\xE9 textuel au titre, ou retirez-le s'il est purement d\xE9coratif.`
+      });
+    }
+    return out;
+  }
+};
+var headingsRules = [headingOrderSkip, h1Missing, h1Multiple, listStructure, emptyHeading];
 
 // src/rules/tables.ts
 var declaredLayout = (t2) => ["presentation", "none"].includes((attr(t2, "role") ?? "").trim());
@@ -18886,87 +19013,6 @@ var layoutTableDataMarkup = {
   }
 };
 var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup];
-
-// src/name.ts
-var collapse = (s) => s.replace(/\s+/g, " ").trim();
-function nameFromContent(el) {
-  let out = "";
-  const walk2 = (n) => {
-    if (n.type === "text") {
-      out += n.data;
-      return;
-    }
-    if (n.tag === "img") {
-      const a = attr(n, "alt");
-      if (a) out += " " + a;
-      return;
-    }
-    if (n.tag === "svg") {
-      const title2 = descendants(n).find((d) => d.tag === "title");
-      if (title2) out += " " + nameFromContent(title2);
-      return;
-    }
-    if (attr(n, "aria-hidden") === "true") return;
-    for (const c of n.children) walk2(c);
-  };
-  for (const c of el.children) walk2(c);
-  return collapse(out);
-}
-function ariaLabelledbyText(el, doc) {
-  const ids = attr(el, "aria-labelledby");
-  if (!ids) return "";
-  const parts = [];
-  for (const id of ids.split(/\s+/).filter(Boolean)) {
-    const ref = doc.byId.get(id);
-    if (ref) parts.push(nameFromContent(ref) || (attr(ref, "aria-label") ?? "").trim());
-  }
-  return collapse(parts.join(" "));
-}
-var BUTTON_INPUT = /* @__PURE__ */ new Set(["button", "submit", "reset"]);
-var NAMELESS_BY_DEFAULT = /* @__PURE__ */ new Set(["submit", "reset"]);
-function accessibleName(el, doc) {
-  const labelledby = ariaLabelledbyText(el, doc);
-  if (labelledby) return labelledby;
-  const ariaLabel = (attr(el, "aria-label") ?? "").trim();
-  if (ariaLabel) return ariaLabel;
-  if (el.tag === "img" || el.tag === "area") {
-    return (attr(el, "alt") ?? "").trim();
-  }
-  if (el.tag === "input") {
-    const type = (attr(el, "type") ?? "text").toLowerCase();
-    if (BUTTON_INPUT.has(type)) {
-      const value = (attr(el, "value") ?? "").trim();
-      if (value) return value;
-      if (NAMELESS_BY_DEFAULT.has(type)) return type === "submit" ? "Submit" : "Reset";
-      return (attr(el, "title") ?? "").trim();
-    }
-  }
-  const content = nameFromContent(el);
-  if (content) return content;
-  return (attr(el, "title") ?? "").trim();
-}
-var FIELD_TAGS = /* @__PURE__ */ new Set(["input", "select", "textarea"]);
-var NON_LABELABLE_INPUT = /* @__PURE__ */ new Set(["hidden", "submit", "reset", "button", "image"]);
-function isFormField(el) {
-  if (!FIELD_TAGS.has(el.tag)) return false;
-  if (el.tag === "input") {
-    const type = (attr(el, "type") ?? "text").toLowerCase();
-    return !NON_LABELABLE_INPUT.has(type);
-  }
-  return true;
-}
-function controlLabel(el, doc) {
-  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc)) return { hasLabel: true, via: "aria-labelledby" };
-  if ((attr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
-  const id = attr(el, "id");
-  if (id) {
-    const lbl = doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id);
-    if (lbl) return { hasLabel: true, via: "for" };
-  }
-  if (ancestors(el).some((a) => a.tag === "label")) return { hasLabel: true, via: "wrapping" };
-  if ((attr(el, "title") ?? "").trim()) return { hasLabel: true, via: "title" };
-  return { hasLabel: false, via: null };
-}
 
 // src/rules/links.ts
 function hasIconChild(el) {
@@ -19175,7 +19221,31 @@ var selectHasOption = {
     return out;
   }
 };
-var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption];
+var labelForDangling = {
+  id: "label-for-dangling",
+  criteria: ["1.3.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "label") continue;
+      const f = (attr(el, "for") ?? "").trim();
+      if (!f || f.includes("{")) continue;
+      if (doc.byId.has(f)) continue;
+      const passedAsIdProp = doc.elements.some((e) => e !== el && Object.entries(e.attribs).some(([k, v]) => v === f && /id/i.test(k)));
+      if (passedAsIdProp) continue;
+      out.push({
+        criteriaId: "1.3.1",
+        el,
+        message: `<label for="${f}"> ne cible aucun \xE9l\xE9ment \u2014 aucun champ n'a id="${f}".`,
+        remediation: `Donnez au champ id="${f}", corrigez l'attribut for, ou enveloppez le champ dans le <label>.`
+      });
+    }
+    return out;
+  }
+};
+var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption, labelForDangling];
 
 // src/rules/navigation.ts
 var skipLinkTargetMissing = {
@@ -19232,6 +19302,11 @@ var positiveTabindex = {
 var navigationRules = [skipLinkTargetMissing, positiveTabindex];
 
 // src/rules/multimedia.ts
+function mutedStatically(el) {
+  if (!hasAttr(el, "muted")) return false;
+  const v = (attr(el, "muted") ?? "").trim().toLowerCase();
+  return v === "" || v === "muted" || v === "true" || v === "{true}";
+}
 var autoplayMedia = {
   id: "autoplay-media",
   criteria: ["1.4.2", "2.2.2"],
@@ -19242,7 +19317,7 @@ var autoplayMedia = {
     for (const el of doc.elements) {
       if (el.tag !== "audio" && el.tag !== "video") continue;
       if (!hasAttr(el, "autoplay")) continue;
-      if (el.tag === "video" && hasAttr(el, "muted")) {
+      if (el.tag === "video" && mutedStatically(el)) {
         out.push({
           criteriaId: "2.2.2",
           el,
@@ -19261,7 +19336,28 @@ var autoplayMedia = {
     return out;
   }
 };
-var multimediaRules = [autoplayMedia];
+var mediaNoTrack = {
+  id: "media-no-track",
+  criteria: ["1.2.2"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "video") continue;
+      if (mutedStatically(el)) continue;
+      if (descendants(el).some((d) => d.tag === "track")) continue;
+      out.push({
+        criteriaId: "1.2.2",
+        el,
+        message: `<video> sans \xE9l\xE9ment <track> \u2014 aucune piste de sous-titres/l\xE9gendes synchronis\xE9es.`,
+        remediation: `Ajoutez <track kind="captions" src="\u2026" srclang="fr" label="Fran\xE7ais"> (ou subtitles) pour le m\xE9dia synchronis\xE9.`
+      });
+    }
+    return out;
+  }
+};
+var multimediaRules = [autoplayMedia, mediaNoTrack];
 
 // src/rules/presentation.ts
 var metaViewportZoomBlock = {
@@ -19465,6 +19561,51 @@ var contrastLiteral = {
 };
 var colorsRules = [contrastLiteral];
 
+// src/rules/timing.ts
+var metaRefreshRedirect = {
+  id: "meta-refresh-redirect",
+  criteria: ["2.2.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "meta") continue;
+      if ((attr(el, "http-equiv") ?? "").toLowerCase() !== "refresh") continue;
+      const content = (attr(el, "content") ?? "").trim();
+      const seconds = Number.parseInt(content, 10);
+      if (!Number.isFinite(seconds) || seconds <= 0) continue;
+      out.push({
+        criteriaId: "2.2.1",
+        el,
+        message: `<meta http-equiv="refresh" content="${content}"> impose un d\xE9lai de ${seconds}s \u2014 rafra\xEEchissement/redirection temporis\xE9 non contr\xF4lable.`,
+        remediation: `Supprimez le meta refresh temporis\xE9, ou laissez l'utilisateur contr\xF4ler/d\xE9sactiver/prolonger le d\xE9lai.`
+      });
+    }
+    return out;
+  }
+};
+var blinkMarquee = {
+  id: "blink-marquee",
+  criteria: ["2.2.2"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "blink" && el.tag !== "marquee") continue;
+      out.push({
+        criteriaId: "2.2.2",
+        el,
+        message: `<${el.tag}> \u2014 contenu en mouvement/clignotant automatique sans m\xE9canisme de pause.`,
+        remediation: `Remplacez <${el.tag}> par du contenu statique, ou fournissez un contr\xF4le pause/stop/masquer.`
+      });
+    }
+    return out;
+  }
+};
+var timingRules = [metaRefreshRedirect, blinkMarquee];
+
 // src/rules/registry.ts
 var ALL_RULES = [
   ...colorsRules,
@@ -19478,7 +19619,8 @@ var ALL_RULES = [
   ...formsRules,
   ...navigationRules,
   ...multimediaRules,
-  ...presentationRules
+  ...presentationRules,
+  ...timingRules
 ];
 var SEVERITY_ORDER = { bloquant: 0, majeur: 1, mineur: 2 };
 function runRules(doc, only) {
@@ -19664,18 +19806,39 @@ function candidates(base) {
   for (const e of EXT_ORDER) out.push(join2(base, `index${e}`));
   return out;
 }
-function resolveSpecifier(fromFile, spec, known, _aliases) {
-  if (!spec.startsWith(".")) return null;
-  const base = join2(dirname(toPosix(fromFile)), spec);
+function matchKnown(base, known) {
   for (const c of candidates(base)) {
     const key = toPosix(c);
     if (known.has(key)) return key;
   }
   return null;
 }
+function resolveSpecifier(fromFile, spec, known, aliases) {
+  if (spec.startsWith(".")) {
+    return matchKnown(join2(dirname(toPosix(fromFile)), spec), known);
+  }
+  if (aliases?.length) {
+    for (const rule of aliases) {
+      if (rule.wildcard) {
+        if (!spec.startsWith(rule.prefix)) continue;
+        const rest = spec.slice(rule.prefix.length);
+        for (const base of rule.bases) {
+          const hit = matchKnown(join2(base, rest), known);
+          if (hit) return hit;
+        }
+      } else if (spec === rule.prefix) {
+        for (const base of rule.bases) {
+          const hit = matchKnown(base, known);
+          if (hit) return hit;
+        }
+      }
+    }
+  }
+  return null;
+}
 
 // src/graph/graph.ts
-function buildGraph(nodes) {
+function buildGraph(nodes, aliases = []) {
   const map = /* @__PURE__ */ new Map();
   const known = /* @__PURE__ */ new Set();
   const allIds2 = /* @__PURE__ */ new Set();
@@ -19684,16 +19847,25 @@ function buildGraph(nodes) {
     known.add(n.file);
     for (const id of n.definesIds) allIds2.add(id);
   }
-  return { nodes: map, known, allIds: allIds2 };
+  return { nodes: map, known, allIds: allIds2, aliases };
 }
 function resolveUsage(graph, file, localName) {
   const posix = toPosix(file);
   const node = graph.nodes.get(posix);
   if (!node) return void 0;
+  if (localName.includes(".")) {
+    const dot = localName.indexOf(".");
+    const ns = localName.slice(0, dot);
+    const member = localName.slice(dot + 1);
+    const nsImp = node.imports.find((i) => i.imported === "*" && i.local === ns);
+    if (!nsImp) return void 0;
+    const target = resolveSpecifier(posix, nsImp.source, graph.known, graph.aliases);
+    return target ? graph.nodes.get(target)?.components.get(member) : void 0;
+  }
   const imp = node.imports.find((i) => i.local === localName);
   if (imp) {
     if (imp.imported === "*") return void 0;
-    const target = resolveSpecifier(posix, imp.source, graph.known);
+    const target = resolveSpecifier(posix, imp.source, graph.known, graph.aliases);
     if (!target) return void 0;
     return graph.nodes.get(target)?.components.get(imp.imported);
   }
@@ -19712,7 +19884,7 @@ function htmlLangProvidedFor(graph, file) {
     if (!node) continue;
     if (cur !== start && node.providesHtmlLang) return true;
     for (const imp of node.imports) {
-      const target = resolveSpecifier(cur, imp.source, graph.known);
+      const target = resolveSpecifier(cur, imp.source, graph.known, graph.aliases);
       if (target && !seen.has(target)) {
         seen.add(target);
         queue.push(target);
@@ -19812,7 +19984,93 @@ var crossSkipLinkTarget = {
     return { findings: [], suppress };
   }
 };
-var CROSS_RULES = [crossIconOnlyUnnamed, crossPageLang, crossAriaForwarding, crossSkipLinkTarget];
+var NAME_PROPS_PASSED = ["aria-label", "aria-labelledby", "title", "label"];
+var crossPropDrilledNameLost = {
+  id: "cross-prop-drilled-name-lost",
+  criteria: ["4.1.2"],
+  severity: "majeur",
+  run(doc, graph) {
+    const findings = [];
+    for (const el of doc.elements) {
+      if (!isComponentUsage(el)) continue;
+      const passed = NAME_PROPS_PASSED.find((p) => (attr(el, p) ?? "").trim() !== "");
+      if (!passed) continue;
+      const def = resolveUsage(graph, doc.file, el.tag);
+      if (!def?.hasControl || def.acceptsName || def.controlHasName) continue;
+      findings.push({
+        criteriaId: "4.1.2",
+        el,
+        message: `<${el.tag} ${passed}="\u2026"> mais ${def.name} ne transmet pas ce nom au contr\xF4le rendu \u2014 le nom accessible est perdu.`,
+        remediation: `Dans ${def.name}, transmettez ${passed} (ou {...props}) au <button>/<a> rendu, ou nommez le contr\xF4le directement.`,
+        related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "contr\xF4le qui ne re\xE7oit pas le nom pass\xE9" }
+      });
+    }
+    return { findings, suppress: [] };
+  }
+};
+var ARIA_IDREFS = [
+  "aria-labelledby",
+  "aria-describedby",
+  "aria-controls",
+  "aria-owns",
+  "aria-details",
+  "aria-errormessage",
+  "aria-flowto",
+  "aria-activedescendant"
+];
+var crossAriaRefCrossFile = {
+  id: "cross-aria-ref-cross-file",
+  criteria: ["4.1.2"],
+  severity: "majeur",
+  run(doc, graph) {
+    const suppress = [];
+    for (const el of doc.elements) {
+      const missing = [];
+      for (const a of ARIA_IDREFS) {
+        const v = (attr(el, a) ?? "").trim();
+        if (!v || v.includes("{")) continue;
+        for (const id of v.split(/\s+/).filter(Boolean)) if (!doc.byId.has(id)) missing.push(id);
+      }
+      if (!missing.length) continue;
+      if (missing.every((id) => idDefinedAnywhere(graph, id)))
+        suppress.push({ ruleId: "aria-ref-missing-id", line: el.line, reason: "cible(s) d\xE9finie(s) dans un autre fichier du graphe" });
+    }
+    return { findings: [], suppress };
+  }
+};
+var HEADING_TAG = /^h[1-6]$/;
+var crossNameRefCrossFile = {
+  id: "cross-name-ref-cross-file",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  run(doc, graph) {
+    const suppress = [];
+    for (const el of doc.elements) {
+      if (el.tag === "label") {
+        const f = (attr(el, "for") ?? "").trim();
+        if (f && !f.includes("{") && !doc.byId.has(f) && idDefinedAnywhere(graph, f))
+          suppress.push({ ruleId: "label-for-dangling", line: el.line, reason: `cible #${f} d\xE9finie dans un autre fichier du graphe` });
+      }
+      const isHeading = HEADING_TAG.test(el.tag) || (attr(el, "role") ?? "") === "heading";
+      if (isHeading) {
+        const lb = (attr(el, "aria-labelledby") ?? "").trim();
+        const ids = lb.includes("{") ? [] : lb.split(/\s+/).filter(Boolean);
+        if (ids.length && ids.every((id) => !doc.byId.has(id) && idDefinedAnywhere(graph, id)))
+          suppress.push({ ruleId: "empty-heading", line: el.line, reason: "intitul\xE9 fourni par un aria-labelledby d\xE9fini dans un autre fichier" });
+      }
+    }
+    return { findings: [], suppress };
+  }
+};
+var CROSS_RULES = [
+  crossIconOnlyUnnamed,
+  crossPageLang,
+  crossAriaForwarding,
+  crossSkipLinkTarget,
+  crossPropDrilledNameLost,
+  crossAriaRefCrossFile,
+  crossNameRefCrossFile
+];
 function runCrossRules(doc, graph) {
   const findings = [];
   const suppress = [];
@@ -19824,6 +20082,9 @@ function runCrossRules(doc, graph) {
   findings.sort((a, b) => a.line - b.line || a.col - b.col || SEVERITY_ORDER2[a.severity] - SEVERITY_ORDER2[b.severity]);
   return { findings, suppress };
 }
+
+// src/graph/build.ts
+import { dirname as dirname3 } from "path";
 
 // src/graph/imports.ts
 var NAME_PROPS2 = /* @__PURE__ */ new Set(["aria-label", "aria-labelledby", "title", "label", "alt"]);
@@ -19897,7 +20158,18 @@ function analyzeComponent(name, file, fnNode) {
   const control = findControl(fnNode);
   if (!control) {
     const { line: line2, col: col2 } = posOf(fnNode);
-    return { name, file, line: line2, col: col2, rendersIconOnlyControl: false, acceptsName: false, spreadsProps: false, forwardsAria: false };
+    return {
+      name,
+      file,
+      line: line2,
+      col: col2,
+      hasControl: false,
+      rendersIconOnlyControl: false,
+      acceptsName: false,
+      controlHasName: false,
+      spreadsProps: false,
+      forwardsAria: false
+    };
   }
   const { line, col } = posOf(control);
   const attrs = controlAttrs(control);
@@ -19906,8 +20178,9 @@ function analyzeComponent(name, file, fnNode) {
   const literalAriaName = attrs.some((a) => NAME_PROPS2.has(attrName(a)) && attrIsLiteral(a));
   const acceptsNameViaChildren = rendersNameExpr(control);
   const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
+  const controlHasName = literalAriaName || hasLiteralText(control);
   const rendersIconOnlyControl = hasIconChild2(control) && !hasLiteralText(control) && !literalAriaName;
-  return { name, file, line, col, rendersIconOnlyControl, acceptsName, spreadsProps, forwardsAria };
+  return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
 }
 function isCapitalized(name) {
   const head = name.split(".")[0] ?? name;
@@ -19999,6 +20272,62 @@ function extractGraphNode(ast, doc, file) {
   return { file: posix, imports, components, definesIds, providesHtmlLang };
 }
 
+// src/graph/tsconfig.ts
+import { existsSync as existsSync2, readFileSync as readFileSync2 } from "fs";
+import { dirname as dirname2, join as join3, resolve, relative } from "path";
+function readJsonish(path) {
+  try {
+    const raw = readFileSync2(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1").replace(/,(\s*[}\]])/g, "$1");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+function findTsconfig(startDir) {
+  let dir = resolve(startDir);
+  for (let i = 0; i < 30; i++) {
+    const p = join3(dir, "tsconfig.json");
+    if (existsSync2(p)) return p;
+    const parent = dirname2(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+function readTsAliases(startDir, cwd = process.cwd()) {
+  const tsconfigPath = findTsconfig(startDir);
+  if (!tsconfigPath) return [];
+  const root = dirname2(tsconfigPath);
+  const cfg = readJsonish(tsconfigPath);
+  if (!cfg) return [];
+  let co = cfg.compilerOptions ?? {};
+  const exts = Array.isArray(cfg.extends) ? cfg.extends : typeof cfg.extends === "string" ? [cfg.extends] : [];
+  for (const e of exts) {
+    if (typeof e !== "string") continue;
+    const ext2 = e.endsWith(".json") ? e : `${e}.json`;
+    const base = readJsonish(resolve(root, ext2));
+    if (base?.compilerOptions) co = { ...base.compilerOptions, ...co };
+  }
+  const baseUrl = typeof co.baseUrl === "string" ? co.baseUrl : ".";
+  const baseAbs = resolve(root, baseUrl);
+  const paths = co.paths ?? {};
+  const out = [];
+  for (const [pattern, targetsRaw] of Object.entries(paths)) {
+    if (!Array.isArray(targetsRaw)) continue;
+    const targets = targetsRaw.filter((t2) => typeof t2 === "string");
+    if (!targets.length) continue;
+    const wildcard = pattern.includes("*");
+    const prefix2 = wildcard ? pattern.slice(0, pattern.indexOf("*")) : pattern;
+    const bases = targets.map((t2) => {
+      const star = t2.indexOf("*");
+      const tp = wildcard && star >= 0 ? t2.slice(0, star) : t2;
+      return toPosix(relative(cwd, join3(baseAbs, tp))) || ".";
+    });
+    out.push({ prefix: prefix2, wildcard, bases });
+  }
+  return out;
+}
+
 // src/graph/build.ts
 function buildGraphStreaming(files) {
   const nodes = [];
@@ -20019,13 +20348,14 @@ function buildGraphStreaming(files) {
     }
     nodes.push(extractGraphNode(ast, doc, file));
   }
-  return buildGraph(nodes);
+  const aliases = readTsAliases(files[0] ? dirname3(files[0]) : process.cwd());
+  return buildGraph(nodes, aliases);
 }
 
 // src/discover.ts
-import { existsSync as existsSync2 } from "fs";
+import { existsSync as existsSync3 } from "fs";
 import { execFileSync } from "child_process";
-import { join as join3, relative } from "path";
+import { join as join4, relative as relative2 } from "path";
 function git(args) {
   try {
     return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
@@ -20039,18 +20369,18 @@ function gitChangedFiles(ref) {
   const repoRoot2 = top.trim();
   const base = ref?.trim() ? ref.trim() : "HEAD";
   const out = /* @__PURE__ */ new Set();
-  const add = (s) => {
+  const add2 = (s) => {
     if (!s) return;
     for (const line of s.split("\n")) {
       const t2 = line.trim();
       if (t2) out.add(t2);
     }
   };
-  add(git(["diff", "--name-only", "--diff-filter=d", base]));
-  add(git(["diff", "--name-only", "--diff-filter=d", "--cached", base]));
-  add(git(["ls-files", "--others", "--exclude-standard"]));
+  add2(git(["diff", "--name-only", "--diff-filter=d", base]));
+  add2(git(["diff", "--name-only", "--diff-filter=d", "--cached", base]));
+  add2(git(["ls-files", "--others", "--exclude-standard"]));
   const cwd = process.cwd();
-  return [...out].map((p) => relative(cwd, join3(repoRoot2, p)));
+  return [...out].map((p) => relative2(cwd, join4(repoRoot2, p)));
 }
 var TIER0 = /(^|\/)(layout|template|_app|_document|app|main|index)[.\-/]|(^|\/)(layouts?|templates?)\//i;
 var TIER1 = /(^|\/)(components?|shared|ui|design-system|ds|partials?|includes?)\//i;
@@ -20076,7 +20406,7 @@ function discover(inputs, opts = {}) {
     } else {
       const filter = makeFilter(opts);
       const inScope = inScopeMatcher(inputs);
-      files = changed.filter((f) => existsSync2(f) && filter(f) && (!inScope || inScope(f)));
+      files = changed.filter((f) => existsSync3(f) && filter(f) && (!inScope || inScope(f)));
     }
   } else {
     files = expandInputs(inputs, opts);
@@ -20247,7 +20577,7 @@ function runAudit(opts) {
 
 // src/report.ts
 import { mkdirSync, writeFileSync } from "fs";
-import { join as join4 } from "path";
+import { join as join5 } from "path";
 
 // src/data/standards/rgaa.json
 var rgaa_default = {
@@ -23691,6 +24021,149 @@ var rgaa_glossary_default = {
   }
 };
 
+// src/standards/validate.ts
+var RESERVED_CORE_KEY = "wcag";
+var KNOWN_LANGS = ["fr", "en"];
+var SC_SHAPE = /^\d+\.\d+\.\d+$/;
+var LEGIT_OUT_OF_CORE = /* @__PURE__ */ new Set(["4.1.1"]);
+function classifySc(sc) {
+  if (!SC_SHAPE.test(sc)) return "malformed";
+  if (hasSC(sc)) return "core";
+  if (LEGIT_OUT_OF_CORE.has(sc)) return "legit";
+  return "unknown";
+}
+var GATE_ID_SHAPE = /^\d+\.\d+$/;
+var REQUIRED_STRING_FIELDS = ["key", "name", "org", "country", "baseVersion", "wcagVersion", "license", "source", "attribution", "idPattern"];
+function validatePack(raw, opts = {}) {
+  const issues = [];
+  const err = (path, message) => issues.push({ path, message, severity: "error" });
+  const warn = (path, message) => issues.push({ path, message, severity: "warn" });
+  const done = () => {
+    const ok = !issues.some((x) => x.severity === "error");
+    return { ok, issues, pack: ok ? normalize(raw) : void 0 };
+  };
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    err("", "pack must be a JSON object");
+    return { ok: false, issues };
+  }
+  const p = raw;
+  for (const f of REQUIRED_STRING_FIELDS) {
+    const v = p[f];
+    if (typeof v !== "string" || v.trim() === "") err(f, `"${f}" must be a non-empty string`);
+  }
+  const key = typeof p.key === "string" ? p.key.toLowerCase() : "";
+  if (key === RESERVED_CORE_KEY) err("key", `pack key "${RESERVED_CORE_KEY}" is reserved for the WCAG core`);
+  if (key && opts.knownKeys?.has(key)) {
+    if (opts.allowOverride) warn("key", `pack key "${key}" overrides a built-in/loaded standard`);
+    else err("key", `pack key "${key}" collides with a built-in/loaded standard (use --override to replace it)`);
+  }
+  const locales = Array.isArray(p.locales) ? p.locales : [];
+  if (locales.length === 0) err("locales", "locales must be a non-empty array");
+  for (const l of locales) {
+    if (!KNOWN_LANGS.includes(l)) err("locales", `unsupported locale "${String(l)}" (known: ${KNOWN_LANGS.join(", ")})`);
+  }
+  const defaultLocale = p.defaultLocale;
+  if (typeof defaultLocale !== "string" || !locales.includes(defaultLocale)) {
+    err("defaultLocale", "defaultLocale must be one of locales");
+  }
+  const loc = typeof defaultLocale === "string" ? defaultLocale : KNOWN_LANGS[0];
+  let idRe = null;
+  if (typeof p.idPattern === "string") {
+    try {
+      idRe = new RegExp(p.idPattern);
+    } catch (e) {
+      err("idPattern", `idPattern is not a valid regex: ${e.message}`);
+    }
+  }
+  const themes = Array.isArray(p.themes) ? p.themes : null;
+  if (!themes) err("themes", "themes must be an array");
+  const themeNumbers = /* @__PURE__ */ new Set();
+  themes?.forEach((t2, i) => {
+    const n = t2?.number;
+    if (typeof n !== "number") {
+      err(`themes[${i}].number`, "theme number must be a number");
+      return;
+    }
+    if (themeNumbers.has(n)) err(`themes[${i}].number`, `duplicate theme number ${n}`);
+    themeNumbers.add(n);
+    const name = t2?.name;
+    if (!name || typeof name[loc] !== "string") err(`themes[${i}].name`, `theme ${n} missing name[${loc}]`);
+  });
+  const criteria = Array.isArray(p.criteria) ? p.criteria : null;
+  if (!criteria) err("criteria", "criteria must be an array");
+  const ids = /* @__PURE__ */ new Set();
+  const countByTheme = /* @__PURE__ */ new Map();
+  let nonGateId = false;
+  criteria?.forEach((c, i) => {
+    const id = c?.id;
+    if (typeof id !== "string" || id === "") {
+      err(`criteria[${i}].id`, "criterion id must be a non-empty string");
+    } else {
+      if (ids.has(id)) err(`criteria[${i}].id`, `duplicate criterion id "${id}"`);
+      ids.add(id);
+      if (idRe && !idRe.test(id)) err(`criteria[${i}].id`, `id "${id}" does not match idPattern ${String(p.idPattern)}`);
+      if (!GATE_ID_SHAPE.test(id)) nonGateId = true;
+    }
+    const theme = c?.theme;
+    if (typeof theme !== "number") {
+      err(`criteria[${i}].theme`, "criterion theme must be a number");
+    } else {
+      if (themes && !themeNumbers.has(theme)) err(`criteria[${i}].theme`, `criterion "${String(id)}" references unknown theme ${theme}`);
+      countByTheme.set(theme, (countByTheme.get(theme) ?? 0) + 1);
+    }
+    const title2 = c?.title;
+    if (!title2 || typeof title2[loc] !== "string") err(`criteria[${i}].title`, `criterion "${String(id)}" missing title[${loc}]`);
+    const titlePlain2 = c?.titlePlain;
+    if (!titlePlain2 || typeof titlePlain2[loc] !== "string") err(`criteria[${i}].titlePlain`, `criterion "${String(id)}" missing titlePlain[${loc}]`);
+    const wcag = Array.isArray(c?.wcag) ? c.wcag : null;
+    if (!wcag || wcag.length === 0) {
+      err(`criteria[${i}].wcag`, `criterion "${String(id)}" must map to at least one WCAG SC`);
+    } else {
+      wcag.forEach((sc, j) => {
+        const where = `criteria[${i}].wcag[${j}]`;
+        if (typeof sc !== "string") {
+          err(where, `malformed SC id "${String(sc)}" (expected N.N.N)`);
+          return;
+        }
+        switch (classifySc(sc)) {
+          case "malformed":
+            err(where, `malformed SC id "${sc}" (expected N.N.N)`);
+            break;
+          case "unknown":
+            err(where, `SC "${sc}" is not a recognized WCAG success criterion (not in the WCAG 2.2 AA core and not a known removed SC) \u2014 fabricated?`);
+            break;
+          case "legit":
+            warn(where, `SC "${sc}" is outside the WCAG 2.2 AA core (removed in 2.2) \u2014 kept as a pack-local mapping`);
+            break;
+        }
+      });
+    }
+  });
+  themes?.forEach((t2, i) => {
+    const n = t2?.number;
+    if (typeof n !== "number") return;
+    const declared = t2?.count;
+    const actual = countByTheme.get(n) ?? 0;
+    if (typeof declared === "number" && declared !== actual) {
+      err(`themes[${i}].count`, `theme ${n} declares count ${declared} but has ${actual} criteria`);
+    }
+  });
+  if (nonGateId) {
+    warn(
+      "criteria",
+      "some criterion ids are not the 2-segment <n>.<n> grammar that `check`/`verify` parse \u2014 reports against this pack may not pass those gates (see references/packs.md)"
+    );
+  }
+  return done();
+}
+function normalize(p) {
+  return { ...p, key: String(p.key).toLowerCase() };
+}
+function formatIssues(issues) {
+  const order = (s) => s === "error" ? 0 : 1;
+  return [...issues].sort((a, b) => order(a.severity) - order(b.severity)).map((x) => `  ${x.severity === "error" ? "\u2717" : "\u26A0"} ${x.path ? `${x.path}: ` : ""}${x.message}`);
+}
+
 // src/standards/registry.ts
 var CORE_KEY = "wcag";
 var registry = /* @__PURE__ */ new Map();
@@ -23699,6 +24172,11 @@ function register(pack, glossary) {
   registry.set(pack.key, { pack, glossary });
 }
 register(rgaa_default, rgaa_glossary_default);
+function registerRuntimePack(raw, glossary = {}, opts = {}) {
+  const v = validatePack(raw, { knownKeys: new Set(listStandards()), allowOverride: opts.override });
+  if (v.ok && v.pack) registry.set(v.pack.key, { pack: v.pack, glossary });
+  return v;
+}
 function isCore(key) {
   return key === CORE_KEY;
 }
@@ -23709,6 +24187,9 @@ function loadPack(key) {
   const r = registry.get(key);
   if (!r) throw new Error(`unknown standards pack "${key}" (known packs: ${[...registry.keys()].join(", ") || "none"})`);
   return r.pack;
+}
+function getPack(key) {
+  return registry.get(key)?.pack;
 }
 function listStandards() {
   return [CORE_KEY, ...registry.keys()];
@@ -23942,14 +24423,302 @@ function writeReport(r, opts) {
   const core = isCore(opts.standard);
   const md = core ? renderReport(r, opts.lang) : renderPackReport(r, loadPack(opts.standard), opts.lang);
   mkdirSync(opts.out, { recursive: true });
-  const path = join4(opts.out, `${core ? "wcag" : opts.standard}-${r.date}.md`);
+  const path = join5(opts.out, `${core ? "wcag" : opts.standard}-${r.date}.md`);
   writeFileSync(path, md);
   return path;
 }
 
 // src/prd.ts
 import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
-import { join as join5 } from "path";
+import { join as join6 } from "path";
+
+// src/data/guidance/rgaa.json
+var rgaa_default2 = {
+  pack: "rgaa",
+  source: "https://github.com/SocialGouv/skills/tree/main/skills/rgaa-html-css/rules + https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/",
+  license: "Licence Ouverte / Etalab 2.0 (RGAA criteria) \u2014 derived implementation guidance",
+  attribution: "RGAA 4.1.2 \xA9 DINUM \u2014 Licence Ouverte / Etalab 2.0. Implementation patterns adapted from SocialGouv/skills (rgaa-html-css) under that repository's license; entry ids mirror its rule files.",
+  entries: [
+    {
+      id: "images-informative-alt",
+      criterionId: "1.1",
+      wcag: ["1.1.1"],
+      title: { fr: "Alternative textuelle des images porteuses d'information", en: "Concise alt text for informative images" },
+      summary: {
+        fr: "Toute image porteuse d'information doit avoir un attribut alt qui d\xE9crit son sens en contexte (pas \xAB image \xBB ni le nom de fichier).",
+        en: 'Every informative image needs an alt attribute that conveys its meaning in context (not "image" nor the file name).'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<img src="chart.png" alt="image">',
+          good: '<img src="chart.png" alt="Ventes en hausse de 25 % au T3 2025">',
+          note: { fr: "L'alternative d\xE9crit le sens, pas le nom de fichier.", en: "The alternative conveys the meaning, not the file name." }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.1"
+    },
+    {
+      id: "images-decorative-alt-empty",
+      criterionId: "1.2",
+      wcag: ["1.1.1", "4.1.2"],
+      title: { fr: "Images de d\xE9coration ignor\xE9es par les technologies d'assistance", en: "Decorative images ignored by assistive tech" },
+      summary: {
+        fr: 'Une image purement d\xE9corative doit \xEAtre ignor\xE9e : alt vide (alt="") pour une img, ou aria-hidden="true" pour une ic\xF4ne.',
+        en: 'A purely decorative image must be ignored: empty alt (alt="") on an img, or aria-hidden="true" on an icon.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<img src="separateur.png" alt="s\xE9parateur d\xE9coratif">',
+          good: '<img src="separateur.png" alt="">',
+          note: { fr: "Une d\xE9coration annonc\xE9e au lecteur d'\xE9cran est du bruit.", en: "A decoration announced to a screen reader is noise." }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.2"
+    },
+    {
+      id: "iframes-title-attribute",
+      criterionId: "2.1",
+      wcag: ["4.1.2"],
+      title: { fr: "Titre de cadre pour chaque iframe", en: "Frame title on every iframe" },
+      summary: {
+        fr: "Chaque iframe doit porter un attribut title court et pertinent d\xE9crivant son contenu.",
+        en: "Every iframe must carry a short, relevant title attribute describing its content."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<iframe src="https://www.youtube.com/embed/x"></iframe>',
+          good: '<iframe src="https://www.youtube.com/embed/x" title="Vid\xE9o : pr\xE9sentation du service"></iframe>'
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#2.1"
+    },
+    {
+      id: "links-explicit",
+      criterionId: "6.1",
+      wcag: ["1.1.1", "2.4.4", "2.5.3"],
+      title: { fr: "Intitul\xE9 de lien explicite", en: "Explicit link text" },
+      summary: {
+        fr: "L'intitul\xE9 du lien (texte visible, ou nom accessible via aria-label/aria-labelledby) doit \xEAtre explicite hors contexte.",
+        en: "The link text (visible, or accessible name via aria-label/aria-labelledby) must be explicit out of context."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<a href="/rapport.pdf">Cliquez ici</a>',
+          good: '<a href="/rapport.pdf">T\xE9l\xE9charger le rapport annuel 2024 (PDF, 2 Mo)</a>'
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#6.1"
+    },
+    {
+      id: "images-icon-only-accessible-name",
+      criterionId: "6.2",
+      wcag: ["1.1.1", "2.4.4"],
+      title: { fr: "Contr\xF4le \xE0 ic\xF4ne seule : nom accessible obligatoire", en: "Icon-only control must have an accessible name" },
+      summary: {
+        fr: "Un bouton/lien \xE0 ic\xF4ne seule (sans texte visible) doit avoir un nom accessible via aria-label (l'ic\xF4ne restant aria-hidden).",
+        en: "An icon-only button/link (no visible text) must have an accessible name via aria-label (the icon stays aria-hidden)."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<button>\n  <i class="fa fa-trash" aria-hidden="true"></i>\n</button>',
+          good: `<button aria-label="Supprimer l'\xE9l\xE9ment">
+  <i class="fa fa-trash" aria-hidden="true"></i>
+</button>`
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#6.2"
+    },
+    {
+      id: "lang-html-attribute",
+      criterionId: "8.3",
+      wcag: ["3.1.1"],
+      title: { fr: "Langue par d\xE9faut sur l'\xE9l\xE9ment html", en: "Default language on the html element" },
+      summary: {
+        fr: "L'\xE9l\xE9ment html doit d\xE9clarer la langue par d\xE9faut de la page via l'attribut lang.",
+        en: "The html element must declare the page's default language via the lang attribute."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<!DOCTYPE html>\n<html>\n<head><title>Bienvenue</title></head>\n<body></body>\n</html>",
+          good: '<!DOCTYPE html>\n<html lang="fr">\n<head><title>Bienvenue</title></head>\n<body></body>\n</html>'
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.3"
+    },
+    {
+      id: "lang-valid-code",
+      criterionId: "8.4",
+      wcag: ["3.1.1"],
+      title: { fr: "Code de langue valide", en: "Valid language code" },
+      summary: {
+        fr: "Le code de langue (lang) doit \xEAtre un code valide (ex. fr, en, fr-CA), pas une valeur invent\xE9e.",
+        en: "The lang code must be a valid language tag (e.g. fr, en, fr-CA), not an invented value."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<html lang="french"><head><title>x</title></head><body></body></html>',
+          good: '<html lang="fr"><head><title>x</title></head><body></body></html>'
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.4"
+    },
+    {
+      id: "title-precise-title",
+      criterionId: "8.6",
+      wcag: ["2.4.2"],
+      title: { fr: "Titre de page pertinent", en: "Relevant page title" },
+      summary: {
+        fr: "Chaque page doit avoir un \xE9l\xE9ment title non vide et pertinent d\xE9crivant son sujet.",
+        en: "Every page must have a non-empty, relevant title element describing its subject."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<head><title></title></head>",
+          good: "<head><title>Mon panier \u2014 Boutique Acme</title></head>"
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.6"
+    },
+    {
+      id: "structure-heading-hierarchy",
+      criterionId: "9.1",
+      wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
+      title: { fr: "Structuration par les titres", en: "Structure via headings" },
+      summary: {
+        fr: "L'information est structur\xE9e par une hi\xE9rarchie de titres (h1\u2026h6) sans saut de niveau, avec un h1 unique.",
+        en: "Content is structured by a heading hierarchy (h1\u2026h6) with no skipped level and a single h1."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<h1>Titre</h1><h3>Sous-section</h3>",
+          good: "<h1>Titre</h1><h2>Sous-section</h2>"
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.1"
+    },
+    {
+      id: "lists-unordered",
+      criterionId: "9.3",
+      wcag: ["1.3.1"],
+      title: { fr: "Listes correctement structur\xE9es", en: "Properly structured lists" },
+      summary: {
+        fr: "Les listes visuelles doivent utiliser ul/ol + li (pas des puces simul\xE9es avec des div ou des tirets).",
+        en: "Visual lists must use ul/ol + li (not bullets faked with divs or dashes)."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: "<div>- Pomme</div><div>- Poire</div>",
+          good: "<ul><li>Pomme</li><li>Poire</li></ul>"
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.3"
+    },
+    {
+      id: "forms-label-for-id",
+      criterionId: "11.1",
+      wcag: ["1.3.1", "2.4.6", "3.3.2", "4.1.2"],
+      title: { fr: "Associer l'\xE9tiquette visible au champ via for/id", en: "Associate the visible label with the control via for/id" },
+      summary: {
+        fr: "Chaque champ doit \xEAtre associ\xE9 \xE0 une \xE9tiquette : label[for] li\xE9 \xE0 l'id du champ (le placeholder ne remplace pas une \xE9tiquette).",
+        en: "Every field needs a label: label[for] tied to the field id (a placeholder does not replace a label)."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<span>Email</span>\n<input type="email">',
+          good: '<label for="email">Email</label>\n<input type="email" id="email">'
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.1"
+    },
+    {
+      id: "forms-no-placeholder-only",
+      criterionId: "11.2",
+      wcag: ["2.4.6", "2.5.3", "3.3.2"],
+      title: { fr: "Le placeholder ne remplace pas l'\xE9tiquette", en: "Placeholder is not a label" },
+      summary: {
+        fr: "Le placeholder dispara\xEEt \xE0 la saisie et n'est pas une \xE9tiquette : fournissez un label r\xE9el et pertinent.",
+        en: "A placeholder vanishes on input and is not a label: provide a real, relevant label."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<input type="email" placeholder="Votre email">',
+          good: '<label for="email">Votre email</label><input type="email" id="email">'
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.2"
+    },
+    {
+      id: "consultation-new-window",
+      criterionId: "13.2",
+      wcag: ["3.2.1"],
+      title: { fr: "Ouverture d'une nouvelle fen\xEAtre pr\xE9venue", en: "New-window opening is announced" },
+      summary: {
+        fr: `L'ouverture d'une nouvelle fen\xEAtre (target="_blank") doit \xEAtre annonc\xE9e \xE0 l'utilisateur (dans l'intitul\xE9 ou via une mention).`,
+        en: 'Opening a new window (target="_blank") must be announced to the user (in the link text or a mention).'
+      },
+      impact: "low",
+      examples: [
+        {
+          lang: "html",
+          bad: '<a href="https://exemple.org" target="_blank">Documentation</a>',
+          good: '<a href="https://exemple.org" target="_blank" rel="noopener">Documentation (nouvelle fen\xEAtre)</a>',
+          note: {
+            fr: "RGAA 13.2 \u2192 WCAG 3.2.1. En WCAG seul, ce motif rel\xE8ve du niveau AAA (3.2.5), absent du socle AA : il vit donc en guidance / pack RGAA, jamais en d\xE9tecteur WCAG c\u0153ur.",
+            en: "RGAA 13.2 \u2192 WCAG 3.2.1. Under WCAG alone this is AAA (3.2.5), absent from the AA core \u2014 so it lives as guidance / the RGAA pack, never as a WCAG-core detector."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.2"
+    }
+  ]
+};
+
+// src/guidance/index.ts
+var datasets = /* @__PURE__ */ new Map();
+function add(ds) {
+  datasets.set(ds.pack, ds);
+}
+add(rgaa_default2);
+function registerRuntimeGuidance(ds) {
+  add(ds);
+}
+function guidanceForWcag(sc) {
+  const out = [];
+  for (const ds of datasets.values()) for (const e of ds.entries) if (Array.isArray(e.wcag) && e.wcag.includes(sc)) out.push(e);
+  return out;
+}
+function guidanceForCriterion(packKey, criterionId) {
+  return datasets.get(packKey)?.entries.filter((e) => e.criterionId === criterionId) ?? [];
+}
+function hasGuidance(packKey) {
+  return datasets.has(packKey);
+}
+
+// src/prd.ts
 var SEV_ORDER2 = ["bloquant", "majeur", "mineur"];
 var SEV_RANK = { bloquant: 0, majeur: 1, mineur: 2 };
 var ICON2 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
@@ -23965,7 +24734,24 @@ var L2 = {
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
     fix: "Correction",
     affected: "Occurrence(s)",
-    prdTitle: (label) => `PRD \u2014 ${label}`
+    effort: "Effort estim\xE9",
+    avoid: "\xC0 \xE9viter",
+    recommended: "Recommand\xE9",
+    example: "Exemple",
+    prdTitle: (label) => `PRD \u2014 ${label}`,
+    epic: "\xC9pop\xE9e",
+    story: "User story",
+    ac: "Crit\xE8res d'acceptation (Given/When/Then)",
+    tasks: "T\xE2ches",
+    asUser: "En tant qu'utilisateur en situation de handicap",
+    iNeed: (t2) => `je dois pouvoir compter sur : ${t2}`,
+    given: "\xC9tant donn\xE9",
+    when: "Lorsque",
+    then: "Alors",
+    acWhen: "un utilisateur de technologie d'assistance y acc\xE8de",
+    givenElements: (sel) => `les \xE9l\xE9ments ${sel} concern\xE9s`,
+    techniques: "Techniques WCAG",
+    docNote: "Document d'exigences (PRD) g\xE9n\xE9r\xE9 depuis l'audit statique : une \xE9pop\xE9e par th\xE8me, une user story par crit\xE8re, des crit\xE8res d'acceptation ancr\xE9s sur les intitul\xE9s WCAG. Compl\xE9tez les crit\xE8res \xAB \xE0 \xE9valuer \xBB par une revue humaine."
   },
   en: {
     title: (std) => `Accessibility fix plan \u2014 ${std}`,
@@ -23978,7 +24764,24 @@ var L2 = {
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
     fix: "Fix",
     affected: "Occurrence(s)",
-    prdTitle: (label) => `PRD \u2014 ${label}`
+    effort: "Estimated effort",
+    avoid: "Avoid",
+    recommended: "Recommended",
+    example: "Example",
+    prdTitle: (label) => `PRD \u2014 ${label}`,
+    epic: "Epic",
+    story: "User story",
+    ac: "Acceptance criteria (Given/When/Then)",
+    tasks: "Tasks",
+    asUser: "As a user relying on assistive technology",
+    iNeed: (t2) => `I need: ${t2}`,
+    given: "Given",
+    when: "When",
+    then: "Then",
+    acWhen: "a user of assistive technology reaches them",
+    givenElements: (sel) => `the affected ${sel} elements`,
+    techniques: "WCAG techniques",
+    docNote: "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Complete the \u201Cto assess\u201D criteria with a human review."
   }
 };
 function stdLabel(standard) {
@@ -24024,14 +24827,52 @@ function prdUnits(r, standard = "wcag", lang = "en") {
   units.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || a.criteriaId.localeCompare(b.criteriaId, void 0, { numeric: true }));
   return units;
 }
-function unitBlock(unit, lang, heading) {
+var SEV_WEIGHT = { bloquant: 3, majeur: 2, mineur: 1 };
+function effortOf(unit) {
+  const points = unit.findings.reduce((sum, f) => sum + SEV_WEIGHT[f.severity], 0);
+  return { bucket: points <= 4 ? "S" : points <= 12 ? "M" : "L", points };
+}
+function guidanceFor(unit, standard) {
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  const push = (es) => {
+    for (const e of es) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      out.push(e);
+    }
+  };
+  if (isCore(standard)) push(guidanceForWcag(unit.criteriaId));
+  else {
+    push(guidanceForCriterion(standard, unit.criteriaId));
+    for (const sc of unit.refs) push(guidanceForWcag(sc));
+  }
+  return out;
+}
+function guidanceExampleBlock(entries, lang) {
+  const s = L2[lang];
+  for (const e of entries) {
+    const ex = (e.examples ?? []).find((x) => x.bad || x.good);
+    if (!ex) continue;
+    const note = ex.note?.[lang] ?? ex.note?.fr ?? ex.note?.en;
+    const out = [`**${s.example}**${note ? ` \u2014 ${note}` : ""}`, ""];
+    if (ex.bad) out.push(`_${s.avoid} :_`, "```" + ex.lang, ex.bad, "```", "");
+    if (ex.good) out.push(`_${s.recommended} :_`, "```" + ex.lang, ex.good, "```", "");
+    return out;
+  }
+  return [];
+}
+function unitBlock(unit, lang, heading, standard) {
   const s = L2[lang];
   const out = [];
   const refs = unit.refs.length ? `  \xB7  WCAG ${unit.refs.join(", ")}` : "";
   out.push(`${heading} ${ICON2[unit.severity]} ${unit.label}${refs}`, "");
   const fixes = [...new Set(unit.findings.map((f) => f.remediation))];
   for (const fx of fixes) out.push(`- _${s.fix} :_ ${fx}`);
-  out.push("", `**${s.affected} (${unit.findings.length})**`, "");
+  const { bucket, points } = effortOf(unit);
+  out.push(`- _${s.effort} :_ ${bucket} (${points} pts)`, "");
+  out.push(...guidanceExampleBlock(guidanceFor(unit, standard), lang));
+  out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
     if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
@@ -24039,7 +24880,7 @@ function unitBlock(unit, lang, heading) {
   out.push("");
   return out;
 }
-function header(r, lang, title2) {
+function header(r, lang, title2, note = L2[lang].note) {
   const s = L2[lang];
   return [
     `# ${title2}`,
@@ -24048,7 +24889,7 @@ function header(r, lang, title2) {
     `- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`,
     `- **${s.rate}** : ${r.conformancePct}%`,
     "",
-    `> ${s.note}`,
+    `> ${note}`,
     ""
   ];
 }
@@ -24064,7 +24905,7 @@ function renderBacklog(r, lang = "en", standard = "wcag") {
     const group = units.filter((u) => u.severity === sev);
     if (!group.length) continue;
     out.push(`## ${ICON2[sev]} ${s.sev[sev]} (${group.length})`, "");
-    for (const u of group) out.push(...unitBlock(u, lang, "###"));
+    for (const u of group) out.push(...unitBlock(u, lang, "###", standard));
   }
   return out.join("\n");
 }
@@ -24072,22 +24913,84 @@ function renderPerCriterion(r, lang = "en", standard = "wcag") {
   const s = L2[lang];
   return prdUnits(r, standard, lang).map((u) => {
     const out = header(r, lang, s.prdTitle(u.label));
-    out.push(...unitBlock(u, lang, "##"));
+    out.push(...unitBlock(u, lang, "##", standard));
     return { name: `prd-${u.criteriaId}-${r.date}.md`, content: out.join("\n") };
   });
 }
+function epicsOf(units, standard, lang) {
+  const pack = isCore(standard) ? null : loadPack(standard);
+  const groups = /* @__PURE__ */ new Map();
+  for (const u of units) {
+    let key;
+    let title2;
+    if (pack) {
+      const themeNum = pack.criteria.find((c) => c.id === u.criteriaId)?.theme ?? 0;
+      key = String(themeNum).padStart(3, "0");
+      title2 = (themeNum ? themeName(pack, themeNum, lang) : void 0) ?? `#${themeNum}`;
+    } else {
+      const g = getSC(u.criteriaId)?.guideline ?? u.criteriaId;
+      key = g;
+      title2 = `${g} ${guidelineTitle(g) ?? ""}`.trim();
+    }
+    let epic = groups.get(key);
+    if (!epic) {
+      epic = { key, title: title2, units: [] };
+      groups.set(key, epic);
+    }
+    epic.units.push(u);
+  }
+  return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key, void 0, { numeric: true }));
+}
+function renderPrdDoc(r, lang = "en", standard = "wcag") {
+  const s = L2[lang];
+  const units = prdUnits(r, standard, lang);
+  const out = header(r, lang, s.title(stdLabel(standard)), s.docNote);
+  if (!units.length) {
+    out.push(s.none, "");
+    return out.join("\n");
+  }
+  for (const epic of epicsOf(units, standard, lang)) {
+    out.push(`## ${s.epic} \u2014 ${epic.title}`, "");
+    for (const u of epic.units) {
+      const refs = u.refs.length ? `  \xB7  WCAG ${u.refs.join(", ")}` : "";
+      out.push(`### ${ICON2[u.severity]} ${s.story} \u2014 ${u.label}${refs}`, "");
+      out.push(`> ${s.asUser}, ${s.iNeed(u.title)}.`, "");
+      const hints = [...new Set(u.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "\u2014";
+      out.push(`**${s.ac}**`, "");
+      const scs = isCore(standard) ? [u.criteriaId] : u.refs;
+      for (const sc of scs) {
+        const req = getSC(sc)?.title ?? sc;
+        out.push(`- **${s.given}** ${s.givenElements(hints)} \xB7 **${s.when}** ${s.acWhen} \xB7 **${s.then}** \xAB ${req} \xBB (WCAG ${sc}).`);
+      }
+      const techs = isCore(standard) ? techniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => techniques(sc)))];
+      if (techs.length) out.push("", `_${s.techniques} : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", \u2026" : ""}_`);
+      out.push("", `**${s.tasks} (${u.findings.length})**`, "");
+      for (const f of u.findings) {
+        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
+        if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\``);
+      }
+      out.push("");
+    }
+  }
+  return out.join("\n");
+}
 function writePrd(r, opts) {
   mkdirSync2(opts.out, { recursive: true });
+  if (opts.format === "doc") {
+    const p2 = join6(opts.out, `prd-doc-${r.date}.md`);
+    writeFileSync2(p2, renderPrdDoc(r, opts.lang, opts.standard));
+    return [p2];
+  }
   if (opts.split === "criterion") {
     const paths = [];
     for (const f of renderPerCriterion(r, opts.lang, opts.standard)) {
-      const p2 = join5(opts.out, f.name);
+      const p2 = join6(opts.out, f.name);
       writeFileSync2(p2, f.content);
       paths.push(p2);
     }
     return paths;
   }
-  const p = join5(opts.out, `prd-${r.date}.md`);
+  const p = join6(opts.out, `prd-${r.date}.md`);
   writeFileSync2(p, renderBacklog(r, opts.lang, opts.standard));
   return [p];
 }
@@ -24469,7 +25372,7 @@ function sectionBody(md, n) {
 
 // src/verify.ts
 import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "fs";
-import { join as join6 } from "path";
+import { join as join7 } from "path";
 var VERIFY_MAX = 40;
 var plain = (s) => s.replace(/\[([^\]]+)\]\(#[^)]*\)/g, "$1");
 function ncHeader(standard) {
@@ -24593,8 +25496,8 @@ function applyVerdicts(items) {
 }
 function writeWorklist(items, outDir, semantic, standard = "wcag", lang = "en") {
   mkdirSync3(outDir, { recursive: true });
-  const todoPath = join6(outDir, "VERIFY.todo.json");
-  const mdPath = join6(outDir, "VERIFY.md");
+  const todoPath = join7(outDir, "VERIFY.todo.json");
+  const mdPath = join7(outDir, "VERIFY.md");
   writeFileSync3(todoPath, JSON.stringify(items, null, 2) + "\n");
   writeFileSync3(mdPath, formatWorklist(items, semantic, standard, lang));
   return { todoPath, mdPath, count: items.length };
@@ -24602,9 +25505,9 @@ function writeWorklist(items, outDir, semantic, standard = "wcag", lang = "en") 
 
 // src/scan.ts
 import { execFileSync as execFileSync3 } from "child_process";
-import { mkdtempSync, writeFileSync as writeFileSync4, existsSync as existsSync3, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
+import { mkdtempSync, writeFileSync as writeFileSync4, existsSync as existsSync4, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
 import { tmpdir } from "os";
-import { join as join7, resolve } from "path";
+import { join as join8, resolve as resolve2 } from "path";
 
 // src/axe-map.ts
 var AXE_WCAG = {
@@ -24837,11 +25740,11 @@ function imageExists(tag) {
 }
 var CTX_PREFIX = "ultra11y-dyn-";
 function buildImage(tag = IMAGE_TAG) {
-  const ctx = mkdtempSync(join7(tmpdir(), CTX_PREFIX));
+  const ctx = mkdtempSync(join8(tmpdir(), CTX_PREFIX));
   try {
-    writeFileSync4(join7(ctx, "runner.mjs"), RUNNER);
-    writeFileSync4(join7(ctx, "package.json"), PKG);
-    writeFileSync4(join7(ctx, "Dockerfile"), DOCKERFILE);
+    writeFileSync4(join8(ctx, "runner.mjs"), RUNNER);
+    writeFileSync4(join8(ctx, "package.json"), PKG);
+    writeFileSync4(join8(ctx, "Dockerfile"), DOCKERFILE);
     execFileSync3("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
   } finally {
     rmSync(ctx, { recursive: true, force: true });
@@ -24852,7 +25755,7 @@ function cleanTempContexts() {
   const dir = tmpdir();
   for (const name of readdirSync2(dir)) {
     if (!name.startsWith(CTX_PREFIX)) continue;
-    rmSync(join7(dir, name), { recursive: true, force: true });
+    rmSync(join8(dir, name), { recursive: true, force: true });
     removed++;
   }
   return removed;
@@ -24870,7 +25773,7 @@ function cleanDynamic(tag = IMAGE_TAG) {
 }
 function runRunner(target, isFile, tag) {
   const args = ["run", "--rm"];
-  if (isFile) args.push("-v", `${resolve(target)}:${MOUNT}:ro`);
+  if (isFile) args.push("-v", `${resolve2(target)}:${MOUNT}:ro`);
   args.push(tag, isFile ? MOUNT : target);
   const stdout = execFileSync3("docker", args, { encoding: "utf8", timeout: 24e4, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
   const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
@@ -24913,7 +25816,7 @@ function toDynamicResult(out, target, lang = "en") {
 }
 function runScan(opts) {
   const isUrl = /^https?:\/\//i.test(opts.target);
-  if (!isUrl && !existsSync3(opts.target)) {
+  if (!isUrl && !existsSync4(opts.target)) {
     throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   if (!dockerAvailable()) {
@@ -24921,7 +25824,7 @@ function runScan(opts) {
   }
   const tag = opts.tag ?? IMAGE_TAG;
   if (!imageExists(tag)) buildImage(tag);
-  const isFile = !isUrl && existsSync3(opts.target) && statSync2(opts.target).isFile();
+  const isFile = !isUrl && existsSync4(opts.target) && statSync2(opts.target).isFile();
   const out = runRunner(opts.target, isFile, tag);
   return toDynamicResult(out, opts.target);
 }
@@ -25321,7 +26224,7 @@ function baselineSummary(diff, lang = "fr") {
 // src/init.ts
 import { writeFileSync as writeFileSync6, mkdirSync as mkdirSync4, chmodSync } from "fs";
 import { execFileSync as execFileSync4 } from "child_process";
-import { join as join8 } from "path";
+import { join as join9 } from "path";
 var EN_SEV = { bloquant: "blocking", majeur: "major", mineur: "minor" };
 function repoRoot() {
   try {
@@ -25368,17 +26271,17 @@ jobs:
 `;
 }
 function writeHook(root, enginePath, failOn) {
-  const dir = join8(root, ".git", "hooks");
+  const dir = join9(root, ".git", "hooks");
   mkdirSync4(dir, { recursive: true });
-  const path = join8(dir, "pre-commit");
+  const path = join9(dir, "pre-commit");
   writeFileSync6(path, hookScript(enginePath, failOn));
   chmodSync(path, 493);
   return path;
 }
 function writeCi(root, enginePath, failOn) {
-  const dir = join8(root, ".github", "workflows");
+  const dir = join9(root, ".github", "workflows");
   mkdirSync4(dir, { recursive: true });
-  const path = join8(dir, "a11y.yml");
+  const path = join9(dir, "a11y.yml");
   writeFileSync6(path, ciWorkflow(enginePath, failOn));
   return path;
 }
@@ -25438,6 +26341,244 @@ function auditSummary(r, lang) {
   return lines.join("\n");
 }
 
+// src/config.ts
+import { existsSync as existsSync6, statSync as statSync3 } from "fs";
+import { join as join10, isAbsolute } from "path";
+
+// src/pack.ts
+import { existsSync as existsSync5 } from "fs";
+function exampleParses(ex) {
+  for (const code2 of [ex.bad, ex.good]) {
+    if (!code2) continue;
+    if (ex.lang === "jsx") {
+      if (!parseJsxAst(code2)) return `unparseable JSX example: ${code2.slice(0, 48)}\u2026`;
+    } else if (ex.lang === "html") {
+      try {
+        parseHtml(code2, "<guidance>.html", false);
+      } catch (e) {
+        return `unparseable HTML example (${e instanceof Error ? e.message : String(e)})`;
+      }
+    }
+  }
+  return null;
+}
+function checkGuidance(ds, pack) {
+  const errors = [];
+  const warnings = [];
+  if (typeof ds !== "object" || ds === null || !Array.isArray(ds.entries)) {
+    errors.push("guidance: must be an object with an entries[] array");
+    return { errors, warnings };
+  }
+  const dataset = ds;
+  if (dataset.pack && dataset.pack !== pack.key) warnings.push(`guidance: dataset.pack "${dataset.pack}" \u2260 pack key "${pack.key}"`);
+  dataset.entries.forEach((e, i) => {
+    const at = `guidance.entries[${i}]${e.id ? ` (${e.id})` : ""}`;
+    const crit = e.criterionId ? getCriterion(pack, e.criterionId) : void 0;
+    if (!e.criterionId) {
+      errors.push(`${at}: criterionId is unresolved \u2014 resolve it to a real ${pack.key} criterion (no fabrication)`);
+    } else if (!crit) {
+      errors.push(`${at}: criterionId "${e.criterionId}" does not exist in ${pack.key}`);
+    }
+    if (!Array.isArray(e.wcag) || e.wcag.length === 0) {
+      errors.push(`${at}: must map to at least one WCAG SC`);
+    } else {
+      for (const sc of e.wcag) {
+        switch (classifySc(sc)) {
+          case "malformed":
+            errors.push(`${at}: malformed SC "${sc}"`);
+            break;
+          case "unknown":
+            errors.push(`${at}: SC "${sc}" is not a recognized WCAG success criterion \u2014 fabricated?`);
+            break;
+          case "legit":
+            warnings.push(`${at}: SC "${sc}" is outside the WCAG 2.2 AA core (removed in 2.2)`);
+            break;
+        }
+      }
+      if (crit) {
+        const extra = e.wcag.filter((sc) => !crit.wcag.includes(sc));
+        if (extra.length) warnings.push(`${at}: SC(s) ${extra.join(", ")} not in criterion ${crit.id} mapping (${crit.wcag.join(", ")})`);
+      }
+    }
+    if (!Array.isArray(e.examples) || e.examples.length === 0) {
+      warnings.push(`${at}: no code examples`);
+    } else {
+      e.examples.forEach((ex, j) => {
+        const bad = exampleParses(ex);
+        if (bad) errors.push(`${at}.examples[${j}]: ${bad}`);
+      });
+    }
+  });
+  return { errors, warnings };
+}
+function runPackCheck(packPath, guidancePath) {
+  const errors = [];
+  const warnings = [];
+  if (!existsSync5(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
+  let raw;
+  try {
+    raw = JSON.parse(readText(packPath));
+  } catch {
+    return { ok: false, errors: [`${packPath}: not valid JSON`], warnings };
+  }
+  const v = validatePack(raw);
+  for (const issue of v.issues) (issue.severity === "error" ? errors : warnings).push(`${issue.path ? `${issue.path}: ` : ""}${issue.message}`);
+  if (v.ok && v.pack && guidancePath) {
+    if (!existsSync5(guidancePath)) {
+      errors.push(`guidance file not found: ${guidancePath}`);
+    } else {
+      let gRaw;
+      try {
+        gRaw = JSON.parse(readText(guidancePath));
+      } catch {
+        errors.push(`${guidancePath}: not valid JSON`);
+      }
+      if (gRaw !== void 0) {
+        const g = checkGuidance(gRaw, v.pack);
+        errors.push(...g.errors);
+        warnings.push(...g.warnings);
+      }
+    }
+  }
+  return { ok: errors.length === 0, errors, warnings };
+}
+function packScaffold() {
+  return JSON.stringify(
+    {
+      key: "mypack",
+      name: "MyPack",
+      fullName: "My national accessibility standard",
+      org: "Org",
+      country: "XX",
+      baseVersion: "1.0",
+      wcagVersion: "2.2",
+      locales: ["en"],
+      defaultLocale: "en",
+      license: "\u2026",
+      source: "https://\u2026",
+      attribution: "\u2026 \xA9 \u2026",
+      idPattern: "^\\d+\\.\\d+$",
+      themes: [{ number: 1, name: { en: "Theme one" }, count: 1 }],
+      criteria: [{ id: "1.1", theme: 1, title: { en: "Criterion one" }, titlePlain: { en: "Criterion one" }, wcag: ["1.1.1"] }]
+    },
+    null,
+    2
+  );
+}
+
+// src/config.ts
+var CONFIG_FILE = ".ultra11yrc.json";
+function loadConfig(cwd) {
+  const p = join10(cwd, CONFIG_FILE);
+  if (!existsSync6(p)) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(readText(p));
+  } catch {
+    throw new Error(`${CONFIG_FILE}: not valid JSON`);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`${CONFIG_FILE}: must be a JSON object`);
+  }
+  return parsed;
+}
+function packPaths(path) {
+  if (!existsSync6(path)) return null;
+  if (statSync3(path).isDirectory()) {
+    const pack = join10(path, "pack.json");
+    if (!existsSync6(pack)) return null;
+    const glossary = join10(path, "glossary.json");
+    const guidance = join10(path, "guidance.json");
+    return {
+      pack,
+      glossary: existsSync6(glossary) ? glossary : void 0,
+      guidance: existsSync6(guidance) ? guidance : void 0
+    };
+  }
+  return { pack: path };
+}
+function loadRuntimeStandards(cwd, packFlags, onWarn, override = false) {
+  const result = { errors: [], loadedPacks: [], loadedGuidance: [] };
+  let config = null;
+  try {
+    config = loadConfig(cwd);
+  } catch (e) {
+    result.errors.push(e instanceof Error ? e.message : String(e));
+    return result;
+  }
+  result.defaultStandard = config?.standard;
+  for (const raw of [...config?.packs ?? [], ...packFlags]) {
+    const paths = packPaths(isAbsolute(raw) ? raw : join10(cwd, raw));
+    if (!paths) {
+      result.errors.push(`--pack ${raw}: not found (expected a pack JSON file or a directory with pack.json)`);
+      continue;
+    }
+    let packObj;
+    try {
+      packObj = JSON.parse(readText(paths.pack));
+    } catch {
+      result.errors.push(`--pack ${paths.pack}: not valid JSON`);
+      continue;
+    }
+    let glossary = {};
+    if (paths.glossary) {
+      try {
+        glossary = JSON.parse(readText(paths.glossary));
+      } catch {
+        onWarn(`ultra11y: ${paths.glossary} is not valid JSON \u2014 ignoring glossary.`);
+      }
+    }
+    const v = registerRuntimePack(packObj, glossary, { override });
+    for (const issue of v.issues) if (issue.severity === "warn") onWarn(`ultra11y: ${raw}: ${issue.path ? `${issue.path}: ` : ""}${issue.message}`);
+    if (!v.ok || !v.pack) {
+      result.errors.push(`--pack ${paths.pack}: invalid pack
+${formatIssues(v.issues).join("\n")}`);
+      continue;
+    }
+    result.loadedPacks.push(v.pack.key);
+    if (paths.guidance) loadGuidanceFile(paths.guidance, result, onWarn);
+  }
+  for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join10(cwd, g), result, onWarn);
+  return result;
+}
+function loadGuidanceFile(path, result, onWarn) {
+  if (!existsSync6(path)) {
+    onWarn(`ultra11y: guidance ${path} not found \u2014 skipping.`);
+    return;
+  }
+  let ds;
+  try {
+    ds = JSON.parse(readText(path));
+  } catch {
+    onWarn(`ultra11y: guidance ${path} is not valid JSON \u2014 skipping.`);
+    return;
+  }
+  if (!ds || typeof ds.pack !== "string" || !Array.isArray(ds.entries)) {
+    onWarn(`ultra11y: guidance ${path} is not a valid dataset (needs { pack, entries[] }) \u2014 skipping.`);
+    return;
+  }
+  const pack = getPack(ds.pack);
+  if (pack) {
+    const g = checkGuidance(ds, pack);
+    for (const w of g.warnings) onWarn(`ultra11y: guidance ${path}: ${w}`);
+    if (g.errors.length) {
+      result.errors.push(`guidance ${path}: invalid
+${g.errors.map((e) => `  \u2717 ${e}`).join("\n")}`);
+      return;
+    }
+  } else {
+    for (const e of ds.entries) {
+      if (!Array.isArray(e?.wcag) || !Array.isArray(e?.examples)) {
+        onWarn(`ultra11y: guidance ${path}: entry "${e?.id ?? "?"}" missing wcag[]/examples[] \u2014 skipping dataset.`);
+        return;
+      }
+    }
+  }
+  if (hasGuidance(ds.pack)) onWarn(`ultra11y: guidance ${path} overrides the existing guidance for pack "${ds.pack}".`);
+  registerRuntimeGuidance(ds);
+  result.loadedGuidance.push(path);
+}
+
 // src/cli.ts
 var HELP = `ultra11y v${VERSION}
 Audit HTML/CSS/JSX against WCAG 2.2 AA and produce a dated compliance report, or
@@ -25450,13 +26591,14 @@ Usage:
   ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
   ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--standard <pack>] [--gh-issues] [--lang en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues] [--lang en|fr]
   ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
+  ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
@@ -25501,6 +26643,12 @@ Commands:
              Actions --ci job (audit --since the PR base ref), both gating against
              --baseline so only NEW blocking NCs fail; --baseline writes
              audits/baseline.json (the committed reference).
+  pack       Author/verify a runtime standards pack. 'pack check <pack.json>
+             [--guidance <g.json>]' runs the validator + guidance gate (every
+             criterion maps to well-formed WCAG SCs, every guidance entry resolves to
+             a real criterion, every code example parses) \u2014 the anti-hallucination
+             gate for AI-ingested packs. 'pack scaffold' prints a blank pack to fill.
+             Load packs at audit/report time with --pack (or .ultra11yrc.json).
   scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
              decide the needs-rendering criteria the static engine can't \u2014 computed
              contrast (1.4.3), 320px reflow (1.4.10) \u2014 over a URL or HTML file.
@@ -25524,6 +26672,13 @@ Options:
   --dedup <mode>     audit: collapse identical files \u2014 exact|normalized|off  (default: exact)
   --standard <pack>  report/prd/criteria/check/verify: WCAG core (default) or a pack
                      key (rgaa, \u2026); contribute a country via a pack (see CONTRIBUTING.md)
+  --pack <paths>     load external standards pack(s) at runtime (no rebuild): a pack JSON
+                     file, or a dir with pack.json (+ glossary.json/guidance.json);
+                     comma-separated, validated before use (see references/packs.md)
+  --override         --pack: allow a runtime pack key to replace a built-in/loaded standard
+  --guidance <file>  pack check: the guidance dataset JSON to gate alongside the pack
+  --format <mode>    prd: 'doc' emits a product-requirements document (epics, user
+                     stories, Given/When/Then); default is the fix backlog
   --split <mode>     prd: split the backlog \u2014 currently only 'criterion' (one file per criterion)
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
@@ -25556,7 +26711,7 @@ Options:
   -v, --version      print version
 
 Data: WCAG 2.2 \xA9 W3C (W3C Document License). RGAA 4.1.2 pack \xA9 DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
-var COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init"];
+var COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack"];
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
@@ -25583,7 +26738,10 @@ var VALUE_FLAGS = /* @__PURE__ */ new Set([
   "standard",
   "baseline",
   "fail-on",
-  "split"
+  "split",
+  "pack",
+  "format",
+  "guidance"
 ]);
 var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
 function valueFlagsFor(command) {
@@ -25652,13 +26810,13 @@ async function cmdAudit(p) {
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
   try {
     mkdirSync5(out, { recursive: true });
-    writeFileSync7(join9(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    writeFileSync7(join11(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
   } catch {
   }
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
-    if (existsSync4(baselineFlag)) {
+    if (existsSync7(baselineFlag)) {
       try {
         const parsed = JSON.parse(readText(baselineFlag));
         if (isCurrentAudit(parsed)) baseline = parsed;
@@ -25695,7 +26853,7 @@ function cmdInit(p) {
   let engineRel = process.argv[1] ?? "scripts/ultra11y.mjs";
   try {
     const abs = realpathSync(engineRel);
-    engineRel = abs.startsWith(root + sep2) ? relative2(root, abs) : abs;
+    engineRel = abs.startsWith(root + sep2) ? relative3(root, abs) : abs;
   } catch {
   }
   const failOn = parseFailOn(p.flags["fail-on"]);
@@ -25708,8 +26866,8 @@ function cmdInit(p) {
   if (want.baseline) {
     const inputs = p.positionals.length ? p.positionals : ["."];
     const result = runAudit({ inputs, onWarn: (m) => console.error(m) });
-    mkdirSync5(join9(root, "audits"), { recursive: true });
-    const bp = join9(root, "audits", "baseline.json");
+    mkdirSync5(join11(root, "audits"), { recursive: true });
+    const bp = join11(root, "audits", "baseline.json");
     writeFileSync7(bp, JSON.stringify(result, null, 2) + "\n");
     wrote.push(bp);
   }
@@ -25784,7 +26942,8 @@ async function cmdPrd(p) {
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
   const lang = langOf(p.flags);
   const split = p.flags.split === "criterion" ? "criterion" : void 0;
-  const paths = writePrd(result, { out, lang, split, standard });
+  const format = p.flags.format === "doc" ? "doc" : void 0;
+  const paths = writePrd(result, { out, lang, split, format, standard });
   for (const path of paths) console.log(path);
   if (p.flags["gh-issues"] === true) {
     const units = prdUnits(result, standard, lang);
@@ -25819,15 +26978,15 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     return 0;
   }
   let deps = {};
-  const pkgPath = join9(root, "package.json");
-  if (existsSync4(pkgPath)) {
+  const pkgPath = join11(root, "package.json");
+  if (existsSync7(pkgPath)) {
     try {
       const pkg = JSON.parse(readText(pkgPath));
       deps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
     } catch {
     }
   }
-  const detection = detectFrameworks(deps, (f) => existsSync4(join9(root, f)));
+  const detection = detectFrameworks(deps, (f) => existsSync7(join11(root, f)));
   if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
   else console.log(renderPlan(detection, lang));
   return 0;
@@ -26002,11 +27161,11 @@ async function cmdScan(p) {
     }
     const merged = mergeDynamic(audit, dynamic, lang);
     mkdirSync5(out, { recursive: true });
-    writeFileSync7(join9(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    writeFileSync7(join11(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
     if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
     else
       console.log(
-        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join9(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join9(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
+        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join11(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join11(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
       );
     return 0;
   }
@@ -26018,6 +27177,33 @@ async function cmdScan(p) {
     for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} \u2014 ${f.message}`);
   }
   return 0;
+}
+function cmdPack(p) {
+  const action = p.positionals[0];
+  const lang = langOf(p.flags);
+  if (action === "scaffold") {
+    console.log(packScaffold());
+    return 0;
+  }
+  if (action === "check") {
+    const packPath = p.positionals[1];
+    if (!packPath) {
+      console.error("ultra11y pack check: provide a pack JSON file \u2014 `pack check <pack.json> [--guidance <g.json>]`.");
+      return 2;
+    }
+    const guidance = typeof p.flags.guidance === "string" && p.flags.guidance ? p.flags.guidance : void 0;
+    const res = runPackCheck(packPath, guidance);
+    if (p.flags.json) {
+      console.log(JSON.stringify(res, null, 2));
+    } else {
+      for (const w of res.warnings) console.error(`\u26A0 ${w}`);
+      if (res.ok) console.log(lang === "fr" ? `\u2713 Pack valide${guidance ? " (+ guidance)" : ""}.` : `\u2713 Pack valid${guidance ? " (+ guidance)" : ""}.`);
+      else for (const e of res.errors) console.error(`\u2717 ${e}`);
+    }
+    return res.ok ? 0 : 1;
+  }
+  console.error("ultra11y pack: expected `pack check <pack.json> [--guidance <g.json>]` or `pack scaffold`.");
+  return 2;
 }
 async function main(argv) {
   const first = argv[0];
@@ -26038,6 +27224,13 @@ async function main(argv) {
     console.log(HELP);
     return 0;
   }
+  const packList = typeof p.flags.pack === "string" ? p.flags.pack.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const loaded = loadRuntimeStandards(process.cwd(), packList, (m) => console.error(m), p.flags.override === true);
+  if (loaded.errors.length) {
+    for (const e of loaded.errors) console.error(`ultra11y: ${e}`);
+    return 2;
+  }
+  if (loaded.defaultStandard && p.flags.standard === void 0) p.flags.standard = loaded.defaultStandard;
   switch (p.command) {
     case "audit":
       return cmdAudit(p);
@@ -26059,6 +27252,8 @@ async function main(argv) {
       return cmdFix(p);
     case "init":
       return cmdInit(p);
+    case "pack":
+      return cmdPack(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

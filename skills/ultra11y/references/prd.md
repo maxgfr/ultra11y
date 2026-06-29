@@ -10,14 +10,22 @@ node scripts/ultra11y.mjs prd --in audit.json                     # single backl
 node scripts/ultra11y.mjs prd --in audit.json --split criterion   # one PRD per criterion
 node scripts/ultra11y.mjs prd --in audit.json --gh-issues         # + one GitHub issue per criterion
 node scripts/ultra11y.mjs prd --in audit.json --standard rgaa     # backlog keyed by the RGAA pack
+node scripts/ultra11y.mjs prd --in audit.json --format doc        # product-requirements doc (epics/stories/AC)
 ```
 
 ## Output
 
-- **Default**: one document `audits/prd-YYYY-MM-DD.md`, sectioned by priority (🔴 blocking →
-  🟠 major → 🟡 minor). Each criterion becomes a block: title + WCAG ref, fix(es), then a
-  **checklist** of occurrences (`file:line`), with the **definition site** (`related`) when a
-  cross-file flag carries one.
+- **Default (fix backlog)**: one document `audits/prd-YYYY-MM-DD.md`, sectioned by priority
+  (🔴 blocking → 🟠 major → 🟡 minor). Each criterion becomes a block: title + WCAG ref,
+  fix(es), an **effort estimate** (S/M/L from Σ severity-weighted occurrences), a
+  **before/after example** drawn from the implementation guidance (see
+  `references/guidance.md`), then a **checklist** of occurrences (`file:line`), with the
+  **definition site** (`related`) when a cross-file flag carries one.
+- **`--format doc` (product-requirements doc)**: `audits/prd-doc-YYYY-MM-DD.md` — epics
+  grouped by theme (WCAG guideline, or the pack theme under `--standard`), one **user
+  story** per criterion, **Given/When/Then** acceptance criteria templated from the real SC
+  title/techniques (anchored to W3C text, never invented outcomes), and the occurrence task
+  list. Hand it to a dev team or pair it with `--gh-issues`.
 - **`--split criterion`**: a `prd-<criterion>-YYYY-MM-DD.md` file per criterion with
   non-conformities (handy for batching).
 - The markdown is **always** written, even with `--gh-issues`.

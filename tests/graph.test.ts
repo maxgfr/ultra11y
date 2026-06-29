@@ -69,3 +69,19 @@ describe("graph queries", () => {
     expect(htmlLangProvidedFor(graph, "Button.tsx")).toBe(false);
   });
 });
+
+describe("graph queries — namespace imports", () => {
+  const UI = `export function Button() { return <button>Save</button>; }`;
+  const NS = `import * as UI from "./ui";\nexport default function P(){ return <UI.Button/>; }`;
+  const graph = buildGraph([node(UI, "ui.tsx"), node(NS, "nspage.tsx")]);
+
+  it("resolves a namespace-member usage <UI.Button/> to its definition", () => {
+    const def = resolveUsage(graph, "nspage.tsx", "UI.Button");
+    expect(def?.file).toBe("ui.tsx");
+    expect(def?.name).toBe("Button");
+  });
+
+  it("returns undefined for a namespace member that isn't exported", () => {
+    expect(resolveUsage(graph, "nspage.tsx", "UI.Missing")).toBeUndefined();
+  });
+});

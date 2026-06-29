@@ -85,7 +85,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse"],
+      "ruleIds": ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
       "techniques": [
         "ARIA10",
@@ -162,7 +162,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["media-no-track"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
       "techniques": ["F74", "F75", "F8", "G58", "G87", "G93", "H95", "SM11", "SM12"]
     },
@@ -217,7 +217,9 @@
         "heading-order-skip",
         "h1-missing",
         "h1-multiple",
-        "list-structure"
+        "list-structure",
+        "empty-heading",
+        "label-for-dangling"
       ],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       "techniques": [
@@ -489,7 +491,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["meta-refresh-redirect"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html",
       "techniques": [
         "F16",
@@ -532,7 +534,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": ["autoplay-media"],
+      "ruleIds": ["autoplay-media", "blink-marquee"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html",
       "techniques": [
         "F16",

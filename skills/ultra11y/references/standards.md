@@ -47,6 +47,13 @@ respective WCAG versions; a country pack adds that standard's own numbering and 
 
 ## Adding your country
 
-Drop a pack JSON under `src/data/standards/`, register it in `src/standards/registry.ts`,
-add a test, and open a PR. The full authoring contract (pack schema, locale rules, licence
-requirements, the WCAG-SC mapping, tests) is in **`../../CONTRIBUTING.md`**.
+Two ways, depending on whether you want it shipped or just plugged locally:
+
+- **Built-in (shipped):** drop a pack JSON under `src/data/standards/`, register it in
+  `src/standards/registry.ts`, add a test, and open a PR. The full authoring contract
+  (pack schema, locale rules, licence requirements, the WCAG-SC mapping, tests) is in
+  **`../../CONTRIBUTING.md`**.
+- **Runtime (no rebuild):** author the pack JSON, gate it with `pack check`, and load it
+  with `--pack ./pack.json` (or a `.ultra11yrc.json`). An external standard or rule source
+  can be **AI-ingested** into a pack + implementation guidance and validated by the same
+  gate — see **`packs.md`** and **`guidance.md`**.

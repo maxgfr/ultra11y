@@ -23,6 +23,13 @@ node scripts/ultra11y.mjs audit --changed --graph     # git diff, graph over the
   in hand. The whole repo is never held in memory: O(number of files) small nodes.
 - **`--changed --graph`**: the graph indexes the **whole** scope (to resolve a reference into
   an unchanged definition), but only the diffed files are audited.
+- **Import resolution**: relative specifiers (`./IconButton`), **tsconfig-paths aliases**
+  (`@/components/Icon`, read from the nearest `tsconfig.json`'s `baseUrl`/`paths`), and
+  **namespace members** (`<UI.Button/>` from `import * as UI`) all resolve to a discovered
+  file. *Bounds (documented, never a silent false "conforming"):* bare `node_modules`
+  specifiers (`react`) are out of scope; alias bases are resolved relative to the working
+  dir (run the audit from the project root); React **context** value flow and dynamic
+  `import()` are not traced.
 
 ## The cross-file rules
 
@@ -30,6 +37,14 @@ node scripts/ultra11y.mjs audit --changed --graph     # git diff, graph over the
   **icon-only** control and *can* receive a name (`{...props}` / `aria-label={…}` /
   `{children}`) is used **without a name**. The flag is placed **at the usage site**, with the
   component **definition** in `related`.
+- **`cross-prop-drilled-name-lost`** (WCAG 4.1.2, *flag*): a usage passes an accessible-name
+  prop (`aria-label`/`label`/…) to a component that renders a control but **neither spreads
+  `{...props}` nor forwards a name** to it → the name is silently dropped. Flagged at the
+  usage, with the control **definition** in `related`.
+- **`cross-aria-ref-cross-file`** (WCAG 4.1.2, *suppression*): an `aria-labelledby`/
+  `aria-describedby`/`aria-controls` whose target id lives in **another** file →
+  suppresses the false `aria-ref-missing-id`. Suppressed only when **every** in-page-missing
+  id resolves elsewhere, so a genuinely-dangling reference is never hidden.
 - **`cross-aria-forwarding`** (WCAG 4.1.2, *suppression*): a native control that forwards
   `{...props}` is nameable by its parent → it **suppresses** the false
   `button-empty-name`/`icon-only-control-unnamed` on the **definition**.

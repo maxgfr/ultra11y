@@ -32,6 +32,15 @@ describe("cross-file rules (audit --graph)", () => {
     expect(find(graph, "skip-link-target-missing", "Layout.tsx")).toBeUndefined();
   });
 
+  it("flags a prop-drilled accessible name lost across a component boundary", () => {
+    const f = find(graph, "cross-prop-drilled-name-lost", "page-prop-drill.tsx");
+    expect(f).toBeDefined();
+    expect(f?.related?.file).toMatch(/SaveButton\.tsx$/);
+    expect(f?.criteriaId).toBe("4.1.2");
+    // graph-only: the plain (single-file) pass cannot see across the boundary.
+    expect(find(plain, "cross-prop-drilled-name-lost", "page-prop-drill.tsx")).toBeUndefined();
+  });
+
   it("only adds/removes cross-file effects — the rest of the findings are unchanged", () => {
     // every plain finding that isn't one of the two suppressed kinds still appears
     const suppressed = new Set(["icon-only-control-unnamed", "skip-link-target-missing"]);
@@ -39,5 +48,31 @@ describe("cross-file rules (audit --graph)", () => {
     for (const f of stillThere) {
       expect(graph.some((g) => g.ruleId === f.ruleId && g.file === f.file && g.line === f.line)).toBe(true);
     }
+  });
+});
+
+describe("cross-file suppressors for id-ref rules (audit --graph)", () => {
+  const S = ["tests/fixtures/cross-suppress"];
+  const plain = runAudit({ inputs: S, dedup: "off" }).findings;
+  const graph = runAudit({ inputs: S, dedup: "off", graph: true }).findings;
+  const has = (fs: Finding[], ruleId: string, endsWith = "consumer.tsx") => fs.some((f) => f.ruleId === ruleId && f.file.endsWith(endsWith));
+
+  it("suppresses aria-ref-missing-id when the target id is defined in another file", () => {
+    expect(has(plain, "aria-ref-missing-id")).toBe(true);
+    expect(has(graph, "aria-ref-missing-id")).toBe(false);
+  });
+
+  it("suppresses label-for-dangling when the field lives in an imported component", () => {
+    expect(has(plain, "label-for-dangling")).toBe(true);
+    expect(has(graph, "label-for-dangling")).toBe(false);
+  });
+
+  it("suppresses empty-heading when the heading is named by a cross-file aria-labelledby", () => {
+    expect(has(plain, "empty-heading")).toBe(true);
+    expect(has(graph, "empty-heading")).toBe(false);
+  });
+
+  it("does NOT flag cross-prop-drilled-name-lost when the control already has a literal name", () => {
+    expect(has(graph, "cross-prop-drilled-name-lost", "uses-literal.tsx")).toBe(false);
   });
 });

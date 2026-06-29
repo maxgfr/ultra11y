@@ -107,6 +107,29 @@ node scripts/ultra11y.mjs report --in audits/audit-latest.json --standard sectio
 node scripts/ultra11y.mjs criteria --standard section508 --theme 1
 ```
 
+### Runtime packs, guidance & AI ingestion
+
+You don't have to ship a pack to use one. The same `StandardPack` JSON can be loaded
+**at runtime** — no rebuild — with `--pack ./pack.json` (a file, or a directory holding
+`pack.json` + optional `glossary.json`/`guidance.json`) or a `.ultra11yrc.json`. Whichever
+route you take, the **same validator** runs first, and the `pack` command is the gate:
+
+```bash
+node scripts/ultra11y.mjs pack scaffold > pack.json                  # a blank, valid skeleton
+node scripts/ultra11y.mjs pack check pack.json --guidance guidance.json   # fail-loud gate
+```
+
+`pack check` is the **anti-hallucination gate**: a fabricated SC (not a real WCAG SC), a
+guidance entry whose `criterionId` doesn't resolve, or an unparseable code example fails
+it. This is what makes **AI-assisted ingestion** safe — point the agent at an external
+rule source (e.g. the RGAA SocialGouv/etalab rule packs), have it draft the pack + a
+**guidance** dataset (concrete before/after implementation rules; see
+`skills/ultra11y/references/guidance.md`) + proposed detectors, then iterate against
+`pack check` until green. A deterministic fast-path scaffolder lives at
+`scripts/import-pack.mjs`. Honesty rule for detectors: only add an engine rule for a
+pattern that is statically decidable **and** maps to an SC in the WCAG 2.2 AA core;
+everything else is guidance + residual risk, never silently conforming.
+
 ## PR checklist
 
 - [ ] Pack JSON validates; ids match `idPattern`; every in-core SC resolves.

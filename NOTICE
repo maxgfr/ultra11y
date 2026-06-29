@@ -38,6 +38,26 @@ success-criterion ids, stripping glossary HTML) but does not alter its meaning.
 Attribution: « RGAA 4.1.2 — DINUM ».
 
 ================================================================================
+Bundled RGAA implementation guidance
+================================================================================
+
+The file src/data/guidance/rgaa.json is an implementation-guidance dataset: short
+derived summaries and minimal before/after code examples, each keyed to an RGAA
+criterion and the WCAG success criteria it maps onto. Its entry ids mirror the rule
+files of the SocialGouv/skills "rgaa-html-css" skill, and the patterns are adapted
+from that skill and the official RGAA méthode (DINUM).
+
+Source: https://github.com/SocialGouv/skills (skills/rgaa-html-css/rules)
+        https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/
+
+The underlying RGAA criteria are © DINUM under the Licence Ouverte / Etalab 2.0
+(above). ultra11y stores only short derived summaries + minimal illustrative
+examples, not verbatim prose. When ingesting another rule source, record its own
+license and attribution in the dataset header and in this NOTICE before
+redistributing any of its text. Attribution: « RGAA 4.1.2 — DINUM ; patterns adaptés
+de SocialGouv/skills ».
+
+================================================================================
 Inspiration
 ================================================================================
 

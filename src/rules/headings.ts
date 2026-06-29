@@ -1,6 +1,7 @@
 // Theme 9 — Information structure (headings).
 import type { Doc, El } from "../parse/html.js";
 import { attr, elementsByTag } from "../parse/html.js";
+import { accessibleName } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 function headingLevel(el: El): number | null {
@@ -122,4 +123,25 @@ const listStructure: Rule = {
   },
 };
 
-export const headingsRules: Rule[] = [headingOrderSkip, h1Missing, h1Multiple, listStructure];
+const emptyHeading: Rule = {
+  id: "empty-heading",
+  criteria: ["1.3.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const { el, level } of headings(doc)) {
+      if (attr(el, "aria-hidden") === "true") continue;
+      if (accessibleName(el, doc)) continue;
+      out.push({
+        criteriaId: "1.3.1",
+        el,
+        message: `Titre <${el.tag}> de niveau ${level} vide — un titre sans intitulé désoriente la navigation au clavier/lecteur d'écran.`,
+        remediation: `Donnez un intitulé textuel au titre, ou retirez-le s'il est purement décoratif.`,
+      });
+    }
+    return out;
+  },
+};
+
+export const headingsRules: Rule[] = [headingOrderSkip, h1Missing, h1Multiple, listStructure, emptyHeading];

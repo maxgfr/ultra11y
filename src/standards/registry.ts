@@ -6,6 +6,7 @@ import rgaaPack from "../data/standards/rgaa.json";
 import rgaaGlossary from "../data/standards/rgaa.glossary.json";
 import type { StandardPack } from "./types.js";
 import type { Glossary } from "../types.js";
+import { validatePack, type PackValidation } from "./validate.js";
 
 export const CORE_KEY = "wcag";
 
@@ -22,6 +23,19 @@ function register(pack: StandardPack, glossary: Glossary): void {
 }
 
 register(rgaaPack as unknown as StandardPack, rgaaGlossary as unknown as Glossary);
+
+/**
+ * Register an EXTERNAL pack at runtime (from `--pack` / `.ultra11yrc.json`) — the
+ * pluggable counterpart to the build-time `register` above. It runs the shared
+ * `validatePack` guardrail first; on ANY error-severity issue it does not register and
+ * returns the validation so the caller can fail loudly (never a silent accept). A key
+ * that collides with a built-in/loaded standard is an error unless `opts.override`.
+ */
+export function registerRuntimePack(raw: unknown, glossary: Glossary = {}, opts: { override?: boolean } = {}): PackValidation {
+  const v = validatePack(raw, { knownKeys: new Set(listStandards()), allowOverride: opts.override });
+  if (v.ok && v.pack) registry.set(v.pack.key, { pack: v.pack, glossary });
+  return v;
+}
 
 export function isCore(key: string): boolean {
   return key === CORE_KEY;

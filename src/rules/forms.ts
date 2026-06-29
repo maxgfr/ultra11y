@@ -126,4 +126,35 @@ const selectHasOption: Rule = {
   },
 };
 
-export const formsRules: Rule[] = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption];
+// A <label for="x"> whose target id exists nowhere in the document — the visible label
+// is not programmatically associated with any field (a common typo'd for/id pairing).
+// Same-document only; cross-file label/field association is out of scope (see references/cross-file.md).
+const labelForDangling: Rule = {
+  id: "label-for-dangling",
+  criteria: ["1.3.1"],
+  parser: ["html", "jsx"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "label") continue;
+      const f = (attr(el, "for") ?? "").trim();
+      if (!f || f.includes("{")) continue; // empty, or a JSX expression remnant (dynamic for=)
+      if (doc.byId.has(f)) continue;
+      // Wired via an id-bearing prop on a sibling component? Design-system field/upload
+      // components take the input id as a prop (e.g. <FileUpload inputId="x"/>) and render
+      // the <input id="x"> internally — the association is real, just not a literal id here.
+      const passedAsIdProp = doc.elements.some((e) => e !== el && Object.entries(e.attribs).some(([k, v]) => v === f && /id/i.test(k)));
+      if (passedAsIdProp) continue;
+      out.push({
+        criteriaId: "1.3.1",
+        el,
+        message: `<label for="${f}"> ne cible aucun élément — aucun champ n'a id="${f}".`,
+        remediation: `Donnez au champ id="${f}", corrigez l'attribut for, ou enveloppez le champ dans le <label>.`,
+      });
+    }
+    return out;
+  },
+};
+
+export const formsRules: Rule[] = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption, labelForDangling];

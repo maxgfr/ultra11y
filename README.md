@@ -2,9 +2,9 @@
 
 > Audit HTML/CSS/JSX against **WCAG 2.2 AA** accessibility and produce a dated compliance report — or author/review accessible markup without regressions. A [skills.sh](https://skills.sh) agent skill: a deterministic, zero-dependency static engine **plus** the agent's judgment, with `check`/`verify` gates against hallucinated non-conformities. **WCAG is the worldwide core; country standards (RGAA, …) are pluggable in-repo packs.**
 
-ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — 36 machine-detectable checks tied to the WCAG 2.2 success criteria — and is explicit about everything it cannot decide:
+ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — 42 machine-detectable checks tied to the WCAG 2.2 success criteria — and is explicit about everything it cannot decide:
 
-- **Automatable (engine):** missing `alt`/`lang`/`title`, unlabeled fields, empty links/buttons, icon-only controls, iframes without title, tables without headers, heading-level skips, duplicate ids, invalid/broken ARIA, positive `tabindex`, autoplay media…
+- **Automatable (engine):** missing `alt`/`lang`/`title`, unlabeled fields, empty links/buttons, icon-only controls, iframes without title, tables without headers, heading-level skips, empty/dangling headings & labels, duplicate ids, invalid/broken ARIA, positive `tabindex`, autoplay/timed-refresh/`blink`/`marquee` media…
 - **Needs rendering (you):** computed contrast, visible focus, zoom/reflow, content on hover — flagged as **residual risks**, never silently "conforming".
 - **Human judgment (you):** alt-text relevance, link purpose in context, reading/tab order, caption accuracy…
 

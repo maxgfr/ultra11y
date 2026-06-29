@@ -21,8 +21,10 @@ export interface ComponentDef {
   line: number; // 1-based position of the control (or the component) in the file
   col: number;
   // Signals about the primary control (<button>/<a href>) the component renders.
+  hasControl: boolean; // the component renders a nameable control (<button>/<a href>)
   rendersIconOnlyControl: boolean; // icon child, no literal text, no literal aria-name
   acceptsName: boolean; // a name could be injected from props (spread / aria expr / {children})
+  controlHasName: boolean; // control already bears a literal name (text or literal aria-label) — a passed name prop is dead, not lost
   spreadsProps: boolean; // control has {...props}
   forwardsAria: boolean; // control has aria-label/labelledby set to an expression
 }
@@ -124,7 +126,18 @@ function analyzeComponent(name: string, file: string, fnNode: AstNode): Componen
   const control = findControl(fnNode);
   if (!control) {
     const { line, col } = posOf(fnNode);
-    return { name, file, line, col, rendersIconOnlyControl: false, acceptsName: false, spreadsProps: false, forwardsAria: false };
+    return {
+      name,
+      file,
+      line,
+      col,
+      hasControl: false,
+      rendersIconOnlyControl: false,
+      acceptsName: false,
+      controlHasName: false,
+      spreadsProps: false,
+      forwardsAria: false,
+    };
   }
   const { line, col } = posOf(control);
   const attrs = controlAttrs(control);
@@ -133,8 +146,9 @@ function analyzeComponent(name: string, file: string, fnNode: AstNode): Componen
   const literalAriaName = attrs.some((a) => NAME_PROPS.has(attrName(a)) && attrIsLiteral(a));
   const acceptsNameViaChildren = rendersNameExpr(control);
   const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
+  const controlHasName = literalAriaName || hasLiteralText(control);
   const rendersIconOnlyControl = hasIconChild(control) && !hasLiteralText(control) && !literalAriaName;
-  return { name, file, line, col, rendersIconOnlyControl, acceptsName, spreadsProps, forwardsAria };
+  return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
 }
 
 function isCapitalized(name: string): boolean {

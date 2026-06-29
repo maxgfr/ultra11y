@@ -159,11 +159,13 @@ const ariaRefMissingId: Rule = {
       const refs: { attr: string; ids: string[] }[] = [];
       for (const a of IDREF_ATTRS) {
         const v = attr(el, a);
-        if (v) refs.push({ attr: a, ids: v.split(/\s+/).filter(Boolean) });
+        // A JSX expression value (e.g. aria-describedby={err ? "x" : undefined}) is dynamic,
+        // not a literal id list — never split/verify it (would yield garbage ids).
+        if (v && !v.includes("{")) refs.push({ attr: a, ids: v.split(/\s+/).filter(Boolean) });
       }
       for (const a of IDREF_SINGLE) {
         const v = (attr(el, a) ?? "").trim();
-        if (v) refs.push({ attr: a, ids: [v] });
+        if (v && !v.includes("{")) refs.push({ attr: a, ids: [v] });
       }
       for (const { attr: a, ids } of refs) {
         const missing = ids.filter((id) => !doc.byId.has(id));

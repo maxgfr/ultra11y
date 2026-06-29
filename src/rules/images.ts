@@ -84,4 +84,26 @@ const canvasFallbackMissing: Rule = {
   },
 };
 
-export const imagesRules: Rule[] = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing];
+const inputImageAltMissing: Rule = {
+  id: "input-image-alt-missing",
+  criteria: ["1.1.1"],
+  parser: ["html", "jsx"],
+  severity: "bloquant",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "input" || (attr(el, "type") ?? "").toLowerCase() !== "image") continue;
+      const alt = (attr(el, "alt") ?? "").trim();
+      if (alt || named(el) || (attr(el, "title") ?? "").trim()) continue;
+      out.push({
+        criteriaId: "1.1.1",
+        el,
+        message: `<input type="image"> sans alt ni nom accessible — le bouton image n'a pas d'alternative textuelle.`,
+        remediation: `Ajoutez alt="…" décrivant l'action du bouton (ex. alt="Rechercher").`,
+      });
+    }
+    return out;
+  },
+};
+
+export const imagesRules: Rule[] = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing];

@@ -3,15 +3,17 @@
 // discovered scope; consumed (read-only) during the audit pass.
 import type { FileGraphNode, ComponentDef } from "./imports.js";
 import { resolveSpecifier } from "./resolve.js";
+import type { AliasMap } from "./tsconfig.js";
 import { toPosix } from "../glob.js";
 
 export interface DepGraph {
   nodes: Map<string, FileGraphNode>; // posix file -> node
   known: ReadonlySet<string>; // all discovered files (posix), for specifier resolution
   allIds: ReadonlySet<string>; // every literal id defined anywhere (global skip-link lookup)
+  aliases: AliasMap; // tsconfig-paths aliases for "@/…" specifier resolution
 }
 
-export function buildGraph(nodes: FileGraphNode[]): DepGraph {
+export function buildGraph(nodes: FileGraphNode[], aliases: AliasMap = []): DepGraph {
   const map = new Map<string, FileGraphNode>();
   const known = new Set<string>();
   const allIds = new Set<string>();
@@ -21,19 +23,30 @@ export function buildGraph(nodes: FileGraphNode[]): DepGraph {
     known.add(n.file);
     for (const id of n.definesIds) allIds.add(id);
   }
-  return { nodes: map, known, allIds };
+  return { nodes: map, known, allIds, aliases };
 }
 
-/** Resolve a component used as `<localName/>` in `file` to its definition,
- *  following the import binding across files (or a local definition). */
+/** Resolve a component used as `<localName/>` in `file` to its definition, following the
+ *  import binding across files (relative or aliased), a namespace member (`<UI.Button/>`),
+ *  or a local definition. */
 export function resolveUsage(graph: DepGraph, file: string, localName: string): ComponentDef | undefined {
   const posix = toPosix(file);
   const node = graph.nodes.get(posix);
   if (!node) return undefined;
+  // Namespaced usage `<UI.Button/>` → namespace import `import * as UI` + member Button.
+  if (localName.includes(".")) {
+    const dot = localName.indexOf(".");
+    const ns = localName.slice(0, dot);
+    const member = localName.slice(dot + 1);
+    const nsImp = node.imports.find((i) => i.imported === "*" && i.local === ns);
+    if (!nsImp) return undefined;
+    const target = resolveSpecifier(posix, nsImp.source, graph.known, graph.aliases);
+    return target ? graph.nodes.get(target)?.components.get(member) : undefined;
+  }
   const imp = node.imports.find((i) => i.local === localName);
   if (imp) {
-    if (imp.imported === "*") return undefined; // namespace import — not resolved in v1
-    const target = resolveSpecifier(posix, imp.source, graph.known);
+    if (imp.imported === "*") return undefined; // bare namespace binding used without a member
+    const target = resolveSpecifier(posix, imp.source, graph.known, graph.aliases);
     if (!target) return undefined;
     return graph.nodes.get(target)?.components.get(imp.imported);
   }
@@ -57,7 +70,7 @@ export function htmlLangProvidedFor(graph: DepGraph, file: string): boolean {
     if (!node) continue;
     if (cur !== start && node.providesHtmlLang) return true;
     for (const imp of node.imports) {
-      const target = resolveSpecifier(cur, imp.source, graph.known);
+      const target = resolveSpecifier(cur, imp.source, graph.known, graph.aliases);
       if (target && !seen.has(target)) {
         seen.add(target);
         queue.push(target);

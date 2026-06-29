@@ -16,6 +16,7 @@ import { navigationRules } from "./navigation.js";
 import { multimediaRules } from "./multimedia.js";
 import { presentationRules } from "./presentation.js";
 import { colorsRules } from "./colors.js";
+import { timingRules } from "./timing.js";
 
 export const ALL_RULES: Rule[] = [
   ...colorsRules,
@@ -30,6 +31,7 @@ export const ALL_RULES: Rule[] = [
   ...navigationRules,
   ...multimediaRules,
   ...presentationRules,
+  ...timingRules,
 ];
 
 const SEVERITY_ORDER: Record<string, number> = { bloquant: 0, majeur: 1, mineur: 2 };

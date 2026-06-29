@@ -7,8 +7,10 @@ import { parseJsxAst } from "../parse/jsx-ast.js";
 import { jsxAstToDoc } from "../parse/jsx-bridge.js";
 import { parseHtml, type Doc } from "../parse/html.js";
 import { jsxToHtml } from "../parse/jsx.js";
+import { dirname } from "node:path";
 import { extractGraphNode, type FileGraphNode } from "./imports.js";
 import { buildGraph, type DepGraph } from "./graph.js";
+import { readTsAliases } from "./tsconfig.js";
 
 export function buildGraphStreaming(files: string[]): DepGraph {
   const nodes: FileGraphNode[] = [];
@@ -29,5 +31,8 @@ export function buildGraphStreaming(files: string[]): DepGraph {
     }
     nodes.push(extractGraphNode(ast, doc, file));
   }
-  return buildGraph(nodes);
+  // tsconfig-paths aliases, found by walking up from the first file's dir (cwd-relative
+  // bases to match the discovered file paths). Empty when there is no tsconfig.
+  const aliases = readTsAliases(files[0] ? dirname(files[0]) : process.cwd());
+  return buildGraph(nodes, aliases);
 }

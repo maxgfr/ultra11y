@@ -1,0 +1,261 @@
+{
+  "pack": "rgaa",
+  "source": "https://github.com/SocialGouv/skills/tree/main/skills/rgaa-html-css/rules + https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/",
+  "license": "Licence Ouverte / Etalab 2.0 (RGAA criteria) — derived implementation guidance",
+  "attribution": "RGAA 4.1.2 © DINUM — Licence Ouverte / Etalab 2.0. Implementation patterns adapted from SocialGouv/skills (rgaa-html-css) under that repository's license; entry ids mirror its rule files.",
+  "entries": [
+    {
+      "id": "images-informative-alt",
+      "criterionId": "1.1",
+      "wcag": ["1.1.1"],
+      "title": { "fr": "Alternative textuelle des images porteuses d'information", "en": "Concise alt text for informative images" },
+      "summary": {
+        "fr": "Toute image porteuse d'information doit avoir un attribut alt qui décrit son sens en contexte (pas « image » ni le nom de fichier).",
+        "en": "Every informative image needs an alt attribute that conveys its meaning in context (not \"image\" nor the file name)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"chart.png\" alt=\"image\">",
+          "good": "<img src=\"chart.png\" alt=\"Ventes en hausse de 25 % au T3 2025\">",
+          "note": { "fr": "L'alternative décrit le sens, pas le nom de fichier.", "en": "The alternative conveys the meaning, not the file name." }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.1"
+    },
+    {
+      "id": "images-decorative-alt-empty",
+      "criterionId": "1.2",
+      "wcag": ["1.1.1", "4.1.2"],
+      "title": { "fr": "Images de décoration ignorées par les technologies d'assistance", "en": "Decorative images ignored by assistive tech" },
+      "summary": {
+        "fr": "Une image purement décorative doit être ignorée : alt vide (alt=\"\") pour une img, ou aria-hidden=\"true\" pour une icône.",
+        "en": "A purely decorative image must be ignored: empty alt (alt=\"\") on an img, or aria-hidden=\"true\" on an icon."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"separateur.png\" alt=\"séparateur décoratif\">",
+          "good": "<img src=\"separateur.png\" alt=\"\">",
+          "note": { "fr": "Une décoration annoncée au lecteur d'écran est du bruit.", "en": "A decoration announced to a screen reader is noise." }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.2"
+    },
+    {
+      "id": "iframes-title-attribute",
+      "criterionId": "2.1",
+      "wcag": ["4.1.2"],
+      "title": { "fr": "Titre de cadre pour chaque iframe", "en": "Frame title on every iframe" },
+      "summary": {
+        "fr": "Chaque iframe doit porter un attribut title court et pertinent décrivant son contenu.",
+        "en": "Every iframe must carry a short, relevant title attribute describing its content."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<iframe src=\"https://www.youtube.com/embed/x\"></iframe>",
+          "good": "<iframe src=\"https://www.youtube.com/embed/x\" title=\"Vidéo : présentation du service\"></iframe>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#2.1"
+    },
+    {
+      "id": "links-explicit",
+      "criterionId": "6.1",
+      "wcag": ["1.1.1", "2.4.4", "2.5.3"],
+      "title": { "fr": "Intitulé de lien explicite", "en": "Explicit link text" },
+      "summary": {
+        "fr": "L'intitulé du lien (texte visible, ou nom accessible via aria-label/aria-labelledby) doit être explicite hors contexte.",
+        "en": "The link text (visible, or accessible name via aria-label/aria-labelledby) must be explicit out of context."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<a href=\"/rapport.pdf\">Cliquez ici</a>",
+          "good": "<a href=\"/rapport.pdf\">Télécharger le rapport annuel 2024 (PDF, 2 Mo)</a>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#6.1"
+    },
+    {
+      "id": "images-icon-only-accessible-name",
+      "criterionId": "6.2",
+      "wcag": ["1.1.1", "2.4.4"],
+      "title": { "fr": "Contrôle à icône seule : nom accessible obligatoire", "en": "Icon-only control must have an accessible name" },
+      "summary": {
+        "fr": "Un bouton/lien à icône seule (sans texte visible) doit avoir un nom accessible via aria-label (l'icône restant aria-hidden).",
+        "en": "An icon-only button/link (no visible text) must have an accessible name via aria-label (the icon stays aria-hidden)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<button>\n  <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\n</button>",
+          "good": "<button aria-label=\"Supprimer l'élément\">\n  <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\n</button>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#6.2"
+    },
+    {
+      "id": "lang-html-attribute",
+      "criterionId": "8.3",
+      "wcag": ["3.1.1"],
+      "title": { "fr": "Langue par défaut sur l'élément html", "en": "Default language on the html element" },
+      "summary": {
+        "fr": "L'élément html doit déclarer la langue par défaut de la page via l'attribut lang.",
+        "en": "The html element must declare the page's default language via the lang attribute."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<!DOCTYPE html>\n<html>\n<head><title>Bienvenue</title></head>\n<body></body>\n</html>",
+          "good": "<!DOCTYPE html>\n<html lang=\"fr\">\n<head><title>Bienvenue</title></head>\n<body></body>\n</html>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.3"
+    },
+    {
+      "id": "lang-valid-code",
+      "criterionId": "8.4",
+      "wcag": ["3.1.1"],
+      "title": { "fr": "Code de langue valide", "en": "Valid language code" },
+      "summary": {
+        "fr": "Le code de langue (lang) doit être un code valide (ex. fr, en, fr-CA), pas une valeur inventée.",
+        "en": "The lang code must be a valid language tag (e.g. fr, en, fr-CA), not an invented value."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<html lang=\"french\"><head><title>x</title></head><body></body></html>",
+          "good": "<html lang=\"fr\"><head><title>x</title></head><body></body></html>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.4"
+    },
+    {
+      "id": "title-precise-title",
+      "criterionId": "8.6",
+      "wcag": ["2.4.2"],
+      "title": { "fr": "Titre de page pertinent", "en": "Relevant page title" },
+      "summary": {
+        "fr": "Chaque page doit avoir un élément title non vide et pertinent décrivant son sujet.",
+        "en": "Every page must have a non-empty, relevant title element describing its subject."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<head><title></title></head>",
+          "good": "<head><title>Mon panier — Boutique Acme</title></head>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.6"
+    },
+    {
+      "id": "structure-heading-hierarchy",
+      "criterionId": "9.1",
+      "wcag": ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
+      "title": { "fr": "Structuration par les titres", "en": "Structure via headings" },
+      "summary": {
+        "fr": "L'information est structurée par une hiérarchie de titres (h1…h6) sans saut de niveau, avec un h1 unique.",
+        "en": "Content is structured by a heading hierarchy (h1…h6) with no skipped level and a single h1."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<h1>Titre</h1><h3>Sous-section</h3>",
+          "good": "<h1>Titre</h1><h2>Sous-section</h2>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.1"
+    },
+    {
+      "id": "lists-unordered",
+      "criterionId": "9.3",
+      "wcag": ["1.3.1"],
+      "title": { "fr": "Listes correctement structurées", "en": "Properly structured lists" },
+      "summary": {
+        "fr": "Les listes visuelles doivent utiliser ul/ol + li (pas des puces simulées avec des div ou des tirets).",
+        "en": "Visual lists must use ul/ol + li (not bullets faked with divs or dashes)."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div>- Pomme</div><div>- Poire</div>",
+          "good": "<ul><li>Pomme</li><li>Poire</li></ul>"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.3"
+    },
+    {
+      "id": "forms-label-for-id",
+      "criterionId": "11.1",
+      "wcag": ["1.3.1", "2.4.6", "3.3.2", "4.1.2"],
+      "title": { "fr": "Associer l'étiquette visible au champ via for/id", "en": "Associate the visible label with the control via for/id" },
+      "summary": {
+        "fr": "Chaque champ doit être associé à une étiquette : label[for] lié à l'id du champ (le placeholder ne remplace pas une étiquette).",
+        "en": "Every field needs a label: label[for] tied to the field id (a placeholder does not replace a label)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<span>Email</span>\n<input type=\"email\">",
+          "good": "<label for=\"email\">Email</label>\n<input type=\"email\" id=\"email\">"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.1"
+    },
+    {
+      "id": "forms-no-placeholder-only",
+      "criterionId": "11.2",
+      "wcag": ["2.4.6", "2.5.3", "3.3.2"],
+      "title": { "fr": "Le placeholder ne remplace pas l'étiquette", "en": "Placeholder is not a label" },
+      "summary": {
+        "fr": "Le placeholder disparaît à la saisie et n'est pas une étiquette : fournissez un label réel et pertinent.",
+        "en": "A placeholder vanishes on input and is not a label: provide a real, relevant label."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<input type=\"email\" placeholder=\"Votre email\">",
+          "good": "<label for=\"email\">Votre email</label><input type=\"email\" id=\"email\">"
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.2"
+    },
+    {
+      "id": "consultation-new-window",
+      "criterionId": "13.2",
+      "wcag": ["3.2.1"],
+      "title": { "fr": "Ouverture d'une nouvelle fenêtre prévenue", "en": "New-window opening is announced" },
+      "summary": {
+        "fr": "L'ouverture d'une nouvelle fenêtre (target=\"_blank\") doit être annoncée à l'utilisateur (dans l'intitulé ou via une mention).",
+        "en": "Opening a new window (target=\"_blank\") must be announced to the user (in the link text or a mention)."
+      },
+      "impact": "low",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<a href=\"https://exemple.org\" target=\"_blank\">Documentation</a>",
+          "good": "<a href=\"https://exemple.org\" target=\"_blank\" rel=\"noopener\">Documentation (nouvelle fenêtre)</a>",
+          "note": {
+            "fr": "RGAA 13.2 → WCAG 3.2.1. En WCAG seul, ce motif relève du niveau AAA (3.2.5), absent du socle AA : il vit donc en guidance / pack RGAA, jamais en détecteur WCAG cœur.",
+            "en": "RGAA 13.2 → WCAG 3.2.1. Under WCAG alone this is AAA (3.2.5), absent from the AA core — so it lives as guidance / the RGAA pack, never as a WCAG-core detector."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.2"
+    }
+  ]
+}

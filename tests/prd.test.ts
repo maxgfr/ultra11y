@@ -3,7 +3,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AuditResult } from "../src/types.js";
-import { prdUnits, renderBacklog, renderPerCriterion, writePrd } from "../src/prd.js";
+import { prdUnits, renderBacklog, renderPerCriterion, renderPrdDoc, writePrd } from "../src/prd.js";
 
 const tmps: string[] = [];
 function tmp(): string {
@@ -116,5 +116,34 @@ describe("renderPerCriterion + writePrd", () => {
     const paths = writePrd(AUDIT, { out, lang: "fr", split: "criterion", standard: "wcag" });
     expect(paths.length).toBe(3);
     expect(readdirSync(out).sort()).toEqual(["prd-1.1.1-2026-06-29.md", "prd-2.4.3-2026-06-29.md", "prd-4.1.2-2026-06-29.md"]);
+  });
+});
+
+describe("renderPrdDoc (--format doc)", () => {
+  it("emits epics, one user story per criterion, and a Given/When/Then per criterion", () => {
+    const doc = renderPrdDoc(AUDIT, "en", "wcag");
+    expect(doc).toContain("## Epic — ");
+    expect(doc).toMatch(/### .*User story —/);
+    expect(doc).toContain("As a user relying on assistive technology");
+    expect(doc).toMatch(/\*\*Given\*\*.*\*\*When\*\*.*\*\*Then\*\*/);
+    expect(doc).toContain("`src/a.html:3`"); // task list keeps the occurrences
+  });
+
+  it("groups by RGAA theme under --standard rgaa", () => {
+    // The pack view projects from r.criteria (CriterionResult[]), so populate it.
+    const withCriteria: AuditResult = {
+      ...AUDIT,
+      criteria: [{ id: "1.1.1", guideline: "1.1", status: "NC", findings: [AUDIT.findings[1]!] }],
+    };
+    const doc = renderPrdDoc(withCriteria, "fr", "rgaa");
+    expect(doc).toContain("## Épopée — ");
+    expect(doc).toContain("RGAA"); // pack-labelled stories
+  });
+
+  it("writePrd --format doc writes a prd-doc-<date>.md file", () => {
+    const out = tmp();
+    const paths = writePrd(AUDIT, { out, lang: "en", format: "doc", standard: "wcag" });
+    expect(paths).toEqual([join(out, "prd-doc-2026-06-29.md")]);
+    expect(readFileSync(paths[0]!, "utf8")).toContain("Epic — ");
   });
 });

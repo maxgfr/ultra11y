@@ -11,14 +11,14 @@ levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 �
 
 | SC | Title | Level | Automatability | Rules | RGAA |
 |---|---|---|---|---|---|
-| 1.1.1 | Non-text Content | A | judgment | img-alt-missing, canvas-fallback-missing, decorative-alt-misuse | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.9, 4.7, 4.8, 4.9, 6.1, 6.2, 7.2, 10.2, 13.3, 13.4, 13.5, 13.6 |
+| 1.1.1 | Non-text Content | A | judgment | img-alt-missing, canvas-fallback-missing, decorative-alt-misuse, input-image-alt-missing | 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.9, 4.7, 4.8, 4.9, 6.1, 6.2, 7.2, 10.2, 13.3, 13.4, 13.5, 13.6 |
 
 ## 1.2 Time-based Media
 
 | SC | Title | Level | Automatability | Rules | RGAA |
 |---|---|---|---|---|---|
 | 1.2.1 | Audio-only and Video-only (Prerecorded) | A | judgment | — | 4.1, 4.2 |
-| 1.2.2 | Captions (Prerecorded) | A | judgment | — | 4.3, 4.4 |
+| 1.2.2 | Captions (Prerecorded) | A | judgment | media-no-track | 4.3, 4.4 |
 | 1.2.3 | Audio Description or Media Alternative (Prerecorded) | A | judgment | — | 4.1, 4.2 |
 | 1.2.4 | Captions (Live) | AA | judgment | — | — |
 | 1.2.5 | Audio Description (Prerecorded) | AA | judgment | — | 4.5, 4.6 |
@@ -27,7 +27,7 @@ levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 �
 
 | SC | Title | Level | Automatability | Rules | RGAA |
 |---|---|---|---|---|---|
-| 1.3.1 | Info and Relationships | A | judgment | fieldset-legend-missing, data-table-no-headers, table-caption-missing, layout-table-data-markup, heading-order-skip, h1-missing, h1-multiple, list-structure | 3.1, 5.1, 5.2, 5.4, 5.5, 5.6, 5.7, 5.8, 7.3, 8.9, 9.1, 9.2, 9.3, 9.4, 10.1, 10.2, 11.1, 11.5, 11.6, 11.7, 11.8, 12.6, 13.3, 13.4 |
+| 1.3.1 | Info and Relationships | A | judgment | fieldset-legend-missing, data-table-no-headers, table-caption-missing, layout-table-data-markup, heading-order-skip, h1-missing, h1-multiple, list-structure, empty-heading, label-for-dangling | 3.1, 5.1, 5.2, 5.4, 5.5, 5.6, 5.7, 5.8, 7.3, 8.9, 9.1, 9.2, 9.3, 9.4, 10.1, 10.2, 11.1, 11.5, 11.6, 11.7, 11.8, 12.6, 13.3, 13.4 |
 | 1.3.2 | Meaningful Sequence | A | judgment | — | 5.3, 8.10, 10.1, 10.3, 10.8, 13.3, 13.4 |
 | 1.3.3 | Sensory Characteristics | A | judgment | — | 10.9, 10.10 |
 | 1.3.4 | Orientation | AA | needs-rendering | — | 13.9 |
@@ -59,8 +59,8 @@ levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 �
 
 | SC | Title | Level | Automatability | Rules | RGAA |
 |---|---|---|---|---|---|
-| 2.2.1 | Timing Adjustable | A | judgment | — | 13.1, 13.8 |
-| 2.2.2 | Pause, Stop, Hide | A | judgment | autoplay-media | 13.1, 13.8 |
+| 2.2.1 | Timing Adjustable | A | judgment | meta-refresh-redirect | 13.1, 13.8 |
+| 2.2.2 | Pause, Stop, Hide | A | judgment | autoplay-media, blink-marquee | 13.1, 13.8 |
 
 ## 2.3 Seizures and Physical Reactions
 

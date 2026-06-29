@@ -120,12 +120,115 @@ const crossSkipLinkTarget: CrossRule = {
   },
 };
 
-export const CROSS_RULES: CrossRule[] = [crossIconOnlyUnnamed, crossPageLang, crossAriaForwarding, crossSkipLinkTarget];
+// 5) A component usage passes a name-bearing prop, but the resolved component renders a
+//    control that neither spreads {...props} nor forwards a name to it → the prop-drilled
+//    accessible name is lost across the boundary. Raise at the usage, point at the control.
+const NAME_PROPS_PASSED = ["aria-label", "aria-labelledby", "title", "label"];
+const crossPropDrilledNameLost: CrossRule = {
+  id: "cross-prop-drilled-name-lost",
+  criteria: ["4.1.2"],
+  severity: "majeur",
+  run(doc, graph) {
+    const findings = [];
+    for (const el of doc.elements) {
+      if (!isComponentUsage(el)) continue;
+      const passed = NAME_PROPS_PASSED.find((p) => (attr(el, p) ?? "").trim() !== "");
+      if (!passed) continue;
+      const def = resolveUsage(graph, doc.file, el.tag);
+      // Fire only when the control would otherwise be NAMELESS: it must render a control,
+      // not accept a name from props, AND not already carry a literal name (else the passed
+      // prop is dead code, not a real 4.1.2 non-conformity).
+      if (!def?.hasControl || def.acceptsName || def.controlHasName) continue;
+      findings.push({
+        criteriaId: "4.1.2",
+        el,
+        message: `<${el.tag} ${passed}="…"> mais ${def.name} ne transmet pas ce nom au contrôle rendu — le nom accessible est perdu.`,
+        remediation: `Dans ${def.name}, transmettez ${passed} (ou {...props}) au <button>/<a> rendu, ou nommez le contrôle directement.`,
+        related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "contrôle qui ne reçoit pas le nom passé" },
+      });
+    }
+    return { findings, suppress: [] };
+  },
+};
+
+// 6) An aria-*by / aria-controls reference whose target id is defined in ANOTHER file of
+//    the graph → suppress the single-file aria-ref-missing-id false positive. Conservative:
+//    suppress only when EVERY in-page-missing id on the element resolves elsewhere, so a
+//    genuinely-dangling reference is never hidden.
+const ARIA_IDREFS = [
+  "aria-labelledby",
+  "aria-describedby",
+  "aria-controls",
+  "aria-owns",
+  "aria-details",
+  "aria-errormessage",
+  "aria-flowto",
+  "aria-activedescendant",
+];
+const crossAriaRefCrossFile: CrossRule = {
+  id: "cross-aria-ref-cross-file",
+  criteria: ["4.1.2"],
+  severity: "majeur",
+  run(doc, graph) {
+    const suppress: Suppression[] = [];
+    for (const el of doc.elements) {
+      const missing: string[] = [];
+      for (const a of ARIA_IDREFS) {
+        const v = (attr(el, a) ?? "").trim();
+        if (!v || v.includes("{")) continue; // dynamic JSX expression — not a literal id list
+        for (const id of v.split(/\s+/).filter(Boolean)) if (!doc.byId.has(id)) missing.push(id);
+      }
+      if (!missing.length) continue; // the single-file rule won't fire on this element
+      if (missing.every((id) => idDefinedAnywhere(graph, id)))
+        suppress.push({ ruleId: "aria-ref-missing-id", line: el.line, reason: "cible(s) définie(s) dans un autre fichier du graphe" });
+    }
+    return { findings: [], suppress };
+  },
+};
+
+// 7) A <label for="x"> or an empty heading named via aria-labelledby whose target id lives
+//    in ANOTHER file of the graph → suppress the single-file label-for-dangling /
+//    empty-heading false positive (the field / label is rendered by an imported component).
+//    Mirrors cross-aria-ref-cross-file's conservatism: only when the id resolves elsewhere.
+const HEADING_TAG = /^h[1-6]$/;
+const crossNameRefCrossFile: CrossRule = {
+  id: "cross-name-ref-cross-file",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  run(doc, graph) {
+    const suppress: Suppression[] = [];
+    for (const el of doc.elements) {
+      if (el.tag === "label") {
+        const f = (attr(el, "for") ?? "").trim();
+        if (f && !f.includes("{") && !doc.byId.has(f) && idDefinedAnywhere(graph, f))
+          suppress.push({ ruleId: "label-for-dangling", line: el.line, reason: `cible #${f} définie dans un autre fichier du graphe` });
+      }
+      const isHeading = HEADING_TAG.test(el.tag) || (attr(el, "role") ?? "") === "heading";
+      if (isHeading) {
+        const lb = (attr(el, "aria-labelledby") ?? "").trim();
+        const ids = lb.includes("{") ? [] : lb.split(/\s+/).filter(Boolean);
+        if (ids.length && ids.every((id) => !doc.byId.has(id) && idDefinedAnywhere(graph, id)))
+          suppress.push({ ruleId: "empty-heading", line: el.line, reason: "intitulé fourni par un aria-labelledby défini dans un autre fichier" });
+      }
+    }
+    return { findings: [], suppress };
+  },
+};
+
+export const CROSS_RULES: CrossRule[] = [
+  crossIconOnlyUnnamed,
+  crossPageLang,
+  crossAriaForwarding,
+  crossSkipLinkTarget,
+  crossPropDrilledNameLost,
+  crossAriaRefCrossFile,
+  crossNameRefCrossFile,
+];
 
 /** Rule ids that can raise a finding (for dataset/registry cross-checks). Suppressors
  *  raise none and are intentionally excluded. */
 export function crossRuleIds(): string[] {
-  return ["cross-icon-only-unnamed"];
+  return ["cross-icon-only-unnamed", "cross-prop-drilled-name-lost"];
 }
 
 export interface CrossRunResult {

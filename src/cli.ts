@@ -16,6 +16,8 @@ import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } 
 import { repoRoot, writeHook, writeCi } from "./init.js";
 import { auditSummary } from "./output.js";
 import { resolveStandard, type StandardId } from "./standards/index.js";
+import { loadRuntimeStandards } from "./config.js";
+import { runPackCheck, packScaffold } from "./pack.js";
 import { readStdin, readText } from "./util.js";
 
 const HELP = `ultra11y v${VERSION}
@@ -29,13 +31,14 @@ Usage:
   ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
   ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--standard <pack>] [--gh-issues] [--lang en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues] [--lang en|fr]
   ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
+  ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
   ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
@@ -80,6 +83,12 @@ Commands:
              Actions --ci job (audit --since the PR base ref), both gating against
              --baseline so only NEW blocking NCs fail; --baseline writes
              audits/baseline.json (the committed reference).
+  pack       Author/verify a runtime standards pack. 'pack check <pack.json>
+             [--guidance <g.json>]' runs the validator + guidance gate (every
+             criterion maps to well-formed WCAG SCs, every guidance entry resolves to
+             a real criterion, every code example parses) — the anti-hallucination
+             gate for AI-ingested packs. 'pack scaffold' prints a blank pack to fill.
+             Load packs at audit/report time with --pack (or .ultra11yrc.json).
   scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
              decide the needs-rendering criteria the static engine can't — computed
              contrast (1.4.3), 320px reflow (1.4.10) — over a URL or HTML file.
@@ -103,6 +112,13 @@ Options:
   --dedup <mode>     audit: collapse identical files — exact|normalized|off  (default: exact)
   --standard <pack>  report/prd/criteria/check/verify: WCAG core (default) or a pack
                      key (rgaa, …); contribute a country via a pack (see CONTRIBUTING.md)
+  --pack <paths>     load external standards pack(s) at runtime (no rebuild): a pack JSON
+                     file, or a dir with pack.json (+ glossary.json/guidance.json);
+                     comma-separated, validated before use (see references/packs.md)
+  --override         --pack: allow a runtime pack key to replace a built-in/loaded standard
+  --guidance <file>  pack check: the guidance dataset JSON to gate alongside the pack
+  --format <mode>    prd: 'doc' emits a product-requirements document (epics, user
+                     stories, Given/When/Then); default is the fix backlog
   --split <mode>     prd: split the backlog — currently only 'criterion' (one file per criterion)
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
@@ -136,7 +152,7 @@ Options:
 
 Data: WCAG 2.2 © W3C (W3C Document License). RGAA 4.1.2 pack © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
 
-const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init"] as const;
+const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack"] as const;
 type Command = (typeof COMMANDS)[number];
 
 function isCommand(s: string | undefined): s is Command {
@@ -167,6 +183,9 @@ const VALUE_FLAGS = new Set([
   "baseline",
   "fail-on",
   "split",
+  "pack",
+  "format",
+  "guidance",
 ]);
 // `init` treats --baseline as a boolean selector ("write the baseline"), not a
 // path, so it must NOT consume the following token. audit/fix keep it as a value
@@ -404,7 +423,8 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const lang = langOf(p.flags);
   const split = p.flags.split === "criterion" ? "criterion" : undefined;
-  const paths = writePrd(result, { out, lang, split, standard });
+  const format = p.flags.format === "doc" ? "doc" : undefined;
+  const paths = writePrd(result, { out, lang, split, format, standard });
   for (const path of paths) console.log(path);
 
   // --gh-issues: always-written markdown above; GitHub is opt-in + best-effort.
@@ -675,6 +695,34 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
   return 0;
 }
 
+function cmdPack(p: ParsedArgs): number {
+  const action = p.positionals[0];
+  const lang = langOf(p.flags);
+  if (action === "scaffold") {
+    console.log(packScaffold());
+    return 0;
+  }
+  if (action === "check") {
+    const packPath = p.positionals[1];
+    if (!packPath) {
+      console.error("ultra11y pack check: provide a pack JSON file — `pack check <pack.json> [--guidance <g.json>]`.");
+      return 2;
+    }
+    const guidance = typeof p.flags.guidance === "string" && p.flags.guidance ? (p.flags.guidance as string) : undefined;
+    const res = runPackCheck(packPath, guidance);
+    if (p.flags.json) {
+      console.log(JSON.stringify(res, null, 2));
+    } else {
+      for (const w of res.warnings) console.error(`⚠ ${w}`);
+      if (res.ok) console.log(lang === "fr" ? `✓ Pack valide${guidance ? " (+ guidance)" : ""}.` : `✓ Pack valid${guidance ? " (+ guidance)" : ""}.`);
+      else for (const e of res.errors) console.error(`✗ ${e}`);
+    }
+    return res.ok ? 0 : 1;
+  }
+  console.error("ultra11y pack: expected `pack check <pack.json> [--guidance <g.json>]` or `pack scaffold`.");
+  return 2;
+}
+
 export async function main(argv: string[]): Promise<number> {
   const first = argv[0];
 
@@ -699,6 +747,24 @@ export async function main(argv: string[]): Promise<number> {
     console.log(HELP);
     return 0;
   }
+
+  // Load any runtime standards packs (--pack / .ultra11yrc.json) BEFORE resolving
+  // --standard, so an external pack is registered when stdOf/loadPack runs. A bad
+  // config or an invalid pack is a hard error (never a silent skip).
+  const packList =
+    typeof p.flags.pack === "string"
+      ? (p.flags.pack as string)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+  const loaded = loadRuntimeStandards(process.cwd(), packList, (m) => console.error(m), p.flags.override === true);
+  if (loaded.errors.length) {
+    for (const e of loaded.errors) console.error(`ultra11y: ${e}`);
+    return 2;
+  }
+  if (loaded.defaultStandard && p.flags.standard === undefined) p.flags.standard = loaded.defaultStandard;
+
   switch (p.command as Command) {
     case "audit":
       return cmdAudit(p);
@@ -720,6 +786,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdFix(p);
     case "init":
       return cmdInit(p);
+    case "pack":
+      return cmdPack(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

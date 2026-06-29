@@ -1,6 +1,6 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no install, no keys) runs 36 static checks across WCAG success criteria — missing alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — and decides the criteria it can; YOU supply the judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA (France) and other country standards are pluggable in-repo packs (`--standard rgaa`). JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports; `prd` emits a fix backlog; check/verify gates reject hallucinated non-conformities. Triggers: 'audit accessibility / WCAG / a11y', 'compliance report', 'make this accessible', 'fix accessibility', 'audit RGAA'."
+description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated compliance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no install, no keys) runs 42 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — and decides what it can; YOU supply judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA (France) and other standards are pluggable packs, built-in or loaded at runtime (`--standard rgaa`, `--pack`), with `pack check` gating AI-ingested packs. JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports; `prd` emits a fix backlog or a PRD doc; check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
 license: MIT
 metadata:
   version: 2.1.0
@@ -18,9 +18,13 @@ criteria that need a **rendered DOM** (contrast, focus, zoom). Gates stop any
 hallucinated non-conformity from surviving.
 
 **WCAG 2.2 Level AA is the worldwide core.** Country standards — France's **RGAA**, the
-US **Section 508**, the EU **EN 301 549** — are pluggable in-repo *standards packs* that
-map their criteria onto WCAG; add `--standard rgaa` to re-key reports/criteria, or
-contribute your country (see `references/standards.md`).
+US **Section 508**, the EU **EN 301 549** — are pluggable *standards packs* that map their
+criteria onto WCAG. Add `--standard rgaa` to re-key reports/criteria; **plug an external
+pack at runtime** with `--pack ./pack.json` (or a `.ultra11yrc.json`), no rebuild; or
+contribute your country (see `references/standards.md`). Packs (and their concrete
+**implementation guidance** — the RGAA SocialGouv/etalab good/bad patterns) can be
+**AI-ingested** and gated by `pack check` so a fabricated mapping never passes — see
+`references/packs.md` and `references/guidance.md`.
 
 > **Core rules:**
 > 1. **Never invent a non-conformity**: every `NC` cites a real, resolvable element (`check` verifies it).
@@ -42,11 +46,22 @@ contribute your country (see `references/standards.md`).
   `audit --graph` resolves imports and applies cross-file rules (an icon-only component
   used without a name, an anchor target in another file…), no browser; read
   **`references/cross-file.md`**.
-- **"Generate the fix markdown / PRDs (→ GitHub issues)"** → `prd` (backlog by default,
-  `--split criterion`, `--gh-issues` via the `gh` CLI); read **`references/prd.md`**.
+- **"Generate the fix markdown / PRDs (→ GitHub issues)"** → `prd` (fix backlog by
+  default with before/after guidance + effort, `--split criterion`, `--format doc` for a
+  product-requirements doc with epics/user-stories/Given-When-Then, `--gh-issues` via the
+  `gh` CLI); read **`references/prd.md`**.
+- **"Plug or author a standards pack (RGAA & beyond), AI-ingest external rules"** →
+  `--pack`/`.ultra11yrc.json` to load at runtime, `pack check` to gate it (the
+  anti-hallucination guardrail), `pack scaffold` to start one; concrete before/after
+  implementation guidance attaches to findings/PRD; read **`references/packs.md`** and
+  **`references/guidance.md`**.
 - **"Decide the judgment / rendering criteria (judgment phase)"** → `verify` produces a
   checklist grounded in each SC's W3C Understanding reference; rule on each, then
   `verify --apply`; read **`references/judgment.md`**.
+- **"Focus, keyboard & interaction logic (the human-logic part)"** → the engine marks
+  focus order/visible/trap and on-focus/on-input criteria as residual risks; YOU read the
+  full component source and reason about the keyboard/focus behaviour; read
+  **`references/focus-and-logic.md`**.
 - **"Put the fixes in place"** → `fix` (dry-run by default, `--write` applies the safe
   codemods, proposes the rest without inventing anything); read **`references/fix.md`**.
 - **"Fix by priority, no regressions (correction phase)"** → `fix` (`--write`,
@@ -76,6 +91,9 @@ node scripts/ultra11y.mjs audit --changed --json            # only the git diff 
 node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md
 node scripts/ultra11y.mjs report --in audit.json --standard rgaa       # derived RGAA report (France pack)
 node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # fix backlog (+ GitHub issues)
+node scripts/ultra11y.mjs prd    --in audit.json --format doc          # product-requirements doc (epics/stories/AC)
+node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --pack ./packs/section508.json   # load an external pack at runtime
+node scripts/ultra11y.mjs pack check ./packs/section508.json --guidance ./packs/section508.guidance.json   # gate an (AI-)authored pack
 node scripts/ultra11y.mjs criteria 1.4.3                    # one WCAG success criterion
 node scripts/ultra11y.mjs criteria --list                   # all SCs grouped by guideline
 node scripts/ultra11y.mjs criteria --standard rgaa --theme 8   # a pack theme
@@ -98,7 +116,9 @@ drive the judgment and content stages:
    **audit the render** (`render` → build/SSR → `audit`) for reliable verdicts (otherwise
    the scope-risk note reminds you).
 2. **Judge** the rendering/judgment criteria with `verify` (W3C Understanding grounding)
-   and decide each entry.
+   and decide each entry — including **focus & interaction logic** (read the full component
+   source: keyboard operability, focus order/visibility, traps, on-focus/on-input changes;
+   see `references/focus-and-logic.md`).
 3. **Fix** by priority: `fix --write --iterate` for the mechanical part (anti-regression
    gate), then hand-apply the judgment/content fixes (alt, labels, structure) guided by
    `references/correction.md`.

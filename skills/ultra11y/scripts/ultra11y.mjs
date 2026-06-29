@@ -3573,11 +3573,14 @@ function lineColAt(lineStarts, offset) {
   }
   return { line: lo + 1, col: offset - lineStarts[lo] + 1 };
 }
-function parseHtml(source, file, lossy = false) {
+function parseHtml(source, file, lossy = false, sfc = false) {
   const dom = parseDocument(source, {
     withStartIndices: true,
     withEndIndices: true,
-    lowerCaseTags: true,
+    // SFC: keep tag case so PascalCase components stay non-intrinsic (rules skip
+    // them). Attribute names stay lowercased (HTML attrs are case-insensitive, and
+    // the dynamic-binding prefixes `:`/`v-bind:`/`bind:` are already lowercase).
+    lowerCaseTags: !sfc,
     lowerCaseAttributeNames: true,
     recognizeSelfClosing: true
   });
@@ -3594,7 +3597,7 @@ function parseHtml(source, file, lossy = false) {
       const { line, col } = lineColAt(lineStarts, start);
       const el = {
         type: "element",
-        tag: dh.name.toLowerCase(),
+        tag: sfc ? dh.name : dh.name.toLowerCase(),
         attribs: { ...dh.attribs },
         children: [],
         parent,
@@ -3619,13 +3622,25 @@ function parseHtml(source, file, lossy = false) {
     const c = convert(node, null);
     if (c) roots.push(c);
   }
-  return { file, source, lossy, kind: lossy ? "jsx-lossy" : "html", roots, elements, byId: byId2, lineStarts };
+  return { file, source, lossy, kind: sfc ? "sfc" : lossy ? "jsx-lossy" : "html", roots, elements, byId: byId2, lineStarts };
 }
 function attr(el, name) {
   return el.attribs[name.toLowerCase()];
 }
 function hasAttr(el, name) {
   return name.toLowerCase() in el.attribs;
+}
+var BIND_PREFIXES = ["", ":", "v-bind:", "x-bind:", "bind:"];
+function boundAttr(el, name) {
+  const lower = name.toLowerCase();
+  for (const p of BIND_PREFIXES) {
+    const k = p + lower;
+    if (k in el.attribs) return el.attribs[k];
+  }
+  return void 0;
+}
+function hasBoundAttr(el, name) {
+  return boundAttr(el, name) !== void 0;
 }
 function textContent(node) {
   if (node.type === "text") return node.data;
@@ -17975,20 +17990,33 @@ function attribsOf(opening2, source) {
   }
   return attribs;
 }
-function collectJsx(node, out) {
-  const n = asNode2(node);
+function collectJsx(node, out, arm, seq) {
   if (Array.isArray(node)) {
-    for (const item of node) collectJsx(item, out);
+    for (const item of node) collectJsx(item, out, arm, seq);
     return;
   }
+  const n = asNode2(node);
   if (!n || typeof n.type !== "string") return;
   if (n.type === "JSXElement" || n.type === "JSXFragment") {
-    out.push(n);
+    out.push({ node: n, arm });
+    return;
+  }
+  if (n.type === "ConditionalExpression") {
+    const id = seq.n++;
+    collectJsx(n.test, out, arm, seq);
+    collectJsx(n.consequent, out, `${arm}/c${id}T`, seq);
+    collectJsx(n.alternate, out, `${arm}/c${id}F`, seq);
+    return;
+  }
+  if (n.type === "LogicalExpression") {
+    const id = seq.n++;
+    collectJsx(n.left, out, arm, seq);
+    collectJsx(n.right, out, `${arm}/c${id}R`, seq);
     return;
   }
   for (const key in n) {
     if (key === "loc" || key === "start" || key === "end" || key === "range" || key === "type") continue;
-    collectJsx(n[key], out);
+    collectJsx(n[key], out, arm, seq);
   }
 }
 function jsxAstToDoc(ast, source, file) {
@@ -17996,7 +18024,8 @@ function jsxAstToDoc(ast, source, file) {
   const elements = [];
   const byId2 = /* @__PURE__ */ new Map();
   const roots = [];
-  const convert = (node, parent) => {
+  const seq = { n: 0 };
+  const convert = (node, parent, arm = "") => {
     let tag = "#fragment";
     let attribs = {};
     let spread = false;
@@ -18019,7 +18048,8 @@ function jsxAstToDoc(ast, source, file) {
       col: (node.loc?.start.column ?? 0) + 1,
       start: node.start ?? 0,
       end: node.end ?? 0,
-      ...spread ? { spread: true } : {}
+      ...spread ? { spread: true } : {},
+      ...arm ? { branchArm: arm } : {}
     };
     elements.push(el);
     const id = attribs.id;
@@ -18029,12 +18059,12 @@ function jsxAstToDoc(ast, source, file) {
         const data2 = typeof c.value === "string" ? c.value : "";
         if (data2.trim() !== "") el.children.push({ type: "text", data: data2, parent: el });
       } else if (c.type === "JSXElement" || c.type === "JSXFragment") {
-        el.children.push(convert(c, el));
+        el.children.push(convert(c, el, arm));
       } else if (c.type === "JSXExpressionContainer" || c.type === "JSXSpreadChild") {
         el.children.push({ type: "text", data: source.slice(c.start ?? 0, c.end ?? 0), parent: el });
         const nested = [];
-        collectJsx(c.expression ?? c, nested);
-        for (const j of nested) el.children.push(convert(j, el));
+        collectJsx(c.expression ?? c, nested, arm, seq);
+        for (const j of nested) el.children.push(convert(j.node, el, j.arm));
       }
     }
     return el;
@@ -18091,6 +18121,7 @@ function opaqueLibrarySpecifiers(ast, elements) {
 function detectKind(file, forceJsx = false) {
   if (forceJsx) return "jsx";
   if (/\.(jsx|tsx)$/i.test(file)) return "jsx";
+  if (/\.(vue|svelte|astro)$/i.test(file)) return "sfc";
   return "html";
 }
 function parseSource(source, file, opts = {}) {
@@ -18100,7 +18131,7 @@ function parseSource(source, file, opts = {}) {
     if (ast) return jsxAstToDoc(ast, source, file);
     return parseHtml(jsxToHtml(source), file, true);
   }
-  return parseHtml(source, file, false);
+  return parseHtml(source, file, false, kind === "sfc");
 }
 
 // src/rules/rule.ts
@@ -18135,17 +18166,18 @@ function toFinding(doc, ruleId, def, rf) {
     // Only carry source offsets when they index into the *real* file. For lossy
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
     // edit by range and baseline diffing falls back to line/selector identity.
-    ...doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end }
+    ...doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end },
+    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human verification.
+    ...doc.kind === "sfc" ? { preliminary: true } : {}
   };
 }
 
 // src/rules/images.ts
 var isHidden = (el) => attr(el, "aria-hidden") === "true" || ["presentation", "none"].includes((attr(el, "role") ?? "").trim());
-var named = (el) => !!(attr(el, "aria-label") ?? "").trim() || hasAttr(el, "aria-labelledby");
+var named = (el) => !!(boundAttr(el, "aria-label") ?? "").trim() || hasBoundAttr(el, "aria-labelledby");
 var imgAltMissing = {
   id: "img-alt-missing",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -18153,7 +18185,7 @@ var imgAltMissing = {
       const isImg = el.tag === "img" || el.tag === "area" || (attr(el, "role") ?? "") === "img";
       if (!isImg) continue;
       if (isHidden(el) && el.tag !== "area") continue;
-      if (hasAttr(el, "alt") || named(el)) continue;
+      if (hasBoundAttr(el, "alt") || named(el)) continue;
       out.push({
         criteriaId: "1.1.1",
         el,
@@ -18167,7 +18199,6 @@ var imgAltMissing = {
 var decorativeAltMisuse = {
   id: "decorative-alt-misuse",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -18199,7 +18230,6 @@ var decorativeAltMisuse = {
 var canvasFallbackMissing = {
   id: "canvas-fallback-missing",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -18220,13 +18250,12 @@ var canvasFallbackMissing = {
 var inputImageAltMissing = {
   id: "input-image-alt-missing",
   criteria: ["1.1.1"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
     for (const el of doc.elements) {
       if (el.tag !== "input" || (attr(el, "type") ?? "").toLowerCase() !== "image") continue;
-      const alt = (attr(el, "alt") ?? "").trim();
+      const alt = (boundAttr(el, "alt") ?? "").trim();
       if (alt || named(el) || (attr(el, "title") ?? "").trim()) continue;
       out.push({
         criteriaId: "1.1.1",
@@ -18244,7 +18273,6 @@ var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, in
 var iframeTitleMissing = {
   id: "iframe-title-missing",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -18384,11 +18412,11 @@ var IDREF_SINGLE = ["aria-activedescendant"];
 var invalidAriaRole = {
   id: "invalid-aria-role",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
     for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue;
       const role = (attr(el, "role") ?? "").trim();
       if (!role) continue;
       const tokens = role.split(/\s+/);
@@ -18408,7 +18436,6 @@ var invalidAriaRole = {
 var ariaRefMissingId = {
   id: "aria-ref-missing-id",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -18460,7 +18487,6 @@ var IMPLICIT_ROLE = {
 var redundantAria = {
   id: "redundant-aria",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const out = [];
@@ -18485,7 +18511,6 @@ var NONINTERACTIVE = /* @__PURE__ */ new Set(["div", "span"]);
 var clickableNoninteractive = {
   id: "clickable-noninteractive",
   criteria: ["4.1.2", "2.1.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -18525,7 +18550,6 @@ function satisfiesChild(d, reqRoles) {
 var ariaRequiredChildren = {
   id: "aria-required-children",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -18548,7 +18572,6 @@ var ariaRequiredChildren = {
 var ariaHiddenFocusable = {
   id: "aria-hidden-focusable",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -18569,7 +18592,6 @@ var ariaHiddenFocusable = {
 var nestedInteractive = {
   id: "nested-interactive",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -18597,10 +18619,14 @@ var scriptsAriaRules = [
 ];
 
 // src/rules/mandatory.ts
+var NEXT_METADATA = /export\s+(const\s+metadata\b|(async\s+)?function\s+generateMetadata\b)/;
+function titleSetByFramework(doc) {
+  if (doc.kind === "html") return false;
+  return NEXT_METADATA.test(doc.source) && /\btitle\s*:/.test(doc.source);
+}
 var htmlLangMissing = {
   id: "html-lang-missing",
   criteria: ["3.1.1"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   scope: "page",
   run(doc) {
@@ -18621,13 +18647,13 @@ var htmlLangMissing = {
 var titleMissingEmpty = {
   id: "title-missing-empty",
   criteria: ["2.4.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   scope: "page",
   run(doc) {
     const titles = elementsByTag(doc, "title");
     const hasNonEmpty = titles.some((t2) => visibleText(t2).length > 0);
     if (hasNonEmpty) return [];
+    if (titleSetByFramework(doc)) return [];
     const anchor = elementsByTag(doc, "head")[0] ?? elementsByTag(doc, "html")[0] ?? doc.elements[0];
     if (!anchor) return [];
     return [
@@ -18643,7 +18669,6 @@ var titleMissingEmpty = {
 var duplicateId = {
   id: "duplicate-id",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const seen = /* @__PURE__ */ new Map();
@@ -18666,7 +18691,6 @@ var duplicateId = {
 var inlineLangChangeMissing = {
   id: "inline-lang-change-missing",
   criteria: ["3.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const out = [];
@@ -18689,7 +18713,6 @@ var BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
 var langInvalid = {
   id: "lang-invalid",
   criteria: ["3.1.1", "3.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const out = [];
@@ -18711,6 +18734,9 @@ var mandatoryRules = [htmlLangMissing, titleMissingEmpty, duplicateId, inlineLan
 
 // src/name.ts
 var collapse = (s) => s.replace(/\s+/g, " ").trim();
+function mayInjectContent(el) {
+  return descendants(el).some((d) => d.tag === "slot" || d.tag !== "#fragment" && !isIntrinsic(d.tag));
+}
 function nameFromContent(el) {
   let out = "";
   const walk2 = (n) => {
@@ -18749,10 +18775,11 @@ var NAMELESS_BY_DEFAULT = /* @__PURE__ */ new Set(["submit", "reset"]);
 function accessibleName(el, doc) {
   const labelledby = ariaLabelledbyText(el, doc);
   if (labelledby) return labelledby;
-  const ariaLabel = (attr(el, "aria-label") ?? "").trim();
+  if (hasBoundAttr(el, "aria-labelledby") && !attr(el, "aria-labelledby")) return "\xA0";
+  const ariaLabel = (boundAttr(el, "aria-label") ?? "").trim();
   if (ariaLabel) return ariaLabel;
   if (el.tag === "img" || el.tag === "area") {
-    return (attr(el, "alt") ?? "").trim();
+    return (boundAttr(el, "alt") ?? "").trim();
   }
   if (el.tag === "input") {
     const type = (attr(el, "type") ?? "text").toLowerCase();
@@ -18778,8 +18805,8 @@ function isFormField(el) {
   return true;
 }
 function controlLabel(el, doc) {
-  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc)) return { hasLabel: true, via: "aria-labelledby" };
-  if ((attr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
+  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc) || hasBoundAttr(el, "aria-labelledby")) return { hasLabel: true, via: "aria-labelledby" };
+  if ((boundAttr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
   const id = attr(el, "id");
   if (id) {
     const lbl = doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id);
@@ -18791,6 +18818,21 @@ function controlLabel(el, doc) {
 }
 
 // src/rules/headings.ts
+function contentMaybeInjected(doc) {
+  if (doc.kind === "html") return false;
+  for (const el of doc.elements) {
+    if (el.tag === "slot") return true;
+    if (el.tag !== "#fragment" && !isIntrinsic(el.tag)) return true;
+  }
+  const stack = [...doc.roots];
+  while (stack.length) {
+    const n = stack.pop();
+    if (n.type === "text") {
+      if (n.data.includes("{")) return true;
+    } else stack.push(...n.children);
+  }
+  return false;
+}
 function headingLevel(el) {
   const m = /^h([1-6])$/.exec(el.tag);
   if (m) return Number(m[1]);
@@ -18811,14 +18853,14 @@ function headings(doc) {
 var headingOrderSkip = {
   id: "heading-order-skip",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const hs = headings(doc);
     const out = [];
     let prev = 0;
+    let prevArm;
     for (const { el, level } of hs) {
-      if (prev !== 0 && level - prev > 1) {
+      if (prev !== 0 && el.branchArm === prevArm && level - prev > 1) {
         out.push({
           criteriaId: "1.3.1",
           el,
@@ -18827,6 +18869,7 @@ var headingOrderSkip = {
         });
       }
       prev = level;
+      prevArm = el.branchArm;
     }
     return out;
   }
@@ -18834,12 +18877,12 @@ var headingOrderSkip = {
 var h1Missing = {
   id: "h1-missing",
   criteria: ["1.3.1"],
-  parser: ["html"],
   severity: "majeur",
   scope: "page",
   run(doc) {
     const hasH1 = headings(doc).some((h) => h.level === 1);
     if (hasH1) return [];
+    if (contentMaybeInjected(doc)) return [];
     const anchor = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
     if (!anchor) return [];
     return [
@@ -18855,7 +18898,6 @@ var h1Missing = {
 var h1Multiple = {
   id: "h1-multiple",
   criteria: ["1.3.1"],
-  parser: ["html"],
   severity: "mineur",
   scope: "page",
   run(doc) {
@@ -18869,17 +18911,16 @@ var h1Multiple = {
     }));
   }
 };
-var ALLOWED_IN_LIST = /* @__PURE__ */ new Set(["li", "script", "template"]);
+var ALLOWED_IN_LIST = /* @__PURE__ */ new Set(["li", "script", "template", "slot"]);
 var listStructure = {
   id: "list-structure",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
     for (const el of doc.elements) {
       if (el.tag === "ul" || el.tag === "ol") {
-        const bad = el.children.find((c) => c.type === "element" && !ALLOWED_IN_LIST.has(c.tag));
+        const bad = el.children.find((c) => c.type === "element" && isIntrinsic(c.tag) && !ALLOWED_IN_LIST.has(c.tag));
         if (bad && bad.type === "element") {
           out.push({
             criteriaId: "1.3.1",
@@ -18906,13 +18947,13 @@ var listStructure = {
 var emptyHeading = {
   id: "empty-heading",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
     for (const { el, level } of headings(doc)) {
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc)) continue;
+      if (mayInjectContent(el)) continue;
       out.push({
         criteriaId: "1.3.1",
         el,
@@ -18940,13 +18981,13 @@ function isLayoutTable(t2) {
 var dataTableNoHeaders = {
   id: "data-table-no-headers",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
     for (const t2 of doc.elements) {
       if (t2.tag !== "table" || isLayoutTable(t2)) continue;
       const desc = descendants(t2);
+      if (!desc.some((d) => d.tag === "tr" || d.tag === "td" || d.tag === "th")) continue;
       const hasTh = desc.some((d) => d.tag === "th");
       const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasAttr(d, "scope") || hasAttr(d, "headers")));
       if (hasTh && hasAssoc) continue;
@@ -18972,7 +19013,6 @@ var dataTableNoHeaders = {
 var tableCaptionMissing = {
   id: "table-caption-missing",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const out = [];
@@ -18993,7 +19033,6 @@ var tableCaptionMissing = {
 var layoutTableDataMarkup = {
   id: "layout-table-data-markup",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const out = [];
@@ -19038,7 +19077,6 @@ var isButton = (el) => {
 var linkEmptyName = {
   id: "link-empty-name",
   criteria: ["2.4.4"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -19046,6 +19084,7 @@ var linkEmptyName = {
       if (el.tag !== "a" || !hasAttr(el, "href")) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc) !== "") continue;
+      if (mayInjectContent(el)) continue;
       if (hasIconChild(el)) continue;
       out.push({
         criteriaId: "2.4.4",
@@ -19060,7 +19099,6 @@ var linkEmptyName = {
 var buttonEmptyName = {
   id: "button-empty-name",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -19068,6 +19106,7 @@ var buttonEmptyName = {
       if (!isButton(el)) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc) !== "") continue;
+      if (mayInjectContent(el)) continue;
       if (hasIconChild(el)) continue;
       out.push({
         criteriaId: "4.1.2",
@@ -19082,7 +19121,6 @@ var buttonEmptyName = {
 var iconOnlyControlUnnamed = {
   id: "icon-only-control-unnamed",
   criteria: ["2.4.4", "4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -19092,6 +19130,7 @@ var iconOnlyControlUnnamed = {
       if (!link && !button) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       if (accessibleName(el, doc) !== "") continue;
+      if (mayInjectContent(el)) continue;
       if (!hasIconChild(el)) continue;
       out.push({
         criteriaId: link ? "2.4.4" : "4.1.2",
@@ -19110,7 +19149,6 @@ var REAL_LABEL = /* @__PURE__ */ new Set(["for", "wrapping", "aria-label", "aria
 var controlLabelMissing = {
   id: "control-label-missing",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "bloquant",
   run(doc) {
     const out = [];
@@ -19132,7 +19170,6 @@ var controlLabelMissing = {
 var placeholderAsLabel = {
   id: "placeholder-as-label",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19154,7 +19191,6 @@ var placeholderAsLabel = {
 var fieldsetLegendMissing = {
   id: "fieldset-legend-missing",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19176,7 +19212,6 @@ var fieldsetLegendMissing = {
 var formFieldMultipleLabels = {
   id: "form-field-multiple-labels",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const counts = /* @__PURE__ */ new Map();
@@ -19204,13 +19239,13 @@ var formFieldMultipleLabels = {
 var selectHasOption = {
   id: "select-has-option",
   criteria: ["4.1.2"],
-  parser: ["html", "jsx"],
   severity: "mineur",
   run(doc) {
     const out = [];
     for (const el of doc.elements) {
       if (el.tag !== "select") continue;
       if (descendants(el).some((d) => d.tag === "option")) continue;
+      if (mayInjectContent(el)) continue;
       out.push({
         criteriaId: "4.1.2",
         el,
@@ -19224,7 +19259,6 @@ var selectHasOption = {
 var labelForDangling = {
   id: "label-for-dangling",
   criteria: ["1.3.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19251,7 +19285,6 @@ var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing
 var skipLinkTargetMissing = {
   id: "skip-link-target-missing",
   criteria: ["2.4.1"],
-  parser: ["html"],
   severity: "majeur",
   scope: "page",
   run(doc) {
@@ -19280,7 +19313,6 @@ var skipLinkTargetMissing = {
 var positiveTabindex = {
   id: "positive-tabindex",
   criteria: ["2.4.3"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19310,7 +19342,6 @@ function mutedStatically(el) {
 var autoplayMedia = {
   id: "autoplay-media",
   criteria: ["1.4.2", "2.2.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19339,7 +19370,6 @@ var autoplayMedia = {
 var mediaNoTrack = {
   id: "media-no-track",
   criteria: ["1.2.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19363,7 +19393,6 @@ var multimediaRules = [autoplayMedia, mediaNoTrack];
 var metaViewportZoomBlock = {
   id: "meta-viewport-zoom-block",
   criteria: ["1.4.4"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19536,7 +19565,6 @@ function hasDirectText(el) {
 var contrastLiteral = {
   id: "contrast-literal",
   criteria: ["1.4.3"],
-  parser: ["html", "jsx", "css"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19565,7 +19593,6 @@ var colorsRules = [contrastLiteral];
 var metaRefreshRedirect = {
   id: "meta-refresh-redirect",
   criteria: ["2.2.1"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19588,7 +19615,6 @@ var metaRefreshRedirect = {
 var blinkMarquee = {
   id: "blink-marquee",
   criteria: ["2.2.2"],
-  parser: ["html", "jsx"],
   severity: "majeur",
   run(doc) {
     const out = [];
@@ -19694,6 +19720,12 @@ function extSet(extra) {
   return set;
 }
 var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
+var TEST_DIR = /* @__PURE__ */ new Set(["__tests__", "__mocks__", ".storybook"]);
+var TEST_FILE = /\.(test|spec|stories|story|cy)\.[^./]+$/i;
+function isTestArtifact(rel) {
+  if (TEST_FILE.test(rel)) return true;
+  return rel.split("/").some((seg) => TEST_DIR.has(seg));
+}
 function globToRegExp(glob) {
   let re = "";
   for (let i = 0; i < glob.length; i++) {
@@ -19734,6 +19766,7 @@ function makeFilter(opts = {}) {
     const rel = toPosix(file);
     if (include && !include(rel)) return false;
     if (exclude?.(rel)) return false;
+    if (!opts.noDefaultExcludes && isTestArtifact(rel) && !(include && include(rel))) return false;
     return true;
   };
 }
@@ -19775,6 +19808,7 @@ function expandInputs(inputs, opts = {}) {
   const exclude = compileGlobs(opts.exclude);
   const exts = extSet(opts.ext);
   const files = /* @__PURE__ */ new Set();
+  const explicit = /* @__PURE__ */ new Set();
   for (const input of inputs) {
     if (input === "-") continue;
     if (hasGlob(input)) {
@@ -19789,12 +19823,22 @@ function expandInputs(inputs, opts = {}) {
         for (const f of acc) if (exts.has(ext(f))) files.add(f);
       } else if (exts.has(ext(input))) {
         files.add(input);
+        explicit.add(input);
       }
     }
   }
   let list = [...files];
   if (include) list = list.filter((f) => include(toPosix(f)));
   if (exclude) list = list.filter((f) => !exclude(toPosix(f)));
+  if (!opts.noDefaultExcludes) {
+    const before = list.length;
+    list = list.filter((f) => {
+      const rel = toPosix(f);
+      return !isTestArtifact(rel) || explicit.has(f) || include != null && include(rel);
+    });
+    const dropped = before - list.length;
+    if (dropped) opts.onWarn?.(`ultra11y: skipped ${dropped} test/spec/story file(s) \u2014 pass --no-default-excludes to audit them.`);
+  }
   return list.sort();
 }
 
@@ -20210,11 +20254,30 @@ function extractGraphNode(ast, doc, file) {
   const posix = toPosix(file);
   const imports = [];
   const components = /* @__PURE__ */ new Map();
+  const constStrings = /* @__PURE__ */ new Map();
+  if (ast) {
+    for (const stmt of asNodes((asNode(ast.program) ?? ast).body)) {
+      const vd = stmt.type === "VariableDeclaration" ? stmt : stmt.type === "ExportNamedDeclaration" ? asNode(stmt.declaration) : void 0;
+      if (!vd || vd.type !== "VariableDeclaration") continue;
+      for (const d of asNodes(vd.declarations)) {
+        const idn = asNode(d.id);
+        const init = asNode(d.init);
+        if (idn?.type === "Identifier" && typeof idn.name === "string" && init?.type === "StringLiteral" && typeof init.value === "string") {
+          constStrings.set(idn.name, init.value);
+        }
+      }
+    }
+  }
   const definesIds = [];
   let providesHtmlLang = false;
   for (const el of doc.elements) {
     const id = el.attribs.id;
     if (id && !id.startsWith("{")) definesIds.push(id);
+    else if (id) {
+      const m = /^\{\s*([A-Za-z_$][\w$]*)\s*\}$/.exec(id);
+      const resolved = m ? constStrings.get(m[1]) : void 0;
+      if (resolved) definesIds.push(resolved);
+    }
     if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
   }
   if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang };
@@ -20430,7 +20493,16 @@ function residualReason(automatability) {
 }
 var STATIC_PREDS = allSC().filter((c) => c.automatability === "static").map((c) => [c.sc, APPLICABLE[c.sc] ?? isFullDocument]);
 function newAccum() {
-  return { byCriterion: /* @__PURE__ */ new Map(), applicable: /* @__PURE__ */ new Map(), allFindings: [], fileCount: 0, opaqueLibs: /* @__PURE__ */ new Set(), opaqueFiles: 0 };
+  return {
+    byCriterion: /* @__PURE__ */ new Map(),
+    applicable: /* @__PURE__ */ new Map(),
+    allFindings: [],
+    fileCount: 0,
+    opaqueLibs: /* @__PURE__ */ new Set(),
+    opaqueFiles: 0,
+    sfcFiles: 0,
+    sfcExts: /* @__PURE__ */ new Set()
+  };
 }
 function foldDoc(acc, doc, graph) {
   let findings = runRules(doc);
@@ -20454,6 +20526,11 @@ function foldDoc(acc, doc, graph) {
   if (doc.opaqueComponents?.length) {
     for (const lib of doc.opaqueComponents) acc.opaqueLibs.add(lib);
     acc.opaqueFiles++;
+  }
+  if (doc.kind === "sfc") {
+    acc.sfcFiles++;
+    const e = doc.file.toLowerCase().match(/\.[a-z]+$/)?.[0];
+    if (e) acc.sfcExts.add(e);
   }
   acc.fileCount++;
 }
@@ -20507,7 +20584,8 @@ function finalize(acc, inputs, extra = {}) {
       files: acc.fileCount,
       ...extra.truncated ? { truncated: extra.truncated } : {},
       ...extra.dedup ? { dedup: extra.dedup } : {},
-      ...acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {}
+      ...acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {},
+      ...acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {}
     },
     guidelines,
     criteria,
@@ -20532,11 +20610,12 @@ function runAudit(opts) {
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn
   });
   let graph;
   if (opts.graph) {
-    const graphFiles = opts.changed || opts.since ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext }).files : files;
+    const graphFiles = opts.changed || opts.since ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files : files;
     graph = buildGraphStreaming(graphFiles);
   }
   for (let i = 0; i < files.length; i++) {
@@ -24290,7 +24369,8 @@ var L = {
     canonical: "fichier(s) canonique(s) audit\xE9(s)",
     duplicate: "doublon(s) identique(s) ignor\xE9(s)",
     truncated: (l, t2, s) => `P\xE9rim\xE8tre tronqu\xE9 : ${l}/${t2} fichiers audit\xE9s (priorit\xE9 d'abord), ${s} ignor\xE9(s). \xC9largir avec --max-files.`,
-    rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`
+    rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
+    sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`
   },
   en: {
     title: (std) => `Accessibility audit report \u2014 ${std}`,
@@ -24322,7 +24402,8 @@ var L = {
     canonical: "canonical file(s) audited",
     duplicate: "identical duplicate(s) skipped",
     truncated: (l, t2, s) => `Scope truncated: ${l}/${t2} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`,
-    rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`
+    rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
+    sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`
   }
 };
 function ncEntry(label, f, fixLabel) {
@@ -24343,6 +24424,7 @@ function render(r, lang, opts) {
   if (opts.derivedOf) out.push(`> \u21AA\uFE0F ${s.derived(opts.derivedOf)}`, "");
   if (r.scope.truncated) out.push(`> \u2702\uFE0F ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> \u{1F9E9} ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
+  if (r.scope.sourceTemplate) out.push(`> \u{1F9E9} ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
   const rows = opts.groups.flatMap((g) => g.rows);
   const labelOf = new Map(rows.map((row) => [row.id, row.label]));
   const th = s.th(opts.groupHead);
@@ -25775,7 +25857,14 @@ function runRunner(target, isFile, tag) {
   const args = ["run", "--rm"];
   if (isFile) args.push("-v", `${resolve2(target)}:${MOUNT}:ro`);
   args.push(tag, isFile ? MOUNT : target);
-  const stdout = execFileSync3("docker", args, { encoding: "utf8", timeout: 24e4, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  let stdout;
+  try {
+    stdout = execFileSync3("docker", args, { encoding: "utf8", timeout: 24e4, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+  } catch (e) {
+    const err = e;
+    const detail = (err.stderr ? String(err.stderr).trim() : "") || err.message || String(e);
+    throw new Error(`docker run failed \u2014 ${detail}`);
+  }
   const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
   return JSON.parse(line);
 }
@@ -26136,6 +26225,7 @@ function runFix(opts) {
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn
   });
   const out = [];
@@ -26297,7 +26387,8 @@ var STR = {
     noFindings: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
     residualTitle: "\xC0 \xE9valuer manuellement (jugement / rendu)",
     manualNote: "crit\xE8res non d\xE9cidables par le moteur \u2014 \xE0 compl\xE9ter par une revue humaine.",
-    renderedNote: "fichier(s) rendent des composants de biblioth\xE8que non analys\xE9s en source \u2014 auditez le build (render) ou scan"
+    renderedNote: "fichier(s) rendent des composants de biblioth\xE8que non analys\xE9s en source \u2014 auditez le build (render) ou scan",
+    sfcNote: "composant(s) .vue/.svelte/.astro audit\xE9(s) en SOURCE (template) \u2014 slots et liaisons dynamiques invisibles : verdict pr\xE9liminaire, auditez le rendu (render/scan)"
   },
   en: {
     summaryTitle: "WCAG 2.2 AA audit (ultra11y static engine)",
@@ -26308,7 +26399,8 @@ var STR = {
     noFindings: "No non-conformity detected by the static engine.",
     residualTitle: "To assess manually (judgment / rendering)",
     manualNote: "criteria the engine cannot decide \u2014 complete with a human review.",
-    renderedNote: "file(s) render component-library output not analysed from source \u2014 audit the build (render) or scan"
+    renderedNote: "file(s) render component-library output not analysed from source \u2014 audit the build (render) or scan",
+    sfcNote: ".vue/.svelte/.astro file(s) audited as SOURCE (template) \u2014 slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)"
   }
 };
 function t(lang, key) {
@@ -26338,6 +26430,7 @@ function auditSummary(r, lang) {
   lines.push("");
   lines.push(`${t(lang, "residualTitle")} : ${r.residualRisks.length} ${t(lang, "manualNote")}`);
   if (r.scope.rendered) lines.push(`\u{1F9E9} ${r.scope.rendered.files} ${t(lang, "renderedNote")} (${r.scope.rendered.opaqueLibraries.join(", ")}).`);
+  if (r.scope.sourceTemplate) lines.push(`\u{1F9E9} ${r.scope.sourceTemplate.files} ${t(lang, "sfcNote")} (${r.scope.sourceTemplate.extensions.join(", ")}).`);
   return lines.join("\n");
 }
 
@@ -26588,7 +26681,7 @@ non-conformities. RGAA (France) and other country standards are pluggable packs
 (--standard <pack>); WCAG is the worldwide core.
 
 Usage:
-  ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
+  ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr] [--no-default-excludes]
   ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues] [--lang en|fr]
@@ -26663,6 +26756,8 @@ Options:
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
   --ext <list>       audit/fix: extra file extensions to walk (e.g. .twig,.erb);
                      .html/.htm/.xhtml/.jsx/.tsx/.vue/.svelte/.astro are built-in
+  --no-default-excludes  audit/fix: also audit test/spec/story/__tests__ markup
+                     (excluded by default; logged, never a silent drop)
   --jsx              audit/fix: force JSX/TSX parsing for inputs of any extension
   --graph            audit: also resolve imports + run cross-file rules (alias --cross-file)
   --cross-file       audit: alias of --graph
@@ -26805,6 +26900,7 @@ async function cmdAudit(p) {
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : void 0,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : void 0,
     graph: p.flags.graph === true || p.flags["cross-file"] === true,
+    noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m)
   });
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
@@ -26916,7 +27012,15 @@ async function cmdReport(p) {
   }
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
   const path = writeReport(result, { out, lang: langOf(p.flags), standard });
-  console.log(path);
+  if (p.flags.json)
+    console.log(
+      JSON.stringify(
+        { path, conformancePct: result.conformancePct, date: result.date, standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag" },
+        null,
+        2
+      )
+    );
+  else console.log(path);
   return 0;
 }
 async function cmdPrd(p) {
@@ -26944,19 +27048,25 @@ async function cmdPrd(p) {
   const split = p.flags.split === "criterion" ? "criterion" : void 0;
   const format = p.flags.format === "doc" ? "doc" : void 0;
   const paths = writePrd(result, { out, lang, split, format, standard });
-  for (const path of paths) console.log(path);
+  const json = p.flags.json === true;
+  if (!json) for (const path of paths) console.log(path);
+  let gh2;
   if (p.flags["gh-issues"] === true) {
     const units = prdUnits(result, standard, lang);
     if (!ghAvailable()) {
-      console.error("ultra11y prd: --gh-issues skipped \u2014 `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
+      if (!json)
+        console.error("ultra11y prd: --gh-issues skipped \u2014 `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
     } else if (units.length === 0) {
-      console.error("ultra11y prd: --gh-issues skipped \u2014 no findings to file.");
+      if (!json) console.error("ultra11y prd: --gh-issues skipped \u2014 no findings to file.");
     } else {
-      const r = pushIssues(units, lang, standard);
-      const msg = lang === "fr" ? `ultra11y prd : issues GitHub \u2014 ${r.created} cr\xE9\xE9e(s), ${r.skipped} d\xE9j\xE0 existante(s)${r.failed ? `, ${r.failed} en \xE9chec` : ""}.` : `ultra11y prd: GitHub issues \u2014 ${r.created} created, ${r.skipped} already existed${r.failed ? `, ${r.failed} failed` : ""}.`;
-      console.log(msg);
+      gh2 = pushIssues(units, lang, standard);
+      if (!json)
+        console.log(
+          lang === "fr" ? `ultra11y prd : issues GitHub \u2014 ${gh2.created} cr\xE9\xE9e(s), ${gh2.skipped} d\xE9j\xE0 existante(s)${gh2.failed ? `, ${gh2.failed} en \xE9chec` : ""}.` : `ultra11y prd: GitHub issues \u2014 ${gh2.created} created, ${gh2.skipped} already existed${gh2.failed ? `, ${gh2.failed} failed` : ""}.`
+        );
     }
   }
+  if (json) console.log(JSON.stringify({ paths, units: prdUnits(result, standard, lang), ...gh2 ? { gh: gh2 } : {} }, null, 2));
   return 0;
 }
 function cmdRender(p) {
@@ -27064,9 +27174,11 @@ function cmdVerify(p) {
   const items = buildWorklist(readText(rep), standard, max);
   const out = typeof p.flags.out === "string" ? p.flags.out : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
-  console.log(
-    lang === "fr" ? `${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify \u2192 ${mdPath}, ${todoPath}`
-  );
+  if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
+  else
+    console.log(
+      lang === "fr" ? `${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify \u2192 ${mdPath}, ${todoPath}`
+    );
   return 0;
 }
 async function cmdFix(p) {
@@ -27088,6 +27200,7 @@ async function cmdFix(p) {
     ext: asList(p.flags.ext),
     changed: p.flags.changed === true || since !== void 0,
     since,
+    noDefaultExcludes: p.flags["no-default-excludes"] === true,
     only: typeof onlyFlag === "string" ? onlyFlag.split(",").map((s) => s.trim()).filter(Boolean) : void 0,
     write,
     onWarn: (m) => console.error(m)

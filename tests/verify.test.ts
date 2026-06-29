@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { renderReport } from "../src/report.js";
-import { buildWorklist, applyVerdicts, writeWorklist, type VerifyItem } from "../src/verify.js";
+import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, type VerifyItem } from "../src/verify.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const report = renderReport(runAudit({ inputs: [`${FIX}non-conforming/bad.html`] }), "fr");
@@ -64,6 +64,14 @@ describe("applyVerdicts", () => {
   it("accepts 'partial' as supporting the non-conformity", () => {
     const items = base().map((i) => ({ ...i, verdict: "partial" as const }));
     expect(applyVerdicts(items).ok).toBe(true);
+  });
+});
+
+describe("formatWorklist (judgment grounding)", () => {
+  it("inlines the RGAA test conditions per criterion and a pre-completion validation checklist", () => {
+    const md = formatWorklist(buildWorklist(report, 3), false);
+    expect(md).toContain("Tests RGAA");
+    expect(md).toContain("Liste de contrôle avant clôture");
   });
 });
 

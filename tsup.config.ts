@@ -10,13 +10,13 @@ export default defineConfig({
   outDir: "scripts",
   format: ["esm"],
   outExtension: () => ({ js: ".mjs" }),
-  target: "node18",
+  target: "node22",
   platform: "node",
   bundle: true,
   // tsup externalises packages listed in `dependencies` by default; force them
   // into the bundle so the shipped .mjs is truly standalone (no node_modules at
   // skill-use time). domhandler is type-only but listed for safety.
-  noExternal: ["htmlparser2", "domhandler"],
+  noExternal: ["htmlparser2", "domhandler", "@babel/parser"],
   clean: false,
   minify: false,
   splitting: false,

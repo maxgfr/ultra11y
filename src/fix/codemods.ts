@@ -18,6 +18,12 @@ export const LANG_PLACEHOLDER = "und";
 export interface Codemod {
   fixability: Fixability;
   build?: (source: string, start: number) => Edit[];
+  // Safe to apply to a real JSX/TSX AST (kind === "jsx-ast")? True only when the
+  // edit removes an attribute by range or inserts an attribute whose HTML spelling
+  // is also a valid React DOM prop (alt/lang/title/aria-label/role). A codemod that
+  // REWRITES an existing attribute is unsafe in JSX (it would lowercase the React
+  // spelling, e.g. tabIndex={5} → tabindex="0"), so it stays off for JSX in v1.
+  jsxSafe?: boolean;
 }
 
 const one =
@@ -56,13 +62,13 @@ function altFix(source: string, start: number): Edit[] {
 export const CODEMODS: Record<string, Codemod> = {
   // auto
   "positive-tabindex": { fixability: "auto", build: one((s, st) => setAttr(s, st, "tabindex", "0")) },
-  "redundant-aria": { fixability: "auto", build: one((s, st) => removeAttr(s, st, "role")) },
+  "redundant-aria": { fixability: "auto", jsxSafe: true, build: one((s, st) => removeAttr(s, st, "role")) },
   "meta-viewport-zoom-block": { fixability: "auto", build: viewportFix },
-  // placeholder
-  "iframe-title-missing": { fixability: "placeholder", build: one((s, st) => setAttr(s, st, "title", PLACEHOLDER)) },
-  "html-lang-missing": { fixability: "placeholder", build: one((s, st) => setAttr(s, st, "lang", LANG_PLACEHOLDER)) },
-  "img-alt-missing": { fixability: "placeholder", build: altFix },
-  "control-label-missing": { fixability: "placeholder", build: one((s, st) => setAttr(s, st, "aria-label", PLACEHOLDER)) },
+  // placeholder (inserts a valid attribute; alt/lang/title/aria-label are valid React DOM props)
+  "iframe-title-missing": { fixability: "placeholder", jsxSafe: true, build: one((s, st) => setAttr(s, st, "title", PLACEHOLDER)) },
+  "html-lang-missing": { fixability: "placeholder", jsxSafe: true, build: one((s, st) => setAttr(s, st, "lang", LANG_PLACEHOLDER)) },
+  "img-alt-missing": { fixability: "placeholder", jsxSafe: true, build: altFix },
+  "control-label-missing": { fixability: "placeholder", jsxSafe: true, build: one((s, st) => setAttr(s, st, "aria-label", PLACEHOLDER)) },
 };
 
 export function fixabilityOf(ruleId: string): Fixability {

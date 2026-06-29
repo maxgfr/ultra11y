@@ -54,10 +54,38 @@ describe("fix — dry-run vs write", () => {
     expect(out).toContain('title="TODO"'); // iframe-title-missing
   });
 
-  it("refuses to write JSX/TSX (lossy) and keeps fixes as proposals", () => {
+  it("applies jsxSafe codemods to a real-AST JSX/TSX file and writes it", () => {
     const d = tmp();
     const f = join(d, "C.tsx");
-    const before = `export const C = () => <button role="button" tabIndex={5}>go</button>;`;
+    const before = `export const C = () => <button role="button"><img src="x" /></button>;`;
+    writeFileSync(f, before);
+    const r = runFix({ inputs: [f], write: true });
+    const ff = r.files[0]!;
+    expect(ff.lossy).toBe(false);
+    expect(ff.written).toBe(true);
+    const out = readFileSync(f, "utf8");
+    expect(out).not.toContain('role="button"'); // redundant role removed (jsxSafe)
+    expect(out).toContain('alt="TODO"'); // img alt placeholder inserted (jsxSafe)
+  });
+
+  it("does NOT rewrite name-spelling-sensitive attributes on JSX (tabindex stays put)", () => {
+    const d = tmp();
+    const f = join(d, "C.tsx");
+    const before = `export const C = () => <button tabindex="5">go</button>;`;
+    writeFileSync(f, before);
+    const r = runFix({ inputs: [f], write: true });
+    // positive-tabindex is flagged but its codemod is not jsxSafe → left for the human.
+    expect(r.files[0]!.items.some((i) => i.ruleId === "positive-tabindex")).toBe(true);
+    expect(readFileSync(f, "utf8")).toBe(before); // untouched
+    expect(r.files[0]!.written).toBe(false);
+  });
+
+  it("keeps fixes proposal-only when JSX cannot be AST-parsed (lossy fallback)", () => {
+    const d = tmp();
+    const f = join(d, "C.tsx");
+    // adjacent top-level JSX after a comment is not a valid module → AST parse fails
+    // → lossy fallback (offsets index the transformed string, so no range edits).
+    const before = `{/* x */}<button role="button">go</button><span />`;
     writeFileSync(f, before);
     const warns: string[] = [];
     const r = runFix({ inputs: [f], write: true, onWarn: (m) => warns.push(m) });

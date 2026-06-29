@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main, parseArgs } from "../src/cli.js";
@@ -63,6 +63,34 @@ describe("main — command wiring", () => {
   });
   it("report without --in exits 2", async () => {
     expect((await run(["report"])).code).toBe(2);
+  });
+  it("prd without --in exits 2", async () => {
+    expect((await run(["prd"])).code).toBe(2);
+  });
+  it("prd renders a backlog from an audit json", async () => {
+    const tmpd = join(tmpdir(), "u11y-prd-cli");
+    await run(["audit", `${FIX}non-conforming/bad.html`, "--out", tmpd, "--json"]);
+    const r = await run(["prd", "--in", join(tmpd, "audit-latest.json"), "--out", tmpd]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("prd-");
+  });
+  it("parses audit --graph/--cross-file and prd --split/--gh-issues", () => {
+    expect(parseArgs(["audit", "src", "--graph"]).flags.graph).toBe(true);
+    expect(parseArgs(["audit", "src", "--cross-file"]).flags["cross-file"]).toBe(true);
+    expect(parseArgs(["prd", "--in", "a.json", "--split", "criterion"]).flags.split).toBe("criterion");
+    expect(parseArgs(["prd", "--in", "a.json", "--gh-issues"]).flags["gh-issues"]).toBe(true);
+  });
+  it("render --json prints framework detection and exits 0", async () => {
+    const r = await run(["render", ".", "--json"]);
+    expect(r.code).toBe(0);
+    expect(() => JSON.parse(r.out)).not.toThrow();
+    expect(JSON.parse(r.out)).toHaveProperty("frameworks");
+  });
+  it("render --scaffold writes an SSR harness", async () => {
+    const f = join(tmpdir(), "u11y-render-harness.tsx");
+    const r = await run(["render", "--scaffold", "--out", f]);
+    expect(r.code).toBe(0);
+    expect(readFileSync(f, "utf8")).toContain("renderToStaticMarkup");
   });
   it("check without --report exits 2", async () => {
     expect((await run(["check"])).code).toBe(2);

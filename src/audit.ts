@@ -12,6 +12,9 @@ import { type Doc, attr, hasAttr } from "./parse/html.js";
 import { isFormField } from "./name.js";
 import { isFullDocument } from "./rules/rule.js";
 import { runRules } from "./rules/registry.js";
+import { runCrossRules } from "./rules/cross-registry.js";
+import { buildGraphStreaming } from "./graph/build.js";
+import type { DepGraph } from "./graph/graph.js";
 import { discover } from "./discover.js";
 import { readText, today } from "./util.js";
 
@@ -29,6 +32,7 @@ export interface AuditInput {
   since?: string; // git ref to diff against (implies changed)
   dedup?: DedupMode; // collapse identical files to one canonical audit (default exact)
   maxFiles?: number; // hard cap on canonical files audited (logged truncation)
+  graph?: boolean; // also run cross-file rules over a dependency graph (--graph)
   onWarn?: (msg: string) => void;
 }
 
@@ -78,6 +82,8 @@ interface Accum {
   applicable: Map<string, boolean>; // static criteria only
   allFindings: Finding[];
   fileCount: number;
+  opaqueLibs: Set<string>; // component-library specifiers rendered but not source-analysable
+  opaqueFiles: number; // count of source files that render such components
 }
 
 // Precompute the static criteria + their applicability predicates once.
@@ -86,12 +92,25 @@ const STATIC_PREDS: ReadonlyArray<readonly [string, (d: Doc) => boolean]> = allC
   .map((c) => [c.id, APPLICABLE[c.id] ?? isFullDocument] as const);
 
 function newAccum(): Accum {
-  return { byCriterion: new Map(), applicable: new Map(), allFindings: [], fileCount: 0 };
+  return { byCriterion: new Map(), applicable: new Map(), allFindings: [], fileCount: 0, opaqueLibs: new Set(), opaqueFiles: 0 };
 }
 
-/** Fold one parsed document into the accumulator, then let it be GC'd. */
-export function foldDoc(acc: Accum, doc: Doc): void {
-  for (const f of runRules(doc)) {
+/** Fold one parsed document into the accumulator, then let it be GC'd. When a
+ *  graph is supplied, cross-file findings are added and graph-proven false
+ *  positives are suppressed (matched by ruleId + line on this same doc). */
+export function foldDoc(acc: Accum, doc: Doc, graph?: DepGraph): void {
+  let findings = runRules(doc);
+  if (graph) {
+    const cross = runCrossRules(doc, graph);
+    if (cross.suppress.length) {
+      findings = findings.filter((f) => !cross.suppress.some((s) => s.ruleId === f.ruleId && s.line === f.line));
+    }
+    findings = findings.concat(cross.findings);
+    // A cross finding is evidence its criterion is applicable here (the per-doc
+    // static predicates only know native elements, not resolved components).
+    for (const f of cross.findings) acc.applicable.set(f.criteriaId, true);
+  }
+  for (const f of findings) {
     acc.allFindings.push(f);
     const arr = acc.byCriterion.get(f.criteriaId) ?? [];
     arr.push(f);
@@ -99,6 +118,10 @@ export function foldDoc(acc: Accum, doc: Doc): void {
   }
   for (const [id, pred] of STATIC_PREDS) {
     if (!acc.applicable.get(id) && pred(doc)) acc.applicable.set(id, true);
+  }
+  if (doc.opaqueComponents?.length) {
+    for (const lib of doc.opaqueComponents) acc.opaqueLibs.add(lib);
+    acc.opaqueFiles++;
   }
   acc.fileCount++;
 }
@@ -159,7 +182,13 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
     version: VERSION,
     schemaVersion: SCHEMA_VERSION,
     date: today(),
-    scope: { inputs, files: acc.fileCount, ...(extra.truncated ? { truncated: extra.truncated } : {}), ...(extra.dedup ? { dedup: extra.dedup } : {}) },
+    scope: {
+      inputs,
+      files: acc.fileCount,
+      ...(extra.truncated ? { truncated: extra.truncated } : {}),
+      ...(extra.dedup ? { dedup: extra.dedup } : {}),
+      ...(acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {}),
+    },
     themes,
     criteria,
     findings: acc.allFindings,
@@ -201,6 +230,15 @@ export function runAudit(opts: AuditInput): AuditResult {
     onWarn: opts.onWarn,
   });
 
+  // Cross-file pass: build the dependency graph over the FULL scope (so a changed
+  // file's references resolve into unchanged definitions), then run cross rules in
+  // the audit loop below. Off by default — a plain audit is byte-identical.
+  let graph: DepGraph | undefined;
+  if (opts.graph) {
+    const graphFiles = opts.changed || opts.since ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext }).files : files;
+    graph = buildGraphStreaming(graphFiles);
+  }
+
   for (let i = 0; i < files.length; i++) {
     if (opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles) {
       // skipped = candidates not audited (reconciles: audited + skipped == total),
@@ -227,13 +265,13 @@ export function runAudit(opts: AuditInput): AuditResult {
       }
       seen.add(h);
     }
-    foldDoc(acc, parseSource(content, file, { forceJsx: opts.forceJsx }));
+    foldDoc(acc, parseSource(content, file, { forceJsx: opts.forceJsx }), graph);
   }
 
   const canonicalFiles = acc.fileCount;
   // Respect --max-files for stdin too (don't let the stdin doc push past the cap).
   if (opts.inputs.includes("-") && opts.stdin !== undefined && !(opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles)) {
-    foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }));
+    foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }), graph);
   }
 
   return finalize(acc, opts.inputs, {

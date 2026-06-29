@@ -1,7 +1,7 @@
 {
   "name": "ultra11y",
   "version": "1.4.4",
-  "description": "Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, or author/review accessible markup (native-HTML-first). A skills.sh agent skill: a zero-dependency static engine plus Claude's judgment, with check/verify gates against hallucinated non-conformities.",
+  "description": "Audit HTML/CSS/JSX for RGAA 4.1.2 + WCAG 2.1/2.2 AA accessibility and produce a dated compliance report, or author/review accessible markup (native-HTML-first). A skills.sh agent skill: an install-free static engine (bundled, no npm install) plus Claude's judgment, with check/verify gates against hallucinated non-conformities.",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "bin": {
@@ -14,7 +14,7 @@
     "docker"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "build": "tsup && node scripts/copy-bundle.mjs",
@@ -38,20 +38,21 @@
     "url": "https://github.com/maxgfr/ultra11y"
   },
   "dependencies": {
+    "@babel/parser": "^8.0.0",
     "domhandler": "^6.0.1",
-    "htmlparser2": "^10.0.0"
+    "htmlparser2": "^12.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
+    "@biomejs/biome": "^2.5.1",
     "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
-    "@types/node": "^20.14.0",
-    "@vitest/coverage-v8": "^4.1.8",
-    "semantic-release": "^24.2.0",
-    "tsup": "^8.3.0",
-    "typescript": "^5.5.0",
-    "vitest": "^4.1.0",
+    "@types/node": "^26.0.1",
+    "@vitest/coverage-v8": "^4.1.9",
+    "semantic-release": "^25.0.5",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
     "yaml": "^2.9.0"
   },
   "pnpm": {

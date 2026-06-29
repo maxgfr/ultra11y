@@ -43,6 +43,56 @@ describe("methodology.md states the formula and the static/rendering/judgment sp
   });
 });
 
+describe("cross-file.md teaches audit --graph", () => {
+  const t = read("cross-file.md");
+  it("covers --graph, the two-pass model and the cross-file rules", () => {
+    expect(t).toMatch(/ultra11y\.mjs audit/);
+    expect(t).toContain("--graph");
+    expect(t).toContain("cross-icon-only-unnamed");
+    expect(t).toMatch(/import/i);
+  });
+});
+
+describe("prd.md teaches the fix backlog + GitHub issues", () => {
+  const t = read("prd.md");
+  it("covers the prd command, --split criterion and --gh-issues", () => {
+    expect(t).toMatch(/ultra11y\.mjs prd/);
+    expect(t).toContain("--split criterion");
+    expect(t).toContain("--gh-issues");
+  });
+});
+
+describe("rendered.md teaches auditing rendered output", () => {
+  const t = read("rendered.md");
+  it("covers the render command, build-output, SSR snapshot and scan", () => {
+    expect(t).toMatch(/ultra11y\.mjs render/);
+    expect(t).toMatch(/ultra11y\.mjs audit/);
+    expect(t).toContain("--scaffold");
+    expect(t).toMatch(/DSFR/);
+    expect(t).toMatch(/scan/);
+  });
+});
+
+describe("judgment.md teaches the judgment phase", () => {
+  const t = read("judgment.md");
+  it("covers verify, the RGAA grid and the verdict tokens", () => {
+    expect(t).toMatch(/ultra11y\.mjs verify/);
+    expect(t).toMatch(/supported/);
+    expect(t).toMatch(/refuted/);
+    expect(t).toMatch(/RGAA/);
+  });
+});
+
+describe("correction.md teaches the correction phase", () => {
+  const t = read("correction.md");
+  it("covers fix (write/iterate), priority order and the anti-regression gate", () => {
+    expect(t).toMatch(/ultra11y\.mjs fix/);
+    expect(t).toContain("--write");
+    expect(t).toContain("--iterate");
+    expect(t).toMatch(/[Bb]loquant/);
+  });
+});
+
 describe("verify.md teaches the verify gate", () => {
   const t = read("verify.md");
   it("covers the command, --semantic and the verdict tokens", () => {

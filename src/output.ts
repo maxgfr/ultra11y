@@ -2,7 +2,7 @@
 // summary (the --json path prints the AuditResult verbatim instead).
 import type { AuditResult, Lang, Severity } from "./types.js";
 
-type Key = "summaryTitle" | "files" | "autoConformance" | "theme" | "findingsTitle" | "noFindings" | "residualTitle" | "manualNote";
+type Key = "summaryTitle" | "files" | "autoConformance" | "theme" | "findingsTitle" | "noFindings" | "residualTitle" | "manualNote" | "renderedNote";
 
 const STR: Record<Lang, Record<Key, string>> = {
   fr: {
@@ -14,6 +14,7 @@ const STR: Record<Lang, Record<Key, string>> = {
     noFindings: "Aucune non-conformité détectée par le moteur statique.",
     residualTitle: "À évaluer manuellement (jugement / rendu)",
     manualNote: "critères non décidables par le moteur — à compléter par une revue humaine.",
+    renderedNote: "fichier(s) rendent des composants de bibliothèque non analysés en source — auditez le build (render) ou scan",
   },
   en: {
     summaryTitle: "RGAA 4.1.2 audit (ultra11y static engine)",
@@ -24,6 +25,7 @@ const STR: Record<Lang, Record<Key, string>> = {
     noFindings: "No non-conformity detected by the static engine.",
     residualTitle: "To assess manually (judgment / rendering)",
     manualNote: "criteria the engine cannot decide — complete with a human review.",
+    renderedNote: "file(s) render component-library output not analysed from source — audit the build (render) or scan",
   },
 };
 
@@ -55,5 +57,6 @@ export function auditSummary(r: AuditResult, lang: Lang): string {
   }
   lines.push("");
   lines.push(`${t(lang, "residualTitle")} : ${r.residualRisks.length} ${t(lang, "manualNote")}`);
+  if (r.scope.rendered) lines.push(`🧩 ${r.scope.rendered.files} ${t(lang, "renderedNote")} (${r.scope.rendered.opaqueLibraries.join(", ")}).`);
   return lines.join("\n");
 }

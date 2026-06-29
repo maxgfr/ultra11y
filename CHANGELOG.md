@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.2.0](https://github.com/maxgfr/ultra11y/compare/v2.1.0...v2.2.0) (2026-06-29)
+
+
+### Bug Fixes
+
+* **scan:** surface the container's real error instead of "Command failed" ([3c3f6b8](https://github.com/maxgfr/ultra11y/commit/3c3f6b8e5d2920e72c32ca2008f025696d74fc44))
+
+
+### Features
+
+* **audit:** preliminary SFC findings, default test-exclude, --json for report/prd/verify ([48a5684](https://github.com/maxgfr/ultra11y/commit/48a5684f84b5255046d160e4e093e8a1ba21d737))
+* **rules:** component-aware auditing for JSX & .vue/.svelte/.astro ([551b767](https://github.com/maxgfr/ultra11y/commit/551b767530b5fc750855b91eebc4f05c12615a55))
+
 # [2.1.0](https://github.com/maxgfr/ultra11y/compare/v2.0.0...v2.1.0) (2026-06-29)
 
 

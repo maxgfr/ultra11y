@@ -137,7 +137,17 @@ function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {
   const args = ["run", "--rm"];
   if (isFile) args.push("-v", `${resolve(target)}:${MOUNT}:ro`);
   args.push(tag, isFile ? MOUNT : target);
-  const stdout = execFileSync("docker", args, { encoding: "utf8", timeout: 240000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  let stdout: string;
+  try {
+    // Pipe (not ignore) the container's stderr so a failed run surfaces the real
+    // cause (e.g. ERR_NAME_NOT_RESOLVED / a navigation timeout) instead of a bare
+    // "Command failed: docker run …".
+    stdout = execFileSync("docker", args, { encoding: "utf8", timeout: 240000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+  } catch (e) {
+    const err = e as { stderr?: Buffer | string; message?: string };
+    const detail = (err.stderr ? String(err.stderr).trim() : "") || err.message || String(e);
+    throw new Error(`docker run failed — ${detail}`);
+  }
   const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
   return JSON.parse(line) as RunnerOutput;
 }

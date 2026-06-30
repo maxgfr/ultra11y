@@ -53,8 +53,9 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   **`references/cross-file.md`**.
 - **"Generate the fix markdown / PRDs (→ GitHub issues)"** → `prd` (fix backlog by
   default with before/after guidance + effort, `--split criterion`, `--format doc` for a
-  product-requirements doc with epics/user-stories/Given-When-Then, `--gh-issues` via the
-  `gh` CLI); read **`references/prd.md`**.
+  product-requirements doc with epics/user-stories/Given-When-Then, `--gh-issues` for one
+  issue per criterion or `--gh-single` for a single consolidated issue via the `gh` CLI);
+  read **`references/prd.md`**.
 - **"Plug or author a standards pack (RGAA & beyond), AI-ingest external rules"** →
   `--pack`/`.ultra11yrc.json` to load at runtime, `pack check` to gate it (the
   anti-hallucination guardrail), `pack scaffold` to start one; concrete before/after
@@ -96,7 +97,8 @@ node scripts/ultra11y.mjs audit --changed --json            # only the git diff 
 node scripts/ultra11y.mjs audit "src/**" --no-default-excludes   # also audit test/spec/story markup
 node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md
 node scripts/ultra11y.mjs report --in audit.json --standard rgaa       # derived RGAA report (France pack)
-node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # fix backlog (+ GitHub issues)
+node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # fix backlog (+ one GitHub issue per criterion)
+node scripts/ultra11y.mjs prd    --in audit.json --gh-single          # fix backlog (+ ONE consolidated GitHub issue)
 node scripts/ultra11y.mjs prd    --in audit.json --format doc          # product-requirements doc (epics/stories/AC)
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --pack ./packs/section508.json   # load an external pack at runtime
 node scripts/ultra11y.mjs pack check ./packs/section508.json --guidance ./packs/section508.guidance.json   # gate an (AI-)authored pack

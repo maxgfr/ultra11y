@@ -2,21 +2,32 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("node:child_process", () => ({ execFileSync: vi.fn() }));
 import { execFileSync } from "node:child_process";
-import { ghAvailable, existingIssueTitles, createIssue, issueTitle, issueBody, pushIssues } from "../src/gh.js";
+import {
+  ghAvailable,
+  existingIssueTitles,
+  createIssue,
+  issueTitle,
+  issueBody,
+  pushIssues,
+  singleIssueTitle,
+  singleIssueBody,
+  pushSingleIssue,
+} from "../src/gh.js";
 import type { PrdUnit } from "../src/prd.js";
+import type { Severity } from "../src/types.js";
 
 const mock = execFileSync as unknown as ReturnType<typeof vi.fn>;
 const argv = (call: unknown[]): string[] => (call[1] as string[]) ?? [];
 
 beforeEach(() => mock.mockReset());
 
-function unit(criteriaId: string, title: string): PrdUnit {
+function unit(criteriaId: string, title: string, severity: Severity = "bloquant"): PrdUnit {
   return {
     criteriaId,
     title,
     label: `${criteriaId} — ${title}`,
     refs: ["1.1.1"],
-    severity: "bloquant",
+    severity,
     findings: [
       {
         ruleId: "cross-icon-only-unnamed",
@@ -25,7 +36,7 @@ function unit(criteriaId: string, title: string): PrdUnit {
         line: 5,
         col: 7,
         selectorHint: "IconButton",
-        severity: "bloquant",
+        severity,
         message: "icône seule sans nom",
         remediation: "Passez aria-label",
         snippet: "<IconButton/>",
@@ -104,6 +115,71 @@ describe("gh helpers", () => {
     });
     const r = pushIssues([unit("8.3", "Langue")], "fr", "rgaa");
     expect(r.createdTitles).toEqual(["[a11y] RGAA 8.3 — Langue"]);
+    const labelArg = seen.find((a) => a.includes("--label"));
+    expect(labelArg?.join(",")).toContain("rgaa");
+  });
+});
+
+describe("gh single consolidated issue", () => {
+  it("singleIssueTitle is stable and standard-keyed (no counts or date, so re-runs de-dupe)", () => {
+    expect(singleIssueTitle("WCAG")).toBe("[a11y] WCAG — Accessibility audit");
+    expect(singleIssueTitle("RGAA")).toBe("[a11y] RGAA — Accessibility audit");
+  });
+
+  it("singleIssueBody sections by severity and includes every criterion with its occurrences and fix", () => {
+    const body = singleIssueBody([unit("4.1.2", "Name", "bloquant"), unit("1.4.3", "Contrast", "majeur"), unit("2.4.4", "Link", "mineur")], "en");
+    expect(body).toContain("Blocking (1)");
+    expect(body).toContain("Major (1)");
+    expect(body).toContain("Minor (1)");
+    expect(body).toContain("4.1.2 — Name");
+    expect(body).toContain("1.4.3 — Contrast");
+    expect(body).toContain("2.4.4 — Link");
+    expect(body).toContain("`src/page.tsx:5`");
+    expect(body).toContain("Passez aria-label");
+  });
+
+  it("singleIssueBody localizes the severity headings in French", () => {
+    const body = singleIssueBody([unit("4.1.2", "Name", "bloquant")], "fr");
+    expect(body).toContain("Bloquant (1)");
+  });
+
+  it("pushSingleIssue creates exactly one consolidated issue labelled by the most-severe criterion", () => {
+    const seen: string[][] = [];
+    mock.mockImplementation((...callArgs: unknown[]) => {
+      const args = (callArgs[1] as string[] | undefined) ?? [];
+      if (args.includes("list")) return JSON.stringify([]);
+      seen.push(args);
+      return "";
+    });
+    const r = pushSingleIssue([unit("1.4.3", "Contrast", "majeur"), unit("4.1.2", "Name", "bloquant")], "en");
+    expect(r.created).toBe(1);
+    expect(r.createdTitles).toEqual(["[a11y] WCAG — Accessibility audit"]);
+    expect(seen.filter((a) => a.includes("create")).length).toBe(1);
+    const labelArg = seen.find((a) => a.includes("--label"));
+    expect(labelArg?.join(",")).toContain("bloquant");
+  });
+
+  it("pushSingleIssue skips when the consolidated issue already exists", () => {
+    mock.mockImplementation((...callArgs: unknown[]) => {
+      const args = (callArgs[1] as string[] | undefined) ?? [];
+      if (args.includes("list")) return JSON.stringify([{ title: "[a11y] WCAG — Accessibility audit" }]);
+      return "";
+    });
+    const r = pushSingleIssue([unit("4.1.2", "Name")], "en");
+    expect(r.skipped).toBe(1);
+    expect(r.created).toBe(0);
+  });
+
+  it("pushSingleIssue keys the title and label by the active pack under --standard", () => {
+    const seen: string[][] = [];
+    mock.mockImplementation((...callArgs: unknown[]) => {
+      const args = (callArgs[1] as string[] | undefined) ?? [];
+      if (args.includes("list")) return JSON.stringify([]);
+      seen.push(args);
+      return "";
+    });
+    const r = pushSingleIssue([unit("8.3", "Langue")], "fr", "rgaa");
+    expect(r.createdTitles).toEqual(["[a11y] RGAA — Accessibility audit"]);
     const labelArg = seen.find((a) => a.includes("--label"));
     expect(labelArg?.join(",")).toContain("rgaa");
   });

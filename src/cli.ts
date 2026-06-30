@@ -5,7 +5,7 @@ import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./type
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
 import { writePrd, prdUnits } from "./prd.js";
-import { ghAvailable, pushIssues } from "./gh.js";
+import { ghAvailable, pushIssues, pushSingleIssue } from "./gh.js";
 import { detectFrameworks, renderPlan, ssrHarness, type Detection } from "./render.js";
 import { runCriteria, renderCriteriaReference } from "./criteria.js";
 import { checkReport } from "./check.js";
@@ -31,7 +31,7 @@ Usage:
   ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr] [--no-default-excludes]
   ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues] [--lang en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
   ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
@@ -56,8 +56,9 @@ Commands:
              (e.g. --standard rgaa → audits/rgaa-YYYY-MM-DD.md).
   prd        Turn an AuditResult into an actionable "fixes to do" backlog
              (audits/prd-YYYY-MM-DD.md), grouped by criterion and sectioned by
-             priority; --split criterion writes one PRD file per criterion, and
-             --gh-issues files one de-duplicated GitHub issue per criterion (gh CLI).
+             priority; --split criterion writes one PRD file per criterion;
+             --gh-issues files one de-duplicated GitHub issue per criterion, or
+             --gh-single files the whole audit as a single issue (gh CLI).
   render     Get RENDERED HTML to audit (so component libraries like DSFR are
              checked as the HTML they emit, not their JSX sources): detect the
              framework and print the build→audit recipe, or --scaffold a
@@ -123,6 +124,7 @@ Options:
                      stories, Given/When/Then); default is the fix backlog
   --split <mode>     prd: split the backlog — currently only 'criterion' (one file per criterion)
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
+  --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
   --write            fix: apply fixes to disk (default is a dry-run diff)
   --iterate          fix: with --write, re-audit + re-apply mechanical fixes until stable (bounded)
@@ -439,17 +441,20 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   const json = p.flags.json === true;
   if (!json) for (const path of paths) console.log(path);
 
-  // --gh-issues: always-written markdown above; GitHub is opt-in + best-effort.
+  // GitHub: always-written markdown above; issues are opt-in + best-effort.
+  // --gh-single → one consolidated issue; --gh-issues → one issue per criterion.
+  const ghMode: "single" | "per-criterion" | null = p.flags["gh-single"] === true ? "single" : p.flags["gh-issues"] === true ? "per-criterion" : null;
   let gh: { created: number; skipped: number; failed: number } | undefined;
-  if (p.flags["gh-issues"] === true) {
+  if (ghMode) {
+    const flag = ghMode === "single" ? "--gh-single" : "--gh-issues";
     const units = prdUnits(result, standard, lang);
     if (!ghAvailable()) {
       if (!json)
-        console.error("ultra11y prd: --gh-issues skipped — `gh` is not installed or not authenticated (run `gh auth login`). Markdown was still written.");
+        console.error(`ultra11y prd: ${flag} skipped — \`gh\` is not installed or not authenticated (run \`gh auth login\`). Markdown was still written.`);
     } else if (units.length === 0) {
-      if (!json) console.error("ultra11y prd: --gh-issues skipped — no findings to file.");
+      if (!json) console.error(`ultra11y prd: ${flag} skipped — no findings to file.`);
     } else {
-      gh = pushIssues(units, lang, standard);
+      gh = ghMode === "single" ? pushSingleIssue(units, lang, standard) : pushIssues(units, lang, standard);
       if (!json)
         console.log(
           lang === "fr"

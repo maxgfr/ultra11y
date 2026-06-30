@@ -26,7 +26,7 @@ node scripts/ultra11y.mjs --help
 ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
 ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
 ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--standard <pack>] [--gh-issues] [--lang en|fr]
+ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
 ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
 ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
 ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]

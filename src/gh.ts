@@ -4,9 +4,17 @@
 // wrote the markdown and we just report that issues were skipped. De-dupes by
 // issue title so re-running never creates duplicates.
 import { execFileSync } from "node:child_process";
-import type { Lang } from "./types.js";
+import type { Lang, Severity } from "./types.js";
 import type { PrdUnit } from "./prd.js";
 import { type StandardId, isCore, loadPack } from "./standards/index.js";
+
+const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
+const SEV_RANK: Record<Severity, number> = { bloquant: 0, majeur: 1, mineur: 2 };
+const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
+const SEV_LABEL: Record<Lang, Record<Severity, string>> = {
+  fr: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
+  en: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
+};
 
 /** Display label + issue tag for the active standard ("WCAG"/"wcag" or a pack's). */
 function standardTag(standard: StandardId): { label: string; tag: string } {
@@ -104,6 +112,50 @@ export function pushIssues(units: PrdUnit[], lang: Lang, standard: StandardId = 
     } else {
       result.failed++;
     }
+  }
+  return result;
+}
+
+/** Stable title for the single consolidated audit issue. No counts/date so re-runs de-dupe. */
+export function singleIssueTitle(label = "WCAG"): string {
+  return `[a11y] ${label} — Accessibility audit`;
+}
+
+/** One consolidated issue body: every criterion, sectioned by severity (blocking → minor),
+ *  each criterion reusing the same fix + occurrences block as the per-criterion issues. */
+export function singleIssueBody(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag"): string {
+  const { label } = standardTag(standard);
+  const intro =
+    lang === "fr"
+      ? `Audit d'accessibilité ${label} — ${units.length} critère(s) non conforme(s).`
+      : `${label} accessibility audit — ${units.length} non-conforming criteria.`;
+  const lines: string[] = [intro, ""];
+  for (const sev of SEV_ORDER) {
+    const group = units.filter((u) => u.severity === sev);
+    if (!group.length) continue;
+    lines.push(`## ${ICON[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
+    for (const u of group) lines.push(`### ${u.label}`, "", issueBody(u, lang), "");
+  }
+  return lines.join("\n");
+}
+
+/** Create ONE consolidated issue for the whole audit, de-duped by its stable title and
+ *  labelled by the most severe criterion. Mirrors pushIssues' best-effort/skip semantics. */
+export function pushSingleIssue(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag"): PushResult {
+  const { label, tag } = standardTag(standard);
+  const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
+  if (!units.length) return result;
+  const title = singleIssueTitle(label);
+  if (existingIssueTitles().has(title)) {
+    result.skipped = 1;
+    return result;
+  }
+  const severity = [...units].sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])[0]!.severity;
+  if (createIssue(title, singleIssueBody(units, lang, standard), ["accessibility", tag, severity])) {
+    result.created = 1;
+    result.createdTitles.push(title);
+  } else {
+    result.failed = 1;
   }
   return result;
 }

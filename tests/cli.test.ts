@@ -79,6 +79,7 @@ describe("main — command wiring", () => {
     expect(parseArgs(["audit", "src", "--cross-file"]).flags["cross-file"]).toBe(true);
     expect(parseArgs(["prd", "--in", "a.json", "--split", "criterion"]).flags.split).toBe("criterion");
     expect(parseArgs(["prd", "--in", "a.json", "--gh-issues"]).flags["gh-issues"]).toBe(true);
+    expect(parseArgs(["prd", "--in", "a.json", "--gh-single"]).flags["gh-single"]).toBe(true);
   });
   it("render --json prints framework detection and exits 0", async () => {
     const r = await run(["render", ".", "--json"]);

@@ -9,6 +9,7 @@ node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --json > audit.json
 node scripts/ultra11y.mjs prd --in audit.json                     # single backlog (default)
 node scripts/ultra11y.mjs prd --in audit.json --split criterion   # one PRD per criterion
 node scripts/ultra11y.mjs prd --in audit.json --gh-issues         # + one GitHub issue per criterion
+node scripts/ultra11y.mjs prd --in audit.json --gh-single         # + ONE consolidated GitHub issue (whole audit)
 node scripts/ultra11y.mjs prd --in audit.json --standard rgaa     # backlog keyed by the RGAA pack
 node scripts/ultra11y.mjs prd --in audit.json --format doc        # product-requirements doc (epics/stories/AC)
 ```
@@ -33,16 +34,23 @@ node scripts/ultra11y.mjs prd --in audit.json --format doc        # product-requ
   `{paths, units, gh?}` where `units` is the structured per-criterion backlog (title,
   severity, occurrences, before/after) an agent can consume directly.
 
-## GitHub issues (`--gh-issues`, opt-in)
+## GitHub issues (`--gh-issues` / `--gh-single`, opt-in)
 
 - Uses the **`gh` CLI** (which handles its own auth) — **no** npm dependency, no key in
   ultra11y.
-- **One issue per criterion** (regardless of `--split`), stable title
+- **`--gh-issues` → one issue per criterion** (regardless of `--split`), stable title
   `"[a11y] WCAG <sc> — <title>"` (or `"[a11y] <PACK> <id> — …"` under `--standard`), labels
   `accessibility`, `wcag` (or the pack key), severity. The body carries fix + `file:line`
   occurrences + definition site.
+- **`--gh-single` → ONE consolidated issue** for the whole audit, stable title
+  `"[a11y] WCAG — Accessibility audit"` (or `"[a11y] <PACK> — Accessibility audit"`). The body
+  is the full backlog **sectioned by severity** (🔴 blocking → 🟠 major → 🟡 minor), each
+  criterion carrying the same fix + `file:line` occurrences + definition site. Labelled by the
+  **most severe** criterion. Use this when you want a single tracking ticket instead of N.
+- `--gh-single` **wins** if both flags are passed.
 - **De-dupe by title**: an existing issue (open or closed) is skipped, so re-running never
-  creates duplicates.
+  creates duplicates. The consolidated title carries **no count or date**, so it stays stable
+  across re-runs.
 - **Graceful degradation**: if `gh` is absent / unauthenticated, the command says so and exits
   `0` — the markdown was still produced.
 

@@ -90,3 +90,99 @@ describe("page-scoped detectors still behave in a full document", () => {
     expect(findOf(html, "meta-refresh-redirect")).toHaveLength(1);
   });
 });
+
+describe("live-region-conflict (4.1.3)", () => {
+  it("flags an invalid aria-live value", () => {
+    const f = findOf(`<div aria-live="urgent">Erreur</div>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("4.1.3");
+  });
+  it("flags role=alert contradicted by aria-live=polite (majeur)", () => {
+    const f = findOf(`<div role="alert" aria-live="polite">Erreur</div>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.severity).toBe("majeur");
+  });
+  it("flags role=status contradicted by aria-live=assertive (mineur)", () => {
+    const f = findOf(`<p role="status" aria-live="assertive">3 résultats</p>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.severity).toBe("mineur");
+  });
+  it("does not flag consistent or plain live regions", () => {
+    expect(findOf(`<div role="alert">Erreur</div>`, "live-region-conflict")).toHaveLength(0);
+    expect(findOf(`<div aria-live="polite">Sauvegardé</div>`, "live-region-conflict")).toHaveLength(0);
+    expect(findOf(`<div role="status" aria-live="polite">ok</div>`, "live-region-conflict")).toHaveLength(0);
+  });
+  it("does not flag a dynamic aria-live value or a component prop (JSX)", () => {
+    expect(findOf(`<div aria-live={mode}>x</div>`, "live-region-conflict", "t.tsx")).toHaveLength(0);
+    expect(findOf(`<Toast aria-live="urgent">x</Toast>`, "live-region-conflict", "t.tsx")).toHaveLength(0);
+  });
+});
+
+describe("aria-invalid-no-description (3.3.1)", () => {
+  it("flags aria-invalid=true without a linked description", () => {
+    const f = findOf(`<input type="email" aria-invalid="true">`, "aria-invalid-no-description");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("3.3.1");
+  });
+  it("does not flag when aria-describedby or aria-errormessage links the error", () => {
+    expect(findOf(`<input aria-invalid="true" aria-describedby="e">`, "aria-invalid-no-description")).toHaveLength(0);
+    expect(findOf(`<input aria-invalid="true" aria-errormessage="e">`, "aria-invalid-no-description")).toHaveLength(0);
+  });
+  it("does not flag aria-invalid=false / absent, or a dynamic value (JSX)", () => {
+    expect(findOf(`<input aria-invalid="false">`, "aria-invalid-no-description")).toHaveLength(0);
+    expect(findOf(`<input type="text">`, "aria-invalid-no-description")).toHaveLength(0);
+    expect(findOf(`<input aria-invalid={hasError} />`, "aria-invalid-no-description", "t.tsx")).toHaveLength(0);
+  });
+});
+
+describe("missing-main-landmark (1.3.1)", () => {
+  it("flags a full page with body content but no <main>", () => {
+    const f = findOf(page(`<header>h</header><div>contenu</div><footer>f</footer>`), "missing-main-landmark");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("1.3.1");
+  });
+  it("does not flag when a <main> or role=main is present", () => {
+    expect(findOf(page(`<main>contenu</main>`), "missing-main-landmark")).toHaveLength(0);
+    expect(findOf(page(`<div role="main">contenu</div>`), "missing-main-landmark")).toHaveLength(0);
+  });
+  it("does not run on a fragment/component (page-scoped)", () => {
+    expect(findOf(`<div>contenu</div>`, "missing-main-landmark")).toHaveLength(0);
+  });
+});
+
+describe("multiple-main-landmark (1.3.1)", () => {
+  it("flags more than one main landmark", () => {
+    const f = findOf(page(`<main>a</main><main>b</main>`), "multiple-main-landmark");
+    expect(f).toHaveLength(1);
+  });
+  it("does not flag a single main", () => {
+    expect(findOf(page(`<main>a</main>`), "multiple-main-landmark")).toHaveLength(0);
+  });
+});
+
+describe("control-name-title-only (4.1.2)", () => {
+  it("flags a button/link named only by title", () => {
+    expect(findOf(`<button title="Fermer"><svg aria-hidden="true"></svg></button>`, "control-name-title-only")).toHaveLength(1);
+    expect(findOf(`<a href="/x" title="Aide"></a>`, "control-name-title-only")[0]!.criteriaId).toBe("4.1.2");
+  });
+  it("does not flag when visible text, aria-label, or an alt image names the control", () => {
+    expect(findOf(`<button title="Fermer">Fermer</button>`, "control-name-title-only")).toHaveLength(0);
+    expect(findOf(`<a href="/x" title="Aide" aria-label="Aide">i</a>`, "control-name-title-only")).toHaveLength(0);
+    expect(findOf(`<a href="/x" title="Profil"><img src="a.png" alt="Profil"></a>`, "control-name-title-only")).toHaveLength(0);
+  });
+  it("does not flag a control without title", () => {
+    expect(findOf(`<button>Fermer</button>`, "control-name-title-only")).toHaveLength(0);
+  });
+});
+
+describe("object-embed-no-name (1.1.1)", () => {
+  it("flags <object>/<embed> with no name or fallback", () => {
+    expect(findOf(`<object data="a.pdf"></object>`, "object-embed-no-name")).toHaveLength(1);
+    expect(findOf(`<embed src="a.svg">`, "object-embed-no-name")[0]!.criteriaId).toBe("1.1.1");
+  });
+  it("does not flag when named or with fallback content or aria-hidden", () => {
+    expect(findOf(`<object data="a.pdf" title="Rapport annuel"></object>`, "object-embed-no-name")).toHaveLength(0);
+    expect(findOf(`<object data="a.pdf">Rapport annuel (PDF)</object>`, "object-embed-no-name")).toHaveLength(0);
+    expect(findOf(`<embed src="a.svg" aria-hidden="true">`, "object-embed-no-name")).toHaveLength(0);
+  });
+});

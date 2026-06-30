@@ -164,4 +164,41 @@ const labelForDangling: Rule = {
   },
 };
 
-export const formsRules: Rule[] = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption, labelForDangling];
+// A control flagged aria-invalid="true" must point AT the error text (aria-describedby
+// or aria-errormessage) so assistive tech can restitute *why* it is invalid. aria-invalid
+// alone announces "invalid" with no reason — the error is signalled but not associated
+// (WCAG 3.3.1 Error Identification). The inverse case (visible error text not linked at all)
+// is a judgment call left to the auditor (see RGAA 11.10 guidance).
+const ariaInvalidNoDescription: Rule = {
+  id: "aria-invalid-no-description",
+  criteria: ["3.3.1"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (!isFormField(el)) continue;
+      const invalid = attr(el, "aria-invalid");
+      if (invalid === undefined || invalid.includes("{")) continue; // absent or dynamic value — nothing to assert
+      if (invalid.trim().toLowerCase() !== "true") continue; // "false"/"grammar"/"spelling" are not unlinked errors
+      if (hasAttr(el, "aria-describedby") || hasAttr(el, "aria-errormessage")) continue; // error text is linked
+      if (hasDynamicSpread(el)) continue; // a spread (JSX {...props} / v-bind) may inject the description
+      out.push({
+        criteriaId: "3.3.1",
+        el,
+        message: `<${el.tag}> a aria-invalid="true" mais aucun aria-describedby/aria-errormessage — l'erreur est signalée sans être reliée à son message.`,
+        remediation: `Reliez le message d'erreur au champ via aria-describedby (ou aria-errormessage) pointant vers le texte d'erreur.`,
+      });
+    }
+    return out;
+  },
+};
+
+export const formsRules: Rule[] = [
+  controlLabelMissing,
+  placeholderAsLabel,
+  fieldsetLegendMissing,
+  formFieldMultipleLabels,
+  selectHasOption,
+  labelForDangling,
+  ariaInvalidNoDescription,
+];

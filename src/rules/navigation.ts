@@ -1,7 +1,24 @@
-// Theme 12 — Navigation (statically-checkable slice).
-import type { Doc } from "../parse/html.js";
-import { attr, hasAttr } from "../parse/html.js";
-import type { Rule, RuleFinding } from "./rule.js";
+// Theme 12 — Navigation + page landmarks (statically-checkable slice).
+import type { Doc, El } from "../parse/html.js";
+import { attr, elementsByTag, hasAttr } from "../parse/html.js";
+import { isIntrinsic } from "../parse/jsx-bridge.js";
+import { type Rule, type RuleFinding, shellBodyInjected } from "./rule.js";
+
+// JSX/SFC: a child component or a `{children}`/`{expr}` child may inject the <main> at
+// runtime (a Next.js layout supplies <main> via {children}). Never assert "no main" then.
+function contentMaybeInjected(doc: Doc): boolean {
+  if (doc.kind === "html") return false;
+  return doc.elements.some((e) => e.tag === "slot" || (e.tag !== "#fragment" && !isIntrinsic(e.tag)));
+}
+
+/** Visible <main>/role="main" landmarks (aria-hidden ones don't count). */
+function mainLandmarks(doc: Doc): El[] {
+  return doc.elements.filter((e) => {
+    if (attr(e, "aria-hidden") === "true") return false;
+    if (e.tag === "main") return true;
+    return (attr(e, "role") ?? "").trim().toLowerCase() === "main";
+  });
+}
 
 const skipLinkTargetMissing: Rule = {
   id: "skip-link-target-missing",
@@ -55,4 +72,44 @@ const positiveTabindex: Rule = {
   },
 };
 
-export const navigationRules: Rule[] = [skipLinkTargetMissing, positiveTabindex];
+// A full page must expose its primary content in a <main> landmark so AT users can jump
+// to it (and skip links have a target). Page-scoped: never runs on fragments/components.
+const missingMainLandmark: Rule = {
+  id: "missing-main-landmark",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  scope: "page",
+  run(doc: Doc): RuleFinding[] {
+    if (mainLandmarks(doc).length > 0) return [];
+    if (contentMaybeInjected(doc) || shellBodyInjected(doc)) return []; // <main> may be injected at runtime
+    const anchor = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
+    if (!anchor) return [];
+    return [
+      {
+        criteriaId: "1.3.1",
+        el: anchor,
+        message: `Aucun repère <main> dans la page — le contenu principal n'est pas identifié (et la cible d'un lien d'évitement manque).`,
+        remediation: `Enveloppez le contenu principal dans un <main id="content"> (unique par page).`,
+      },
+    ];
+  },
+};
+
+const multipleMainLandmark: Rule = {
+  id: "multiple-main-landmark",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  scope: "page",
+  run(doc: Doc): RuleFinding[] {
+    const mains = mainLandmarks(doc);
+    if (mains.length <= 1) return [];
+    return mains.slice(1).map((el) => ({
+      criteriaId: "1.3.1",
+      el,
+      message: `Plusieurs repères <main> dans la page (${mains.length}) — un seul contenu principal est autorisé.`,
+      remediation: `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`,
+    }));
+  },
+};
+
+export const navigationRules: Rule[] = [skipLinkTargetMissing, positiveTabindex, missingMainLandmark, multipleMainLandmark];

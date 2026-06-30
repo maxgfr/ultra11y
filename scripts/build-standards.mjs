@@ -114,12 +114,12 @@ const NEEDS_RENDERING = new Set([
 // icon-only-control-unnamed) appear under BOTH their SCs so registry's bidirectional
 // rule↔dataset cross-check holds.
 const RULE_SC_COVERAGE = {
-  "1.1.1": ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing"],
+  "1.1.1": ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing", "object-embed-no-name"],
   "1.2.2": ["media-no-track"],
   "1.3.1": [
     "fieldset-legend-missing", "data-table-no-headers", "table-caption-missing",
     "layout-table-data-markup", "heading-order-skip", "h1-missing", "h1-multiple", "list-structure",
-    "empty-heading", "label-for-dangling",
+    "empty-heading", "label-for-dangling", "missing-main-landmark", "multiple-main-landmark",
   ],
   "1.4.2": ["autoplay-media"],
   "1.4.3": ["contrast-literal"],
@@ -133,12 +133,14 @@ const RULE_SC_COVERAGE = {
   "2.4.4": ["link-empty-name", "icon-only-control-unnamed"],
   "3.1.1": ["html-lang-missing", "lang-invalid"],
   "3.1.2": ["inline-lang-change-missing", "lang-invalid"],
+  "3.3.1": ["aria-invalid-no-description"],
   "4.1.2": [
     "iframe-title-missing", "invalid-aria-role", "aria-ref-missing-id", "redundant-aria",
     "clickable-noninteractive", "aria-required-children", "aria-hidden-focusable", "nested-interactive",
     "duplicate-id", "control-label-missing", "placeholder-as-label", "form-field-multiple-labels",
-    "select-has-option", "button-empty-name", "icon-only-control-unnamed",
+    "select-has-option", "button-empty-name", "icon-only-control-unnamed", "control-name-title-only",
   ],
+  "4.1.3": ["live-region-conflict"],
 };
 
 function automatabilityOf(sc) {

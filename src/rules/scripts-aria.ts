@@ -340,6 +340,60 @@ const nestedInteractive: Rule = {
   },
 };
 
+// WAI-ARIA implicit live-region politeness per role. A status message whose role and
+// aria-live disagree — or whose aria-live value is invalid — is restituted incoherently
+// (an alert announced "polite" is queued and may be missed; an invalid value is ignored).
+const ROLE_LIVENESS: Record<string, "assertive" | "polite" | "off"> = {
+  alert: "assertive",
+  alertdialog: "assertive",
+  status: "polite",
+  log: "polite",
+  timer: "off",
+  marquee: "off",
+};
+const VALID_LIVE = new Set(["off", "polite", "assertive"]);
+
+const liveRegionConflict: Rule = {
+  id: "live-region-conflict",
+  criteria: ["4.1.3"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue; // a component's aria-live/role is a prop, not the HTML attr
+      const liveRaw = attr(el, "aria-live");
+      if (liveRaw === undefined || liveRaw.includes("{")) continue; // absent or dynamic value — nothing to assert
+      const live = liveRaw.trim().toLowerCase();
+      if (!live) continue;
+      if (!VALID_LIVE.has(live)) {
+        out.push({
+          criteriaId: "4.1.3",
+          el,
+          message: `aria-live="${liveRaw}" invalide — seules les valeurs off, polite, assertive sont restituées.`,
+          remediation: `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignorée.`,
+        });
+        continue;
+      }
+      const role = (attr(el, "role") ?? "").trim().toLowerCase();
+      if (role.includes("{")) continue; // dynamic role expression — can't compare
+      const want = ROLE_LIVENESS[role];
+      if (want && want !== live) {
+        out.push({
+          criteriaId: "4.1.3",
+          el,
+          severity: want === "assertive" ? "majeur" : "mineur",
+          message: `role="${role}" implique aria-live="${want}" mais aria-live="${live}" — message de statut restitué de façon incohérente.`,
+          remediation:
+            want === "assertive"
+              ? `Laissez role="${role}" gérer la restitution (retirez aria-live) ou utilisez aria-live="assertive".`
+              : `Alignez aria-live sur "${want}", cohérent avec role="${role}", ou retirez-le.`,
+        });
+      }
+    }
+    return out;
+  },
+};
+
 export const scriptsAriaRules: Rule[] = [
   invalidAriaRole,
   ariaRefMissingId,
@@ -348,4 +402,5 @@ export const scriptsAriaRules: Rule[] = [
   ariaRequiredChildren,
   ariaHiddenFocusable,
   nestedInteractive,
+  liveRegionConflict,
 ];

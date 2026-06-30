@@ -8,7 +8,10 @@
       "id": "images-informative-alt",
       "criterionId": "1.1",
       "wcag": ["1.1.1"],
-      "title": { "fr": "Alternative textuelle des images porteuses d'information", "en": "Concise alt text for informative images" },
+      "title": {
+        "fr": "Alternative textuelle des images porteuses d'information",
+        "en": "Concise alt text for informative images"
+      },
       "summary": {
         "fr": "Toute image porteuse d'information doit avoir un attribut alt qui décrit son sens en contexte (pas « image » ni le nom de fichier).",
         "en": "Every informative image needs an alt attribute that conveys its meaning in context (not \"image\" nor the file name)."
@@ -19,7 +22,10 @@
           "lang": "html",
           "bad": "<img src=\"chart.png\" alt=\"image\">",
           "good": "<img src=\"chart.png\" alt=\"Ventes en hausse de 25 % au T3 2025\">",
-          "note": { "fr": "L'alternative décrit le sens, pas le nom de fichier.", "en": "The alternative conveys the meaning, not the file name." }
+          "note": {
+            "fr": "L'alternative décrit le sens, pas le nom de fichier.",
+            "en": "The alternative conveys the meaning, not the file name."
+          }
         }
       ],
       "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.1"
@@ -28,7 +34,10 @@
       "id": "images-decorative-alt-empty",
       "criterionId": "1.2",
       "wcag": ["1.1.1", "4.1.2"],
-      "title": { "fr": "Images de décoration ignorées par les technologies d'assistance", "en": "Decorative images ignored by assistive tech" },
+      "title": {
+        "fr": "Images de décoration ignorées par les technologies d'assistance",
+        "en": "Decorative images ignored by assistive tech"
+      },
       "summary": {
         "fr": "Une image purement décorative doit être ignorée : alt vide (alt=\"\") pour une img, ou aria-hidden=\"true\" pour une icône.",
         "en": "A purely decorative image must be ignored: empty alt (alt=\"\") on an img, or aria-hidden=\"true\" on an icon."
@@ -39,7 +48,10 @@
           "lang": "html",
           "bad": "<img src=\"separateur.png\" alt=\"séparateur décoratif\">",
           "good": "<img src=\"separateur.png\" alt=\"\">",
-          "note": { "fr": "Une décoration annoncée au lecteur d'écran est du bruit.", "en": "A decoration announced to a screen reader is noise." }
+          "note": {
+            "fr": "Une décoration annoncée au lecteur d'écran est du bruit.",
+            "en": "A decoration announced to a screen reader is noise."
+          }
         }
       ],
       "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.2"
@@ -48,7 +60,10 @@
       "id": "iframes-title-attribute",
       "criterionId": "2.1",
       "wcag": ["4.1.2"],
-      "title": { "fr": "Titre de cadre pour chaque iframe", "en": "Frame title on every iframe" },
+      "title": {
+        "fr": "Titre de cadre pour chaque iframe",
+        "en": "Frame title on every iframe"
+      },
       "summary": {
         "fr": "Chaque iframe doit porter un attribut title court et pertinent décrivant son contenu.",
         "en": "Every iframe must carry a short, relevant title attribute describing its content."
@@ -67,7 +82,10 @@
       "id": "links-explicit",
       "criterionId": "6.1",
       "wcag": ["1.1.1", "2.4.4", "2.5.3"],
-      "title": { "fr": "Intitulé de lien explicite", "en": "Explicit link text" },
+      "title": {
+        "fr": "Intitulé de lien explicite",
+        "en": "Explicit link text"
+      },
       "summary": {
         "fr": "L'intitulé du lien (texte visible, ou nom accessible via aria-label/aria-labelledby) doit être explicite hors contexte.",
         "en": "The link text (visible, or accessible name via aria-label/aria-labelledby) must be explicit out of context."
@@ -86,7 +104,10 @@
       "id": "images-icon-only-accessible-name",
       "criterionId": "6.2",
       "wcag": ["1.1.1", "2.4.4"],
-      "title": { "fr": "Contrôle à icône seule : nom accessible obligatoire", "en": "Icon-only control must have an accessible name" },
+      "title": {
+        "fr": "Contrôle à icône seule : nom accessible obligatoire",
+        "en": "Icon-only control must have an accessible name"
+      },
       "summary": {
         "fr": "Un bouton/lien à icône seule (sans texte visible) doit avoir un nom accessible via aria-label (l'icône restant aria-hidden).",
         "en": "An icon-only button/link (no visible text) must have an accessible name via aria-label (the icon stays aria-hidden)."
@@ -105,7 +126,10 @@
       "id": "lang-html-attribute",
       "criterionId": "8.3",
       "wcag": ["3.1.1"],
-      "title": { "fr": "Langue par défaut sur l'élément html", "en": "Default language on the html element" },
+      "title": {
+        "fr": "Langue par défaut sur l'élément html",
+        "en": "Default language on the html element"
+      },
       "summary": {
         "fr": "L'élément html doit déclarer la langue par défaut de la page via l'attribut lang.",
         "en": "The html element must declare the page's default language via the lang attribute."
@@ -124,7 +148,10 @@
       "id": "lang-valid-code",
       "criterionId": "8.4",
       "wcag": ["3.1.1"],
-      "title": { "fr": "Code de langue valide", "en": "Valid language code" },
+      "title": {
+        "fr": "Code de langue valide",
+        "en": "Valid language code"
+      },
       "summary": {
         "fr": "Le code de langue (lang) doit être un code valide (ex. fr, en, fr-CA), pas une valeur inventée.",
         "en": "The lang code must be a valid language tag (e.g. fr, en, fr-CA), not an invented value."
@@ -143,7 +170,10 @@
       "id": "title-precise-title",
       "criterionId": "8.6",
       "wcag": ["2.4.2"],
-      "title": { "fr": "Titre de page pertinent", "en": "Relevant page title" },
+      "title": {
+        "fr": "Titre de page pertinent",
+        "en": "Relevant page title"
+      },
       "summary": {
         "fr": "Chaque page doit avoir un élément title non vide et pertinent décrivant son sujet.",
         "en": "Every page must have a non-empty, relevant title element describing its subject."
@@ -162,7 +192,10 @@
       "id": "structure-heading-hierarchy",
       "criterionId": "9.1",
       "wcag": ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
-      "title": { "fr": "Structuration par les titres", "en": "Structure via headings" },
+      "title": {
+        "fr": "Structuration par les titres",
+        "en": "Structure via headings"
+      },
       "summary": {
         "fr": "L'information est structurée par une hiérarchie de titres (h1…h6) sans saut de niveau, avec un h1 unique.",
         "en": "Content is structured by a heading hierarchy (h1…h6) with no skipped level and a single h1."
@@ -181,7 +214,10 @@
       "id": "lists-unordered",
       "criterionId": "9.3",
       "wcag": ["1.3.1"],
-      "title": { "fr": "Listes correctement structurées", "en": "Properly structured lists" },
+      "title": {
+        "fr": "Listes correctement structurées",
+        "en": "Properly structured lists"
+      },
       "summary": {
         "fr": "Les listes visuelles doivent utiliser ul/ol + li (pas des puces simulées avec des div ou des tirets).",
         "en": "Visual lists must use ul/ol + li (not bullets faked with divs or dashes)."
@@ -200,7 +236,10 @@
       "id": "forms-label-for-id",
       "criterionId": "11.1",
       "wcag": ["1.3.1", "2.4.6", "3.3.2", "4.1.2"],
-      "title": { "fr": "Associer l'étiquette visible au champ via for/id", "en": "Associate the visible label with the control via for/id" },
+      "title": {
+        "fr": "Associer l'étiquette visible au champ via for/id",
+        "en": "Associate the visible label with the control via for/id"
+      },
       "summary": {
         "fr": "Chaque champ doit être associé à une étiquette : label[for] lié à l'id du champ (le placeholder ne remplace pas une étiquette).",
         "en": "Every field needs a label: label[for] tied to the field id (a placeholder does not replace a label)."
@@ -219,7 +258,10 @@
       "id": "forms-no-placeholder-only",
       "criterionId": "11.2",
       "wcag": ["2.4.6", "2.5.3", "3.3.2"],
-      "title": { "fr": "Le placeholder ne remplace pas l'étiquette", "en": "Placeholder is not a label" },
+      "title": {
+        "fr": "Le placeholder ne remplace pas l'étiquette",
+        "en": "Placeholder is not a label"
+      },
       "summary": {
         "fr": "Le placeholder disparaît à la saisie et n'est pas une étiquette : fournissez un label réel et pertinent.",
         "en": "A placeholder vanishes on input and is not a label: provide a real, relevant label."
@@ -238,7 +280,10 @@
       "id": "consultation-new-window",
       "criterionId": "13.2",
       "wcag": ["3.2.1"],
-      "title": { "fr": "Ouverture d'une nouvelle fenêtre prévenue", "en": "New-window opening is announced" },
+      "title": {
+        "fr": "Ouverture d'une nouvelle fenêtre prévenue",
+        "en": "New-window opening is announced"
+      },
       "summary": {
         "fr": "L'ouverture d'une nouvelle fenêtre (target=\"_blank\") doit être annoncée à l'utilisateur (dans l'intitulé ou via une mention).",
         "en": "Opening a new window (target=\"_blank\") must be announced to the user (in the link text or a mention)."
@@ -256,6 +301,2017 @@
         }
       ],
       "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.2"
+    },
+    {
+      "id": "status-messages-restitution",
+      "criterionId": "7.5",
+      "wcag": ["4.1.3"],
+      "title": {
+        "fr": "Messages de statut restitués par les technologies d'assistance",
+        "en": "Status messages exposed to assistive technologies"
+      },
+      "summary": {
+        "fr": "Un message de statut (succès, erreur, chargement, compteur de résultats) doit être annoncé sans déplacer le focus, via role=\"status\"/\"alert\" ou aria-live. Une erreur ou un message urgent doit être assertif (role=\"alert\" ou aria-live=\"assertive\") ; une information non urgente reste polie (role=\"status\" ou aria-live=\"polite\"). Le rôle et la valeur d'aria-live ne doivent pas se contredire.",
+        "en": "A status message (success, error, loading, result counter) must be announced without moving focus, via role=\"status\"/\"alert\" or aria-live. An error or urgent message must be assertive (role=\"alert\" or aria-live=\"assertive\"); non-urgent info stays polite (role=\"status\" or aria-live=\"polite\"). The role and the aria-live value must not contradict each other."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div aria-live=\"polite\" class=\"alert-error\">Le formulaire comporte des erreurs.</div>",
+          "good": "<div role=\"alert\">Le formulaire comporte des erreurs.</div>",
+          "note": {
+            "fr": "Une erreur en aria-live=\"polite\" est mise en file basse priorité et peut être manquée ; role=\"alert\" la restitue immédiatement (assertif).",
+            "en": "An error in aria-live=\"polite\" is low-priority queued and may be missed; role=\"alert\" announces it immediately (assertive)."
+          }
+        },
+        {
+          "lang": "html",
+          "bad": "<p role=\"status\" aria-live=\"assertive\">3 résultats trouvés</p>",
+          "good": "<p role=\"status\">3 résultats trouvés</p>",
+          "note": {
+            "fr": "role=\"status\" implique déjà aria-live=\"polite\" : un aria-live=\"assertive\" contradictoire interrompt l'utilisateur pour une information non urgente.",
+            "en": "role=\"status\" already implies aria-live=\"polite\"; a contradictory aria-live=\"assertive\" interrupts the user for non-urgent information."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      "id": "forms-error-association",
+      "criterionId": "11.10",
+      "wcag": ["3.3.1", "3.3.2"],
+      "title": {
+        "fr": "Erreur de saisie reliée au champ concerné",
+        "en": "Input error associated with its field"
+      },
+      "summary": {
+        "fr": "Chaque message d'erreur de saisie doit être relié programmatiquement à son champ : aria-invalid=\"true\" sur le champ en erreur, et aria-describedby (ou aria-errormessage) pointant vers le texte de l'erreur. Un message visible mais non relié n'est pas restitué sur le champ par les lecteurs d'écran.",
+        "en": "Each input error message must be programmatically associated with its field: aria-invalid=\"true\" on the failing control, and aria-describedby (or aria-errormessage) pointing to the error text. A visible-but-unlinked message is not exposed on the field to screen readers."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<label for=\"email\">E-mail</label><input id=\"email\" type=\"email\" class=\"is-error\"><p class=\"error\">Adresse e-mail invalide.</p>",
+          "good": "<label for=\"email\">E-mail</label><input id=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-error\"><p id=\"email-error\">Adresse e-mail invalide.</p>",
+          "note": {
+            "fr": "L'erreur visible porte un id cible d'aria-describedby, et le champ aria-invalid=\"true\" — l'association devient programmatique.",
+            "en": "The visible error carries an id referenced by aria-describedby, and the field has aria-invalid=\"true\" — the association becomes programmatic."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.10"
+    },
+    {
+      "id": "images-alt-relevance",
+      "criterionId": "1.3",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Pertinence de l'alternative textuelle des images",
+        "en": "Relevance of the image text alternative"
+      },
+      "summary": {
+        "fr": "L'alternative d'une image porteuse d'information doit transmettre la même information ou fonction, de façon concise. Elle ne doit pas se limiter à « image »/au nom de fichier, ni répéter mot pour mot un texte adjacent, ni décrire l'apparence quand c'est l'information qui compte.",
+        "en": "An informative image's alt must convey the same information or function, concisely. It must not be just \"image\"/the file name, must not duplicate adjacent text verbatim, and must not describe appearance when it is the meaning that matters."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p>Notre équipe vous accueille du lundi au vendredi.</p>\n<img src=\"equipe.jpg\" alt=\"Notre équipe vous accueille du lundi au vendredi.\">",
+          "good": "<p>Notre équipe vous accueille du lundi au vendredi.</p>\n<img src=\"equipe.jpg\" alt=\"Les six conseillers du service clientèle au comptoir d'accueil\">",
+          "note": {
+            "fr": "L'alternative ne répète pas le texte adjacent : elle apporte l'information que l'image ajoute.",
+            "en": "The alt does not repeat the adjacent text: it conveys what the image adds."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.3"
+    },
+    {
+      "id": "images-captcha-alt-purpose",
+      "criterionId": "1.4",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Alternative d'une image CAPTCHA : nature et fonction",
+        "en": "CAPTCHA image alternative: nature and purpose"
+      },
+      "summary": {
+        "fr": "L'alternative d'une image utilisée comme CAPTCHA ou image-test doit en identifier la nature et la fonction (« Code de sécurité visuel anti-spam ») sans jamais révéler la réponse attendue, ni rester vide.",
+        "en": "The alt of an image used as a CAPTCHA or test image must identify its nature and purpose (\"Visual anti-spam security code\") without ever revealing the expected answer, and must not be empty."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"/captcha/generate\" alt=\"A7X9P2\">\n<input type=\"text\" name=\"captcha\">",
+          "good": "<label for=\"captcha\">Recopiez le code de l'image</label>\n<img src=\"/captcha/generate\" alt=\"Code de sécurité visuel anti-spam\">\n<input id=\"captcha\" type=\"text\" name=\"captcha\">",
+          "note": {
+            "fr": "L'alternative décrit la fonction du CAPTCHA, sans dévoiler le code à saisir.",
+            "en": "The alt describes the CAPTCHA's purpose without disclosing the code to enter."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.4"
+    },
+    {
+      "id": "additional-captcha-alternative",
+      "criterionId": "1.5",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Solution d'accès alternatif au CAPTCHA",
+        "en": "Alternative access mechanism for a CAPTCHA"
+      },
+      "summary": {
+        "fr": "Un CAPTCHA visuel doit proposer au moins une alternative d'un autre type (CAPTCHA audio, question logique, vérification par e-mail) afin que les personnes ne percevant pas l'image puissent aussi valider le formulaire.",
+        "en": "A visual CAPTCHA must offer at least one alternative of a different kind (audio CAPTCHA, logic question, email verification) so that people who cannot perceive the image can still complete the form."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<form>\n  <label for=\"captcha\">Vérification anti-robot</label>\n  <img src=\"/captcha/generate\" alt=\"Code de sécurité visuel\">\n  <input id=\"captcha\" type=\"text\" name=\"captcha\">\n  <button type=\"submit\">Envoyer</button>\n</form>",
+          "good": "<form>\n  <label for=\"captcha\">Vérification anti-robot</label>\n  <img src=\"/captcha/generate\" alt=\"Code de sécurité visuel\">\n  <input id=\"captcha\" type=\"text\" name=\"captcha\">\n  <p><a href=\"/captcha/audio\">Écouter une version audio du code</a></p>\n  <button type=\"submit\">Envoyer</button>\n</form>",
+          "note": {
+            "fr": "Une alternative audio permet de résoudre le CAPTCHA sans percevoir l'image.",
+            "en": "An audio alternative lets users solve the CAPTCHA without perceiving the image."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.5"
+    },
+    {
+      "id": "images-complex-description",
+      "criterionId": "1.6",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Description détaillée des images complexes",
+        "en": "Detailed description for complex images"
+      },
+      "summary": {
+        "fr": "Une image complexe (graphique, schéma, carte, infographie) doit avoir, en plus d'un alt court qui résume son message, une description détaillée accessible : texte adjacent visible, lien/bouton vers la description, ou référence via aria-describedby.",
+        "en": "A complex image (chart, diagram, map, infographic) needs, beyond a short alt summarising its message, an accessible detailed description: visible adjacent text, a link/button to the description, or a reference via aria-describedby."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"ca-2025.png\" alt=\"Graphique du chiffre d'affaires\">",
+          "good": "<figure>\n  <img src=\"ca-2025.png\" alt=\"Chiffre d'affaires en hausse de 40 % sur 2025\" aria-describedby=\"ca-desc\">\n  <figcaption>Figure 1 — Évolution du chiffre d'affaires 2025</figcaption>\n</figure>\n<div id=\"ca-desc\">\n  <p>Janvier : 1,2 M€ ; mars : 1,5 M€ ; juin : 1,8 M€ ; septembre : 2,0 M€ ; décembre : 2,4 M€.</p>\n</div>",
+          "note": {
+            "fr": "L'alt court résume, et aria-describedby relie la description chiffrée complète.",
+            "en": "The short alt summarises while aria-describedby links the full numeric description."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.6"
+    },
+    {
+      "id": "images-complex-description-relevance",
+      "criterionId": "1.7",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Pertinence de la description détaillée",
+        "en": "Relevance of the detailed description"
+      },
+      "summary": {
+        "fr": "Quand une image complexe a une description détaillée, celle-ci doit retranscrire toute l'information véhiculée par l'image (valeurs, tendances, légendes, relations) et pas seulement son titre ou son thème.",
+        "en": "When a complex image has a detailed description, that description must transcribe all the information the image conveys (values, trends, legends, relationships), not merely its title or topic."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"ca-2025.png\" alt=\"Chiffre d'affaires 2025\" aria-describedby=\"d\">\n<p id=\"d\">Graphique présentant l'évolution du chiffre d'affaires en 2025.</p>",
+          "good": "<img src=\"ca-2025.png\" alt=\"Chiffre d'affaires 2025\" aria-describedby=\"d\">\n<p id=\"d\">Chiffre d'affaires trimestriel 2025 : T1 1,2 M€, T2 1,5 M€, T3 2,0 M€, T4 2,4 M€, soit +40 % sur l'année, portés par l'export au T2 et au T4.</p>",
+          "note": {
+            "fr": "La description doit livrer les données réelles, pas seulement reformuler le titre.",
+            "en": "The description must provide the actual data, not merely restate the title."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.7"
+    },
+    {
+      "id": "images-no-text-in-images",
+      "criterionId": "1.8",
+      "wcag": ["1.4.5"],
+      "title": {
+        "fr": "Remplacer les images texte par du texte stylé",
+        "en": "Replace images of text with styled real text"
+      },
+      "summary": {
+        "fr": "Le texte porteur d'information rendu sous forme d'image (bannière, titre en PNG) doit être remplacé par du vrai texte HTML mis en forme en CSS, sauf si la présentation visuelle est essentielle (logo, marque). Le texte image ne se redimensionne pas, ne se reflow pas et ignore les préférences utilisateur.",
+        "en": "Information-bearing text rendered as an image (banner, PNG heading) must be replaced by real HTML text styled with CSS, unless the visual presentation is essential (logo, brand). Image text does not resize, reflow, or honour user preferences."
+      },
+      "impact": "low",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"banniere-bienvenue.png\" alt=\"Bienvenue dans notre boutique - Livraison offerte\">",
+          "good": "<div class=\"banner\">\n  <h1>Bienvenue dans notre boutique</h1>\n  <p>Livraison offerte sur toutes les commandes</p>\n</div>",
+          "note": {
+            "fr": "Le vrai texte HTML se redimensionne, se traduit et respecte les préférences de l'utilisateur.",
+            "en": "Real HTML text resizes, translates, and respects user preferences."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.8"
+    },
+    {
+      "id": "images-figure-figcaption",
+      "criterionId": "1.9",
+      "wcag": ["1.1.1", "4.1.2"],
+      "title": {
+        "fr": "Relier une légende à son image",
+        "en": "Associate a caption with its image"
+      },
+      "summary": {
+        "fr": "Quand une image a une légende visible, l'image et sa légende doivent être regroupées dans un <figure>, la légende étant placée dans un <figcaption>. Un simple paragraphe voisin n'a aucun lien programmatique avec l'image.",
+        "en": "When an image has a visible caption, the image and its caption must be grouped in a <figure>, with the caption inside a <figcaption>. A plain neighbouring paragraph has no programmatic link to the image."
+      },
+      "impact": "low",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<img src=\"siege.jpg\" alt=\"Le nouveau siège\">\n<p class=\"caption\">Le nouveau siège inauguré en 2025 à Lyon.</p>",
+          "good": "<figure>\n  <img src=\"siege.jpg\" alt=\"Le nouveau siège\">\n  <figcaption>Le nouveau siège inauguré en 2025 à Lyon.</figcaption>\n</figure>",
+          "note": {
+            "fr": "figure + figcaption créent l'association programmatique entre l'image et sa légende.",
+            "en": "figure + figcaption create the programmatic association between image and caption."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.9"
+    },
+    {
+      "id": "color-not-sole-means",
+      "criterionId": "3.1",
+      "wcag": ["1.3.1", "1.4.1"],
+      "title": {
+        "fr": "Ne pas donner l'information uniquement par la couleur",
+        "en": "Do not convey information by colour alone"
+      },
+      "summary": {
+        "fr": "Toute information signalée par la couleur (erreur en rouge, champ obligatoire, statut, série d'un graphique) doit aussi être disponible par un autre moyen : texte, icône avec libellé, motif ou forme. Sinon les personnes ne percevant pas les couleurs perdent l'information.",
+        "en": "Any information signalled by colour (red error, required field, status, chart series) must also be available by another means: text, a labelled icon, a pattern, or a shape. Otherwise people who do not perceive colour lose the information."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<label for=\"email\">Adresse e-mail</label>\n<input id=\"email\" type=\"email\" style=\"border-color:#d00\">",
+          "good": "<label for=\"email\">Adresse e-mail</label>\n<input id=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-err\">\n<p id=\"email-err\">Erreur : saisissez une adresse e-mail valide.</p>",
+          "note": {
+            "fr": "L'erreur n'est plus signalée que par la couleur : un texte d'erreur la rend perceptible par tous.",
+            "en": "The error is no longer signalled by colour alone: an error text makes it perceivable by everyone."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#3.1"
+    },
+    {
+      "id": "color-text-contrast",
+      "criterionId": "3.2",
+      "wcag": ["1.4.3"],
+      "title": {
+        "fr": "Contraste suffisant entre texte et arrière-plan",
+        "en": "Sufficient text/background contrast"
+      },
+      "summary": {
+        "fr": "Le contraste texte/arrière-plan doit être d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (≥ 24 px, ou ≥ 18,5 px en gras). Le texte placé sur une image ou un dégradé doit être vérifié visuellement.",
+        "en": "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (≥ 24 px, or ≥ 18.5 px bold). Text over an image or gradient must be checked visually."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p style=\"color:#999999;background:#ffffff\">Conditions générales d'utilisation</p>",
+          "good": "<p style=\"color:#595959;background:#ffffff\">Conditions générales d'utilisation</p>",
+          "note": {
+            "fr": "#999 sur blanc ≈ 2,85:1 (insuffisant) ; #595959 sur blanc ≈ 7:1, conforme pour du texte courant.",
+            "en": "#999 on white ≈ 2.85:1 (insufficient); #595959 on white ≈ 7:1, compliant for body text."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#3.2"
+    },
+    {
+      "id": "color-non-text-contrast",
+      "criterionId": "3.3",
+      "wcag": ["1.4.11"],
+      "title": {
+        "fr": "Contraste des composants et éléments graphiques",
+        "en": "Contrast of UI components and graphical elements"
+      },
+      "summary": {
+        "fr": "Les couleurs des composants d'interface (bordures de champ, boutons, cases, focus) et des éléments graphiques porteurs d'information doivent atteindre un contraste d'au moins 3:1 avec les couleurs adjacentes, pour rester perceptibles.",
+        "en": "The colours of UI components (field borders, buttons, checkboxes, focus) and of information-bearing graphical elements must reach at least 3:1 contrast with adjacent colours to remain perceivable."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<input type=\"text\" style=\"border:1px solid #cccccc;background:#ffffff\">",
+          "good": "<input type=\"text\" style=\"border:1px solid #767676;background:#ffffff\">",
+          "note": {
+            "fr": "#ccc sur blanc ≈ 1,61:1 (la bordure disparaît) ; #767676 ≈ 4,5:1 dépasse le seuil de 3:1 requis.",
+            "en": "#ccc on white ≈ 1.61:1 (the border vanishes); #767676 ≈ 4.5:1 exceeds the required 3:1 threshold."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#3.3"
+    },
+    {
+      "id": "media-transcript",
+      "criterionId": "4.1",
+      "wcag": ["1.2.1", "1.2.3"],
+      "title": {
+        "fr": "Transcription ou audiodescription d'un média pré-enregistré",
+        "en": "Transcript or audio description for prerecorded media"
+      },
+      "summary": {
+        "fr": "Chaque média temporel pré-enregistré (audio, vidéo) doit, si nécessaire, disposer d'une transcription textuelle complète ou d'une audiodescription, accessible directement dans la page (texte adjacent ou lien clairement identifié), pas seulement via un téléchargement.",
+        "en": "Each prerecorded time-based media (audio, video) must, where needed, provide a full text transcript or an audio description, available directly in the page (adjacent text or a clearly identified link), not only via a download."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<audio controls src=\"/podcast.mp3\"></audio>",
+          "good": "<figure>\n  <audio controls src=\"/podcast.mp3\"></audio>\n  <figcaption><a href=\"/podcast-transcription\">Transcription textuelle du podcast</a></figcaption>\n</figure>",
+          "note": {
+            "fr": "Un lien identifié vers la transcription rend le contenu audio accessible aux personnes sourdes.",
+            "en": "An identified link to the transcript makes the audio content accessible to deaf users."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.1"
+    },
+    {
+      "id": "media-captions-track",
+      "criterionId": "4.3",
+      "wcag": ["1.2.2"],
+      "title": {
+        "fr": "Sous-titres synchronisés des vidéos",
+        "en": "Synchronized captions for video"
+      },
+      "summary": {
+        "fr": "Chaque média temporel synchronisé pré-enregistré (vidéo avec son) doit avoir des sous-titres synchronisés via un élément <track kind=\"captions\"> (et non kind=\"subtitles\", réservé à la traduction), couvrant dialogues et sons signifiants.",
+        "en": "Each prerecorded synchronized time-based media (video with sound) must have synchronized captions via a <track kind=\"captions\"> element (not kind=\"subtitles\", which is for translation), covering dialogue and meaningful sounds."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<video controls>\n  <source src=\"/presentation.mp4\" type=\"video/mp4\">\n</video>",
+          "good": "<video controls>\n  <source src=\"/presentation.mp4\" type=\"video/mp4\">\n  <track kind=\"captions\" src=\"/sous-titres.vtt\" srclang=\"fr\" label=\"Français\" default>\n</video>",
+          "note": {
+            "fr": "kind=\"captions\" (et non \"subtitles\") fournit les sous-titres d'accessibilité incluant les sons signifiants.",
+            "en": "kind=\"captions\" (not \"subtitles\") provides accessibility captions including meaningful sounds."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.3"
+    },
+    {
+      "id": "media-audio-description",
+      "criterionId": "4.5",
+      "wcag": ["1.2.5"],
+      "title": {
+        "fr": "Audiodescription synchronisée des vidéos",
+        "en": "Synchronized audio description for video"
+      },
+      "summary": {
+        "fr": "Quand une vidéo véhicule de l'information visuelle non décrite par la bande son (texte à l'écran, action muette), une audiodescription synchronisée doit être fournie, par exemple via un <track kind=\"descriptions\"> ou une version audiodécrite de la vidéo.",
+        "en": "When a video conveys visual information not covered by the soundtrack (on-screen text, silent action), a synchronized audio description must be provided, e.g. via a <track kind=\"descriptions\"> or an audio-described version of the video."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<video controls>\n  <source src=\"/demo.mp4\" type=\"video/mp4\">\n  <track kind=\"captions\" src=\"/st.vtt\" srclang=\"fr\" label=\"Français\" default>\n</video>",
+          "good": "<video controls>\n  <source src=\"/demo.mp4\" type=\"video/mp4\">\n  <track kind=\"captions\" src=\"/st.vtt\" srclang=\"fr\" label=\"Français\" default>\n  <track kind=\"descriptions\" src=\"/audiodesc.vtt\" srclang=\"fr\" label=\"Audiodescription\">\n</video>",
+          "note": {
+            "fr": "L'audiodescription restitue l'information visuelle absente de la bande son pour les personnes aveugles.",
+            "en": "The audio description conveys visual information missing from the soundtrack for blind users."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.5"
+    },
+    {
+      "id": "media-clearly-identifiable",
+      "criterionId": "4.7",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Média temporel clairement identifiable",
+        "en": "Clearly identifiable time-based media"
+      },
+      "summary": {
+        "fr": "Chaque média temporel doit être clairement identifié par un intitulé ou un texte adjacent précisant sa nature et son sujet, afin que l'utilisateur sache de quoi il s'agit avant de le lire.",
+        "en": "Each time-based media must be clearly identified by a title or adjacent text stating its nature and topic, so the user knows what it is before playing it."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<video controls>\n  <source src=\"/clip.mp4\" type=\"video/mp4\">\n</video>",
+          "good": "<h2>Vidéo : présentation du nouveau service (durée 3 min)</h2>\n<video controls>\n  <source src=\"/clip.mp4\" type=\"video/mp4\">\n</video>",
+          "note": {
+            "fr": "Un intitulé adjacent annonce la nature et le sujet du média avant lecture.",
+            "en": "An adjacent heading announces the media's nature and topic before playback."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.7"
+    },
+    {
+      "id": "media-non-temporal-alternative",
+      "criterionId": "4.8",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Alternative à un média non temporel",
+        "en": "Alternative for non-time-based media"
+      },
+      "summary": {
+        "fr": "Chaque média non temporel (application embarquée, contenu interactif type carte ou objet) doit, si nécessaire, offrir une alternative accessible restituant la même information ou fonction, par exemple un contenu de repli à l'intérieur de l'élément ou un équivalent textuel adjacent.",
+        "en": "Each non-time-based media (embedded application, interactive content such as a map or object) must, where needed, offer an accessible alternative conveying the same information or function, e.g. fallback content inside the element or an adjacent text equivalent."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<object data=\"/carte-agences\" type=\"application/xhtml+xml\"></object>",
+          "good": "<object data=\"/carte-agences\" type=\"application/xhtml+xml\">\n  <ul>\n    <li>Agence Paris — 10 rue de la Paix, 75002</li>\n    <li>Agence Lyon — 5 place Bellecour, 69002</li>\n  </ul>\n</object>",
+          "note": {
+            "fr": "Le contenu de repli liste les mêmes informations que la carte interactive.",
+            "en": "The fallback content lists the same information as the interactive map."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.8"
+    },
+    {
+      "id": "media-autoplay-control",
+      "criterionId": "4.10",
+      "wcag": ["1.4.2"],
+      "title": {
+        "fr": "Contrôle du son déclenché automatiquement",
+        "en": "Control of automatically triggered sound"
+      },
+      "summary": {
+        "fr": "Un son qui se déclenche automatiquement et dure plus de 3 secondes doit être contrôlable par l'utilisateur (pause/arrêt ou réglage de volume indépendant) via un mécanisme accessible dès le début de la page. Le plus simple est de ne pas utiliser l'autoplay.",
+        "en": "Sound that starts automatically and lasts more than 3 seconds must be controllable by the user (pause/stop or independent volume control) via a mechanism available from the start of the page. The simplest fix is to avoid autoplay."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<audio src=\"/ambiance.mp3\" autoplay loop></audio>",
+          "good": "<audio src=\"/ambiance.mp3\" controls></audio>",
+          "note": {
+            "fr": "Sans autoplay et avec des contrôles, l'utilisateur décide de lancer et d'arrêter le son.",
+            "en": "Without autoplay and with controls, the user decides when to start and stop the sound."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.10"
+    },
+    {
+      "id": "media-keyboard-control",
+      "criterionId": "4.11",
+      "wcag": ["2.1.1", "2.1.2"],
+      "title": {
+        "fr": "Contrôle clavier du lecteur multimédia",
+        "en": "Keyboard control of the media player"
+      },
+      "summary": {
+        "fr": "Tous les contrôles d'un média temporel (lecture, pause, volume, sous-titres) doivent être utilisables au clavier et avec tout dispositif de pointage. Les contrôles natifs (attribut controls) le sont d'office ; un lecteur personnalisé doit s'appuyer sur de vrais <button> focusables, pas des <div>/<span> cliquables.",
+        "en": "All controls of a time-based media (play, pause, volume, captions) must be operable by keyboard and any pointing device. Native controls (the controls attribute) are by default; a custom player must rely on real focusable <button> elements, not clickable <div>/<span>."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<video id=\"clip\" src=\"/clip.mp4\"></video>\n<div onclick=\"document.getElementById('clip').play()\">Lecture</div>",
+          "good": "<video src=\"/clip.mp4\" controls></video>",
+          "note": {
+            "fr": "Les contrôles natifs sont focusables et opérables au clavier ; un <div> cliquable ne l'est pas.",
+            "en": "Native controls are focusable and keyboard-operable; a clickable <div> is not."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.11"
+    },
+    {
+      "id": "media-assistive-tech-compatible",
+      "criterionId": "4.13",
+      "wcag": ["4.1.2"],
+      "title": {
+        "fr": "Lecteur multimédia compatible avec les technologies d'assistance",
+        "en": "Media player compatible with assistive technologies"
+      },
+      "summary": {
+        "fr": "Chaque média et son lecteur doivent exposer aux technologies d'assistance le nom, le rôle et l'état de leurs contrôles. Préférer un lecteur natif (<video>/<audio> controls) ; un lecteur personnalisé doit utiliser de vrais <button> dotés d'un nom accessible et, le cas échéant, d'états ARIA (aria-pressed).",
+        "en": "Each media and its player must expose the name, role, and state of their controls to assistive technologies. Prefer a native player (<video>/<audio> controls); a custom player must use real <button> elements with an accessible name and, where relevant, ARIA states (aria-pressed)."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div class=\"player\">\n  <span class=\"icon-play\" onclick=\"play()\"></span>\n</div>",
+          "good": "<div class=\"player\">\n  <button type=\"button\" aria-label=\"Lecture\" onclick=\"play()\">\n    <span class=\"fr-icon-play-fill\" aria-hidden=\"true\"></span>\n  </button>\n</div>",
+          "note": {
+            "fr": "Un vrai <button> avec aria-label expose nom et rôle aux lecteurs d'écran ; l'icône reste décorative.",
+            "en": "A real <button> with aria-label exposes name and role to screen readers; the icon stays decorative."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.13"
+    },
+    {
+      "id": "frames-title-relevant",
+      "criterionId": "2.2",
+      "wcag": ["4.1.2"],
+      "title": {
+        "fr": "Pertinence du titre de cadre",
+        "en": "Relevance of the frame title"
+      },
+      "summary": {
+        "fr": "Le title d'un iframe doit décrire précisément le contenu embarqué : éviter les valeurs génériques (« iframe », « cadre », « contenu »). Le titre doit permettre à l'utilisateur de savoir, avant d'y entrer, ce que le cadre contient.",
+        "en": "An iframe's title must precisely describe the embedded content: avoid generic values (\"iframe\", \"frame\", \"content\"). The title must let the user know what the frame contains before entering it."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<iframe src=\"https://maps.example.fr/embed\" title=\"iframe\"></iframe>",
+          "good": "<iframe src=\"https://maps.example.fr/embed\" title=\"Carte de localisation de l'agence de Lyon\"></iframe>",
+          "note": {
+            "fr": "Le titre nomme le contenu réel du cadre, pas son type technique.",
+            "en": "The title names the frame's actual content, not its technical type."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#2.2"
+    },
+    {
+      "id": "tables-data-complex-summary",
+      "criterionId": "5.1",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Résumé pour les tableaux de données complexes",
+        "en": "Summary for complex data tables"
+      },
+      "summary": {
+        "fr": "Un tableau de données complexe (en-têtes sur plusieurs niveaux, cellules fusionnées, groupes de lignes) doit fournir un résumé décrivant son organisation, par exemple dans son caption. Le résumé aide l'utilisateur à se construire un modèle mental avant d'explorer les cellules.",
+        "en": "A complex data table (multi-level headers, merged cells, grouped rows) must provide a summary describing its organisation, e.g. inside its caption. The summary helps the user build a mental model before exploring the cells."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table>\n  <caption>Effectifs</caption>\n  <tr><th id=\"par\" colspan=\"2\">Paris</th></tr>\n  <tr><th id=\"n\" headers=\"par\">Nom</th><th id=\"s\" headers=\"par\">Service</th></tr>\n  <tr><td headers=\"par n\">Marie</td><td headers=\"par s\">Design</td></tr>\n</table>",
+          "good": "<table>\n  <caption>Effectifs. Colonnes : nom, service. Lignes groupées par site (Paris, Lyon).</caption>\n  <tr><th id=\"par\" colspan=\"2\">Paris</th></tr>\n  <tr><th id=\"n\" headers=\"par\">Nom</th><th id=\"s\" headers=\"par\">Service</th></tr>\n  <tr><td headers=\"par n\">Marie</td><td headers=\"par s\">Design</td></tr>\n</table>",
+          "note": {
+            "fr": "Le résumé décrit la structure (colonnes et regroupement de lignes) du tableau complexe.",
+            "en": "The summary describes the structure (columns and row grouping) of the complex table."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.1"
+    },
+    {
+      "id": "tables-complex-summary-relevant",
+      "criterionId": "5.2",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Pertinence du résumé de tableau complexe",
+        "en": "Relevance of the complex-table summary"
+      },
+      "summary": {
+        "fr": "Lorsqu'un résumé est présent, il doit décrire fidèlement la structure réelle du tableau (organisation des en-têtes, regroupements, sens de lecture) et non répéter le simple titre ni donner une description erronée.",
+        "en": "When a summary is present, it must faithfully describe the table's actual structure (header organisation, groupings, reading direction) and not merely repeat the title nor give a wrong description."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table>\n  <caption>Budget. Tableau simple à deux colonnes.</caption>\n  <tr><th id=\"a\" rowspan=\"2\">Poste</th><th id=\"y\" colspan=\"2\">2025</th></tr>\n  <tr><th id=\"t1\" headers=\"y\">T1</th><th id=\"t2\" headers=\"y\">T2</th></tr>\n  <tr><td headers=\"a\">Achats</td><td headers=\"a y t1\">10 k€</td><td headers=\"a y t2\">12 k€</td></tr>\n</table>",
+          "good": "<table>\n  <caption>Budget. En-tête « 2025 » couvrant deux colonnes trimestrielles (T1, T2), une ligne par poste.</caption>\n  <tr><th id=\"a\" rowspan=\"2\">Poste</th><th id=\"y\" colspan=\"2\">2025</th></tr>\n  <tr><th id=\"t1\" headers=\"y\">T1</th><th id=\"t2\" headers=\"y\">T2</th></tr>\n  <tr><td headers=\"a\">Achats</td><td headers=\"a y t1\">10 k€</td><td headers=\"a y t2\">12 k€</td></tr>\n</table>",
+          "note": {
+            "fr": "Le résumé fautif annonce un tableau simple alors qu'il a des en-têtes fusionnés sur deux niveaux.",
+            "en": "The faulty summary claims a simple table while it has two-level merged headers."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.2"
+    },
+    {
+      "id": "tables-layout-reading-order",
+      "criterionId": "5.3",
+      "wcag": ["1.3.2"],
+      "title": {
+        "fr": "Ordre de lecture cohérent des tableaux de mise en forme",
+        "en": "Coherent reading order in layout tables"
+      },
+      "summary": {
+        "fr": "Un tableau de mise en forme doit rester compréhensible une fois linéarisé (lu cellule par cellule, ligne par ligne, de gauche à droite). L'ordre du code source doit produire une séquence logique : le contenu principal avant les contenus secondaires.",
+        "en": "A layout table must stay understandable once linearised (read cell by cell, row by row, left to right). The source order must produce a logical sequence: main content before secondary content."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table role=\"presentation\">\n  <tr>\n    <td><nav>Liens annexes</nav></td>\n    <td><h1>Actualité principale</h1><p>Le contenu attendu en premier.</p></td>\n  </tr>\n</table>",
+          "good": "<table role=\"presentation\">\n  <tr>\n    <td><h1>Actualité principale</h1><p>Le contenu attendu en premier.</p></td>\n    <td><nav>Liens annexes</nav></td>\n  </tr>\n</table>",
+          "note": {
+            "fr": "L'ordre source place le contenu principal avant la colonne secondaire, comme à l'écran.",
+            "en": "Source order places the main content before the secondary column, matching the screen."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.3"
+    },
+    {
+      "id": "tables-data-caption",
+      "criterionId": "5.4",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Titre associé au tableau de données via caption",
+        "en": "Data-table title associated via caption"
+      },
+      "summary": {
+        "fr": "Le titre d'un tableau de données doit être correctement associé au tableau grâce à l'élément caption (premier enfant de table), et non placé dans un p ou un titre détaché. Le caption est annoncé par les lecteurs d'écran à l'entrée dans le tableau.",
+        "en": "A data table's title must be correctly associated with the table through a caption element (first child of table), not placed in a detached p or heading. The caption is announced by screen readers when entering the table."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p class=\"titre\">Chiffre d'affaires trimestriel</p>\n<table>\n  <tr><th scope=\"col\">Trimestre</th><th scope=\"col\">CA</th></tr>\n  <tr><td>T1</td><td>120 000 €</td></tr>\n</table>",
+          "good": "<table>\n  <caption>Chiffre d'affaires trimestriel</caption>\n  <tr><th scope=\"col\">Trimestre</th><th scope=\"col\">CA</th></tr>\n  <tr><td>T1</td><td>120 000 €</td></tr>\n</table>",
+          "note": {
+            "fr": "Le caption lie programmatiquement le titre au tableau ; un p adjacent ne l'est pas.",
+            "en": "The caption programmatically ties the title to the table; an adjacent p does not."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.4"
+    },
+    {
+      "id": "tables-data-caption-relevant",
+      "criterionId": "5.5",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Pertinence du titre de tableau de données",
+        "en": "Relevance of the data-table title"
+      },
+      "summary": {
+        "fr": "Le caption d'un tableau de données doit décrire réellement le contenu présenté et permettre de le distinguer des autres tableaux de la page : éviter les libellés vides de sens comme « Tableau » ou « Données ».",
+        "en": "A data table's caption must genuinely describe the content presented and let it be told apart from other tables on the page: avoid meaningless labels like \"Table\" or \"Data\"."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table>\n  <caption>Tableau 1</caption>\n  <tr><th scope=\"col\">Mois</th><th scope=\"col\">Ventes</th></tr>\n  <tr><td>Janvier</td><td>150</td></tr>\n</table>",
+          "good": "<table>\n  <caption>Ventes mensuelles 2025 (en unités)</caption>\n  <tr><th scope=\"col\">Mois</th><th scope=\"col\">Ventes</th></tr>\n  <tr><td>Janvier</td><td>150</td></tr>\n</table>",
+          "note": {
+            "fr": "Le titre pertinent indique le sujet et la période, pas un simple numéro.",
+            "en": "The relevant title states the subject and period, not just a number."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.5"
+    },
+    {
+      "id": "tables-data-th-headers",
+      "criterionId": "5.6",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "En-têtes de tableau déclarés avec th",
+        "en": "Table headers declared with th"
+      },
+      "summary": {
+        "fr": "Chaque en-tête de colonne et de ligne d'un tableau de données doit être déclaré avec un élément th (et non un td mis en gras ou stylé). Le th porte la sémantique « cellule d'en-tête » indispensable aux lecteurs d'écran pour annoncer le libellé des données.",
+        "en": "Every column and row header of a data table must be declared with a th element (not a bold or styled td). The th carries the \"header cell\" semantics that screen readers need to announce data labels."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table>\n  <caption>Répertoire</caption>\n  <tr><td><strong>Nom</strong></td><td><strong>Service</strong></td></tr>\n  <tr><td>Alice</td><td>Ingénierie</td></tr>\n</table>",
+          "good": "<table>\n  <caption>Répertoire</caption>\n  <tr><th scope=\"col\">Nom</th><th scope=\"col\">Service</th></tr>\n  <tr><td>Alice</td><td>Ingénierie</td></tr>\n</table>",
+          "note": {
+            "fr": "th remplace td+gras : la sémantique d'en-tête est réellement exposée.",
+            "en": "th replaces td+bold: the header semantics are actually exposed."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.6"
+    },
+    {
+      "id": "tables-data-scope",
+      "criterionId": "5.7",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Association des cellules à leurs en-têtes (scope / headers+id)",
+        "en": "Associating cells with their headers (scope / headers+id)"
+      },
+      "summary": {
+        "fr": "Chaque cellule doit être associée à ses en-têtes par la technique adaptée : scope=\"col\"/\"row\" sur les th des tableaux simples ; id sur les th et headers sur les td pour les tableaux complexes (en-têtes fusionnés ou multi-niveaux).",
+        "en": "Each cell must be associated with its headers using the right technique: scope=\"col\"/\"row\" on th for simple tables; id on th and headers on td for complex tables (merged or multi-level headers)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table>\n  <caption>Ventes mensuelles</caption>\n  <tr><th></th><th>Janvier</th><th>Février</th></tr>\n  <tr><th>Widgets</th><td>150</td><td>200</td></tr>\n</table>",
+          "good": "<table>\n  <caption>Ventes mensuelles</caption>\n  <tr><td></td><th scope=\"col\">Janvier</th><th scope=\"col\">Février</th></tr>\n  <tr><th scope=\"row\">Widgets</th><td>150</td><td>200</td></tr>\n</table>",
+          "note": {
+            "fr": "scope=\"col\" et scope=\"row\" lèvent l'ambiguïté ligne/colonne ; pour les en-têtes fusionnés, utiliser id+headers.",
+            "en": "scope=\"col\" and scope=\"row\" remove the row/column ambiguity; for merged headers, use id+headers."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.7"
+    },
+    {
+      "id": "tables-layout-no-data-semantics",
+      "criterionId": "5.8",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Tableaux de mise en forme sans sémantique de données",
+        "en": "Layout tables without data-table semantics"
+      },
+      "summary": {
+        "fr": "Un tableau utilisé pour la mise en forme ne doit contenir aucun élément ou attribut propre aux tableaux de données (th, caption, scope, thead/tbody/tfoot). Il doit porter role=\"presentation\" (ou role=\"none\") et n'utiliser que des td.",
+        "en": "A table used for layout must contain no data-table element or attribute (th, caption, scope, thead/tbody/tfoot). It must carry role=\"presentation\" (or role=\"none\") and use only td cells."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<table>\n  <caption>Mise en page</caption>\n  <tr><th scope=\"col\">Logo</th><th scope=\"col\">Accroche</th></tr>\n  <tr><td><img src=\"logo.png\" alt=\"\"></td><td><p>Bienvenue</p></td></tr>\n</table>",
+          "good": "<table role=\"presentation\">\n  <tr><td><img src=\"logo.png\" alt=\"\"></td><td><p>Bienvenue</p></td></tr>\n</table>",
+          "note": {
+            "fr": "role=\"presentation\" + uniquement des td : aucune relation de données n'est annoncée à tort.",
+            "en": "role=\"presentation\" + td-only: no data relationship is wrongly announced."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.8"
+    },
+    {
+      "id": "controls-interactive-semantics",
+      "criterionId": "7.1",
+      "wcag": ["4.1.2"],
+      "title": {
+        "fr": "Composants riches compatibles avec les technologies d'assistance",
+        "en": "Scripted controls compatible with assistive technologies"
+      },
+      "summary": {
+        "fr": "Chaque composant créé en script doit exposer un rôle, un nom et un état corrects aux technologies d'assistance. Utiliser les éléments natifs (button pour une action, a[href] pour la navigation) plutôt qu'un div/span rendu interactif en JS.",
+        "en": "Every scripted control must expose a correct role, name and state to assistive technologies. Use native elements (button for an action, a[href] for navigation) rather than a div/span made interactive in JS."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div class=\"btn\" onclick=\"openMenu()\">Menu</div>",
+          "good": "<button type=\"button\" onclick=\"openMenu()\">Menu</button>",
+          "note": {
+            "fr": "Un div n'a ni rôle bouton ni gestion clavier ; button restitue le rôle et l'activation Entrée/Espace nativement.",
+            "en": "A div has no button role nor keyboard handling; button conveys the role and Enter/Space activation natively."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.1"
+    },
+    {
+      "id": "scripts-relevant-alternative",
+      "criterionId": "7.2",
+      "wcag": ["1.1.1", "4.1.2"],
+      "title": {
+        "fr": "Alternative pertinente pour un script",
+        "en": "Relevant alternative for a script"
+      },
+      "summary": {
+        "fr": "Lorsqu'un script propose une alternative (contenu de repli, version accessible), celle-ci doit restituer la même information ou la même fonction. Une alternative présente mais vide, obsolète ou trompeuse n'est pas conforme.",
+        "en": "When a script provides an alternative (fallback content, accessible version), it must convey the same information or function. An alternative that is present but empty, stale, or misleading is non-conformant."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<canvas id=\"chart\" width=\"400\" height=\"200\">Graphique</canvas>",
+          "good": "<canvas id=\"chart\" width=\"400\" height=\"200\">\n  <table>\n    <caption>Ventes 2025 par trimestre</caption>\n    <tr><th>T1</th><td>120</td></tr>\n    <tr><th>T2</th><td>150</td></tr>\n  </table>\n</canvas>",
+          "note": {
+            "fr": "Le contenu de repli du canvas restitue réellement les données, pas un simple libellé « Graphique ».",
+            "en": "The canvas fallback actually conveys the data, not just a \"Chart\" label."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.2"
+    },
+    {
+      "id": "keyboard-mouse-equivalent",
+      "criterionId": "7.3",
+      "wcag": ["2.1.1"],
+      "title": {
+        "fr": "Script contrôlable au clavier et au pointeur",
+        "en": "Script controllable by keyboard and pointer"
+      },
+      "summary": {
+        "fr": "Toute interaction déclenchée à la souris (onclick, drag, survol) doit avoir un équivalent clavier. Le plus simple est d'utiliser un élément interactif natif qui gère Entrée/Espace, plutôt qu'un gestionnaire d'événement sur un élément non focusable.",
+        "en": "Every mouse-triggered interaction (onclick, drag, hover) must have a keyboard equivalent. The simplest fix is a native interactive element handling Enter/Space, rather than an event handler on a non-focusable element."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<span onmouseover=\"showTip()\" onclick=\"toggle()\">Aide</span>",
+          "good": "<button type=\"button\" onfocus=\"showTip()\" onmouseover=\"showTip()\" onclick=\"toggle()\">Aide</button>",
+          "note": {
+            "fr": "Le span n'est ni focusable ni activable au clavier ; le button l'est et double le survol par le focus.",
+            "en": "The span is neither focusable nor keyboard-activable; the button is, and mirrors hover with focus."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.3"
+    },
+    {
+      "id": "scripts-context-change-control",
+      "criterionId": "7.4",
+      "wcag": ["3.2.1", "3.2.2"],
+      "title": {
+        "fr": "Changement de contexte maîtrisé par l'utilisateur",
+        "en": "User-controlled change of context"
+      },
+      "summary": {
+        "fr": "Un changement de contexte (navigation, soumission, rechargement) ne doit pas se déclencher automatiquement à la prise de focus ou à la simple modification d'un champ : l'utilisateur doit en être averti ou le déclencher lui-même via un bouton explicite.",
+        "en": "A change of context (navigation, submit, reload) must not fire automatically on focus or on merely changing a field: the user must be warned or trigger it themselves via an explicit button."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<label for=\"country\">Pays</label>\n<select id=\"country\" onchange=\"location.href='/' + this.value\">\n  <option value=\"fr\">France</option>\n  <option value=\"be\">Belgique</option>\n</select>",
+          "good": "<form action=\"/go\" method=\"get\">\n  <label for=\"country\">Pays</label>\n  <select id=\"country\" name=\"country\">\n    <option value=\"fr\">France</option>\n    <option value=\"be\">Belgique</option>\n  </select>\n  <button type=\"submit\">Valider</button>\n</form>",
+          "note": {
+            "fr": "La navigation au onchange surprend l'utilisateur au clavier ; un bouton de validation lui rend le contrôle.",
+            "en": "Navigating on onchange surprises keyboard users; a submit button gives them control."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.4"
+    },
+    {
+      "id": "structure-document-landmarks",
+      "criterionId": "9.2",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Structure du document cohérente via les régions",
+        "en": "Coherent document structure via landmarks"
+      },
+      "summary": {
+        "fr": "Chaque page doit être structurée par des régions sémantiques : un header (banner), un main unique, un footer (contentinfo) et des nav étiquetés. Ces repères permettent aux technologies d'assistance de naviguer directement entre les zones.",
+        "en": "Each page must be structured with semantic landmarks: a header (banner), a single main, a footer (contentinfo) and labelled nav regions. These let assistive technologies jump directly between areas."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div class=\"top\">Logo</div>\n<div class=\"menu\"><a href=\"/\">Accueil</a></div>\n<div class=\"content\"><h1>Titre</h1></div>\n<div class=\"bottom\">Mentions légales</div>",
+          "good": "<header>Logo</header>\n<nav aria-label=\"Menu principal\"><a href=\"/\">Accueil</a></nav>\n<main><h1>Titre</h1></main>\n<footer>Mentions légales</footer>",
+          "note": {
+            "fr": "Les éléments de section remplacent les div génériques et exposent des régions navigables.",
+            "en": "Sectioning elements replace generic divs and expose navigable landmarks."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.2"
+    },
+    {
+      "id": "additional-blockquote",
+      "criterionId": "9.4",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Citations correctement indiquées",
+        "en": "Quotations correctly marked up"
+      },
+      "summary": {
+        "fr": "Les citations doivent être balisées sémantiquement : blockquote pour une citation de niveau bloc, q pour une citation en ligne. Des guillemets ou une classe CSS « quote » ne portent aucune information pour les technologies d'assistance.",
+        "en": "Quotations must be marked up semantically: blockquote for a block-level quote, q for an inline quote. Quotation marks or a CSS \"quote\" class carry no meaning for assistive technologies."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p class=\"quote\">« La simplicité est la sophistication suprême. »</p>\n<p>Elle a dit \"bonjour\" puis est partie.</p>",
+          "good": "<blockquote cite=\"https://example.fr/source\">\n  <p>La simplicité est la sophistication suprême.</p>\n</blockquote>\n<p>Elle a dit <q>bonjour</q> puis est partie.</p>",
+          "note": {
+            "fr": "blockquote et q identifient la citation ; l'attribut cite peut pointer la source.",
+            "en": "blockquote and q identify the quotation; the cite attribute can point to the source."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.4"
+    },
+    {
+      "id": "presentation-css-not-html",
+      "criterionId": "10.1",
+      "wcag": ["1.3.1", "1.3.2"],
+      "title": {
+        "fr": "Présentation contrôlée par CSS, pas par des balises de mise en forme",
+        "en": "Presentation controlled by CSS, not formatting tags"
+      },
+      "summary": {
+        "fr": "La mise en forme doit être réalisée via des feuilles de styles, pas par des balises ou attributs de présentation obsolètes (font, center, attributs align/bgcolor) ni par des éléments détournés pour leur seul rendu visuel.",
+        "en": "Styling must be done with stylesheets, not deprecated presentational tags or attributes (font, center, align/bgcolor) nor elements hijacked purely for their visual rendering."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<center><font size=\"6\" color=\"red\">Promotion</font></center>",
+          "good": "<h2 class=\"promo\">Promotion</h2>",
+          "note": {
+            "fr": "Le style (couleur, taille, centrage) passe par la classe CSS .promo, la balise reste sémantique.",
+            "en": "Styling (color, size, centering) goes through the CSS class .promo; the tag stays semantic."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.1"
+    },
+    {
+      "id": "css-readable-without-images",
+      "criterionId": "10.2",
+      "wcag": ["1.1.1", "1.3.1"],
+      "title": {
+        "fr": "Contenu visible porteur d'information conservé sans CSS",
+        "en": "Visible informative content preserved without CSS"
+      },
+      "summary": {
+        "fr": "Le contenu porteur d'information doit rester présent quand les styles sont désactivés : ne pas placer de texte essentiel uniquement dans une image de fond CSS, et ne pas masquer une information par display:none/visibility:hidden destinés au seul rendu.",
+        "en": "Informative content must remain present when styles are disabled: never put essential text only inside a CSS background image, and don't hide information with display:none/visibility:hidden used purely for layout."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div class=\"hero\" style=\"background-image:url('solde.jpg');width:800px;height:200px\"></div>",
+          "good": "<div class=\"hero\">\n  <h2>Soldes : -30% sur tout le site</h2>\n  <p>Offre valable jusqu'au 31 juillet.</p>\n</div>",
+          "note": {
+            "fr": "Le message promotionnel est du vrai texte HTML ; l'image de fond reste purement décorative.",
+            "en": "The promo message is real HTML text; the background image stays purely decorative."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.2"
+    },
+    {
+      "id": "additional-source-order",
+      "criterionId": "10.3",
+      "wcag": ["1.3.2", "2.4.3"],
+      "title": {
+        "fr": "Ordre du code source cohérent avec l'ordre de lecture",
+        "en": "Source order matching the reading order"
+      },
+      "summary": {
+        "fr": "L'information doit rester compréhensible styles désactivés : l'ordre du DOM doit suivre l'ordre de lecture attendu. Éviter de réordonner visuellement le contenu via flex order, grid ou position absolue sans réordonner la source.",
+        "en": "Information must stay understandable with styles off: the DOM order must follow the expected reading order. Avoid visually reordering content via flex order, grid, or absolute positioning without reordering the source."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div style=\"display:flex\">\n  <main>Article</main>\n  <aside style=\"order:-1\">Liens connexes</aside>\n</div>",
+          "good": "<div style=\"display:flex\">\n  <aside>Liens connexes</aside>\n  <main>Article</main>\n</div>",
+          "note": {
+            "fr": "On place l'aside avant le main dans la source pour que l'ordre lu corresponde à l'ordre vu.",
+            "en": "Place the aside before the main in the source so the read order matches the visual order."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.3"
+    },
+    {
+      "id": "css-text-zoom-200",
+      "criterionId": "10.4",
+      "wcag": ["1.4.4"],
+      "title": {
+        "fr": "Texte lisible à 200% d'agrandissement",
+        "en": "Text readable at 200% zoom"
+      },
+      "summary": {
+        "fr": "Le texte doit rester lisible et complet quand la taille des caractères est portée à 200% au moins, sans chevauchement, troncature ni perte. Utiliser des unités relatives (rem/em, max-width) plutôt que des largeurs et hauteurs fixes en pixels.",
+        "en": "Text must remain readable and complete when character size is increased to at least 200%, without overlap, truncation, or loss. Use relative units (rem/em, max-width) rather than fixed pixel widths and heights."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p style=\"width:300px;height:40px;overflow:hidden;font-size:14px\">Texte qui sera coupé à fort zoom</p>",
+          "good": "<p style=\"max-width:40rem;overflow:visible;font-size:1rem\">Texte lisible même agrandi</p>",
+          "note": {
+            "fr": "La hauteur fixe + overflow:hidden tronque le texte agrandi ; les unités relatives s'adaptent.",
+            "en": "Fixed height + overflow:hidden truncates enlarged text; relative units adapt."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.4"
+    },
+    {
+      "id": "css-color-declarations-paired",
+      "criterionId": "10.5",
+      "wcag": ["1.4.3"],
+      "title": {
+        "fr": "Déclarations CSS de couleurs de fond et de police cohérentes",
+        "en": "Paired CSS foreground and background color declarations"
+      },
+      "summary": {
+        "fr": "Dès qu'une couleur de texte est déclarée, la couleur de fond de l'élément doit l'être aussi (et inversement), afin que le contraste reste maîtrisé même si l'utilisateur force ses propres couleurs ou si un fond hérité change.",
+        "en": "Whenever a text color is declared, the element's background color must be declared too (and vice versa), so contrast stays controlled even if the user forces their own colors or an inherited background changes."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<style>.note{color:#ffffff;padding:1rem}</style>\n<p class=\"note\">Information importante</p>",
+          "good": "<style>.note{color:#ffffff;background-color:#1f5096;padding:1rem}</style>\n<p class=\"note\">Information importante</p>",
+          "note": {
+            "fr": "Texte blanc sans fond déclaré devient illisible sur un fond clair ; déclarer les deux couleurs ensemble.",
+            "en": "White text with no declared background becomes unreadable on a light surface; declare both colors together."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.5"
+    },
+    {
+      "id": "presentation-link-distinguishable",
+      "criterionId": "10.6",
+      "wcag": ["1.4.1"],
+      "title": {
+        "fr": "Lien identifiable par rapport au texte environnant",
+        "en": "Link distinguishable from surrounding text"
+      },
+      "summary": {
+        "fr": "Un lien dont la nature n'est pas évidente au sein d'un texte ne doit pas se distinguer uniquement par la couleur : ajouter un soulignement (ou un autre indice visuel) ou garantir un contraste d'au moins 3:1 avec le texte environnant accompagné d'un indice au survol et au focus.",
+        "en": "A link whose nature is not obvious within text must not be set apart by color alone: add an underline (or another visual cue), or ensure at least 3:1 contrast with surrounding text plus a cue on hover and focus."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<style>p a{color:#3a7;text-decoration:none}</style>\n<p>Voir nos <a href=\"/cgv\">conditions</a> de vente.</p>",
+          "good": "<style>p a{color:#1a5fb4;text-decoration:underline}</style>\n<p>Voir nos <a href=\"/cgv\">conditions</a> de vente.</p>",
+          "note": {
+            "fr": "Le soulignement distingue le lien même pour qui ne perçoit pas la différence de couleur.",
+            "en": "The underline sets the link apart even for users who don't perceive the color difference."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.6"
+    },
+    {
+      "id": "keyboard-visible-focus",
+      "criterionId": "10.7",
+      "wcag": ["1.4.1", "2.4.7"],
+      "title": {
+        "fr": "Prise de focus visible",
+        "en": "Visible focus indicator"
+      },
+      "summary": {
+        "fr": "Chaque élément recevant le focus clavier doit afficher un indicateur de focus visible. Ne jamais supprimer l'outline par défaut sans le remplacer par un indicateur au moins aussi visible (outline custom, :focus-visible).",
+        "en": "Every element receiving keyboard focus must show a visible focus indicator. Never remove the default outline without replacing it with an at-least-as-visible indicator (custom outline, :focus-visible)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<style>a:focus,button:focus{outline:none}</style>",
+          "good": "<style>a:focus-visible,button:focus-visible{outline:2px solid #1a5fb4;outline-offset:2px}</style>",
+          "note": {
+            "fr": "outline:none rend la navigation clavier invisible ; un outline contrasté la rétablit.",
+            "en": "outline:none makes keyboard navigation invisible; a contrasted outline restores it."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.7"
+    },
+    {
+      "id": "presentation-hidden-content-correct",
+      "criterionId": "10.8",
+      "wcag": ["1.3.2", "4.1.2"],
+      "title": {
+        "fr": "Contenus cachés correctement ignorés ou exposés",
+        "en": "Hidden content correctly ignored or exposed"
+      },
+      "summary": {
+        "fr": "Les contenus masqués visuellement n'ayant pas vocation à être restitués (décoratifs, dupliqués) doivent être retirés de l'arbre d'accessibilité (aria-hidden, display:none). À l'inverse, ne jamais cacher aux technologies d'assistance une information porteuse de sens.",
+        "en": "Visually hidden content not meant to be conveyed (decorative, duplicated) must be removed from the accessibility tree (aria-hidden, display:none). Conversely, never hide meaningful information from assistive technologies."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p><span aria-hidden=\"true\">Prix : 20 €</span></p>\n<i class=\"icon-star\">étoile</i>",
+          "good": "<p>Prix : 20 €</p>\n<i class=\"icon-star\" aria-hidden=\"true\"></i> Très bien noté",
+          "note": {
+            "fr": "On expose le prix (information) et on masque seulement l'icône décorative.",
+            "en": "Expose the price (information) and hide only the decorative icon."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.8"
+    },
+    {
+      "id": "presentation-not-shape-position-only",
+      "criterionId": "10.9",
+      "wcag": ["1.3.3", "1.4.1"],
+      "title": {
+        "fr": "Information non donnée par la forme, la taille ou la position seules",
+        "en": "Information not conveyed by shape, size, or position alone"
+      },
+      "summary": {
+        "fr": "Aucune information ne doit reposer uniquement sur la forme, la taille ou la position d'un élément (« cliquez le bouton rond », « le champ à droite »). Tout repère visuel doit être doublé d'une alternative textuelle ou d'un libellé explicite.",
+        "en": "No information may rely solely on an element's shape, size, or position (\"click the round button\", \"the field on the right\"). Every visual cue must be paired with a text alternative or explicit label."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<ul>\n  <li><span class=\"dot green\"></span> serveur-01</li>\n  <li><span class=\"dot red\"></span> serveur-02</li>\n</ul>",
+          "good": "<ul>\n  <li><span class=\"dot green\" aria-hidden=\"true\"></span> serveur-01 — En ligne</li>\n  <li><span class=\"dot red\" aria-hidden=\"true\"></span> serveur-02 — Hors ligne</li>\n</ul>",
+          "note": {
+            "fr": "Le statut « En ligne / Hors ligne » est donné en texte, la pastille colorée n'est qu'un renfort.",
+            "en": "The \"Online / Offline\" status is given as text; the colored dot is only reinforcement."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.9"
+    },
+    {
+      "id": "presentation-reflow",
+      "criterionId": "10.11",
+      "wcag": ["1.4.10"],
+      "title": {
+        "fr": "Contenu adaptable sans défilement à deux dimensions",
+        "en": "Content reflows without two-dimensional scrolling"
+      },
+      "summary": {
+        "fr": "Le contenu doit pouvoir s'afficher sans perte d'information ni de fonction, sans défilement horizontal pour une largeur de fenêtre de 320px (ni défilement vertical à 256px de hauteur). Éviter les largeurs fixes ; privilégier les conteneurs fluides et responsive.",
+        "en": "Content must display without loss of information or function, with no horizontal scrolling at a 320px window width (nor vertical scrolling at 256px height). Avoid fixed widths; favor fluid, responsive containers."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div style=\"width:1200px\">\n  <p>Tableau de bord sur largeur fixe</p>\n</div>",
+          "good": "<div style=\"max-width:100%;width:100%\">\n  <p>Tableau de bord fluide</p>\n</div>",
+          "note": {
+            "fr": "width:1200px force un défilement horizontal sur petit écran ; max-width:100% laisse le contenu se réagencer.",
+            "en": "width:1200px forces horizontal scrolling on small screens; max-width:100% lets content reflow."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.11"
+    },
+    {
+      "id": "css-text-spacing-readable",
+      "criterionId": "10.12",
+      "wcag": ["1.4.12"],
+      "title": {
+        "fr": "Espacement du texte redéfinissable sans perte",
+        "en": "User-adjustable text spacing without loss"
+      },
+      "summary": {
+        "fr": "Le contenu doit rester lisible et fonctionnel quand l'utilisateur impose interligne 1,5, espacement de paragraphe 2, espacement des lettres 0,12 et des mots 0,16 (relatifs à la taille de police). Éviter les conteneurs à hauteur fixe avec overflow:hidden qui tronquent le texte.",
+        "en": "Content must stay readable and functional when the user applies line-height 1.5, paragraph spacing 2, letter spacing 0.12, and word spacing 0.16 (relative to font size). Avoid fixed-height containers with overflow:hidden that clip text."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p style=\"height:60px;overflow:hidden;line-height:1.1\">Description tronquée si l'espacement augmente</p>",
+          "good": "<p style=\"min-height:60px;overflow:visible;line-height:1.5\">Description qui s'étend librement</p>",
+          "note": {
+            "fr": "min-height + overflow:visible laissent le bloc grandir quand l'utilisateur augmente l'espacement.",
+            "en": "min-height + overflow:visible let the block grow when the user increases spacing."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.12"
+    },
+    {
+      "id": "presentation-hover-focus-content",
+      "criterionId": "10.13",
+      "wcag": ["1.4.13"],
+      "title": {
+        "fr": "Contenus additionnels au survol/focus contrôlables",
+        "en": "User-controllable content on hover/focus"
+      },
+      "summary": {
+        "fr": "Un contenu additionnel apparaissant au survol ou à la prise de focus (infobulle, sous-menu) doit être masquable sans déplacer le pointeur (touche Échap), rester affiché tant que le pointeur le survole, et persister tant que le déclencheur garde le focus.",
+        "en": "Additional content appearing on hover or focus (tooltip, submenu) must be dismissible without moving the pointer (Escape), remain visible while the pointer is over it, and persist as long as the trigger keeps focus."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<span onmouseover=\"showTip()\" onmouseout=\"hideTip()\">Aide</span>\n<div id=\"tip\" hidden>Astuce</div>",
+          "good": "<button type=\"button\" aria-describedby=\"tip\">Aide</button>\n<div id=\"tip\" role=\"tooltip\">Astuce — appuyez sur Échap pour fermer</div>",
+          "note": {
+            "fr": "L'infobulle doit être atteignable au focus, survolable sans disparaître et fermable via Échap.",
+            "en": "The tooltip must be reachable on focus, hoverable without vanishing, and dismissible with Escape."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.13"
+    },
+    {
+      "id": "presentation-css-content-keyboard",
+      "criterionId": "10.14",
+      "wcag": ["2.1.1"],
+      "title": {
+        "fr": "Contenus additionnels CSS accessibles au clavier",
+        "en": "CSS-revealed additional content reachable by keyboard"
+      },
+      "summary": {
+        "fr": "Un contenu additionnel rendu visible uniquement via CSS (sous-menu en :hover, info au survol) doit aussi pouvoir être affiché au clavier et par tout dispositif de pointage : ajouter une déclaration :focus / :focus-within équivalente au :hover.",
+        "en": "Additional content revealed only via CSS (a :hover submenu, hover-only info) must also be displayable by keyboard and any pointing device: add a :focus / :focus-within declaration equivalent to the :hover one."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<style>.menu .sub{display:none}\n.menu:hover .sub{display:block}</style>\n<li class=\"menu\"><a href=\"/p\">Produits</a><ul class=\"sub\"><li><a href=\"/p/a\">A</a></li></ul></li>",
+          "good": "<style>.menu .sub{display:none}\n.menu:hover .sub,.menu:focus-within .sub{display:block}</style>\n<li class=\"menu\"><a href=\"/p\">Produits</a><ul class=\"sub\"><li><a href=\"/p/a\">A</a></li></ul></li>",
+          "note": {
+            "fr": ":focus-within révèle le sous-menu au clavier comme :hover le fait à la souris.",
+            "en": ":focus-within reveals the submenu for keyboard users just as :hover does for the mouse."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.14"
+    },
+    {
+      "id": "forms-consistent-labels",
+      "criterionId": "11.3",
+      "wcag": ["3.2.4"],
+      "title": {
+        "fr": "Étiqueter de façon cohérente les champs de même fonction",
+        "en": "Label fields with the same function consistently"
+      },
+      "summary": {
+        "fr": "Un champ qui remplit la même fonction et qui se répète dans la page ou dans l'ensemble de pages doit porter une étiquette formulée à l'identique (ex. toujours « Adresse e-mail », pas « Courriel » ici et « E-mail » là).",
+        "en": "A field that has the same function and recurs across the page or set of pages must carry an identically worded label (e.g. always \"Email address\", not \"Email\" here and \"E-mail\" there)."
+      },
+      "impact": "low",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<form action=\"/contact\" method=\"post\">\n  <label for=\"c-mail\">Courriel</label>\n  <input type=\"email\" id=\"c-mail\" name=\"email\">\n</form>\n<form action=\"/newsletter\" method=\"post\">\n  <label for=\"n-mail\">Votre e-mail</label>\n  <input type=\"email\" id=\"n-mail\" name=\"email\">\n</form>",
+          "good": "<form action=\"/contact\" method=\"post\">\n  <label for=\"c-mail\">Adresse e-mail</label>\n  <input type=\"email\" id=\"c-mail\" name=\"email\">\n</form>\n<form action=\"/newsletter\" method=\"post\">\n  <label for=\"n-mail\">Adresse e-mail</label>\n  <input type=\"email\" id=\"n-mail\" name=\"email\">\n</form>",
+          "note": {
+            "fr": "Les deux champs e-mail ont la même fonction : ils doivent porter la même étiquette.",
+            "en": "Both email fields share the same function: they must carry the same label."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.3"
+    },
+    {
+      "id": "forms-label-field-adjacent",
+      "criterionId": "11.4",
+      "wcag": ["3.3.2"],
+      "title": {
+        "fr": "Accoler chaque étiquette à son champ",
+        "en": "Keep each label adjacent to its field"
+      },
+      "summary": {
+        "fr": "Dans le DOM comme à l'écran, l'étiquette doit être contiguë à son champ (au-dessus ou à gauche pour un champ texte/select, après pour une case à cocher ou un bouton radio) : aucun autre champ ne doit s'intercaler entre une étiquette et le champ qu'elle décrit.",
+        "en": "In the DOM and on screen, the label must sit next to its field (above or to the left for text/select, after for a checkbox or radio): no other field may come between a label and the field it describes."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div>\n  <label for=\"city\">Ville</label>\n</div>\n<div>\n  <label for=\"zip\">Code postal</label>\n  <input type=\"text\" id=\"zip\" name=\"zip\">\n</div>\n<input type=\"text\" id=\"city\" name=\"city\">",
+          "good": "<div>\n  <label for=\"city\">Ville</label>\n  <input type=\"text\" id=\"city\" name=\"city\">\n</div>\n<div>\n  <label for=\"zip\">Code postal</label>\n  <input type=\"text\" id=\"zip\" name=\"zip\">\n</div>",
+          "note": {
+            "fr": "Dans le cas non conforme, le champ « Ville » est séparé de son étiquette par le bloc « Code postal ».",
+            "en": "In the non-compliant case, the \"City\" field is separated from its label by the \"Postal code\" block."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.4"
+    },
+    {
+      "id": "forms-group-related-fields",
+      "criterionId": "11.5",
+      "wcag": ["1.3.1", "3.3.2"],
+      "title": {
+        "fr": "Regrouper les champs de même nature",
+        "en": "Group fields of the same nature"
+      },
+      "summary": {
+        "fr": "Les champs qui répondent à une même question ou décrivent une même donnée (boutons radio, cases à cocher, adresse éclatée en plusieurs champs) doivent être regroupés programmatiquement dans un même conteneur — typiquement un <fieldset> — pour que le lien entre eux soit restitué aux technologies d'assistance.",
+        "en": "Fields that answer the same question or describe one piece of data (radio buttons, checkboxes, an address split across several fields) must be programmatically grouped in a single container — typically a <fieldset> — so their relationship is conveyed to assistive technologies."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p>Mode de livraison</p>\n<input type=\"radio\" id=\"std\" name=\"ship\" value=\"std\">\n<label for=\"std\">Standard</label>\n<input type=\"radio\" id=\"exp\" name=\"ship\" value=\"exp\">\n<label for=\"exp\">Express</label>",
+          "good": "<fieldset>\n  <legend>Mode de livraison</legend>\n  <input type=\"radio\" id=\"std\" name=\"ship\" value=\"std\">\n  <label for=\"std\">Standard</label>\n  <input type=\"radio\" id=\"exp\" name=\"ship\" value=\"exp\">\n  <label for=\"exp\">Express</label>\n</fieldset>",
+          "note": {
+            "fr": "Le <fieldset> matérialise le regroupement ; sans lui, chaque option radio est annoncée isolément, sans la question commune.",
+            "en": "The <fieldset> materializes the grouping; without it, each radio option is announced in isolation, without the shared question."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.5"
+    },
+    {
+      "id": "forms-fieldset-legend",
+      "criterionId": "11.6",
+      "wcag": ["1.3.1", "3.3.2"],
+      "title": {
+        "fr": "Donner une légende à chaque regroupement de champs",
+        "en": "Give every field group a legend"
+      },
+      "summary": {
+        "fr": "Chaque regroupement de champs de même nature doit porter une légende : un <fieldset> doit contenir un <legend> en premier enfant (ou, à défaut, un role=\"group\" doté d'un aria-label / aria-labelledby). La légende est restituée avant chaque champ du groupe.",
+        "en": "Every group of same-nature fields must carry a legend: a <fieldset> must contain a <legend> as its first child (or, failing that, a role=\"group\" with aria-label / aria-labelledby). The legend is announced before each field in the group."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<fieldset>\n  <input type=\"checkbox\" id=\"cgu\" name=\"cgu\">\n  <label for=\"cgu\">J'accepte les conditions</label>\n  <input type=\"checkbox\" id=\"news\" name=\"news\">\n  <label for=\"news\">Recevoir la newsletter</label>\n</fieldset>",
+          "good": "<fieldset>\n  <legend>Préférences du compte</legend>\n  <input type=\"checkbox\" id=\"cgu\" name=\"cgu\">\n  <label for=\"cgu\">J'accepte les conditions</label>\n  <input type=\"checkbox\" id=\"news\" name=\"news\">\n  <label for=\"news\">Recevoir la newsletter</label>\n</fieldset>",
+          "note": {
+            "fr": "Un <fieldset> sans <legend> n'est pas conforme : le groupe existe mais n'a pas de titre annoncé.",
+            "en": "A <fieldset> without a <legend> is non-compliant: the group exists but has no announced title."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.6"
+    },
+    {
+      "id": "forms-relevant-legend",
+      "criterionId": "11.7",
+      "wcag": ["1.3.1", "3.3.2"],
+      "title": {
+        "fr": "Rédiger une légende de groupe pertinente",
+        "en": "Write a relevant group legend"
+      },
+      "summary": {
+        "fr": "Le texte de la <legend> (ou de l'aria-label du role=\"group\") doit décrire précisément la nature ou la finalité du regroupement, et non un libellé générique : il complète chaque étiquette de champ pour former une question complète et compréhensible hors contexte.",
+        "en": "The <legend> text (or the role=\"group\" aria-label) must precisely describe the nature or purpose of the grouping, not a generic label: combined with each field label it must form a complete, context-free question."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<fieldset>\n  <legend>Informations</legend>\n  <input type=\"radio\" id=\"mr\" name=\"civ\" value=\"mr\">\n  <label for=\"mr\">Monsieur</label>\n  <input type=\"radio\" id=\"mrs\" name=\"civ\" value=\"mrs\">\n  <label for=\"mrs\">Madame</label>\n</fieldset>",
+          "good": "<fieldset>\n  <legend>Civilité</legend>\n  <input type=\"radio\" id=\"mr\" name=\"civ\" value=\"mr\">\n  <label for=\"mr\">Monsieur</label>\n  <input type=\"radio\" id=\"mrs\" name=\"civ\" value=\"mrs\">\n  <label for=\"mrs\">Madame</label>\n</fieldset>",
+          "note": {
+            "fr": "« Informations » ne décrit pas le groupe ; « Civilité » indique exactement ce qui est demandé.",
+            "en": "\"Information\" does not describe the group; \"Title/Salutation\" states exactly what is asked."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.7"
+    },
+    {
+      "id": "forms-select-optgroup",
+      "criterionId": "11.8",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Regrouper les options d'une liste de choix avec optgroup",
+        "en": "Group select options with optgroup"
+      },
+      "summary": {
+        "fr": "Quand un <select> contient de nombreuses options relevant de catégories distinctes, regroupez-les avec des <optgroup> dotés d'un attribut label décrivant chaque catégorie, afin que la structure soit restituée et la navigation facilitée.",
+        "en": "When a <select> holds many options belonging to distinct categories, group them with <optgroup> elements carrying a label attribute that names each category, so the structure is conveyed and navigation is easier."
+      },
+      "impact": "low",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<label for=\"dept\">Département</label>\n<select id=\"dept\" name=\"dept\">\n  <option value=\"75\">Paris</option>\n  <option value=\"92\">Hauts-de-Seine</option>\n  <option value=\"69\">Rhône</option>\n  <option value=\"38\">Isère</option>\n</select>",
+          "good": "<label for=\"dept\">Département</label>\n<select id=\"dept\" name=\"dept\">\n  <optgroup label=\"Île-de-France\">\n    <option value=\"75\">Paris</option>\n    <option value=\"92\">Hauts-de-Seine</option>\n  </optgroup>\n  <optgroup label=\"Auvergne-Rhône-Alpes\">\n    <option value=\"69\">Rhône</option>\n    <option value=\"38\">Isère</option>\n  </optgroup>\n</select>",
+          "note": {
+            "fr": "Les <optgroup> ne sont nécessaires que si les options relèvent réellement de catégories distinctes.",
+            "en": "<optgroup> elements are only needed when the options genuinely fall into distinct categories."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.8"
+    },
+    {
+      "id": "forms-relevant-button-label",
+      "criterionId": "11.9",
+      "wcag": ["2.5.3", "4.1.2"],
+      "title": {
+        "fr": "Donner un intitulé de bouton pertinent",
+        "en": "Give buttons a relevant label"
+      },
+      "summary": {
+        "fr": "L'intitulé de chaque bouton doit décrire précisément son action dans le contexte du formulaire (pas « OK » ni « Envoyer » seul quand plusieurs formulaires coexistent). Si un nom accessible est ajouté (aria-label), il doit reprendre le texte visible pour respecter le critère « label in name ».",
+        "en": "Each button's label must precisely describe its action in the form's context (not a bare \"OK\" or \"Submit\" when several forms coexist). If an accessible name is added (aria-label), it must include the visible text to satisfy \"label in name\"."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<form action=\"/contact\" method=\"post\">\n  <label for=\"msg\">Message</label>\n  <textarea id=\"msg\" name=\"msg\"></textarea>\n  <button type=\"submit\">OK</button>\n</form>",
+          "good": "<form action=\"/contact\" method=\"post\">\n  <label for=\"msg\">Message</label>\n  <textarea id=\"msg\" name=\"msg\"></textarea>\n  <button type=\"submit\">Envoyer ma demande de contact</button>\n</form>",
+          "note": {
+            "fr": "Hors contexte (liste des éléments du lecteur d'écran), « OK » ne dit rien ; l'intitulé explicite reste compréhensible.",
+            "en": "Out of context (a screen reader's elements list), \"OK\" says nothing; the explicit label stays understandable."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.9"
+    },
+    {
+      "id": "forms-verify-before-consequential-submit",
+      "criterionId": "11.12",
+      "wcag": ["3.3.4"],
+      "title": {
+        "fr": "Permettre la vérification avant une soumission à conséquences",
+        "en": "Allow verification before a consequential submission"
+      },
+      "summary": {
+        "fr": "Tout formulaire à conséquences financières, juridiques, de suppression de données ou de réponse à un examen doit offrir au moins un de ces mécanismes : annulation/modification après envoi, étape de vérification récapitulative, ou case de confirmation explicite avant validation.",
+        "en": "Any form with financial, legal, data-deletion or test-submission consequences must offer at least one of: reversal/modification after submission, a review/verification step, or an explicit confirmation checkbox before validation."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<form action=\"/account/delete\" method=\"post\">\n  <button type=\"submit\">Supprimer mon compte</button>\n</form>",
+          "good": "<form action=\"/account/delete\" method=\"post\">\n  <h2>Confirmer la suppression du compte</h2>\n  <p>Cette action est définitive et supprime toutes vos données.</p>\n  <label>\n    <input type=\"checkbox\" name=\"confirm\" value=\"yes\" required>\n    Je confirme vouloir supprimer définitivement mon compte\n  </label>\n  <button type=\"submit\">Confirmer la suppression</button>\n</form>",
+          "note": {
+            "fr": "Ici, la case de confirmation obligatoire constitue le mécanisme de vérification avant une action irréversible.",
+            "en": "Here, the required confirmation checkbox provides the verification step before an irreversible action."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.12"
+    },
+    {
+      "id": "forms-autocomplete",
+      "criterionId": "11.13",
+      "wcag": ["1.3.5"],
+      "title": {
+        "fr": "Renseigner autocomplete sur les champs de données utilisateur",
+        "en": "Set autocomplete on user-data fields"
+      },
+      "summary": {
+        "fr": "Les champs collectant une donnée concernant l'utilisateur (nom, prénom, e-mail, téléphone, adresse, code postal…) doivent porter l'attribut autocomplete avec la valeur normalisée HTML correspondante, afin de permettre le remplissage automatique par le navigateur.",
+        "en": "Fields collecting user data (first/last name, email, phone, address, postal code…) must carry the autocomplete attribute with the matching HTML token, to enable browser autofill."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<label for=\"fn\">Prénom</label>\n<input type=\"text\" id=\"fn\" name=\"fn\">\n<label for=\"em\">E-mail</label>\n<input type=\"email\" id=\"em\" name=\"em\">\n<label for=\"tel\">Téléphone</label>\n<input type=\"tel\" id=\"tel\" name=\"tel\">",
+          "good": "<label for=\"fn\">Prénom</label>\n<input type=\"text\" id=\"fn\" name=\"fn\" autocomplete=\"given-name\">\n<label for=\"em\">E-mail</label>\n<input type=\"email\" id=\"em\" name=\"em\" autocomplete=\"email\">\n<label for=\"tel\">Téléphone</label>\n<input type=\"tel\" id=\"tel\" name=\"tel\" autocomplete=\"tel\">",
+          "note": {
+            "fr": "Utilisez les tokens normalisés (given-name, family-name, email, tel, street-address, postal-code…), pas une valeur libre.",
+            "en": "Use the standard tokens (given-name, family-name, email, tel, street-address, postal-code…), not an arbitrary value."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.13"
+    },
+    {
+      "id": "page-doctype",
+      "criterionId": "8.1",
+      "wcag": ["4.1.1"],
+      "title": {
+        "fr": "Type de document déclaré sur chaque page",
+        "en": "Document type declared on every page"
+      },
+      "summary": {
+        "fr": "Chaque page web doit commencer par une déclaration de type de document (<!DOCTYPE html>) en toute première ligne, avant la balise <html>, pour que le navigateur et les technologies d'assistance interprètent le code en mode standard.",
+        "en": "Every page must start with a document type declaration (<!DOCTYPE html>) on the very first line, before the <html> tag, so browsers and assistive tech parse it in standards mode."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<html lang=\"fr\"><head><title>Accueil - MonSite</title></head><body><h1>Accueil</h1></body></html>",
+          "good": "<!DOCTYPE html><html lang=\"fr\"><head><title>Accueil - MonSite</title></head><body><h1>Accueil</h1></body></html>",
+          "note": {
+            "fr": "Sans DOCTYPE, le navigateur bascule en mode quirks et le rendu devient imprévisible.",
+            "en": "Without a DOCTYPE the browser falls back to quirks mode and rendering becomes unreliable."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.1"
+    },
+    {
+      "id": "semantics-valid-code",
+      "criterionId": "8.2",
+      "wcag": ["4.1.1", "4.1.2"],
+      "title": {
+        "fr": "Code source valide selon le type de document",
+        "en": "Source code valid against the document type"
+      },
+      "summary": {
+        "fr": "Le code généré doit être valide : balises correctement imbriquées et fermées, attributs entre guillemets, pas d'identifiant id dupliqué. Un code invalide produit un arbre d'accessibilité incohérent.",
+        "en": "Generated code must be valid: properly nested and closed tags, quoted attributes, no duplicated id. Invalid markup yields an inconsistent accessibility tree."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<a href=\"/a\">Profil<a href=\"/b\">Réglages</a><input id=\"q\"><input id=\"q\">",
+          "good": "<a href=\"/a\">Profil</a> <a href=\"/b\">Réglages</a><input id=\"q\"><input id=\"q2\">",
+          "note": {
+            "fr": "Pas de liens imbriqués, chaque balise est fermée et chaque id est unique dans la page.",
+            "en": "No nested links, every tag is closed, and each id is unique within the page."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.2"
+    },
+    {
+      "id": "title-precise-title",
+      "criterionId": "8.5",
+      "wcag": ["2.4.2"],
+      "title": {
+        "fr": "Titre de page présent et pertinent",
+        "en": "Page title present and relevant"
+      },
+      "summary": {
+        "fr": "Chaque page doit avoir un élément <title> non vide qui identifie précisément son contenu dans le site (généralement « contenu de la page - nom du site »), et non un titre générique comme « Accueil » ou « Page ».",
+        "en": "Every page needs a non-empty <title> that uniquely identifies its content within the site (usually \"page content - site name\"), not a generic label like \"Home\" or \"Page\"."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<head><title>Page</title></head>",
+          "good": "<head><title>Panier - MaBoutique</title></head>",
+          "note": {
+            "fr": "Un titre précis distingue les onglets ouverts et annonce la page au lecteur d'écran dès le chargement.",
+            "en": "A precise title distinguishes open tabs and announces the page to screen readers on load."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.5"
+    },
+    {
+      "id": "lang-inline-changes",
+      "criterionId": "8.7",
+      "wcag": ["3.1.2"],
+      "title": {
+        "fr": "Changements de langue signalés dans le contenu",
+        "en": "Inline language changes marked up"
+      },
+      "summary": {
+        "fr": "Tout passage rédigé dans une langue différente de la langue principale de la page doit être encadré par un élément portant un attribut lang adéquat, pour que la synthèse vocale change de voix (hors noms propres et termes entrés dans le langage courant).",
+        "en": "Any passage written in a language other than the page's main language must be wrapped in an element carrying an appropriate lang attribute so speech synthesis switches voice (proper nouns and adopted terms excepted)."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p lang=\"fr\">Notre dernier article : <span>Best practices for accessibility</span>.</p>",
+          "good": "<p lang=\"fr\">Notre dernier article : <span lang=\"en\">Best practices for accessibility</span>.</p>",
+          "note": {
+            "fr": "Sans lang=\"en\", le lecteur d'écran prononce l'anglais avec les règles du français.",
+            "en": "Without lang=\"en\", the screen reader pronounces English with French phonetic rules."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.7"
+    },
+    {
+      "id": "lang-code-valid",
+      "criterionId": "8.8",
+      "wcag": ["3.1.2"],
+      "title": {
+        "fr": "Code de langue valide et pertinent",
+        "en": "Valid and relevant language code"
+      },
+      "summary": {
+        "fr": "La valeur de chaque attribut lang signalant un changement de langue doit être un code ISO 639 valide (ex. en, ar, es) et correspondre réellement à la langue du passage, pas un nom de langue écrit en toutes lettres.",
+        "en": "Each lang attribute marking a language change must use a valid ISO 639 code (e.g. en, ar, es) that actually matches the passage's language, not a spelled-out language name."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p>Bienvenue, <span lang=\"english\">welcome aboard</span> !</p>",
+          "good": "<p>Bienvenue, <span lang=\"en\">welcome aboard</span> !</p>",
+          "note": {
+            "fr": "« english » n'est pas un code valide ; le code ISO 639 est « en ».",
+            "en": "\"english\" is not a valid code; the ISO 639 code is \"en\"."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.8"
+    },
+    {
+      "id": "semantics-no-presentation-only-tags",
+      "criterionId": "8.9",
+      "wcag": ["1.3.1"],
+      "title": {
+        "fr": "Balises non détournées à des fins de présentation",
+        "en": "Tags not misused purely for presentation"
+      },
+      "summary": {
+        "fr": "Les balises porteuses de sens ne doivent pas être employées uniquement pour leur rendu visuel : un titre visuel doit être un vrai <hn>, une liste un <ul>/<ol>, et non un paragraphe stylé. Inversement les balises sémantiques ne servent pas à obtenir un effet de mise en forme.",
+        "en": "Semantic tags must not be used only for their visual effect: a visual heading must be a real <hn>, a list a <ul>/<ol>, not a styled paragraph. Conversely, semantic tags must not be hijacked just for layout."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p class=\"big-bold\">Nos services</p><p>Détail de la section.</p>",
+          "good": "<h2>Nos services</h2><p>Détail de la section.</p>",
+          "note": {
+            "fr": "Un titre faux (paragraphe stylé) est invisible à la navigation par titres du lecteur d'écran.",
+            "en": "A fake heading (styled paragraph) is invisible to screen-reader heading navigation."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.9"
+    },
+    {
+      "id": "additional-dir-attribute",
+      "criterionId": "8.10",
+      "wcag": ["1.3.2"],
+      "title": {
+        "fr": "Sens de lecture signalé avec l'attribut dir",
+        "en": "Reading direction marked with the dir attribute"
+      },
+      "summary": {
+        "fr": "Tout contenu dont le sens de lecture diffère de celui de la page (texte arabe ou hébreu dans une page de gauche à droite) doit être encadré par un élément portant l'attribut dir adéquat (dir=\"rtl\"), pour un affichage et un ordre de lecture corrects.",
+        "en": "Any content whose reading direction differs from the page (Arabic or Hebrew inside a left-to-right page) must be wrapped in an element carrying the right dir attribute (dir=\"rtl\") for correct rendering and reading order."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p lang=\"fr\">Salutation en arabe : مرحبا بالعالم</p>",
+          "good": "<p lang=\"fr\">Salutation en arabe : <span dir=\"rtl\" lang=\"ar\">مرحبا بالعالم</span></p>",
+          "note": {
+            "fr": "Sans dir=\"rtl\", le texte bidirectionnel s'affiche et se restitue dans le mauvais ordre.",
+            "en": "Without dir=\"rtl\", bidirectional text is displayed and read back in the wrong order."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.10"
+    },
+    {
+      "id": "structure-landmark-regions",
+      "criterionId": "12.6",
+      "wcag": ["1.3.1", "2.4.1", "4.1.2"],
+      "title": {
+        "fr": "Zones de regroupement identifiées par des repères",
+        "en": "Page regions identified as landmarks"
+      },
+      "summary": {
+        "fr": "Les zones répétées d'un ensemble de pages (en-tête, navigation principale, contenu principal, pied de page) doivent être balisées avec les éléments de repère natifs (<header>, <nav>, <main>, <footer>) pour être atteignables directement par les technologies d'assistance.",
+        "en": "Recurring regions across a page set (header, main navigation, main content, footer) must use native landmark elements (<header>, <nav>, <main>, <footer>) so assistive tech can jump to them directly."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div class=\"header\">…</div><div class=\"nav\">…</div><div class=\"content\">…</div><div class=\"footer\">…</div>",
+          "good": "<header>…</header><nav aria-label=\"Navigation principale\">…</nav><main>…</main><footer>…</footer>",
+          "note": {
+            "fr": "Plusieurs <nav> sur une page se distinguent par un aria-label propre à chacun.",
+            "en": "Multiple <nav> elements on one page are told apart by a distinct aria-label on each."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.6"
+    },
+    {
+      "id": "keyboard-skip-link",
+      "criterionId": "12.7",
+      "wcag": ["2.4.1", "2.4.3", "3.2.3"],
+      "title": {
+        "fr": "Lien d'évitement vers le contenu principal",
+        "en": "Skip link to main content"
+      },
+      "summary": {
+        "fr": "Chaque page doit fournir, comme premier élément focalisable du <body>, un lien d'évitement pointant vers la zone de contenu principal (ancre vers l'id du <main>), pour que l'utilisateur clavier puisse sauter les blocs répétés.",
+        "en": "Every page must provide, as the first focusable element in <body>, a skip link targeting the main content area (anchor to the <main> id), so keyboard users can bypass repeated blocks."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<body><header><nav>…</nav></header><main><h1>Bienvenue</h1></main></body>",
+          "good": "<body><a href=\"#main-content\" class=\"skip-link\">Aller au contenu</a><header><nav>…</nav></header><main id=\"main-content\"><h1>Bienvenue</h1></main></body>",
+          "note": {
+            "fr": "Le lien doit cibler un id réel et redevenir visible à la prise de focus.",
+            "en": "The link must target a real id and become visible again when focused."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.7"
+    },
+    {
+      "id": "keyboard-tab-order",
+      "criterionId": "12.8",
+      "wcag": ["2.4.3"],
+      "title": {
+        "fr": "Ordre de tabulation cohérent",
+        "en": "Coherent tab order"
+      },
+      "summary": {
+        "fr": "L'ordre de tabulation doit suivre l'ordre de lecture logique. Ne pas forcer la séquence avec un tabindex positif (> 0) ni la désaccorder via la réorganisation CSS (flex order, float, position absolue). Utiliser tabindex=\"0\" ou \"-1\" uniquement.",
+        "en": "Tab order must follow the logical reading order. Never force the sequence with a positive tabindex (> 0) nor break it with CSS reordering (flex order, float, absolute positioning). Use only tabindex=\"0\" or \"-1\"."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<form><label for=\"email\">E-mail</label><input id=\"email\" tabindex=\"2\"><label for=\"nom\">Nom</label><input id=\"nom\" tabindex=\"1\"></form>",
+          "good": "<form><label for=\"nom\">Nom</label><input id=\"nom\"><label for=\"email\">E-mail</label><input id=\"email\"></form>",
+          "note": {
+            "fr": "Un tabindex positif place l'élément en tête de séquence et casse l'ordre naturel du DOM.",
+            "en": "A positive tabindex jumps the element to the front and breaks the natural DOM order."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.8"
+    },
+    {
+      "id": "keyboard-no-trap",
+      "criterionId": "12.9",
+      "wcag": ["2.1.1", "2.1.2"],
+      "title": {
+        "fr": "Pas de piège au clavier",
+        "en": "No keyboard trap"
+      },
+      "summary": {
+        "fr": "L'utilisateur doit toujours pouvoir sortir d'un composant au clavier seul (Tab, Maj+Tab, Échap). Une boîte de dialogue qui capture le focus doit offrir une fermeture focalisable et gérer la touche Échap, puis rendre le focus à l'élément déclencheur.",
+        "en": "Focus must always be able to leave a component with the keyboard alone (Tab, Shift+Tab, Escape). A dialog that captures focus must offer a focusable close control, handle Escape, then return focus to the triggering element."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Conditions\" tabindex=\"-1\"><p>Vous devez accepter les conditions.</p></div>",
+          "good": "<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Conditions\" tabindex=\"-1\"><p>Vous devez accepter les conditions.</p><button type=\"button\" onclick=\"closeDialog()\">Fermer</button></div>",
+          "note": {
+            "fr": "Sans fermeture focalisable ni gestion d'Échap, le focus reste prisonnier de la modale.",
+            "en": "Without a focusable close and Escape handling, focus stays trapped inside the modal."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.9"
+    },
+    {
+      "id": "keyboard-single-key-shortcuts",
+      "criterionId": "12.10",
+      "wcag": ["2.1.4"],
+      "title": {
+        "fr": "Raccourcis clavier à une seule touche contrôlables",
+        "en": "Single-key shortcuts must be controllable"
+      },
+      "summary": {
+        "fr": "Un raccourci n'utilisant qu'une seule touche (lettre, chiffre, ponctuation, symbole) doit pouvoir être désactivé, reconfiguré, ou n'être actif que lorsque le composant concerné a le focus — sinon il se déclenche pendant la saisie.",
+        "en": "A shortcut using a single character key (letter, number, punctuation, symbol) must be deactivatable, remappable, or active only while the relevant component has focus — otherwise it fires during typing."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "jsx",
+          "bad": "useEffect(() => {\n  const onKey = (e) => { if (e.key === \"r\") reply(); };\n  document.addEventListener(\"keydown\", onKey);\n  return () => document.removeEventListener(\"keydown\", onKey);\n}, []);",
+          "good": "useEffect(() => {\n  const onKey = (e) => { if (e.key === \"r\" && e.altKey) reply(); };\n  document.addEventListener(\"keydown\", onKey);\n  return () => document.removeEventListener(\"keydown\", onKey);\n}, []);",
+          "note": {
+            "fr": "Exiger un modificateur (Alt) ou limiter le raccourci au focus évite les déclenchements pendant la frappe.",
+            "en": "Requiring a modifier (Alt) or scoping the shortcut to focus prevents triggers while typing."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.10"
+    },
+    {
+      "id": "keyboard-hover-focus-mirror",
+      "criterionId": "12.11",
+      "wcag": ["2.1.1"],
+      "title": {
+        "fr": "Contenus additionnels atteignables au clavier",
+        "en": "Hover/focus content reachable by keyboard"
+      },
+      "summary": {
+        "fr": "Tout contenu additionnel affiché au survol (sous-menu, infobulle, popup) doit aussi apparaître à la prise de focus clavier et rester consultable sans disparaître. Refléter :hover par :focus / :focus-within.",
+        "en": "Any additional content shown on hover (submenu, tooltip, popup) must also appear on keyboard focus and stay readable without vanishing. Mirror :hover with :focus / :focus-within."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<style>.menu .submenu{display:none}.menu:hover .submenu{display:block}</style><ul class=\"menu\"><li><a href=\"/produits\">Produits</a><ul class=\"submenu\"><li><a href=\"/produits/a\">A</a></li></ul></li></ul>",
+          "good": "<style>.menu .submenu{display:none}.menu:hover .submenu,.menu:focus-within .submenu{display:block}</style><ul class=\"menu\"><li><a href=\"/produits\">Produits</a><ul class=\"submenu\"><li><a href=\"/produits/a\">A</a></li></ul></li></ul>",
+          "note": {
+            "fr": "Sans :focus-within, le sous-menu n'apparaît jamais pour un utilisateur clavier.",
+            "en": "Without :focus-within, the submenu never appears for a keyboard user."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.11"
+    },
+    {
+      "id": "time-limit-control",
+      "criterionId": "13.1",
+      "wcag": ["2.2.1", "2.2.2"],
+      "title": {
+        "fr": "Contrôle des limites de temps",
+        "en": "Control over time limits"
+      },
+      "summary": {
+        "fr": "Pour toute session avec expiration ou contenu à rafraîchissement automatique, l'utilisateur doit être averti au moins 20 secondes avant l'échéance et pouvoir prolonger, désactiver ou ajuster la limite de temps (hors cas particuliers comme les enchères en temps réel).",
+        "en": "For any expiring session or auto-refreshing content, the user must be warned at least 20 seconds before the deadline and be able to extend, turn off, or adjust the time limit (real-time exceptions like auctions aside)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "jsx",
+          "bad": "function Session() {\n  useEffect(() => {\n    const t = setTimeout(() => logout(), 30 * 60 * 1000);\n    return () => clearTimeout(t);\n  }, []);\n  return <main>Formulaire de démarche</main>;\n}",
+          "good": "function Session() {\n  const [warn, setWarn] = useState(false);\n  useEffect(() => {\n    const t = setTimeout(() => setWarn(true), 29 * 60 * 1000);\n    return () => clearTimeout(t);\n  }, []);\n  return (\n    <main>\n      {warn && (\n        <div role=\"alertdialog\" aria-label=\"Session bientôt expirée\">\n          <p>Votre session expire dans 1 minute.</p>\n          <button type=\"button\" onClick={extendSession}>Prolonger</button>\n        </div>\n      )}\n    </main>\n  );\n}",
+          "note": {
+            "fr": "Avertir avant l'expiration et offrir « Prolonger » évite la perte de données saisies.",
+            "en": "Warning before expiry and offering \"Extend\" prevents loss of entered data."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.1"
+    },
+    {
+      "id": "cryptic-content-alternative",
+      "criterionId": "13.5",
+      "wcag": ["1.1.1"],
+      "title": {
+        "fr": "Alternative aux contenus cryptiques",
+        "en": "Alternative for cryptic content"
+      },
+      "summary": {
+        "fr": "Tout contenu cryptique (émoticône texte, art ASCII, syntaxe symbolique) doit disposer d'une alternative textuelle pertinente via aria-label (avec role=\"img\"), title ou le contexte adjacent, pour être compris par les technologies d'assistance.",
+        "en": "Any cryptic content (text emoticon, ASCII art, symbolic syntax) must have a relevant text alternative via aria-label (with role=\"img\"), title, or adjacent context, so assistive tech can convey it."
+      },
+      "impact": "low",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<p>Service rétabli :-)</p>",
+          "good": "<p>Service rétabli <span role=\"img\" aria-label=\"sourire\">:-)</span></p>",
+          "note": {
+            "fr": "Sans alternative, le lecteur d'écran épelle « deux-points tiret parenthèse ».",
+            "en": "Without an alternative the screen reader spells out \"colon dash parenthesis\"."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.5"
+    },
+    {
+      "id": "moving-content-control",
+      "criterionId": "13.8",
+      "wcag": ["2.2.1", "2.2.2"],
+      "title": {
+        "fr": "Contenus en mouvement ou clignotants contrôlables",
+        "en": "Moving or blinking content controllable"
+      },
+      "summary": {
+        "fr": "Tout contenu en mouvement, clignotant ou défilant automatiquement (carrousel, animation) démarré sans action et durant plus de 5 secondes doit disposer d'un mécanisme accessible de pause/arrêt et respecter prefers-reduced-motion.",
+        "en": "Any auto-started moving, blinking, or scrolling content (carousel, animation) lasting more than 5 seconds must offer an accessible pause/stop control and honor prefers-reduced-motion."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "jsx",
+          "bad": "<div className=\"carousel auto-rotating\" aria-label=\"Promotions\">\n  <Slide>Offre 1</Slide>\n  <Slide>Offre 2</Slide>\n</div>",
+          "good": "<section aria-label=\"Promotions\">\n  <button type=\"button\" onClick={togglePlay}>\n    {playing ? \"Mettre en pause\" : \"Lire\"}\n  </button>\n  <div className=\"carousel\">\n    <Slide>Offre 1</Slide>\n    <Slide>Offre 2</Slide>\n  </div>\n</section>",
+          "note": {
+            "fr": "Un bouton pause explicite et le respect de prefers-reduced-motion rendent l'animation maîtrisable.",
+            "en": "An explicit pause button plus honoring prefers-reduced-motion makes the animation controllable."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.8"
+    },
+    {
+      "id": "orientation-not-locked",
+      "criterionId": "13.9",
+      "wcag": ["1.3.4"],
+      "title": {
+        "fr": "Contenu consultable dans les deux orientations",
+        "en": "Content usable in both orientations"
+      },
+      "summary": {
+        "fr": "Le contenu doit rester consultable en orientation portrait et paysage. Ne pas verrouiller l'affichage à une seule orientation ni masquer le contenu derrière un message « Tournez votre appareil » (sauf nécessité fonctionnelle essentielle).",
+        "en": "Content must stay usable in both portrait and landscape orientations. Do not lock the display to a single orientation nor hide content behind a \"Rotate your device\" message (unless an orientation is functionally essential)."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<style>@media (orientation: portrait){.app{display:none}.rotate-msg{display:block}}</style><div class=\"rotate-msg\">Veuillez tourner votre appareil</div><main class=\"app\">Contenu</main>",
+          "good": "<style>.app{display:block}</style><main class=\"app\">Contenu utilisable en portrait comme en paysage</main>",
+          "note": {
+            "fr": "Masquer le contenu en portrait exclut les utilisateurs dont l'appareil est fixé dans cette orientation.",
+            "en": "Hiding content in portrait excludes users whose device is mounted in that orientation."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.9"
+    },
+    {
+      "id": "complex-gestures-alternative",
+      "criterionId": "13.10",
+      "wcag": ["2.5.1"],
+      "title": {
+        "fr": "Alternative aux gestes complexes",
+        "en": "Alternative to complex gestures"
+      },
+      "summary": {
+        "fr": "Toute fonctionnalité activable par un geste complexe (multipoint comme le pincement, ou basé sur une trajectoire comme le balayage) doit aussi pouvoir être déclenchée par un geste simple à un seul point (tap ou clic), par exemple via des boutons.",
+        "en": "Any feature triggered by a complex gesture (multipoint like pinch, or path-based like swipe) must also be operable with a simple single-point gesture (tap or click), e.g. via buttons."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "jsx",
+          "bad": "<div onTouchMove={handleSwipe} aria-label=\"Galerie\">\n  <img src=\"photo1.jpg\" alt=\"Vue de la plage\" />\n</div>",
+          "good": "<div aria-label=\"Galerie\">\n  <img src=\"photo1.jpg\" alt=\"Vue de la plage\" />\n  <button type=\"button\" onClick={prev}>Précédent</button>\n  <button type=\"button\" onClick={next}>Suivant</button>\n</div>",
+          "note": {
+            "fr": "Des boutons Précédent/Suivant doublent le balayage pour les utilisateurs qui ne peuvent pas l'exécuter.",
+            "en": "Previous/Next buttons duplicate the swipe for users who cannot perform it."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.10"
+    },
+    {
+      "id": "pointer-cancellation",
+      "criterionId": "13.11",
+      "wcag": ["2.5.2"],
+      "title": {
+        "fr": "Actions au pointeur annulables",
+        "en": "Pointer actions can be cancelled"
+      },
+      "summary": {
+        "fr": "Une action déclenchée par un dispositif de pointage doit se produire à l'événement de relâchement (clic / mouseup / touchend) et non à l'appui (mousedown / touchstart), afin que l'utilisateur puisse annuler en éloignant le pointeur — ou un mécanisme d'annulation doit être prévu.",
+        "en": "An action triggered by a pointer must fire on the up event (click / mouseup / touchend), not on the down event (mousedown / touchstart), so the user can abort by moving the pointer away — or an undo mechanism must exist."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "jsx",
+          "bad": "<button type=\"button\" onMouseDown={deleteItem}>Supprimer</button>",
+          "good": "<button type=\"button\" onClick={deleteItem}>Supprimer</button>",
+          "note": {
+            "fr": "onClick se déclenche au relâchement : l'utilisateur peut glisser hors du bouton pour annuler.",
+            "en": "onClick fires on release: the user can drag off the button to cancel."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.11"
+    },
+    {
+      "id": "motion-actuation-alternative",
+      "criterionId": "13.12",
+      "wcag": ["2.5.4"],
+      "title": {
+        "fr": "Alternative aux fonctionnalités basées sur le mouvement",
+        "en": "Alternative to motion-actuated features"
+      },
+      "summary": {
+        "fr": "Toute fonctionnalité activée par un mouvement de l'appareil (secousse, inclinaison) doit aussi être disponible via un composant d'interface standard, et la détection du mouvement doit pouvoir être désactivée pour éviter les déclenchements accidentels.",
+        "en": "Any feature actuated by device motion (shake, tilt) must also be available through a standard UI control, and motion detection must be deactivatable to prevent accidental triggering."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "jsx",
+          "bad": "function Editor() {\n  useEffect(() => {\n    window.addEventListener(\"devicemotion\", onShakeUndo);\n    return () => window.removeEventListener(\"devicemotion\", onShakeUndo);\n  }, []);\n  return <p>Secouez l'appareil pour annuler</p>;\n}",
+          "good": "function Editor() {\n  return (\n    <div>\n      <p>Modifications en cours…</p>\n      <button type=\"button\" onClick={undo}>Annuler</button>\n    </div>\n  );\n}",
+          "note": {
+            "fr": "Un bouton « Annuler » offre l'équivalent de la secousse sans dépendre d'un capteur de mouvement.",
+            "en": "An \"Undo\" button offers the equivalent of the shake without relying on a motion sensor."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.12"
     }
   ]
 }

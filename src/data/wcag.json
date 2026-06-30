@@ -85,7 +85,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing"],
+      "ruleIds": ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing", "object-embed-no-name"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
       "techniques": [
         "ARIA10",
@@ -219,7 +219,9 @@
         "h1-multiple",
         "list-structure",
         "empty-heading",
-        "label-for-dangling"
+        "label-for-dangling",
+        "missing-main-landmark",
+        "multiple-main-landmark"
       ],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       "techniques": [
@@ -871,7 +873,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["aria-invalid-no-description"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
       "techniques": [
         "ARIA1",
@@ -1004,7 +1006,8 @@
         "form-field-multiple-labels",
         "select-has-option",
         "button-empty-name",
-        "icon-only-control-unnamed"
+        "icon-only-control-unnamed",
+        "control-name-title-only"
       ],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
       "techniques": [
@@ -1072,7 +1075,7 @@
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["live-region-conflict"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
       "techniques": ["ARIA19", "ARIA22", "ARIA23"]
     }

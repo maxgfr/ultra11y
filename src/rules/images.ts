@@ -110,4 +110,28 @@ const inputImageAltMissing: Rule = {
   },
 };
 
-export const imagesRules: Rule[] = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing];
+// <object>/<embed> embed non-text content (PDF, Flash-era media, SVG, video) and need an
+// accessible name or text fallback, like <img>. (Decorative ones should be aria-hidden.)
+const objectEmbedNoName: Rule = {
+  id: "object-embed-no-name",
+  criteria: ["1.1.1"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "object" && el.tag !== "embed") continue;
+      if (isHidden(el)) continue;
+      if (hasDynamicSpread(el)) continue; // a spread may inject aria-label/title
+      if (accessibleName(el, doc).trim() !== "") continue; // aria-label/labelledby, title, or <object> fallback content
+      out.push({
+        criteriaId: "1.1.1",
+        el,
+        message: `<${el.tag}> sans nom accessible ni contenu de repli — média embarqué sans alternative textuelle.`,
+        remediation: `Ajoutez aria-label/title décrivant le contenu (et un contenu de repli textuel dans <object>…</object>), ou aria-hidden="true" si décoratif.`,
+      });
+    }
+    return out;
+  },
+};
+
+export const imagesRules: Rule[] = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing, objectEmbedNoName];

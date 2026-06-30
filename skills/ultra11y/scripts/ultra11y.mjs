@@ -100,7 +100,13 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing"],
+      ruleIds: [
+        "img-alt-missing",
+        "canvas-fallback-missing",
+        "decorative-alt-misuse",
+        "input-image-alt-missing",
+        "object-embed-no-name"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
       techniques: [
         "ARIA10",
@@ -167,7 +173,21 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html",
-      techniques: ["F30", "F67", "G158", "G159", "G166", "G173", "G58", "G69", "G78", "G8", "H96", "SM6", "SM7"]
+      techniques: [
+        "F30",
+        "F67",
+        "G158",
+        "G159",
+        "G166",
+        "G173",
+        "G58",
+        "G69",
+        "G78",
+        "G8",
+        "H96",
+        "SM6",
+        "SM7"
+      ]
     },
     {
       sc: "1.2.2",
@@ -177,9 +197,21 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["media-no-track"],
+      ruleIds: [
+        "media-no-track"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
-      techniques: ["F74", "F75", "F8", "G58", "G87", "G93", "H95", "SM11", "SM12"]
+      techniques: [
+        "F74",
+        "F75",
+        "F8",
+        "G58",
+        "G87",
+        "G93",
+        "H95",
+        "SM11",
+        "SM12"
+      ]
     },
     {
       sc: "1.2.3",
@@ -191,7 +223,21 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-or-media-alternative-prerecorded.html",
-      techniques: ["F30", "F67", "G158", "G159", "G166", "G173", "G58", "G69", "G78", "G8", "H96", "SM6", "SM7"]
+      techniques: [
+        "F30",
+        "F67",
+        "G158",
+        "G159",
+        "G166",
+        "G173",
+        "G58",
+        "G69",
+        "G78",
+        "G8",
+        "H96",
+        "SM6",
+        "SM7"
+      ]
     },
     {
       sc: "1.2.4",
@@ -214,7 +260,17 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-prerecorded.html",
-      techniques: ["G173", "G58", "G78", "G8", "H96", "SM1", "SM2", "SM6", "SM7"]
+      techniques: [
+        "G173",
+        "G58",
+        "G78",
+        "G8",
+        "H96",
+        "SM1",
+        "SM2",
+        "SM6",
+        "SM7"
+      ]
     },
     {
       sc: "1.3.1",
@@ -234,7 +290,9 @@ var wcag_default = {
         "h1-multiple",
         "list-structure",
         "empty-heading",
-        "label-for-dangling"
+        "label-for-dangling",
+        "missing-main-landmark",
+        "multiple-main-landmark"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       techniques: [
@@ -317,7 +375,26 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html",
-      techniques: ["ARIA4", "C18", "C22", "C6", "C8", "F1", "F15", "F32", "F33", "F34", "F48", "F49", "G10", "G135", "G140", "G57", "G59", "H56"]
+      techniques: [
+        "ARIA4",
+        "C18",
+        "C22",
+        "C6",
+        "C8",
+        "F1",
+        "F15",
+        "F32",
+        "F33",
+        "F34",
+        "F48",
+        "F49",
+        "G10",
+        "G135",
+        "G140",
+        "G57",
+        "G59",
+        "H56"
+      ]
     },
     {
       sc: "1.3.3",
@@ -329,7 +406,12 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html",
-      techniques: ["F14", "F26", "G140", "G96"]
+      techniques: [
+        "F14",
+        "F26",
+        "G140",
+        "G96"
+      ]
     },
     {
       sc: "1.3.4",
@@ -352,7 +434,9 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html",
-      techniques: ["H98"]
+      techniques: [
+        "H98"
+      ]
     },
     {
       sc: "1.4.1",
@@ -364,7 +448,26 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html",
-      techniques: ["C15", "F14", "F26", "F73", "F78", "G111", "G117", "G138", "G14", "G140", "G149", "G165", "G182", "G183", "G195", "G205", "G96", "SCR31"]
+      techniques: [
+        "C15",
+        "F14",
+        "F26",
+        "F73",
+        "F78",
+        "G111",
+        "G117",
+        "G138",
+        "G14",
+        "G140",
+        "G149",
+        "G165",
+        "G182",
+        "G183",
+        "G195",
+        "G205",
+        "G96",
+        "SCR31"
+      ]
     },
     {
       sc: "1.4.2",
@@ -374,9 +477,17 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: ["autoplay-media"],
+      ruleIds: [
+        "autoplay-media"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html",
-      techniques: ["F23", "F93", "G170", "G171", "G60"]
+      techniques: [
+        "F23",
+        "F93",
+        "G170",
+        "G171",
+        "G60"
+      ]
     },
     {
       sc: "1.4.3",
@@ -386,9 +497,19 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
-      ruleIds: ["contrast-literal"],
+      ruleIds: [
+        "contrast-literal"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
-      techniques: ["C29", "F24", "G136", "G145", "G148", "G174", "G18"]
+      techniques: [
+        "C29",
+        "F24",
+        "G136",
+        "G145",
+        "G148",
+        "G174",
+        "G18"
+      ]
     },
     {
       sc: "1.4.4",
@@ -398,9 +519,22 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
-      ruleIds: ["meta-viewport-zoom-block"],
+      ruleIds: [
+        "meta-viewport-zoom-block"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html",
-      techniques: ["C12", "C13", "C14", "C17", "C28", "F69", "F80", "G146", "G179", "SCR34"]
+      techniques: [
+        "C12",
+        "C13",
+        "C14",
+        "C17",
+        "C28",
+        "F69",
+        "F80",
+        "G146",
+        "G179",
+        "SCR34"
+      ]
     },
     {
       sc: "1.4.5",
@@ -412,7 +546,12 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html",
-      techniques: ["C22", "C30", "G136", "G140"]
+      techniques: [
+        "C22",
+        "C30",
+        "G136",
+        "G140"
+      ]
     },
     {
       sc: "1.4.10",
@@ -424,7 +563,10 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
-      techniques: ["C34", "C37"]
+      techniques: [
+        "C34",
+        "C37"
+      ]
     },
     {
       sc: "1.4.11",
@@ -436,7 +578,15 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
-      techniques: ["F78", "G145", "G174", "G18", "G183", "G195", "G207"]
+      techniques: [
+        "F78",
+        "G145",
+        "G174",
+        "G18",
+        "G183",
+        "G195",
+        "G207"
+      ]
     },
     {
       sc: "1.4.12",
@@ -448,7 +598,12 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
-      techniques: ["C21", "C35", "C36", "C8"]
+      techniques: [
+        "C21",
+        "C35",
+        "C36",
+        "C8"
+      ]
     },
     {
       sc: "1.4.13",
@@ -460,7 +615,9 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html",
-      techniques: ["F95"]
+      techniques: [
+        "F95"
+      ]
     },
     {
       sc: "2.1.1",
@@ -470,9 +627,25 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["clickable-noninteractive"],
+      ruleIds: [
+        "clickable-noninteractive"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
-      techniques: ["F10", "F42", "F54", "F55", "G202", "G21", "G4", "G90", "H91", "SCR2", "SCR20", "SCR29", "SCR35"]
+      techniques: [
+        "F10",
+        "F42",
+        "F54",
+        "F55",
+        "G202",
+        "G21",
+        "G4",
+        "G90",
+        "H91",
+        "SCR2",
+        "SCR20",
+        "SCR29",
+        "SCR35"
+      ]
     },
     {
       sc: "2.1.2",
@@ -484,7 +657,14 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html",
-      techniques: ["F10", "G202", "G21", "G4", "G90", "H91"]
+      techniques: [
+        "F10",
+        "G202",
+        "G21",
+        "G4",
+        "G90",
+        "H91"
+      ]
     },
     {
       sc: "2.1.4",
@@ -496,7 +676,10 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/character-key-shortcuts.html",
-      techniques: ["F99", "G217"]
+      techniques: [
+        "F99",
+        "G217"
+      ]
     },
     {
       sc: "2.2.1",
@@ -506,7 +689,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["meta-refresh-redirect"],
+      ruleIds: [
+        "meta-refresh-redirect"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html",
       techniques: [
         "F16",
@@ -549,7 +734,10 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["autoplay-media", "blink-marquee"],
+      ruleIds: [
+        "autoplay-media",
+        "blink-marquee"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html",
       techniques: [
         "F16",
@@ -594,7 +782,11 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html",
-      techniques: ["G15", "G176", "G19"]
+      techniques: [
+        "G15",
+        "G176",
+        "G19"
+      ]
     },
     {
       sc: "2.4.1",
@@ -604,9 +796,29 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["skip-link-target-missing"],
+      ruleIds: [
+        "skip-link-target-missing"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html",
-      techniques: ["ARIA11", "ARIA12", "ARIA4", "F15", "F66", "G1", "G10", "G115", "G123", "G124", "G130", "G135", "G141", "G59", "H42", "H69", "SCR28"]
+      techniques: [
+        "ARIA11",
+        "ARIA12",
+        "ARIA4",
+        "F15",
+        "F66",
+        "G1",
+        "G10",
+        "G115",
+        "G123",
+        "G124",
+        "G130",
+        "G135",
+        "G141",
+        "G59",
+        "H42",
+        "H69",
+        "SCR28"
+      ]
     },
     {
       sc: "2.4.2",
@@ -616,9 +828,15 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: ["title-missing-empty"],
+      ruleIds: [
+        "title-missing-empty"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
-      techniques: ["G127", "G88", "H25"]
+      techniques: [
+        "G127",
+        "G88",
+        "H25"
+      ]
     },
     {
       sc: "2.4.3",
@@ -628,9 +846,30 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["positive-tabindex"],
+      ruleIds: [
+        "positive-tabindex"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
-      techniques: ["C27", "F1", "F15", "F44", "F66", "F85", "G1", "G10", "G123", "G124", "G135", "G140", "G59", "H4", "SCR26", "SCR27", "SCR28", "SCR37"]
+      techniques: [
+        "C27",
+        "F1",
+        "F15",
+        "F44",
+        "F66",
+        "F85",
+        "G1",
+        "G10",
+        "G123",
+        "G124",
+        "G135",
+        "G140",
+        "G59",
+        "H4",
+        "SCR26",
+        "SCR27",
+        "SCR28",
+        "SCR37"
+      ]
     },
     {
       sc: "2.4.4",
@@ -640,9 +879,24 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["link-empty-name", "icon-only-control-unnamed"],
+      ruleIds: [
+        "link-empty-name",
+        "icon-only-control-unnamed"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html",
-      techniques: ["ARIA7", "ARIA8", "F63", "F89", "G53", "G91", "H30", "H78", "H79", "H80", "H81"]
+      techniques: [
+        "ARIA7",
+        "ARIA8",
+        "F63",
+        "F89",
+        "G53",
+        "G91",
+        "H30",
+        "H78",
+        "H79",
+        "H80",
+        "H81"
+      ]
     },
     {
       sc: "2.4.5",
@@ -654,7 +908,12 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/multiple-ways.html",
-      techniques: ["G161", "G61", "G63", "G64"]
+      techniques: [
+        "G161",
+        "G61",
+        "G63",
+        "G64"
+      ]
     },
     {
       sc: "2.4.6",
@@ -666,7 +925,25 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html",
-      techniques: ["ARIA12", "ARIA14", "ARIA16", "ARIA4", "ARIA6", "ARIA9", "F68", "F82", "F86", "G115", "G130", "G131", "G141", "G82", "H42", "H44", "H65"]
+      techniques: [
+        "ARIA12",
+        "ARIA14",
+        "ARIA16",
+        "ARIA4",
+        "ARIA6",
+        "ARIA9",
+        "F68",
+        "F82",
+        "F86",
+        "G115",
+        "G130",
+        "G131",
+        "G141",
+        "G82",
+        "H42",
+        "H44",
+        "H65"
+      ]
     },
     {
       sc: "2.4.7",
@@ -678,7 +955,25 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
-      techniques: ["C15", "F42", "F54", "F55", "F73", "F78", "G149", "G165", "G183", "G195", "G202", "G90", "SCR2", "SCR20", "SCR29", "SCR31", "SCR35"]
+      techniques: [
+        "C15",
+        "F42",
+        "F54",
+        "F55",
+        "F73",
+        "F78",
+        "G149",
+        "G165",
+        "G183",
+        "G195",
+        "G202",
+        "G90",
+        "SCR2",
+        "SCR20",
+        "SCR29",
+        "SCR31",
+        "SCR35"
+      ]
     },
     {
       sc: "2.4.11",
@@ -701,7 +996,10 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pointer-gestures.html",
-      techniques: ["G215", "G216"]
+      techniques: [
+        "G215",
+        "G216"
+      ]
     },
     {
       sc: "2.5.2",
@@ -803,9 +1101,17 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: ["html-lang-missing", "lang-invalid"],
+      ruleIds: [
+        "html-lang-missing",
+        "lang-invalid"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
-      techniques: ["F15", "G10", "G135", "H57"]
+      techniques: [
+        "F15",
+        "G10",
+        "G135",
+        "H57"
+      ]
     },
     {
       sc: "3.1.2",
@@ -815,9 +1121,14 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["inline-lang-change-missing", "lang-invalid"],
+      ruleIds: [
+        "inline-lang-change-missing",
+        "lang-invalid"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html",
-      techniques: ["H58"]
+      techniques: [
+        "H58"
+      ]
     },
     {
       sc: "3.2.1",
@@ -829,7 +1140,21 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html",
-      techniques: ["F22", "F36", "F37", "F41", "F55", "F9", "G107", "G13", "G76", "G80", "H32", "H84", "SCR19"]
+      techniques: [
+        "F22",
+        "F36",
+        "F37",
+        "F41",
+        "F55",
+        "F9",
+        "G107",
+        "G13",
+        "G76",
+        "G80",
+        "H32",
+        "H84",
+        "SCR19"
+      ]
     },
     {
       sc: "3.2.2",
@@ -841,7 +1166,20 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/on-input.html",
-      techniques: ["F22", "F36", "F37", "F41", "F9", "G107", "G13", "G76", "G80", "H32", "H84", "SCR19"]
+      techniques: [
+        "F22",
+        "F36",
+        "F37",
+        "F41",
+        "F9",
+        "G107",
+        "G13",
+        "G76",
+        "G80",
+        "H32",
+        "H84",
+        "SCR19"
+      ]
     },
     {
       sc: "3.2.3",
@@ -853,7 +1191,16 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html",
-      techniques: ["F66", "G1", "G123", "G124", "G59", "G61", "G63", "SCR28"]
+      techniques: [
+        "F66",
+        "G1",
+        "G123",
+        "G124",
+        "G59",
+        "G61",
+        "G63",
+        "SCR28"
+      ]
     },
     {
       sc: "3.2.4",
@@ -865,7 +1212,9 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html",
-      techniques: ["F31"]
+      techniques: [
+        "F31"
+      ]
     },
     {
       sc: "3.2.6",
@@ -886,7 +1235,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: [
+        "aria-invalid-no-description"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
       techniques: [
         "ARIA1",
@@ -960,7 +1311,13 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html",
-      techniques: ["G177", "G84", "G85", "G89", "H89"]
+      techniques: [
+        "G177",
+        "G84",
+        "G85",
+        "G89",
+        "H89"
+      ]
     },
     {
       sc: "3.3.4",
@@ -972,7 +1329,13 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html",
-      techniques: ["G155", "G164", "G168", "G98", "G99"]
+      techniques: [
+        "G155",
+        "G164",
+        "G168",
+        "G98",
+        "G99"
+      ]
     },
     {
       sc: "3.3.7",
@@ -1019,7 +1382,8 @@ var wcag_default = {
         "form-field-multiple-labels",
         "select-has-option",
         "button-empty-name",
-        "icon-only-control-unnamed"
+        "icon-only-control-unnamed",
+        "control-name-title-only"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
       techniques: [
@@ -1087,9 +1451,15 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: [
+        "live-region-conflict"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
-      techniques: ["ARIA19", "ARIA22", "ARIA23"]
+      techniques: [
+        "ARIA19",
+        "ARIA22",
+        "ARIA23"
+      ]
     }
   ]
 };
@@ -18375,7 +18745,28 @@ var inputImageAltMissing = {
     return out;
   }
 };
-var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing];
+var objectEmbedNoName = {
+  id: "object-embed-no-name",
+  criteria: ["1.1.1"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "object" && el.tag !== "embed") continue;
+      if (isHidden(el)) continue;
+      if (hasDynamicSpread(el)) continue;
+      if (accessibleName(el, doc).trim() !== "") continue;
+      out.push({
+        criteriaId: "1.1.1",
+        el,
+        message: `<${el.tag}> sans nom accessible ni contenu de repli \u2014 m\xE9dia embarqu\xE9 sans alternative textuelle.`,
+        remediation: `Ajoutez aria-label/title d\xE9crivant le contenu (et un contenu de repli textuel dans <object>\u2026</object>), ou aria-hidden="true" si d\xE9coratif.`
+      });
+    }
+    return out;
+  }
+};
+var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing, objectEmbedNoName];
 
 // src/rules/frames.ts
 var iframeTitleMissing = {
@@ -18718,6 +19109,52 @@ var nestedInteractive = {
     return out;
   }
 };
+var ROLE_LIVENESS = {
+  alert: "assertive",
+  alertdialog: "assertive",
+  status: "polite",
+  log: "polite",
+  timer: "off",
+  marquee: "off"
+};
+var VALID_LIVE = /* @__PURE__ */ new Set(["off", "polite", "assertive"]);
+var liveRegionConflict = {
+  id: "live-region-conflict",
+  criteria: ["4.1.3"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue;
+      const liveRaw = attr(el, "aria-live");
+      if (liveRaw === void 0 || liveRaw.includes("{")) continue;
+      const live = liveRaw.trim().toLowerCase();
+      if (!live) continue;
+      if (!VALID_LIVE.has(live)) {
+        out.push({
+          criteriaId: "4.1.3",
+          el,
+          message: `aria-live="${liveRaw}" invalide \u2014 seules les valeurs off, polite, assertive sont restitu\xE9es.`,
+          remediation: `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignor\xE9e.`
+        });
+        continue;
+      }
+      const role = (attr(el, "role") ?? "").trim().toLowerCase();
+      if (role.includes("{")) continue;
+      const want = ROLE_LIVENESS[role];
+      if (want && want !== live) {
+        out.push({
+          criteriaId: "4.1.3",
+          el,
+          severity: want === "assertive" ? "majeur" : "mineur",
+          message: `role="${role}" implique aria-live="${want}" mais aria-live="${live}" \u2014 message de statut restitu\xE9 de fa\xE7on incoh\xE9rente.`,
+          remediation: want === "assertive" ? `Laissez role="${role}" g\xE9rer la restitution (retirez aria-live) ou utilisez aria-live="assertive".` : `Alignez aria-live sur "${want}", coh\xE9rent avec role="${role}", ou retirez-le.`
+        });
+      }
+    }
+    return out;
+  }
+};
 var scriptsAriaRules = [
   invalidAriaRole,
   ariaRefMissingId,
@@ -18725,7 +19162,8 @@ var scriptsAriaRules = [
   clickableNoninteractive,
   ariaRequiredChildren,
   ariaHiddenFocusable,
-  nestedInteractive
+  nestedInteractive,
+  liveRegionConflict
 ];
 
 // src/rules/mandatory.ts
@@ -19178,7 +19616,36 @@ var iconOnlyControlUnnamed = {
     return out;
   }
 };
-var linksRules = [linkEmptyName, buttonEmptyName, iconOnlyControlUnnamed];
+var controlNameTitleOnly = {
+  id: "control-name-title-only",
+  criteria: ["4.1.2"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      const link = el.tag === "a" && hasAttr(el, "href");
+      if (!link && !isButton(el)) continue;
+      if (attr(el, "aria-hidden") === "true") continue;
+      const title2 = (attr(el, "title") ?? "").trim();
+      if (!title2 || title2.includes("{")) continue;
+      if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
+      if (mayInjectContent(el)) continue;
+      if (el.tag === "input" && (attr(el, "value") ?? "").trim()) continue;
+      const hasContentName = visibleText(el).trim() !== "" || descendants(el).some(
+        (d) => d.tag === "img" && (attr(d, "alt") ?? "").trim() !== "" || d.tag === "svg" && descendants(d).some((x) => x.tag === "title" && visibleText(x).trim() !== "")
+      );
+      if (hasContentName) continue;
+      out.push({
+        criteriaId: "4.1.2",
+        el,
+        message: `${link ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title \u2014 title n'est pas restitu\xE9 de fa\xE7on fiable (survol uniquement).`,
+        remediation: `Donnez un intitul\xE9 via texte visible ou aria-label ; r\xE9servez title \xE0 une information compl\xE9mentaire.`
+      });
+    }
+    return out;
+  }
+};
+var linksRules = [linkEmptyName, buttonEmptyName, iconOnlyControlUnnamed, controlNameTitleOnly];
 
 // src/rules/forms.ts
 function contentInjected(el) {
@@ -19320,9 +19787,51 @@ var labelForDangling = {
     return out;
   }
 };
-var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption, labelForDangling];
+var ariaInvalidNoDescription = {
+  id: "aria-invalid-no-description",
+  criteria: ["3.3.1"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isFormField(el)) continue;
+      const invalid = attr(el, "aria-invalid");
+      if (invalid === void 0 || invalid.includes("{")) continue;
+      if (invalid.trim().toLowerCase() !== "true") continue;
+      if (hasAttr(el, "aria-describedby") || hasAttr(el, "aria-errormessage")) continue;
+      if (hasDynamicSpread(el)) continue;
+      out.push({
+        criteriaId: "3.3.1",
+        el,
+        message: `<${el.tag}> a aria-invalid="true" mais aucun aria-describedby/aria-errormessage \u2014 l'erreur est signal\xE9e sans \xEAtre reli\xE9e \xE0 son message.`,
+        remediation: `Reliez le message d'erreur au champ via aria-describedby (ou aria-errormessage) pointant vers le texte d'erreur.`
+      });
+    }
+    return out;
+  }
+};
+var formsRules = [
+  controlLabelMissing,
+  placeholderAsLabel,
+  fieldsetLegendMissing,
+  formFieldMultipleLabels,
+  selectHasOption,
+  labelForDangling,
+  ariaInvalidNoDescription
+];
 
 // src/rules/navigation.ts
+function contentMaybeInjected2(doc) {
+  if (doc.kind === "html") return false;
+  return doc.elements.some((e) => e.tag === "slot" || e.tag !== "#fragment" && !isIntrinsic(e.tag));
+}
+function mainLandmarks(doc) {
+  return doc.elements.filter((e) => {
+    if (attr(e, "aria-hidden") === "true") return false;
+    if (e.tag === "main") return true;
+    return (attr(e, "role") ?? "").trim().toLowerCase() === "main";
+  });
+}
 var skipLinkTargetMissing = {
   id: "skip-link-target-missing",
   criteria: ["2.4.1"],
@@ -19372,7 +19881,43 @@ var positiveTabindex = {
     return out;
   }
 };
-var navigationRules = [skipLinkTargetMissing, positiveTabindex];
+var missingMainLandmark = {
+  id: "missing-main-landmark",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  scope: "page",
+  run(doc) {
+    if (mainLandmarks(doc).length > 0) return [];
+    if (contentMaybeInjected2(doc) || shellBodyInjected(doc)) return [];
+    const anchor = elementsByTag(doc, "body")[0] ?? elementsByTag(doc, "html")[0];
+    if (!anchor) return [];
+    return [
+      {
+        criteriaId: "1.3.1",
+        el: anchor,
+        message: `Aucun rep\xE8re <main> dans la page \u2014 le contenu principal n'est pas identifi\xE9 (et la cible d'un lien d'\xE9vitement manque).`,
+        remediation: `Enveloppez le contenu principal dans un <main id="content"> (unique par page).`
+      }
+    ];
+  }
+};
+var multipleMainLandmark = {
+  id: "multiple-main-landmark",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  scope: "page",
+  run(doc) {
+    const mains = mainLandmarks(doc);
+    if (mains.length <= 1) return [];
+    return mains.slice(1).map((el) => ({
+      criteriaId: "1.3.1",
+      el,
+      message: `Plusieurs rep\xE8res <main> dans la page (${mains.length}) \u2014 un seul contenu principal est autoris\xE9.`,
+      remediation: `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`
+    }));
+  }
+};
+var navigationRules = [skipLinkTargetMissing, positiveTabindex, missingMainLandmark, multipleMainLandmark];
 
 // src/rules/multimedia.ts
 function mutedStatically(el) {
@@ -24566,7 +25111,10 @@ var rgaa_default2 = {
       id: "images-informative-alt",
       criterionId: "1.1",
       wcag: ["1.1.1"],
-      title: { fr: "Alternative textuelle des images porteuses d'information", en: "Concise alt text for informative images" },
+      title: {
+        fr: "Alternative textuelle des images porteuses d'information",
+        en: "Concise alt text for informative images"
+      },
       summary: {
         fr: "Toute image porteuse d'information doit avoir un attribut alt qui d\xE9crit son sens en contexte (pas \xAB image \xBB ni le nom de fichier).",
         en: 'Every informative image needs an alt attribute that conveys its meaning in context (not "image" nor the file name).'
@@ -24577,7 +25125,10 @@ var rgaa_default2 = {
           lang: "html",
           bad: '<img src="chart.png" alt="image">',
           good: '<img src="chart.png" alt="Ventes en hausse de 25 % au T3 2025">',
-          note: { fr: "L'alternative d\xE9crit le sens, pas le nom de fichier.", en: "The alternative conveys the meaning, not the file name." }
+          note: {
+            fr: "L'alternative d\xE9crit le sens, pas le nom de fichier.",
+            en: "The alternative conveys the meaning, not the file name."
+          }
         }
       ],
       reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.1"
@@ -24586,7 +25137,10 @@ var rgaa_default2 = {
       id: "images-decorative-alt-empty",
       criterionId: "1.2",
       wcag: ["1.1.1", "4.1.2"],
-      title: { fr: "Images de d\xE9coration ignor\xE9es par les technologies d'assistance", en: "Decorative images ignored by assistive tech" },
+      title: {
+        fr: "Images de d\xE9coration ignor\xE9es par les technologies d'assistance",
+        en: "Decorative images ignored by assistive tech"
+      },
       summary: {
         fr: 'Une image purement d\xE9corative doit \xEAtre ignor\xE9e : alt vide (alt="") pour une img, ou aria-hidden="true" pour une ic\xF4ne.',
         en: 'A purely decorative image must be ignored: empty alt (alt="") on an img, or aria-hidden="true" on an icon.'
@@ -24597,7 +25151,10 @@ var rgaa_default2 = {
           lang: "html",
           bad: '<img src="separateur.png" alt="s\xE9parateur d\xE9coratif">',
           good: '<img src="separateur.png" alt="">',
-          note: { fr: "Une d\xE9coration annonc\xE9e au lecteur d'\xE9cran est du bruit.", en: "A decoration announced to a screen reader is noise." }
+          note: {
+            fr: "Une d\xE9coration annonc\xE9e au lecteur d'\xE9cran est du bruit.",
+            en: "A decoration announced to a screen reader is noise."
+          }
         }
       ],
       reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.2"
@@ -24606,7 +25163,10 @@ var rgaa_default2 = {
       id: "iframes-title-attribute",
       criterionId: "2.1",
       wcag: ["4.1.2"],
-      title: { fr: "Titre de cadre pour chaque iframe", en: "Frame title on every iframe" },
+      title: {
+        fr: "Titre de cadre pour chaque iframe",
+        en: "Frame title on every iframe"
+      },
       summary: {
         fr: "Chaque iframe doit porter un attribut title court et pertinent d\xE9crivant son contenu.",
         en: "Every iframe must carry a short, relevant title attribute describing its content."
@@ -24625,7 +25185,10 @@ var rgaa_default2 = {
       id: "links-explicit",
       criterionId: "6.1",
       wcag: ["1.1.1", "2.4.4", "2.5.3"],
-      title: { fr: "Intitul\xE9 de lien explicite", en: "Explicit link text" },
+      title: {
+        fr: "Intitul\xE9 de lien explicite",
+        en: "Explicit link text"
+      },
       summary: {
         fr: "L'intitul\xE9 du lien (texte visible, ou nom accessible via aria-label/aria-labelledby) doit \xEAtre explicite hors contexte.",
         en: "The link text (visible, or accessible name via aria-label/aria-labelledby) must be explicit out of context."
@@ -24644,7 +25207,10 @@ var rgaa_default2 = {
       id: "images-icon-only-accessible-name",
       criterionId: "6.2",
       wcag: ["1.1.1", "2.4.4"],
-      title: { fr: "Contr\xF4le \xE0 ic\xF4ne seule : nom accessible obligatoire", en: "Icon-only control must have an accessible name" },
+      title: {
+        fr: "Contr\xF4le \xE0 ic\xF4ne seule : nom accessible obligatoire",
+        en: "Icon-only control must have an accessible name"
+      },
       summary: {
         fr: "Un bouton/lien \xE0 ic\xF4ne seule (sans texte visible) doit avoir un nom accessible via aria-label (l'ic\xF4ne restant aria-hidden).",
         en: "An icon-only button/link (no visible text) must have an accessible name via aria-label (the icon stays aria-hidden)."
@@ -24665,7 +25231,10 @@ var rgaa_default2 = {
       id: "lang-html-attribute",
       criterionId: "8.3",
       wcag: ["3.1.1"],
-      title: { fr: "Langue par d\xE9faut sur l'\xE9l\xE9ment html", en: "Default language on the html element" },
+      title: {
+        fr: "Langue par d\xE9faut sur l'\xE9l\xE9ment html",
+        en: "Default language on the html element"
+      },
       summary: {
         fr: "L'\xE9l\xE9ment html doit d\xE9clarer la langue par d\xE9faut de la page via l'attribut lang.",
         en: "The html element must declare the page's default language via the lang attribute."
@@ -24684,7 +25253,10 @@ var rgaa_default2 = {
       id: "lang-valid-code",
       criterionId: "8.4",
       wcag: ["3.1.1"],
-      title: { fr: "Code de langue valide", en: "Valid language code" },
+      title: {
+        fr: "Code de langue valide",
+        en: "Valid language code"
+      },
       summary: {
         fr: "Le code de langue (lang) doit \xEAtre un code valide (ex. fr, en, fr-CA), pas une valeur invent\xE9e.",
         en: "The lang code must be a valid language tag (e.g. fr, en, fr-CA), not an invented value."
@@ -24703,7 +25275,10 @@ var rgaa_default2 = {
       id: "title-precise-title",
       criterionId: "8.6",
       wcag: ["2.4.2"],
-      title: { fr: "Titre de page pertinent", en: "Relevant page title" },
+      title: {
+        fr: "Titre de page pertinent",
+        en: "Relevant page title"
+      },
       summary: {
         fr: "Chaque page doit avoir un \xE9l\xE9ment title non vide et pertinent d\xE9crivant son sujet.",
         en: "Every page must have a non-empty, relevant title element describing its subject."
@@ -24722,7 +25297,10 @@ var rgaa_default2 = {
       id: "structure-heading-hierarchy",
       criterionId: "9.1",
       wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
-      title: { fr: "Structuration par les titres", en: "Structure via headings" },
+      title: {
+        fr: "Structuration par les titres",
+        en: "Structure via headings"
+      },
       summary: {
         fr: "L'information est structur\xE9e par une hi\xE9rarchie de titres (h1\u2026h6) sans saut de niveau, avec un h1 unique.",
         en: "Content is structured by a heading hierarchy (h1\u2026h6) with no skipped level and a single h1."
@@ -24741,7 +25319,10 @@ var rgaa_default2 = {
       id: "lists-unordered",
       criterionId: "9.3",
       wcag: ["1.3.1"],
-      title: { fr: "Listes correctement structur\xE9es", en: "Properly structured lists" },
+      title: {
+        fr: "Listes correctement structur\xE9es",
+        en: "Properly structured lists"
+      },
       summary: {
         fr: "Les listes visuelles doivent utiliser ul/ol + li (pas des puces simul\xE9es avec des div ou des tirets).",
         en: "Visual lists must use ul/ol + li (not bullets faked with divs or dashes)."
@@ -24760,7 +25341,10 @@ var rgaa_default2 = {
       id: "forms-label-for-id",
       criterionId: "11.1",
       wcag: ["1.3.1", "2.4.6", "3.3.2", "4.1.2"],
-      title: { fr: "Associer l'\xE9tiquette visible au champ via for/id", en: "Associate the visible label with the control via for/id" },
+      title: {
+        fr: "Associer l'\xE9tiquette visible au champ via for/id",
+        en: "Associate the visible label with the control via for/id"
+      },
       summary: {
         fr: "Chaque champ doit \xEAtre associ\xE9 \xE0 une \xE9tiquette : label[for] li\xE9 \xE0 l'id du champ (le placeholder ne remplace pas une \xE9tiquette).",
         en: "Every field needs a label: label[for] tied to the field id (a placeholder does not replace a label)."
@@ -24779,7 +25363,10 @@ var rgaa_default2 = {
       id: "forms-no-placeholder-only",
       criterionId: "11.2",
       wcag: ["2.4.6", "2.5.3", "3.3.2"],
-      title: { fr: "Le placeholder ne remplace pas l'\xE9tiquette", en: "Placeholder is not a label" },
+      title: {
+        fr: "Le placeholder ne remplace pas l'\xE9tiquette",
+        en: "Placeholder is not a label"
+      },
       summary: {
         fr: "Le placeholder dispara\xEEt \xE0 la saisie et n'est pas une \xE9tiquette : fournissez un label r\xE9el et pertinent.",
         en: "A placeholder vanishes on input and is not a label: provide a real, relevant label."
@@ -24798,7 +25385,10 @@ var rgaa_default2 = {
       id: "consultation-new-window",
       criterionId: "13.2",
       wcag: ["3.2.1"],
-      title: { fr: "Ouverture d'une nouvelle fen\xEAtre pr\xE9venue", en: "New-window opening is announced" },
+      title: {
+        fr: "Ouverture d'une nouvelle fen\xEAtre pr\xE9venue",
+        en: "New-window opening is announced"
+      },
       summary: {
         fr: `L'ouverture d'une nouvelle fen\xEAtre (target="_blank") doit \xEAtre annonc\xE9e \xE0 l'utilisateur (dans l'intitul\xE9 ou via une mention).`,
         en: 'Opening a new window (target="_blank") must be announced to the user (in the link text or a mention).'
@@ -24816,6 +25406,2061 @@ var rgaa_default2 = {
         }
       ],
       reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.2"
+    },
+    {
+      id: "status-messages-restitution",
+      criterionId: "7.5",
+      wcag: ["4.1.3"],
+      title: {
+        fr: "Messages de statut restitu\xE9s par les technologies d'assistance",
+        en: "Status messages exposed to assistive technologies"
+      },
+      summary: {
+        fr: `Un message de statut (succ\xE8s, erreur, chargement, compteur de r\xE9sultats) doit \xEAtre annonc\xE9 sans d\xE9placer le focus, via role="status"/"alert" ou aria-live. Une erreur ou un message urgent doit \xEAtre assertif (role="alert" ou aria-live="assertive") ; une information non urgente reste polie (role="status" ou aria-live="polite"). Le r\xF4le et la valeur d'aria-live ne doivent pas se contredire.`,
+        en: 'A status message (success, error, loading, result counter) must be announced without moving focus, via role="status"/"alert" or aria-live. An error or urgent message must be assertive (role="alert" or aria-live="assertive"); non-urgent info stays polite (role="status" or aria-live="polite"). The role and the aria-live value must not contradict each other.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div aria-live="polite" class="alert-error">Le formulaire comporte des erreurs.</div>',
+          good: '<div role="alert">Le formulaire comporte des erreurs.</div>',
+          note: {
+            fr: 'Une erreur en aria-live="polite" est mise en file basse priorit\xE9 et peut \xEAtre manqu\xE9e ; role="alert" la restitue imm\xE9diatement (assertif).',
+            en: 'An error in aria-live="polite" is low-priority queued and may be missed; role="alert" announces it immediately (assertive).'
+          }
+        },
+        {
+          lang: "html",
+          bad: '<p role="status" aria-live="assertive">3 r\xE9sultats trouv\xE9s</p>',
+          good: '<p role="status">3 r\xE9sultats trouv\xE9s</p>',
+          note: {
+            fr: `role="status" implique d\xE9j\xE0 aria-live="polite" : un aria-live="assertive" contradictoire interrompt l'utilisateur pour une information non urgente.`,
+            en: 'role="status" already implies aria-live="polite"; a contradictory aria-live="assertive" interrupts the user for non-urgent information.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      id: "forms-error-association",
+      criterionId: "11.10",
+      wcag: ["3.3.1", "3.3.2"],
+      title: {
+        fr: "Erreur de saisie reli\xE9e au champ concern\xE9",
+        en: "Input error associated with its field"
+      },
+      summary: {
+        fr: `Chaque message d'erreur de saisie doit \xEAtre reli\xE9 programmatiquement \xE0 son champ : aria-invalid="true" sur le champ en erreur, et aria-describedby (ou aria-errormessage) pointant vers le texte de l'erreur. Un message visible mais non reli\xE9 n'est pas restitu\xE9 sur le champ par les lecteurs d'\xE9cran.`,
+        en: 'Each input error message must be programmatically associated with its field: aria-invalid="true" on the failing control, and aria-describedby (or aria-errormessage) pointing to the error text. A visible-but-unlinked message is not exposed on the field to screen readers.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<label for="email">E-mail</label><input id="email" type="email" class="is-error"><p class="error">Adresse e-mail invalide.</p>',
+          good: '<label for="email">E-mail</label><input id="email" type="email" aria-invalid="true" aria-describedby="email-error"><p id="email-error">Adresse e-mail invalide.</p>',
+          note: {
+            fr: `L'erreur visible porte un id cible d'aria-describedby, et le champ aria-invalid="true" \u2014 l'association devient programmatique.`,
+            en: 'The visible error carries an id referenced by aria-describedby, and the field has aria-invalid="true" \u2014 the association becomes programmatic.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.10"
+    },
+    {
+      id: "images-alt-relevance",
+      criterionId: "1.3",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Pertinence de l'alternative textuelle des images",
+        en: "Relevance of the image text alternative"
+      },
+      summary: {
+        fr: "L'alternative d'une image porteuse d'information doit transmettre la m\xEAme information ou fonction, de fa\xE7on concise. Elle ne doit pas se limiter \xE0 \xAB image \xBB/au nom de fichier, ni r\xE9p\xE9ter mot pour mot un texte adjacent, ni d\xE9crire l'apparence quand c'est l'information qui compte.",
+        en: `An informative image's alt must convey the same information or function, concisely. It must not be just "image"/the file name, must not duplicate adjacent text verbatim, and must not describe appearance when it is the meaning that matters.`
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p>Notre \xE9quipe vous accueille du lundi au vendredi.</p>\n<img src="equipe.jpg" alt="Notre \xE9quipe vous accueille du lundi au vendredi.">',
+          good: `<p>Notre \xE9quipe vous accueille du lundi au vendredi.</p>
+<img src="equipe.jpg" alt="Les six conseillers du service client\xE8le au comptoir d'accueil">`,
+          note: {
+            fr: "L'alternative ne r\xE9p\xE8te pas le texte adjacent : elle apporte l'information que l'image ajoute.",
+            en: "The alt does not repeat the adjacent text: it conveys what the image adds."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.3"
+    },
+    {
+      id: "images-captcha-alt-purpose",
+      criterionId: "1.4",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Alternative d'une image CAPTCHA : nature et fonction",
+        en: "CAPTCHA image alternative: nature and purpose"
+      },
+      summary: {
+        fr: "L'alternative d'une image utilis\xE9e comme CAPTCHA ou image-test doit en identifier la nature et la fonction (\xAB Code de s\xE9curit\xE9 visuel anti-spam \xBB) sans jamais r\xE9v\xE9ler la r\xE9ponse attendue, ni rester vide.",
+        en: 'The alt of an image used as a CAPTCHA or test image must identify its nature and purpose ("Visual anti-spam security code") without ever revealing the expected answer, and must not be empty.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<img src="/captcha/generate" alt="A7X9P2">\n<input type="text" name="captcha">',
+          good: `<label for="captcha">Recopiez le code de l'image</label>
+<img src="/captcha/generate" alt="Code de s\xE9curit\xE9 visuel anti-spam">
+<input id="captcha" type="text" name="captcha">`,
+          note: {
+            fr: "L'alternative d\xE9crit la fonction du CAPTCHA, sans d\xE9voiler le code \xE0 saisir.",
+            en: "The alt describes the CAPTCHA's purpose without disclosing the code to enter."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.4"
+    },
+    {
+      id: "additional-captcha-alternative",
+      criterionId: "1.5",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Solution d'acc\xE8s alternatif au CAPTCHA",
+        en: "Alternative access mechanism for a CAPTCHA"
+      },
+      summary: {
+        fr: "Un CAPTCHA visuel doit proposer au moins une alternative d'un autre type (CAPTCHA audio, question logique, v\xE9rification par e-mail) afin que les personnes ne percevant pas l'image puissent aussi valider le formulaire.",
+        en: "A visual CAPTCHA must offer at least one alternative of a different kind (audio CAPTCHA, logic question, email verification) so that people who cannot perceive the image can still complete the form."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<form>\n  <label for="captcha">V\xE9rification anti-robot</label>\n  <img src="/captcha/generate" alt="Code de s\xE9curit\xE9 visuel">\n  <input id="captcha" type="text" name="captcha">\n  <button type="submit">Envoyer</button>\n</form>',
+          good: '<form>\n  <label for="captcha">V\xE9rification anti-robot</label>\n  <img src="/captcha/generate" alt="Code de s\xE9curit\xE9 visuel">\n  <input id="captcha" type="text" name="captcha">\n  <p><a href="/captcha/audio">\xC9couter une version audio du code</a></p>\n  <button type="submit">Envoyer</button>\n</form>',
+          note: {
+            fr: "Une alternative audio permet de r\xE9soudre le CAPTCHA sans percevoir l'image.",
+            en: "An audio alternative lets users solve the CAPTCHA without perceiving the image."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.5"
+    },
+    {
+      id: "images-complex-description",
+      criterionId: "1.6",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Description d\xE9taill\xE9e des images complexes",
+        en: "Detailed description for complex images"
+      },
+      summary: {
+        fr: "Une image complexe (graphique, sch\xE9ma, carte, infographie) doit avoir, en plus d'un alt court qui r\xE9sume son message, une description d\xE9taill\xE9e accessible : texte adjacent visible, lien/bouton vers la description, ou r\xE9f\xE9rence via aria-describedby.",
+        en: "A complex image (chart, diagram, map, infographic) needs, beyond a short alt summarising its message, an accessible detailed description: visible adjacent text, a link/button to the description, or a reference via aria-describedby."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: `<img src="ca-2025.png" alt="Graphique du chiffre d'affaires">`,
+          good: `<figure>
+  <img src="ca-2025.png" alt="Chiffre d'affaires en hausse de 40 % sur 2025" aria-describedby="ca-desc">
+  <figcaption>Figure 1 \u2014 \xC9volution du chiffre d'affaires 2025</figcaption>
+</figure>
+<div id="ca-desc">
+  <p>Janvier : 1,2 M\u20AC ; mars : 1,5 M\u20AC ; juin : 1,8 M\u20AC ; septembre : 2,0 M\u20AC ; d\xE9cembre : 2,4 M\u20AC.</p>
+</div>`,
+          note: {
+            fr: "L'alt court r\xE9sume, et aria-describedby relie la description chiffr\xE9e compl\xE8te.",
+            en: "The short alt summarises while aria-describedby links the full numeric description."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.6"
+    },
+    {
+      id: "images-complex-description-relevance",
+      criterionId: "1.7",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Pertinence de la description d\xE9taill\xE9e",
+        en: "Relevance of the detailed description"
+      },
+      summary: {
+        fr: "Quand une image complexe a une description d\xE9taill\xE9e, celle-ci doit retranscrire toute l'information v\xE9hicul\xE9e par l'image (valeurs, tendances, l\xE9gendes, relations) et pas seulement son titre ou son th\xE8me.",
+        en: "When a complex image has a detailed description, that description must transcribe all the information the image conveys (values, trends, legends, relationships), not merely its title or topic."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: `<img src="ca-2025.png" alt="Chiffre d'affaires 2025" aria-describedby="d">
+<p id="d">Graphique pr\xE9sentant l'\xE9volution du chiffre d'affaires en 2025.</p>`,
+          good: `<img src="ca-2025.png" alt="Chiffre d'affaires 2025" aria-describedby="d">
+<p id="d">Chiffre d'affaires trimestriel 2025 : T1 1,2 M\u20AC, T2 1,5 M\u20AC, T3 2,0 M\u20AC, T4 2,4 M\u20AC, soit +40 % sur l'ann\xE9e, port\xE9s par l'export au T2 et au T4.</p>`,
+          note: {
+            fr: "La description doit livrer les donn\xE9es r\xE9elles, pas seulement reformuler le titre.",
+            en: "The description must provide the actual data, not merely restate the title."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.7"
+    },
+    {
+      id: "images-no-text-in-images",
+      criterionId: "1.8",
+      wcag: ["1.4.5"],
+      title: {
+        fr: "Remplacer les images texte par du texte styl\xE9",
+        en: "Replace images of text with styled real text"
+      },
+      summary: {
+        fr: "Le texte porteur d'information rendu sous forme d'image (banni\xE8re, titre en PNG) doit \xEAtre remplac\xE9 par du vrai texte HTML mis en forme en CSS, sauf si la pr\xE9sentation visuelle est essentielle (logo, marque). Le texte image ne se redimensionne pas, ne se reflow pas et ignore les pr\xE9f\xE9rences utilisateur.",
+        en: "Information-bearing text rendered as an image (banner, PNG heading) must be replaced by real HTML text styled with CSS, unless the visual presentation is essential (logo, brand). Image text does not resize, reflow, or honour user preferences."
+      },
+      impact: "low",
+      examples: [
+        {
+          lang: "html",
+          bad: '<img src="banniere-bienvenue.png" alt="Bienvenue dans notre boutique - Livraison offerte">',
+          good: '<div class="banner">\n  <h1>Bienvenue dans notre boutique</h1>\n  <p>Livraison offerte sur toutes les commandes</p>\n</div>',
+          note: {
+            fr: "Le vrai texte HTML se redimensionne, se traduit et respecte les pr\xE9f\xE9rences de l'utilisateur.",
+            en: "Real HTML text resizes, translates, and respects user preferences."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.8"
+    },
+    {
+      id: "images-figure-figcaption",
+      criterionId: "1.9",
+      wcag: ["1.1.1", "4.1.2"],
+      title: {
+        fr: "Relier une l\xE9gende \xE0 son image",
+        en: "Associate a caption with its image"
+      },
+      summary: {
+        fr: "Quand une image a une l\xE9gende visible, l'image et sa l\xE9gende doivent \xEAtre regroup\xE9es dans un <figure>, la l\xE9gende \xE9tant plac\xE9e dans un <figcaption>. Un simple paragraphe voisin n'a aucun lien programmatique avec l'image.",
+        en: "When an image has a visible caption, the image and its caption must be grouped in a <figure>, with the caption inside a <figcaption>. A plain neighbouring paragraph has no programmatic link to the image."
+      },
+      impact: "low",
+      examples: [
+        {
+          lang: "html",
+          bad: '<img src="siege.jpg" alt="Le nouveau si\xE8ge">\n<p class="caption">Le nouveau si\xE8ge inaugur\xE9 en 2025 \xE0 Lyon.</p>',
+          good: '<figure>\n  <img src="siege.jpg" alt="Le nouveau si\xE8ge">\n  <figcaption>Le nouveau si\xE8ge inaugur\xE9 en 2025 \xE0 Lyon.</figcaption>\n</figure>',
+          note: {
+            fr: "figure + figcaption cr\xE9ent l'association programmatique entre l'image et sa l\xE9gende.",
+            en: "figure + figcaption create the programmatic association between image and caption."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#1.9"
+    },
+    {
+      id: "color-not-sole-means",
+      criterionId: "3.1",
+      wcag: ["1.3.1", "1.4.1"],
+      title: {
+        fr: "Ne pas donner l'information uniquement par la couleur",
+        en: "Do not convey information by colour alone"
+      },
+      summary: {
+        fr: "Toute information signal\xE9e par la couleur (erreur en rouge, champ obligatoire, statut, s\xE9rie d'un graphique) doit aussi \xEAtre disponible par un autre moyen : texte, ic\xF4ne avec libell\xE9, motif ou forme. Sinon les personnes ne percevant pas les couleurs perdent l'information.",
+        en: "Any information signalled by colour (red error, required field, status, chart series) must also be available by another means: text, a labelled icon, a pattern, or a shape. Otherwise people who do not perceive colour lose the information."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<label for="email">Adresse e-mail</label>\n<input id="email" type="email" style="border-color:#d00">',
+          good: '<label for="email">Adresse e-mail</label>\n<input id="email" type="email" aria-invalid="true" aria-describedby="email-err">\n<p id="email-err">Erreur : saisissez une adresse e-mail valide.</p>',
+          note: {
+            fr: "L'erreur n'est plus signal\xE9e que par la couleur : un texte d'erreur la rend perceptible par tous.",
+            en: "The error is no longer signalled by colour alone: an error text makes it perceivable by everyone."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#3.1"
+    },
+    {
+      id: "color-text-contrast",
+      criterionId: "3.2",
+      wcag: ["1.4.3"],
+      title: {
+        fr: "Contraste suffisant entre texte et arri\xE8re-plan",
+        en: "Sufficient text/background contrast"
+      },
+      summary: {
+        fr: "Le contraste texte/arri\xE8re-plan doit \xEAtre d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (\u2265 24 px, ou \u2265 18,5 px en gras). Le texte plac\xE9 sur une image ou un d\xE9grad\xE9 doit \xEAtre v\xE9rifi\xE9 visuellement.",
+        en: "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (\u2265 24 px, or \u2265 18.5 px bold). Text over an image or gradient must be checked visually."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: `<p style="color:#999999;background:#ffffff">Conditions g\xE9n\xE9rales d'utilisation</p>`,
+          good: `<p style="color:#595959;background:#ffffff">Conditions g\xE9n\xE9rales d'utilisation</p>`,
+          note: {
+            fr: "#999 sur blanc \u2248 2,85:1 (insuffisant) ; #595959 sur blanc \u2248 7:1, conforme pour du texte courant.",
+            en: "#999 on white \u2248 2.85:1 (insufficient); #595959 on white \u2248 7:1, compliant for body text."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#3.2"
+    },
+    {
+      id: "color-non-text-contrast",
+      criterionId: "3.3",
+      wcag: ["1.4.11"],
+      title: {
+        fr: "Contraste des composants et \xE9l\xE9ments graphiques",
+        en: "Contrast of UI components and graphical elements"
+      },
+      summary: {
+        fr: "Les couleurs des composants d'interface (bordures de champ, boutons, cases, focus) et des \xE9l\xE9ments graphiques porteurs d'information doivent atteindre un contraste d'au moins 3:1 avec les couleurs adjacentes, pour rester perceptibles.",
+        en: "The colours of UI components (field borders, buttons, checkboxes, focus) and of information-bearing graphical elements must reach at least 3:1 contrast with adjacent colours to remain perceivable."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<input type="text" style="border:1px solid #cccccc;background:#ffffff">',
+          good: '<input type="text" style="border:1px solid #767676;background:#ffffff">',
+          note: {
+            fr: "#ccc sur blanc \u2248 1,61:1 (la bordure dispara\xEEt) ; #767676 \u2248 4,5:1 d\xE9passe le seuil de 3:1 requis.",
+            en: "#ccc on white \u2248 1.61:1 (the border vanishes); #767676 \u2248 4.5:1 exceeds the required 3:1 threshold."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#3.3"
+    },
+    {
+      id: "media-transcript",
+      criterionId: "4.1",
+      wcag: ["1.2.1", "1.2.3"],
+      title: {
+        fr: "Transcription ou audiodescription d'un m\xE9dia pr\xE9-enregistr\xE9",
+        en: "Transcript or audio description for prerecorded media"
+      },
+      summary: {
+        fr: "Chaque m\xE9dia temporel pr\xE9-enregistr\xE9 (audio, vid\xE9o) doit, si n\xE9cessaire, disposer d'une transcription textuelle compl\xE8te ou d'une audiodescription, accessible directement dans la page (texte adjacent ou lien clairement identifi\xE9), pas seulement via un t\xE9l\xE9chargement.",
+        en: "Each prerecorded time-based media (audio, video) must, where needed, provide a full text transcript or an audio description, available directly in the page (adjacent text or a clearly identified link), not only via a download."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<audio controls src="/podcast.mp3"></audio>',
+          good: '<figure>\n  <audio controls src="/podcast.mp3"></audio>\n  <figcaption><a href="/podcast-transcription">Transcription textuelle du podcast</a></figcaption>\n</figure>',
+          note: {
+            fr: "Un lien identifi\xE9 vers la transcription rend le contenu audio accessible aux personnes sourdes.",
+            en: "An identified link to the transcript makes the audio content accessible to deaf users."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.1"
+    },
+    {
+      id: "media-captions-track",
+      criterionId: "4.3",
+      wcag: ["1.2.2"],
+      title: {
+        fr: "Sous-titres synchronis\xE9s des vid\xE9os",
+        en: "Synchronized captions for video"
+      },
+      summary: {
+        fr: 'Chaque m\xE9dia temporel synchronis\xE9 pr\xE9-enregistr\xE9 (vid\xE9o avec son) doit avoir des sous-titres synchronis\xE9s via un \xE9l\xE9ment <track kind="captions"> (et non kind="subtitles", r\xE9serv\xE9 \xE0 la traduction), couvrant dialogues et sons signifiants.',
+        en: 'Each prerecorded synchronized time-based media (video with sound) must have synchronized captions via a <track kind="captions"> element (not kind="subtitles", which is for translation), covering dialogue and meaningful sounds.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<video controls>\n  <source src="/presentation.mp4" type="video/mp4">\n</video>',
+          good: '<video controls>\n  <source src="/presentation.mp4" type="video/mp4">\n  <track kind="captions" src="/sous-titres.vtt" srclang="fr" label="Fran\xE7ais" default>\n</video>',
+          note: {
+            fr: `kind="captions" (et non "subtitles") fournit les sous-titres d'accessibilit\xE9 incluant les sons signifiants.`,
+            en: 'kind="captions" (not "subtitles") provides accessibility captions including meaningful sounds.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.3"
+    },
+    {
+      id: "media-audio-description",
+      criterionId: "4.5",
+      wcag: ["1.2.5"],
+      title: {
+        fr: "Audiodescription synchronis\xE9e des vid\xE9os",
+        en: "Synchronized audio description for video"
+      },
+      summary: {
+        fr: `Quand une vid\xE9o v\xE9hicule de l'information visuelle non d\xE9crite par la bande son (texte \xE0 l'\xE9cran, action muette), une audiodescription synchronis\xE9e doit \xEAtre fournie, par exemple via un <track kind="descriptions"> ou une version audiod\xE9crite de la vid\xE9o.`,
+        en: 'When a video conveys visual information not covered by the soundtrack (on-screen text, silent action), a synchronized audio description must be provided, e.g. via a <track kind="descriptions"> or an audio-described version of the video.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<video controls>\n  <source src="/demo.mp4" type="video/mp4">\n  <track kind="captions" src="/st.vtt" srclang="fr" label="Fran\xE7ais" default>\n</video>',
+          good: '<video controls>\n  <source src="/demo.mp4" type="video/mp4">\n  <track kind="captions" src="/st.vtt" srclang="fr" label="Fran\xE7ais" default>\n  <track kind="descriptions" src="/audiodesc.vtt" srclang="fr" label="Audiodescription">\n</video>',
+          note: {
+            fr: "L'audiodescription restitue l'information visuelle absente de la bande son pour les personnes aveugles.",
+            en: "The audio description conveys visual information missing from the soundtrack for blind users."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.5"
+    },
+    {
+      id: "media-clearly-identifiable",
+      criterionId: "4.7",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "M\xE9dia temporel clairement identifiable",
+        en: "Clearly identifiable time-based media"
+      },
+      summary: {
+        fr: "Chaque m\xE9dia temporel doit \xEAtre clairement identifi\xE9 par un intitul\xE9 ou un texte adjacent pr\xE9cisant sa nature et son sujet, afin que l'utilisateur sache de quoi il s'agit avant de le lire.",
+        en: "Each time-based media must be clearly identified by a title or adjacent text stating its nature and topic, so the user knows what it is before playing it."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<video controls>\n  <source src="/clip.mp4" type="video/mp4">\n</video>',
+          good: '<h2>Vid\xE9o : pr\xE9sentation du nouveau service (dur\xE9e 3 min)</h2>\n<video controls>\n  <source src="/clip.mp4" type="video/mp4">\n</video>',
+          note: {
+            fr: "Un intitul\xE9 adjacent annonce la nature et le sujet du m\xE9dia avant lecture.",
+            en: "An adjacent heading announces the media's nature and topic before playback."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.7"
+    },
+    {
+      id: "media-non-temporal-alternative",
+      criterionId: "4.8",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Alternative \xE0 un m\xE9dia non temporel",
+        en: "Alternative for non-time-based media"
+      },
+      summary: {
+        fr: "Chaque m\xE9dia non temporel (application embarqu\xE9e, contenu interactif type carte ou objet) doit, si n\xE9cessaire, offrir une alternative accessible restituant la m\xEAme information ou fonction, par exemple un contenu de repli \xE0 l'int\xE9rieur de l'\xE9l\xE9ment ou un \xE9quivalent textuel adjacent.",
+        en: "Each non-time-based media (embedded application, interactive content such as a map or object) must, where needed, offer an accessible alternative conveying the same information or function, e.g. fallback content inside the element or an adjacent text equivalent."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<object data="/carte-agences" type="application/xhtml+xml"></object>',
+          good: '<object data="/carte-agences" type="application/xhtml+xml">\n  <ul>\n    <li>Agence Paris \u2014 10 rue de la Paix, 75002</li>\n    <li>Agence Lyon \u2014 5 place Bellecour, 69002</li>\n  </ul>\n</object>',
+          note: {
+            fr: "Le contenu de repli liste les m\xEAmes informations que la carte interactive.",
+            en: "The fallback content lists the same information as the interactive map."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.8"
+    },
+    {
+      id: "media-autoplay-control",
+      criterionId: "4.10",
+      wcag: ["1.4.2"],
+      title: {
+        fr: "Contr\xF4le du son d\xE9clench\xE9 automatiquement",
+        en: "Control of automatically triggered sound"
+      },
+      summary: {
+        fr: "Un son qui se d\xE9clenche automatiquement et dure plus de 3 secondes doit \xEAtre contr\xF4lable par l'utilisateur (pause/arr\xEAt ou r\xE9glage de volume ind\xE9pendant) via un m\xE9canisme accessible d\xE8s le d\xE9but de la page. Le plus simple est de ne pas utiliser l'autoplay.",
+        en: "Sound that starts automatically and lasts more than 3 seconds must be controllable by the user (pause/stop or independent volume control) via a mechanism available from the start of the page. The simplest fix is to avoid autoplay."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<audio src="/ambiance.mp3" autoplay loop></audio>',
+          good: '<audio src="/ambiance.mp3" controls></audio>',
+          note: {
+            fr: "Sans autoplay et avec des contr\xF4les, l'utilisateur d\xE9cide de lancer et d'arr\xEAter le son.",
+            en: "Without autoplay and with controls, the user decides when to start and stop the sound."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.10"
+    },
+    {
+      id: "media-keyboard-control",
+      criterionId: "4.11",
+      wcag: ["2.1.1", "2.1.2"],
+      title: {
+        fr: "Contr\xF4le clavier du lecteur multim\xE9dia",
+        en: "Keyboard control of the media player"
+      },
+      summary: {
+        fr: "Tous les contr\xF4les d'un m\xE9dia temporel (lecture, pause, volume, sous-titres) doivent \xEAtre utilisables au clavier et avec tout dispositif de pointage. Les contr\xF4les natifs (attribut controls) le sont d'office ; un lecteur personnalis\xE9 doit s'appuyer sur de vrais <button> focusables, pas des <div>/<span> cliquables.",
+        en: "All controls of a time-based media (play, pause, volume, captions) must be operable by keyboard and any pointing device. Native controls (the controls attribute) are by default; a custom player must rely on real focusable <button> elements, not clickable <div>/<span>."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: `<video id="clip" src="/clip.mp4"></video>
+<div onclick="document.getElementById('clip').play()">Lecture</div>`,
+          good: '<video src="/clip.mp4" controls></video>',
+          note: {
+            fr: "Les contr\xF4les natifs sont focusables et op\xE9rables au clavier ; un <div> cliquable ne l'est pas.",
+            en: "Native controls are focusable and keyboard-operable; a clickable <div> is not."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.11"
+    },
+    {
+      id: "media-assistive-tech-compatible",
+      criterionId: "4.13",
+      wcag: ["4.1.2"],
+      title: {
+        fr: "Lecteur multim\xE9dia compatible avec les technologies d'assistance",
+        en: "Media player compatible with assistive technologies"
+      },
+      summary: {
+        fr: "Chaque m\xE9dia et son lecteur doivent exposer aux technologies d'assistance le nom, le r\xF4le et l'\xE9tat de leurs contr\xF4les. Pr\xE9f\xE9rer un lecteur natif (<video>/<audio> controls) ; un lecteur personnalis\xE9 doit utiliser de vrais <button> dot\xE9s d'un nom accessible et, le cas \xE9ch\xE9ant, d'\xE9tats ARIA (aria-pressed).",
+        en: "Each media and its player must expose the name, role, and state of their controls to assistive technologies. Prefer a native player (<video>/<audio> controls); a custom player must use real <button> elements with an accessible name and, where relevant, ARIA states (aria-pressed)."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div class="player">\n  <span class="icon-play" onclick="play()"></span>\n</div>',
+          good: '<div class="player">\n  <button type="button" aria-label="Lecture" onclick="play()">\n    <span class="fr-icon-play-fill" aria-hidden="true"></span>\n  </button>\n</div>',
+          note: {
+            fr: "Un vrai <button> avec aria-label expose nom et r\xF4le aux lecteurs d'\xE9cran ; l'ic\xF4ne reste d\xE9corative.",
+            en: "A real <button> with aria-label exposes name and role to screen readers; the icon stays decorative."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#4.13"
+    },
+    {
+      id: "frames-title-relevant",
+      criterionId: "2.2",
+      wcag: ["4.1.2"],
+      title: {
+        fr: "Pertinence du titre de cadre",
+        en: "Relevance of the frame title"
+      },
+      summary: {
+        fr: "Le title d'un iframe doit d\xE9crire pr\xE9cis\xE9ment le contenu embarqu\xE9 : \xE9viter les valeurs g\xE9n\xE9riques (\xAB iframe \xBB, \xAB cadre \xBB, \xAB contenu \xBB). Le titre doit permettre \xE0 l'utilisateur de savoir, avant d'y entrer, ce que le cadre contient.",
+        en: `An iframe's title must precisely describe the embedded content: avoid generic values ("iframe", "frame", "content"). The title must let the user know what the frame contains before entering it.`
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<iframe src="https://maps.example.fr/embed" title="iframe"></iframe>',
+          good: `<iframe src="https://maps.example.fr/embed" title="Carte de localisation de l'agence de Lyon"></iframe>`,
+          note: {
+            fr: "Le titre nomme le contenu r\xE9el du cadre, pas son type technique.",
+            en: "The title names the frame's actual content, not its technical type."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#2.2"
+    },
+    {
+      id: "tables-data-complex-summary",
+      criterionId: "5.1",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "R\xE9sum\xE9 pour les tableaux de donn\xE9es complexes",
+        en: "Summary for complex data tables"
+      },
+      summary: {
+        fr: "Un tableau de donn\xE9es complexe (en-t\xEAtes sur plusieurs niveaux, cellules fusionn\xE9es, groupes de lignes) doit fournir un r\xE9sum\xE9 d\xE9crivant son organisation, par exemple dans son caption. Le r\xE9sum\xE9 aide l'utilisateur \xE0 se construire un mod\xE8le mental avant d'explorer les cellules.",
+        en: "A complex data table (multi-level headers, merged cells, grouped rows) must provide a summary describing its organisation, e.g. inside its caption. The summary helps the user build a mental model before exploring the cells."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<table>\n  <caption>Effectifs</caption>\n  <tr><th id="par" colspan="2">Paris</th></tr>\n  <tr><th id="n" headers="par">Nom</th><th id="s" headers="par">Service</th></tr>\n  <tr><td headers="par n">Marie</td><td headers="par s">Design</td></tr>\n</table>',
+          good: '<table>\n  <caption>Effectifs. Colonnes : nom, service. Lignes group\xE9es par site (Paris, Lyon).</caption>\n  <tr><th id="par" colspan="2">Paris</th></tr>\n  <tr><th id="n" headers="par">Nom</th><th id="s" headers="par">Service</th></tr>\n  <tr><td headers="par n">Marie</td><td headers="par s">Design</td></tr>\n</table>',
+          note: {
+            fr: "Le r\xE9sum\xE9 d\xE9crit la structure (colonnes et regroupement de lignes) du tableau complexe.",
+            en: "The summary describes the structure (columns and row grouping) of the complex table."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.1"
+    },
+    {
+      id: "tables-complex-summary-relevant",
+      criterionId: "5.2",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Pertinence du r\xE9sum\xE9 de tableau complexe",
+        en: "Relevance of the complex-table summary"
+      },
+      summary: {
+        fr: "Lorsqu'un r\xE9sum\xE9 est pr\xE9sent, il doit d\xE9crire fid\xE8lement la structure r\xE9elle du tableau (organisation des en-t\xEAtes, regroupements, sens de lecture) et non r\xE9p\xE9ter le simple titre ni donner une description erron\xE9e.",
+        en: "When a summary is present, it must faithfully describe the table's actual structure (header organisation, groupings, reading direction) and not merely repeat the title nor give a wrong description."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<table>\n  <caption>Budget. Tableau simple \xE0 deux colonnes.</caption>\n  <tr><th id="a" rowspan="2">Poste</th><th id="y" colspan="2">2025</th></tr>\n  <tr><th id="t1" headers="y">T1</th><th id="t2" headers="y">T2</th></tr>\n  <tr><td headers="a">Achats</td><td headers="a y t1">10 k\u20AC</td><td headers="a y t2">12 k\u20AC</td></tr>\n</table>',
+          good: '<table>\n  <caption>Budget. En-t\xEAte \xAB 2025 \xBB couvrant deux colonnes trimestrielles (T1, T2), une ligne par poste.</caption>\n  <tr><th id="a" rowspan="2">Poste</th><th id="y" colspan="2">2025</th></tr>\n  <tr><th id="t1" headers="y">T1</th><th id="t2" headers="y">T2</th></tr>\n  <tr><td headers="a">Achats</td><td headers="a y t1">10 k\u20AC</td><td headers="a y t2">12 k\u20AC</td></tr>\n</table>',
+          note: {
+            fr: "Le r\xE9sum\xE9 fautif annonce un tableau simple alors qu'il a des en-t\xEAtes fusionn\xE9s sur deux niveaux.",
+            en: "The faulty summary claims a simple table while it has two-level merged headers."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.2"
+    },
+    {
+      id: "tables-layout-reading-order",
+      criterionId: "5.3",
+      wcag: ["1.3.2"],
+      title: {
+        fr: "Ordre de lecture coh\xE9rent des tableaux de mise en forme",
+        en: "Coherent reading order in layout tables"
+      },
+      summary: {
+        fr: "Un tableau de mise en forme doit rester compr\xE9hensible une fois lin\xE9aris\xE9 (lu cellule par cellule, ligne par ligne, de gauche \xE0 droite). L'ordre du code source doit produire une s\xE9quence logique : le contenu principal avant les contenus secondaires.",
+        en: "A layout table must stay understandable once linearised (read cell by cell, row by row, left to right). The source order must produce a logical sequence: main content before secondary content."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<table role="presentation">\n  <tr>\n    <td><nav>Liens annexes</nav></td>\n    <td><h1>Actualit\xE9 principale</h1><p>Le contenu attendu en premier.</p></td>\n  </tr>\n</table>',
+          good: '<table role="presentation">\n  <tr>\n    <td><h1>Actualit\xE9 principale</h1><p>Le contenu attendu en premier.</p></td>\n    <td><nav>Liens annexes</nav></td>\n  </tr>\n</table>',
+          note: {
+            fr: "L'ordre source place le contenu principal avant la colonne secondaire, comme \xE0 l'\xE9cran.",
+            en: "Source order places the main content before the secondary column, matching the screen."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.3"
+    },
+    {
+      id: "tables-data-caption",
+      criterionId: "5.4",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Titre associ\xE9 au tableau de donn\xE9es via caption",
+        en: "Data-table title associated via caption"
+      },
+      summary: {
+        fr: "Le titre d'un tableau de donn\xE9es doit \xEAtre correctement associ\xE9 au tableau gr\xE2ce \xE0 l'\xE9l\xE9ment caption (premier enfant de table), et non plac\xE9 dans un p ou un titre d\xE9tach\xE9. Le caption est annonc\xE9 par les lecteurs d'\xE9cran \xE0 l'entr\xE9e dans le tableau.",
+        en: "A data table's title must be correctly associated with the table through a caption element (first child of table), not placed in a detached p or heading. The caption is announced by screen readers when entering the table."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: `<p class="titre">Chiffre d'affaires trimestriel</p>
+<table>
+  <tr><th scope="col">Trimestre</th><th scope="col">CA</th></tr>
+  <tr><td>T1</td><td>120 000 \u20AC</td></tr>
+</table>`,
+          good: `<table>
+  <caption>Chiffre d'affaires trimestriel</caption>
+  <tr><th scope="col">Trimestre</th><th scope="col">CA</th></tr>
+  <tr><td>T1</td><td>120 000 \u20AC</td></tr>
+</table>`,
+          note: {
+            fr: "Le caption lie programmatiquement le titre au tableau ; un p adjacent ne l'est pas.",
+            en: "The caption programmatically ties the title to the table; an adjacent p does not."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.4"
+    },
+    {
+      id: "tables-data-caption-relevant",
+      criterionId: "5.5",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Pertinence du titre de tableau de donn\xE9es",
+        en: "Relevance of the data-table title"
+      },
+      summary: {
+        fr: "Le caption d'un tableau de donn\xE9es doit d\xE9crire r\xE9ellement le contenu pr\xE9sent\xE9 et permettre de le distinguer des autres tableaux de la page : \xE9viter les libell\xE9s vides de sens comme \xAB Tableau \xBB ou \xAB Donn\xE9es \xBB.",
+        en: `A data table's caption must genuinely describe the content presented and let it be told apart from other tables on the page: avoid meaningless labels like "Table" or "Data".`
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<table>\n  <caption>Tableau 1</caption>\n  <tr><th scope="col">Mois</th><th scope="col">Ventes</th></tr>\n  <tr><td>Janvier</td><td>150</td></tr>\n</table>',
+          good: '<table>\n  <caption>Ventes mensuelles 2025 (en unit\xE9s)</caption>\n  <tr><th scope="col">Mois</th><th scope="col">Ventes</th></tr>\n  <tr><td>Janvier</td><td>150</td></tr>\n</table>',
+          note: {
+            fr: "Le titre pertinent indique le sujet et la p\xE9riode, pas un simple num\xE9ro.",
+            en: "The relevant title states the subject and period, not just a number."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.5"
+    },
+    {
+      id: "tables-data-th-headers",
+      criterionId: "5.6",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "En-t\xEAtes de tableau d\xE9clar\xE9s avec th",
+        en: "Table headers declared with th"
+      },
+      summary: {
+        fr: "Chaque en-t\xEAte de colonne et de ligne d'un tableau de donn\xE9es doit \xEAtre d\xE9clar\xE9 avec un \xE9l\xE9ment th (et non un td mis en gras ou styl\xE9). Le th porte la s\xE9mantique \xAB cellule d'en-t\xEAte \xBB indispensable aux lecteurs d'\xE9cran pour annoncer le libell\xE9 des donn\xE9es.",
+        en: 'Every column and row header of a data table must be declared with a th element (not a bold or styled td). The th carries the "header cell" semantics that screen readers need to announce data labels.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<table>\n  <caption>R\xE9pertoire</caption>\n  <tr><td><strong>Nom</strong></td><td><strong>Service</strong></td></tr>\n  <tr><td>Alice</td><td>Ing\xE9nierie</td></tr>\n</table>",
+          good: '<table>\n  <caption>R\xE9pertoire</caption>\n  <tr><th scope="col">Nom</th><th scope="col">Service</th></tr>\n  <tr><td>Alice</td><td>Ing\xE9nierie</td></tr>\n</table>',
+          note: {
+            fr: "th remplace td+gras : la s\xE9mantique d'en-t\xEAte est r\xE9ellement expos\xE9e.",
+            en: "th replaces td+bold: the header semantics are actually exposed."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.6"
+    },
+    {
+      id: "tables-data-scope",
+      criterionId: "5.7",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Association des cellules \xE0 leurs en-t\xEAtes (scope / headers+id)",
+        en: "Associating cells with their headers (scope / headers+id)"
+      },
+      summary: {
+        fr: 'Chaque cellule doit \xEAtre associ\xE9e \xE0 ses en-t\xEAtes par la technique adapt\xE9e : scope="col"/"row" sur les th des tableaux simples ; id sur les th et headers sur les td pour les tableaux complexes (en-t\xEAtes fusionn\xE9s ou multi-niveaux).',
+        en: 'Each cell must be associated with its headers using the right technique: scope="col"/"row" on th for simple tables; id on th and headers on td for complex tables (merged or multi-level headers).'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<table>\n  <caption>Ventes mensuelles</caption>\n  <tr><th></th><th>Janvier</th><th>F\xE9vrier</th></tr>\n  <tr><th>Widgets</th><td>150</td><td>200</td></tr>\n</table>",
+          good: '<table>\n  <caption>Ventes mensuelles</caption>\n  <tr><td></td><th scope="col">Janvier</th><th scope="col">F\xE9vrier</th></tr>\n  <tr><th scope="row">Widgets</th><td>150</td><td>200</td></tr>\n</table>',
+          note: {
+            fr: `scope="col" et scope="row" l\xE8vent l'ambigu\xEFt\xE9 ligne/colonne ; pour les en-t\xEAtes fusionn\xE9s, utiliser id+headers.`,
+            en: 'scope="col" and scope="row" remove the row/column ambiguity; for merged headers, use id+headers.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.7"
+    },
+    {
+      id: "tables-layout-no-data-semantics",
+      criterionId: "5.8",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Tableaux de mise en forme sans s\xE9mantique de donn\xE9es",
+        en: "Layout tables without data-table semantics"
+      },
+      summary: {
+        fr: `Un tableau utilis\xE9 pour la mise en forme ne doit contenir aucun \xE9l\xE9ment ou attribut propre aux tableaux de donn\xE9es (th, caption, scope, thead/tbody/tfoot). Il doit porter role="presentation" (ou role="none") et n'utiliser que des td.`,
+        en: 'A table used for layout must contain no data-table element or attribute (th, caption, scope, thead/tbody/tfoot). It must carry role="presentation" (or role="none") and use only td cells.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<table>\n  <caption>Mise en page</caption>\n  <tr><th scope="col">Logo</th><th scope="col">Accroche</th></tr>\n  <tr><td><img src="logo.png" alt=""></td><td><p>Bienvenue</p></td></tr>\n</table>',
+          good: '<table role="presentation">\n  <tr><td><img src="logo.png" alt=""></td><td><p>Bienvenue</p></td></tr>\n</table>',
+          note: {
+            fr: `role="presentation" + uniquement des td : aucune relation de donn\xE9es n'est annonc\xE9e \xE0 tort.`,
+            en: 'role="presentation" + td-only: no data relationship is wrongly announced.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#5.8"
+    },
+    {
+      id: "controls-interactive-semantics",
+      criterionId: "7.1",
+      wcag: ["4.1.2"],
+      title: {
+        fr: "Composants riches compatibles avec les technologies d'assistance",
+        en: "Scripted controls compatible with assistive technologies"
+      },
+      summary: {
+        fr: "Chaque composant cr\xE9\xE9 en script doit exposer un r\xF4le, un nom et un \xE9tat corrects aux technologies d'assistance. Utiliser les \xE9l\xE9ments natifs (button pour une action, a[href] pour la navigation) plut\xF4t qu'un div/span rendu interactif en JS.",
+        en: "Every scripted control must expose a correct role, name and state to assistive technologies. Use native elements (button for an action, a[href] for navigation) rather than a div/span made interactive in JS."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div class="btn" onclick="openMenu()">Menu</div>',
+          good: '<button type="button" onclick="openMenu()">Menu</button>',
+          note: {
+            fr: "Un div n'a ni r\xF4le bouton ni gestion clavier ; button restitue le r\xF4le et l'activation Entr\xE9e/Espace nativement.",
+            en: "A div has no button role nor keyboard handling; button conveys the role and Enter/Space activation natively."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.1"
+    },
+    {
+      id: "scripts-relevant-alternative",
+      criterionId: "7.2",
+      wcag: ["1.1.1", "4.1.2"],
+      title: {
+        fr: "Alternative pertinente pour un script",
+        en: "Relevant alternative for a script"
+      },
+      summary: {
+        fr: "Lorsqu'un script propose une alternative (contenu de repli, version accessible), celle-ci doit restituer la m\xEAme information ou la m\xEAme fonction. Une alternative pr\xE9sente mais vide, obsol\xE8te ou trompeuse n'est pas conforme.",
+        en: "When a script provides an alternative (fallback content, accessible version), it must convey the same information or function. An alternative that is present but empty, stale, or misleading is non-conformant."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<canvas id="chart" width="400" height="200">Graphique</canvas>',
+          good: '<canvas id="chart" width="400" height="200">\n  <table>\n    <caption>Ventes 2025 par trimestre</caption>\n    <tr><th>T1</th><td>120</td></tr>\n    <tr><th>T2</th><td>150</td></tr>\n  </table>\n</canvas>',
+          note: {
+            fr: "Le contenu de repli du canvas restitue r\xE9ellement les donn\xE9es, pas un simple libell\xE9 \xAB Graphique \xBB.",
+            en: 'The canvas fallback actually conveys the data, not just a "Chart" label.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.2"
+    },
+    {
+      id: "keyboard-mouse-equivalent",
+      criterionId: "7.3",
+      wcag: ["2.1.1"],
+      title: {
+        fr: "Script contr\xF4lable au clavier et au pointeur",
+        en: "Script controllable by keyboard and pointer"
+      },
+      summary: {
+        fr: "Toute interaction d\xE9clench\xE9e \xE0 la souris (onclick, drag, survol) doit avoir un \xE9quivalent clavier. Le plus simple est d'utiliser un \xE9l\xE9ment interactif natif qui g\xE8re Entr\xE9e/Espace, plut\xF4t qu'un gestionnaire d'\xE9v\xE9nement sur un \xE9l\xE9ment non focusable.",
+        en: "Every mouse-triggered interaction (onclick, drag, hover) must have a keyboard equivalent. The simplest fix is a native interactive element handling Enter/Space, rather than an event handler on a non-focusable element."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<span onmouseover="showTip()" onclick="toggle()">Aide</span>',
+          good: '<button type="button" onfocus="showTip()" onmouseover="showTip()" onclick="toggle()">Aide</button>',
+          note: {
+            fr: "Le span n'est ni focusable ni activable au clavier ; le button l'est et double le survol par le focus.",
+            en: "The span is neither focusable nor keyboard-activable; the button is, and mirrors hover with focus."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.3"
+    },
+    {
+      id: "scripts-context-change-control",
+      criterionId: "7.4",
+      wcag: ["3.2.1", "3.2.2"],
+      title: {
+        fr: "Changement de contexte ma\xEEtris\xE9 par l'utilisateur",
+        en: "User-controlled change of context"
+      },
+      summary: {
+        fr: "Un changement de contexte (navigation, soumission, rechargement) ne doit pas se d\xE9clencher automatiquement \xE0 la prise de focus ou \xE0 la simple modification d'un champ : l'utilisateur doit en \xEAtre averti ou le d\xE9clencher lui-m\xEAme via un bouton explicite.",
+        en: "A change of context (navigation, submit, reload) must not fire automatically on focus or on merely changing a field: the user must be warned or trigger it themselves via an explicit button."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: `<label for="country">Pays</label>
+<select id="country" onchange="location.href='/' + this.value">
+  <option value="fr">France</option>
+  <option value="be">Belgique</option>
+</select>`,
+          good: '<form action="/go" method="get">\n  <label for="country">Pays</label>\n  <select id="country" name="country">\n    <option value="fr">France</option>\n    <option value="be">Belgique</option>\n  </select>\n  <button type="submit">Valider</button>\n</form>',
+          note: {
+            fr: "La navigation au onchange surprend l'utilisateur au clavier ; un bouton de validation lui rend le contr\xF4le.",
+            en: "Navigating on onchange surprises keyboard users; a submit button gives them control."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.4"
+    },
+    {
+      id: "structure-document-landmarks",
+      criterionId: "9.2",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Structure du document coh\xE9rente via les r\xE9gions",
+        en: "Coherent document structure via landmarks"
+      },
+      summary: {
+        fr: "Chaque page doit \xEAtre structur\xE9e par des r\xE9gions s\xE9mantiques : un header (banner), un main unique, un footer (contentinfo) et des nav \xE9tiquet\xE9s. Ces rep\xE8res permettent aux technologies d'assistance de naviguer directement entre les zones.",
+        en: "Each page must be structured with semantic landmarks: a header (banner), a single main, a footer (contentinfo) and labelled nav regions. These let assistive technologies jump directly between areas."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div class="top">Logo</div>\n<div class="menu"><a href="/">Accueil</a></div>\n<div class="content"><h1>Titre</h1></div>\n<div class="bottom">Mentions l\xE9gales</div>',
+          good: '<header>Logo</header>\n<nav aria-label="Menu principal"><a href="/">Accueil</a></nav>\n<main><h1>Titre</h1></main>\n<footer>Mentions l\xE9gales</footer>',
+          note: {
+            fr: "Les \xE9l\xE9ments de section remplacent les div g\xE9n\xE9riques et exposent des r\xE9gions navigables.",
+            en: "Sectioning elements replace generic divs and expose navigable landmarks."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.2"
+    },
+    {
+      id: "additional-blockquote",
+      criterionId: "9.4",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Citations correctement indiqu\xE9es",
+        en: "Quotations correctly marked up"
+      },
+      summary: {
+        fr: "Les citations doivent \xEAtre balis\xE9es s\xE9mantiquement : blockquote pour une citation de niveau bloc, q pour une citation en ligne. Des guillemets ou une classe CSS \xAB quote \xBB ne portent aucune information pour les technologies d'assistance.",
+        en: 'Quotations must be marked up semantically: blockquote for a block-level quote, q for an inline quote. Quotation marks or a CSS "quote" class carry no meaning for assistive technologies.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p class="quote">\xAB La simplicit\xE9 est la sophistication supr\xEAme. \xBB</p>\n<p>Elle a dit "bonjour" puis est partie.</p>',
+          good: '<blockquote cite="https://example.fr/source">\n  <p>La simplicit\xE9 est la sophistication supr\xEAme.</p>\n</blockquote>\n<p>Elle a dit <q>bonjour</q> puis est partie.</p>',
+          note: {
+            fr: "blockquote et q identifient la citation ; l'attribut cite peut pointer la source.",
+            en: "blockquote and q identify the quotation; the cite attribute can point to the source."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#9.4"
+    },
+    {
+      id: "presentation-css-not-html",
+      criterionId: "10.1",
+      wcag: ["1.3.1", "1.3.2"],
+      title: {
+        fr: "Pr\xE9sentation contr\xF4l\xE9e par CSS, pas par des balises de mise en forme",
+        en: "Presentation controlled by CSS, not formatting tags"
+      },
+      summary: {
+        fr: "La mise en forme doit \xEAtre r\xE9alis\xE9e via des feuilles de styles, pas par des balises ou attributs de pr\xE9sentation obsol\xE8tes (font, center, attributs align/bgcolor) ni par des \xE9l\xE9ments d\xE9tourn\xE9s pour leur seul rendu visuel.",
+        en: "Styling must be done with stylesheets, not deprecated presentational tags or attributes (font, center, align/bgcolor) nor elements hijacked purely for their visual rendering."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<center><font size="6" color="red">Promotion</font></center>',
+          good: '<h2 class="promo">Promotion</h2>',
+          note: {
+            fr: "Le style (couleur, taille, centrage) passe par la classe CSS .promo, la balise reste s\xE9mantique.",
+            en: "Styling (color, size, centering) goes through the CSS class .promo; the tag stays semantic."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.1"
+    },
+    {
+      id: "css-readable-without-images",
+      criterionId: "10.2",
+      wcag: ["1.1.1", "1.3.1"],
+      title: {
+        fr: "Contenu visible porteur d'information conserv\xE9 sans CSS",
+        en: "Visible informative content preserved without CSS"
+      },
+      summary: {
+        fr: "Le contenu porteur d'information doit rester pr\xE9sent quand les styles sont d\xE9sactiv\xE9s : ne pas placer de texte essentiel uniquement dans une image de fond CSS, et ne pas masquer une information par display:none/visibility:hidden destin\xE9s au seul rendu.",
+        en: "Informative content must remain present when styles are disabled: never put essential text only inside a CSS background image, and don't hide information with display:none/visibility:hidden used purely for layout."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: `<div class="hero" style="background-image:url('solde.jpg');width:800px;height:200px"></div>`,
+          good: `<div class="hero">
+  <h2>Soldes : -30% sur tout le site</h2>
+  <p>Offre valable jusqu'au 31 juillet.</p>
+</div>`,
+          note: {
+            fr: "Le message promotionnel est du vrai texte HTML ; l'image de fond reste purement d\xE9corative.",
+            en: "The promo message is real HTML text; the background image stays purely decorative."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.2"
+    },
+    {
+      id: "additional-source-order",
+      criterionId: "10.3",
+      wcag: ["1.3.2", "2.4.3"],
+      title: {
+        fr: "Ordre du code source coh\xE9rent avec l'ordre de lecture",
+        en: "Source order matching the reading order"
+      },
+      summary: {
+        fr: "L'information doit rester compr\xE9hensible styles d\xE9sactiv\xE9s : l'ordre du DOM doit suivre l'ordre de lecture attendu. \xC9viter de r\xE9ordonner visuellement le contenu via flex order, grid ou position absolue sans r\xE9ordonner la source.",
+        en: "Information must stay understandable with styles off: the DOM order must follow the expected reading order. Avoid visually reordering content via flex order, grid, or absolute positioning without reordering the source."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div style="display:flex">\n  <main>Article</main>\n  <aside style="order:-1">Liens connexes</aside>\n</div>',
+          good: '<div style="display:flex">\n  <aside>Liens connexes</aside>\n  <main>Article</main>\n</div>',
+          note: {
+            fr: "On place l'aside avant le main dans la source pour que l'ordre lu corresponde \xE0 l'ordre vu.",
+            en: "Place the aside before the main in the source so the read order matches the visual order."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.3"
+    },
+    {
+      id: "css-text-zoom-200",
+      criterionId: "10.4",
+      wcag: ["1.4.4"],
+      title: {
+        fr: "Texte lisible \xE0 200% d'agrandissement",
+        en: "Text readable at 200% zoom"
+      },
+      summary: {
+        fr: "Le texte doit rester lisible et complet quand la taille des caract\xE8res est port\xE9e \xE0 200% au moins, sans chevauchement, troncature ni perte. Utiliser des unit\xE9s relatives (rem/em, max-width) plut\xF4t que des largeurs et hauteurs fixes en pixels.",
+        en: "Text must remain readable and complete when character size is increased to at least 200%, without overlap, truncation, or loss. Use relative units (rem/em, max-width) rather than fixed pixel widths and heights."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p style="width:300px;height:40px;overflow:hidden;font-size:14px">Texte qui sera coup\xE9 \xE0 fort zoom</p>',
+          good: '<p style="max-width:40rem;overflow:visible;font-size:1rem">Texte lisible m\xEAme agrandi</p>',
+          note: {
+            fr: "La hauteur fixe + overflow:hidden tronque le texte agrandi ; les unit\xE9s relatives s'adaptent.",
+            en: "Fixed height + overflow:hidden truncates enlarged text; relative units adapt."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.4"
+    },
+    {
+      id: "css-color-declarations-paired",
+      criterionId: "10.5",
+      wcag: ["1.4.3"],
+      title: {
+        fr: "D\xE9clarations CSS de couleurs de fond et de police coh\xE9rentes",
+        en: "Paired CSS foreground and background color declarations"
+      },
+      summary: {
+        fr: "D\xE8s qu'une couleur de texte est d\xE9clar\xE9e, la couleur de fond de l'\xE9l\xE9ment doit l'\xEAtre aussi (et inversement), afin que le contraste reste ma\xEEtris\xE9 m\xEAme si l'utilisateur force ses propres couleurs ou si un fond h\xE9rit\xE9 change.",
+        en: "Whenever a text color is declared, the element's background color must be declared too (and vice versa), so contrast stays controlled even if the user forces their own colors or an inherited background changes."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<style>.note{color:#ffffff;padding:1rem}</style>\n<p class="note">Information importante</p>',
+          good: '<style>.note{color:#ffffff;background-color:#1f5096;padding:1rem}</style>\n<p class="note">Information importante</p>',
+          note: {
+            fr: "Texte blanc sans fond d\xE9clar\xE9 devient illisible sur un fond clair ; d\xE9clarer les deux couleurs ensemble.",
+            en: "White text with no declared background becomes unreadable on a light surface; declare both colors together."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.5"
+    },
+    {
+      id: "presentation-link-distinguishable",
+      criterionId: "10.6",
+      wcag: ["1.4.1"],
+      title: {
+        fr: "Lien identifiable par rapport au texte environnant",
+        en: "Link distinguishable from surrounding text"
+      },
+      summary: {
+        fr: "Un lien dont la nature n'est pas \xE9vidente au sein d'un texte ne doit pas se distinguer uniquement par la couleur : ajouter un soulignement (ou un autre indice visuel) ou garantir un contraste d'au moins 3:1 avec le texte environnant accompagn\xE9 d'un indice au survol et au focus.",
+        en: "A link whose nature is not obvious within text must not be set apart by color alone: add an underline (or another visual cue), or ensure at least 3:1 contrast with surrounding text plus a cue on hover and focus."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<style>p a{color:#3a7;text-decoration:none}</style>\n<p>Voir nos <a href="/cgv">conditions</a> de vente.</p>',
+          good: '<style>p a{color:#1a5fb4;text-decoration:underline}</style>\n<p>Voir nos <a href="/cgv">conditions</a> de vente.</p>',
+          note: {
+            fr: "Le soulignement distingue le lien m\xEAme pour qui ne per\xE7oit pas la diff\xE9rence de couleur.",
+            en: "The underline sets the link apart even for users who don't perceive the color difference."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.6"
+    },
+    {
+      id: "keyboard-visible-focus",
+      criterionId: "10.7",
+      wcag: ["1.4.1", "2.4.7"],
+      title: {
+        fr: "Prise de focus visible",
+        en: "Visible focus indicator"
+      },
+      summary: {
+        fr: "Chaque \xE9l\xE9ment recevant le focus clavier doit afficher un indicateur de focus visible. Ne jamais supprimer l'outline par d\xE9faut sans le remplacer par un indicateur au moins aussi visible (outline custom, :focus-visible).",
+        en: "Every element receiving keyboard focus must show a visible focus indicator. Never remove the default outline without replacing it with an at-least-as-visible indicator (custom outline, :focus-visible)."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<style>a:focus,button:focus{outline:none}</style>",
+          good: "<style>a:focus-visible,button:focus-visible{outline:2px solid #1a5fb4;outline-offset:2px}</style>",
+          note: {
+            fr: "outline:none rend la navigation clavier invisible ; un outline contrast\xE9 la r\xE9tablit.",
+            en: "outline:none makes keyboard navigation invisible; a contrasted outline restores it."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.7"
+    },
+    {
+      id: "presentation-hidden-content-correct",
+      criterionId: "10.8",
+      wcag: ["1.3.2", "4.1.2"],
+      title: {
+        fr: "Contenus cach\xE9s correctement ignor\xE9s ou expos\xE9s",
+        en: "Hidden content correctly ignored or exposed"
+      },
+      summary: {
+        fr: "Les contenus masqu\xE9s visuellement n'ayant pas vocation \xE0 \xEAtre restitu\xE9s (d\xE9coratifs, dupliqu\xE9s) doivent \xEAtre retir\xE9s de l'arbre d'accessibilit\xE9 (aria-hidden, display:none). \xC0 l'inverse, ne jamais cacher aux technologies d'assistance une information porteuse de sens.",
+        en: "Visually hidden content not meant to be conveyed (decorative, duplicated) must be removed from the accessibility tree (aria-hidden, display:none). Conversely, never hide meaningful information from assistive technologies."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p><span aria-hidden="true">Prix : 20 \u20AC</span></p>\n<i class="icon-star">\xE9toile</i>',
+          good: '<p>Prix : 20 \u20AC</p>\n<i class="icon-star" aria-hidden="true"></i> Tr\xE8s bien not\xE9',
+          note: {
+            fr: "On expose le prix (information) et on masque seulement l'ic\xF4ne d\xE9corative.",
+            en: "Expose the price (information) and hide only the decorative icon."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.8"
+    },
+    {
+      id: "presentation-not-shape-position-only",
+      criterionId: "10.9",
+      wcag: ["1.3.3", "1.4.1"],
+      title: {
+        fr: "Information non donn\xE9e par la forme, la taille ou la position seules",
+        en: "Information not conveyed by shape, size, or position alone"
+      },
+      summary: {
+        fr: "Aucune information ne doit reposer uniquement sur la forme, la taille ou la position d'un \xE9l\xE9ment (\xAB cliquez le bouton rond \xBB, \xAB le champ \xE0 droite \xBB). Tout rep\xE8re visuel doit \xEAtre doubl\xE9 d'une alternative textuelle ou d'un libell\xE9 explicite.",
+        en: `No information may rely solely on an element's shape, size, or position ("click the round button", "the field on the right"). Every visual cue must be paired with a text alternative or explicit label.`
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<ul>\n  <li><span class="dot green"></span> serveur-01</li>\n  <li><span class="dot red"></span> serveur-02</li>\n</ul>',
+          good: '<ul>\n  <li><span class="dot green" aria-hidden="true"></span> serveur-01 \u2014 En ligne</li>\n  <li><span class="dot red" aria-hidden="true"></span> serveur-02 \u2014 Hors ligne</li>\n</ul>',
+          note: {
+            fr: "Le statut \xAB En ligne / Hors ligne \xBB est donn\xE9 en texte, la pastille color\xE9e n'est qu'un renfort.",
+            en: 'The "Online / Offline" status is given as text; the colored dot is only reinforcement.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.9"
+    },
+    {
+      id: "presentation-reflow",
+      criterionId: "10.11",
+      wcag: ["1.4.10"],
+      title: {
+        fr: "Contenu adaptable sans d\xE9filement \xE0 deux dimensions",
+        en: "Content reflows without two-dimensional scrolling"
+      },
+      summary: {
+        fr: "Le contenu doit pouvoir s'afficher sans perte d'information ni de fonction, sans d\xE9filement horizontal pour une largeur de fen\xEAtre de 320px (ni d\xE9filement vertical \xE0 256px de hauteur). \xC9viter les largeurs fixes ; privil\xE9gier les conteneurs fluides et responsive.",
+        en: "Content must display without loss of information or function, with no horizontal scrolling at a 320px window width (nor vertical scrolling at 256px height). Avoid fixed widths; favor fluid, responsive containers."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div style="width:1200px">\n  <p>Tableau de bord sur largeur fixe</p>\n</div>',
+          good: '<div style="max-width:100%;width:100%">\n  <p>Tableau de bord fluide</p>\n</div>',
+          note: {
+            fr: "width:1200px force un d\xE9filement horizontal sur petit \xE9cran ; max-width:100% laisse le contenu se r\xE9agencer.",
+            en: "width:1200px forces horizontal scrolling on small screens; max-width:100% lets content reflow."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.11"
+    },
+    {
+      id: "css-text-spacing-readable",
+      criterionId: "10.12",
+      wcag: ["1.4.12"],
+      title: {
+        fr: "Espacement du texte red\xE9finissable sans perte",
+        en: "User-adjustable text spacing without loss"
+      },
+      summary: {
+        fr: "Le contenu doit rester lisible et fonctionnel quand l'utilisateur impose interligne 1,5, espacement de paragraphe 2, espacement des lettres 0,12 et des mots 0,16 (relatifs \xE0 la taille de police). \xC9viter les conteneurs \xE0 hauteur fixe avec overflow:hidden qui tronquent le texte.",
+        en: "Content must stay readable and functional when the user applies line-height 1.5, paragraph spacing 2, letter spacing 0.12, and word spacing 0.16 (relative to font size). Avoid fixed-height containers with overflow:hidden that clip text."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: `<p style="height:60px;overflow:hidden;line-height:1.1">Description tronqu\xE9e si l'espacement augmente</p>`,
+          good: `<p style="min-height:60px;overflow:visible;line-height:1.5">Description qui s'\xE9tend librement</p>`,
+          note: {
+            fr: "min-height + overflow:visible laissent le bloc grandir quand l'utilisateur augmente l'espacement.",
+            en: "min-height + overflow:visible let the block grow when the user increases spacing."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.12"
+    },
+    {
+      id: "presentation-hover-focus-content",
+      criterionId: "10.13",
+      wcag: ["1.4.13"],
+      title: {
+        fr: "Contenus additionnels au survol/focus contr\xF4lables",
+        en: "User-controllable content on hover/focus"
+      },
+      summary: {
+        fr: "Un contenu additionnel apparaissant au survol ou \xE0 la prise de focus (infobulle, sous-menu) doit \xEAtre masquable sans d\xE9placer le pointeur (touche \xC9chap), rester affich\xE9 tant que le pointeur le survole, et persister tant que le d\xE9clencheur garde le focus.",
+        en: "Additional content appearing on hover or focus (tooltip, submenu) must be dismissible without moving the pointer (Escape), remain visible while the pointer is over it, and persist as long as the trigger keeps focus."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<span onmouseover="showTip()" onmouseout="hideTip()">Aide</span>\n<div id="tip" hidden>Astuce</div>',
+          good: '<button type="button" aria-describedby="tip">Aide</button>\n<div id="tip" role="tooltip">Astuce \u2014 appuyez sur \xC9chap pour fermer</div>',
+          note: {
+            fr: "L'infobulle doit \xEAtre atteignable au focus, survolable sans dispara\xEEtre et fermable via \xC9chap.",
+            en: "The tooltip must be reachable on focus, hoverable without vanishing, and dismissible with Escape."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.13"
+    },
+    {
+      id: "presentation-css-content-keyboard",
+      criterionId: "10.14",
+      wcag: ["2.1.1"],
+      title: {
+        fr: "Contenus additionnels CSS accessibles au clavier",
+        en: "CSS-revealed additional content reachable by keyboard"
+      },
+      summary: {
+        fr: "Un contenu additionnel rendu visible uniquement via CSS (sous-menu en :hover, info au survol) doit aussi pouvoir \xEAtre affich\xE9 au clavier et par tout dispositif de pointage : ajouter une d\xE9claration :focus / :focus-within \xE9quivalente au :hover.",
+        en: "Additional content revealed only via CSS (a :hover submenu, hover-only info) must also be displayable by keyboard and any pointing device: add a :focus / :focus-within declaration equivalent to the :hover one."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<style>.menu .sub{display:none}\n.menu:hover .sub{display:block}</style>\n<li class="menu"><a href="/p">Produits</a><ul class="sub"><li><a href="/p/a">A</a></li></ul></li>',
+          good: '<style>.menu .sub{display:none}\n.menu:hover .sub,.menu:focus-within .sub{display:block}</style>\n<li class="menu"><a href="/p">Produits</a><ul class="sub"><li><a href="/p/a">A</a></li></ul></li>',
+          note: {
+            fr: ":focus-within r\xE9v\xE8le le sous-menu au clavier comme :hover le fait \xE0 la souris.",
+            en: ":focus-within reveals the submenu for keyboard users just as :hover does for the mouse."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#10.14"
+    },
+    {
+      id: "forms-consistent-labels",
+      criterionId: "11.3",
+      wcag: ["3.2.4"],
+      title: {
+        fr: "\xC9tiqueter de fa\xE7on coh\xE9rente les champs de m\xEAme fonction",
+        en: "Label fields with the same function consistently"
+      },
+      summary: {
+        fr: "Un champ qui remplit la m\xEAme fonction et qui se r\xE9p\xE8te dans la page ou dans l'ensemble de pages doit porter une \xE9tiquette formul\xE9e \xE0 l'identique (ex. toujours \xAB Adresse e-mail \xBB, pas \xAB Courriel \xBB ici et \xAB E-mail \xBB l\xE0).",
+        en: 'A field that has the same function and recurs across the page or set of pages must carry an identically worded label (e.g. always "Email address", not "Email" here and "E-mail" there).'
+      },
+      impact: "low",
+      examples: [
+        {
+          lang: "html",
+          bad: '<form action="/contact" method="post">\n  <label for="c-mail">Courriel</label>\n  <input type="email" id="c-mail" name="email">\n</form>\n<form action="/newsletter" method="post">\n  <label for="n-mail">Votre e-mail</label>\n  <input type="email" id="n-mail" name="email">\n</form>',
+          good: '<form action="/contact" method="post">\n  <label for="c-mail">Adresse e-mail</label>\n  <input type="email" id="c-mail" name="email">\n</form>\n<form action="/newsletter" method="post">\n  <label for="n-mail">Adresse e-mail</label>\n  <input type="email" id="n-mail" name="email">\n</form>',
+          note: {
+            fr: "Les deux champs e-mail ont la m\xEAme fonction : ils doivent porter la m\xEAme \xE9tiquette.",
+            en: "Both email fields share the same function: they must carry the same label."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.3"
+    },
+    {
+      id: "forms-label-field-adjacent",
+      criterionId: "11.4",
+      wcag: ["3.3.2"],
+      title: {
+        fr: "Accoler chaque \xE9tiquette \xE0 son champ",
+        en: "Keep each label adjacent to its field"
+      },
+      summary: {
+        fr: "Dans le DOM comme \xE0 l'\xE9cran, l'\xE9tiquette doit \xEAtre contigu\xEB \xE0 son champ (au-dessus ou \xE0 gauche pour un champ texte/select, apr\xE8s pour une case \xE0 cocher ou un bouton radio) : aucun autre champ ne doit s'intercaler entre une \xE9tiquette et le champ qu'elle d\xE9crit.",
+        en: "In the DOM and on screen, the label must sit next to its field (above or to the left for text/select, after for a checkbox or radio): no other field may come between a label and the field it describes."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div>\n  <label for="city">Ville</label>\n</div>\n<div>\n  <label for="zip">Code postal</label>\n  <input type="text" id="zip" name="zip">\n</div>\n<input type="text" id="city" name="city">',
+          good: '<div>\n  <label for="city">Ville</label>\n  <input type="text" id="city" name="city">\n</div>\n<div>\n  <label for="zip">Code postal</label>\n  <input type="text" id="zip" name="zip">\n</div>',
+          note: {
+            fr: "Dans le cas non conforme, le champ \xAB Ville \xBB est s\xE9par\xE9 de son \xE9tiquette par le bloc \xAB Code postal \xBB.",
+            en: 'In the non-compliant case, the "City" field is separated from its label by the "Postal code" block.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.4"
+    },
+    {
+      id: "forms-group-related-fields",
+      criterionId: "11.5",
+      wcag: ["1.3.1", "3.3.2"],
+      title: {
+        fr: "Regrouper les champs de m\xEAme nature",
+        en: "Group fields of the same nature"
+      },
+      summary: {
+        fr: "Les champs qui r\xE9pondent \xE0 une m\xEAme question ou d\xE9crivent une m\xEAme donn\xE9e (boutons radio, cases \xE0 cocher, adresse \xE9clat\xE9e en plusieurs champs) doivent \xEAtre regroup\xE9s programmatiquement dans un m\xEAme conteneur \u2014 typiquement un <fieldset> \u2014 pour que le lien entre eux soit restitu\xE9 aux technologies d'assistance.",
+        en: "Fields that answer the same question or describe one piece of data (radio buttons, checkboxes, an address split across several fields) must be programmatically grouped in a single container \u2014 typically a <fieldset> \u2014 so their relationship is conveyed to assistive technologies."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p>Mode de livraison</p>\n<input type="radio" id="std" name="ship" value="std">\n<label for="std">Standard</label>\n<input type="radio" id="exp" name="ship" value="exp">\n<label for="exp">Express</label>',
+          good: '<fieldset>\n  <legend>Mode de livraison</legend>\n  <input type="radio" id="std" name="ship" value="std">\n  <label for="std">Standard</label>\n  <input type="radio" id="exp" name="ship" value="exp">\n  <label for="exp">Express</label>\n</fieldset>',
+          note: {
+            fr: "Le <fieldset> mat\xE9rialise le regroupement ; sans lui, chaque option radio est annonc\xE9e isol\xE9ment, sans la question commune.",
+            en: "The <fieldset> materializes the grouping; without it, each radio option is announced in isolation, without the shared question."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.5"
+    },
+    {
+      id: "forms-fieldset-legend",
+      criterionId: "11.6",
+      wcag: ["1.3.1", "3.3.2"],
+      title: {
+        fr: "Donner une l\xE9gende \xE0 chaque regroupement de champs",
+        en: "Give every field group a legend"
+      },
+      summary: {
+        fr: `Chaque regroupement de champs de m\xEAme nature doit porter une l\xE9gende : un <fieldset> doit contenir un <legend> en premier enfant (ou, \xE0 d\xE9faut, un role="group" dot\xE9 d'un aria-label / aria-labelledby). La l\xE9gende est restitu\xE9e avant chaque champ du groupe.`,
+        en: 'Every group of same-nature fields must carry a legend: a <fieldset> must contain a <legend> as its first child (or, failing that, a role="group" with aria-label / aria-labelledby). The legend is announced before each field in the group.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: `<fieldset>
+  <input type="checkbox" id="cgu" name="cgu">
+  <label for="cgu">J'accepte les conditions</label>
+  <input type="checkbox" id="news" name="news">
+  <label for="news">Recevoir la newsletter</label>
+</fieldset>`,
+          good: `<fieldset>
+  <legend>Pr\xE9f\xE9rences du compte</legend>
+  <input type="checkbox" id="cgu" name="cgu">
+  <label for="cgu">J'accepte les conditions</label>
+  <input type="checkbox" id="news" name="news">
+  <label for="news">Recevoir la newsletter</label>
+</fieldset>`,
+          note: {
+            fr: "Un <fieldset> sans <legend> n'est pas conforme : le groupe existe mais n'a pas de titre annonc\xE9.",
+            en: "A <fieldset> without a <legend> is non-compliant: the group exists but has no announced title."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.6"
+    },
+    {
+      id: "forms-relevant-legend",
+      criterionId: "11.7",
+      wcag: ["1.3.1", "3.3.2"],
+      title: {
+        fr: "R\xE9diger une l\xE9gende de groupe pertinente",
+        en: "Write a relevant group legend"
+      },
+      summary: {
+        fr: `Le texte de la <legend> (ou de l'aria-label du role="group") doit d\xE9crire pr\xE9cis\xE9ment la nature ou la finalit\xE9 du regroupement, et non un libell\xE9 g\xE9n\xE9rique : il compl\xE8te chaque \xE9tiquette de champ pour former une question compl\xE8te et compr\xE9hensible hors contexte.`,
+        en: 'The <legend> text (or the role="group" aria-label) must precisely describe the nature or purpose of the grouping, not a generic label: combined with each field label it must form a complete, context-free question.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<fieldset>\n  <legend>Informations</legend>\n  <input type="radio" id="mr" name="civ" value="mr">\n  <label for="mr">Monsieur</label>\n  <input type="radio" id="mrs" name="civ" value="mrs">\n  <label for="mrs">Madame</label>\n</fieldset>',
+          good: '<fieldset>\n  <legend>Civilit\xE9</legend>\n  <input type="radio" id="mr" name="civ" value="mr">\n  <label for="mr">Monsieur</label>\n  <input type="radio" id="mrs" name="civ" value="mrs">\n  <label for="mrs">Madame</label>\n</fieldset>',
+          note: {
+            fr: "\xAB Informations \xBB ne d\xE9crit pas le groupe ; \xAB Civilit\xE9 \xBB indique exactement ce qui est demand\xE9.",
+            en: '"Information" does not describe the group; "Title/Salutation" states exactly what is asked.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.7"
+    },
+    {
+      id: "forms-select-optgroup",
+      criterionId: "11.8",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Regrouper les options d'une liste de choix avec optgroup",
+        en: "Group select options with optgroup"
+      },
+      summary: {
+        fr: "Quand un <select> contient de nombreuses options relevant de cat\xE9gories distinctes, regroupez-les avec des <optgroup> dot\xE9s d'un attribut label d\xE9crivant chaque cat\xE9gorie, afin que la structure soit restitu\xE9e et la navigation facilit\xE9e.",
+        en: "When a <select> holds many options belonging to distinct categories, group them with <optgroup> elements carrying a label attribute that names each category, so the structure is conveyed and navigation is easier."
+      },
+      impact: "low",
+      examples: [
+        {
+          lang: "html",
+          bad: '<label for="dept">D\xE9partement</label>\n<select id="dept" name="dept">\n  <option value="75">Paris</option>\n  <option value="92">Hauts-de-Seine</option>\n  <option value="69">Rh\xF4ne</option>\n  <option value="38">Is\xE8re</option>\n</select>',
+          good: '<label for="dept">D\xE9partement</label>\n<select id="dept" name="dept">\n  <optgroup label="\xCEle-de-France">\n    <option value="75">Paris</option>\n    <option value="92">Hauts-de-Seine</option>\n  </optgroup>\n  <optgroup label="Auvergne-Rh\xF4ne-Alpes">\n    <option value="69">Rh\xF4ne</option>\n    <option value="38">Is\xE8re</option>\n  </optgroup>\n</select>',
+          note: {
+            fr: "Les <optgroup> ne sont n\xE9cessaires que si les options rel\xE8vent r\xE9ellement de cat\xE9gories distinctes.",
+            en: "<optgroup> elements are only needed when the options genuinely fall into distinct categories."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.8"
+    },
+    {
+      id: "forms-relevant-button-label",
+      criterionId: "11.9",
+      wcag: ["2.5.3", "4.1.2"],
+      title: {
+        fr: "Donner un intitul\xE9 de bouton pertinent",
+        en: "Give buttons a relevant label"
+      },
+      summary: {
+        fr: "L'intitul\xE9 de chaque bouton doit d\xE9crire pr\xE9cis\xE9ment son action dans le contexte du formulaire (pas \xAB OK \xBB ni \xAB Envoyer \xBB seul quand plusieurs formulaires coexistent). Si un nom accessible est ajout\xE9 (aria-label), il doit reprendre le texte visible pour respecter le crit\xE8re \xAB label in name \xBB.",
+        en: `Each button's label must precisely describe its action in the form's context (not a bare "OK" or "Submit" when several forms coexist). If an accessible name is added (aria-label), it must include the visible text to satisfy "label in name".`
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<form action="/contact" method="post">\n  <label for="msg">Message</label>\n  <textarea id="msg" name="msg"></textarea>\n  <button type="submit">OK</button>\n</form>',
+          good: '<form action="/contact" method="post">\n  <label for="msg">Message</label>\n  <textarea id="msg" name="msg"></textarea>\n  <button type="submit">Envoyer ma demande de contact</button>\n</form>',
+          note: {
+            fr: "Hors contexte (liste des \xE9l\xE9ments du lecteur d'\xE9cran), \xAB OK \xBB ne dit rien ; l'intitul\xE9 explicite reste compr\xE9hensible.",
+            en: `Out of context (a screen reader's elements list), "OK" says nothing; the explicit label stays understandable.`
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.9"
+    },
+    {
+      id: "forms-verify-before-consequential-submit",
+      criterionId: "11.12",
+      wcag: ["3.3.4"],
+      title: {
+        fr: "Permettre la v\xE9rification avant une soumission \xE0 cons\xE9quences",
+        en: "Allow verification before a consequential submission"
+      },
+      summary: {
+        fr: "Tout formulaire \xE0 cons\xE9quences financi\xE8res, juridiques, de suppression de donn\xE9es ou de r\xE9ponse \xE0 un examen doit offrir au moins un de ces m\xE9canismes : annulation/modification apr\xE8s envoi, \xE9tape de v\xE9rification r\xE9capitulative, ou case de confirmation explicite avant validation.",
+        en: "Any form with financial, legal, data-deletion or test-submission consequences must offer at least one of: reversal/modification after submission, a review/verification step, or an explicit confirmation checkbox before validation."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<form action="/account/delete" method="post">\n  <button type="submit">Supprimer mon compte</button>\n</form>',
+          good: '<form action="/account/delete" method="post">\n  <h2>Confirmer la suppression du compte</h2>\n  <p>Cette action est d\xE9finitive et supprime toutes vos donn\xE9es.</p>\n  <label>\n    <input type="checkbox" name="confirm" value="yes" required>\n    Je confirme vouloir supprimer d\xE9finitivement mon compte\n  </label>\n  <button type="submit">Confirmer la suppression</button>\n</form>',
+          note: {
+            fr: "Ici, la case de confirmation obligatoire constitue le m\xE9canisme de v\xE9rification avant une action irr\xE9versible.",
+            en: "Here, the required confirmation checkbox provides the verification step before an irreversible action."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.12"
+    },
+    {
+      id: "forms-autocomplete",
+      criterionId: "11.13",
+      wcag: ["1.3.5"],
+      title: {
+        fr: "Renseigner autocomplete sur les champs de donn\xE9es utilisateur",
+        en: "Set autocomplete on user-data fields"
+      },
+      summary: {
+        fr: "Les champs collectant une donn\xE9e concernant l'utilisateur (nom, pr\xE9nom, e-mail, t\xE9l\xE9phone, adresse, code postal\u2026) doivent porter l'attribut autocomplete avec la valeur normalis\xE9e HTML correspondante, afin de permettre le remplissage automatique par le navigateur.",
+        en: "Fields collecting user data (first/last name, email, phone, address, postal code\u2026) must carry the autocomplete attribute with the matching HTML token, to enable browser autofill."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<label for="fn">Pr\xE9nom</label>\n<input type="text" id="fn" name="fn">\n<label for="em">E-mail</label>\n<input type="email" id="em" name="em">\n<label for="tel">T\xE9l\xE9phone</label>\n<input type="tel" id="tel" name="tel">',
+          good: '<label for="fn">Pr\xE9nom</label>\n<input type="text" id="fn" name="fn" autocomplete="given-name">\n<label for="em">E-mail</label>\n<input type="email" id="em" name="em" autocomplete="email">\n<label for="tel">T\xE9l\xE9phone</label>\n<input type="tel" id="tel" name="tel" autocomplete="tel">',
+          note: {
+            fr: "Utilisez les tokens normalis\xE9s (given-name, family-name, email, tel, street-address, postal-code\u2026), pas une valeur libre.",
+            en: "Use the standard tokens (given-name, family-name, email, tel, street-address, postal-code\u2026), not an arbitrary value."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.13"
+    },
+    {
+      id: "page-doctype",
+      criterionId: "8.1",
+      wcag: ["4.1.1"],
+      title: {
+        fr: "Type de document d\xE9clar\xE9 sur chaque page",
+        en: "Document type declared on every page"
+      },
+      summary: {
+        fr: "Chaque page web doit commencer par une d\xE9claration de type de document (<!DOCTYPE html>) en toute premi\xE8re ligne, avant la balise <html>, pour que le navigateur et les technologies d'assistance interpr\xE8tent le code en mode standard.",
+        en: "Every page must start with a document type declaration (<!DOCTYPE html>) on the very first line, before the <html> tag, so browsers and assistive tech parse it in standards mode."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<html lang="fr"><head><title>Accueil - MonSite</title></head><body><h1>Accueil</h1></body></html>',
+          good: '<!DOCTYPE html><html lang="fr"><head><title>Accueil - MonSite</title></head><body><h1>Accueil</h1></body></html>',
+          note: {
+            fr: "Sans DOCTYPE, le navigateur bascule en mode quirks et le rendu devient impr\xE9visible.",
+            en: "Without a DOCTYPE the browser falls back to quirks mode and rendering becomes unreliable."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.1"
+    },
+    {
+      id: "semantics-valid-code",
+      criterionId: "8.2",
+      wcag: ["4.1.1", "4.1.2"],
+      title: {
+        fr: "Code source valide selon le type de document",
+        en: "Source code valid against the document type"
+      },
+      summary: {
+        fr: "Le code g\xE9n\xE9r\xE9 doit \xEAtre valide : balises correctement imbriqu\xE9es et ferm\xE9es, attributs entre guillemets, pas d'identifiant id dupliqu\xE9. Un code invalide produit un arbre d'accessibilit\xE9 incoh\xE9rent.",
+        en: "Generated code must be valid: properly nested and closed tags, quoted attributes, no duplicated id. Invalid markup yields an inconsistent accessibility tree."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<a href="/a">Profil<a href="/b">R\xE9glages</a><input id="q"><input id="q">',
+          good: '<a href="/a">Profil</a> <a href="/b">R\xE9glages</a><input id="q"><input id="q2">',
+          note: {
+            fr: "Pas de liens imbriqu\xE9s, chaque balise est ferm\xE9e et chaque id est unique dans la page.",
+            en: "No nested links, every tag is closed, and each id is unique within the page."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.2"
+    },
+    {
+      id: "title-precise-title",
+      criterionId: "8.5",
+      wcag: ["2.4.2"],
+      title: {
+        fr: "Titre de page pr\xE9sent et pertinent",
+        en: "Page title present and relevant"
+      },
+      summary: {
+        fr: "Chaque page doit avoir un \xE9l\xE9ment <title> non vide qui identifie pr\xE9cis\xE9ment son contenu dans le site (g\xE9n\xE9ralement \xAB contenu de la page - nom du site \xBB), et non un titre g\xE9n\xE9rique comme \xAB Accueil \xBB ou \xAB Page \xBB.",
+        en: 'Every page needs a non-empty <title> that uniquely identifies its content within the site (usually "page content - site name"), not a generic label like "Home" or "Page".'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<head><title>Page</title></head>",
+          good: "<head><title>Panier - MaBoutique</title></head>",
+          note: {
+            fr: "Un titre pr\xE9cis distingue les onglets ouverts et annonce la page au lecteur d'\xE9cran d\xE8s le chargement.",
+            en: "A precise title distinguishes open tabs and announces the page to screen readers on load."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.5"
+    },
+    {
+      id: "lang-inline-changes",
+      criterionId: "8.7",
+      wcag: ["3.1.2"],
+      title: {
+        fr: "Changements de langue signal\xE9s dans le contenu",
+        en: "Inline language changes marked up"
+      },
+      summary: {
+        fr: "Tout passage r\xE9dig\xE9 dans une langue diff\xE9rente de la langue principale de la page doit \xEAtre encadr\xE9 par un \xE9l\xE9ment portant un attribut lang ad\xE9quat, pour que la synth\xE8se vocale change de voix (hors noms propres et termes entr\xE9s dans le langage courant).",
+        en: "Any passage written in a language other than the page's main language must be wrapped in an element carrying an appropriate lang attribute so speech synthesis switches voice (proper nouns and adopted terms excepted)."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p lang="fr">Notre dernier article : <span>Best practices for accessibility</span>.</p>',
+          good: '<p lang="fr">Notre dernier article : <span lang="en">Best practices for accessibility</span>.</p>',
+          note: {
+            fr: `Sans lang="en", le lecteur d'\xE9cran prononce l'anglais avec les r\xE8gles du fran\xE7ais.`,
+            en: 'Without lang="en", the screen reader pronounces English with French phonetic rules.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.7"
+    },
+    {
+      id: "lang-code-valid",
+      criterionId: "8.8",
+      wcag: ["3.1.2"],
+      title: {
+        fr: "Code de langue valide et pertinent",
+        en: "Valid and relevant language code"
+      },
+      summary: {
+        fr: "La valeur de chaque attribut lang signalant un changement de langue doit \xEAtre un code ISO 639 valide (ex. en, ar, es) et correspondre r\xE9ellement \xE0 la langue du passage, pas un nom de langue \xE9crit en toutes lettres.",
+        en: "Each lang attribute marking a language change must use a valid ISO 639 code (e.g. en, ar, es) that actually matches the passage's language, not a spelled-out language name."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p>Bienvenue, <span lang="english">welcome aboard</span> !</p>',
+          good: '<p>Bienvenue, <span lang="en">welcome aboard</span> !</p>',
+          note: {
+            fr: "\xAB english \xBB n'est pas un code valide ; le code ISO 639 est \xAB en \xBB.",
+            en: '"english" is not a valid code; the ISO 639 code is "en".'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.8"
+    },
+    {
+      id: "semantics-no-presentation-only-tags",
+      criterionId: "8.9",
+      wcag: ["1.3.1"],
+      title: {
+        fr: "Balises non d\xE9tourn\xE9es \xE0 des fins de pr\xE9sentation",
+        en: "Tags not misused purely for presentation"
+      },
+      summary: {
+        fr: "Les balises porteuses de sens ne doivent pas \xEAtre employ\xE9es uniquement pour leur rendu visuel : un titre visuel doit \xEAtre un vrai <hn>, une liste un <ul>/<ol>, et non un paragraphe styl\xE9. Inversement les balises s\xE9mantiques ne servent pas \xE0 obtenir un effet de mise en forme.",
+        en: "Semantic tags must not be used only for their visual effect: a visual heading must be a real <hn>, a list a <ul>/<ol>, not a styled paragraph. Conversely, semantic tags must not be hijacked just for layout."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p class="big-bold">Nos services</p><p>D\xE9tail de la section.</p>',
+          good: "<h2>Nos services</h2><p>D\xE9tail de la section.</p>",
+          note: {
+            fr: "Un titre faux (paragraphe styl\xE9) est invisible \xE0 la navigation par titres du lecteur d'\xE9cran.",
+            en: "A fake heading (styled paragraph) is invisible to screen-reader heading navigation."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.9"
+    },
+    {
+      id: "additional-dir-attribute",
+      criterionId: "8.10",
+      wcag: ["1.3.2"],
+      title: {
+        fr: "Sens de lecture signal\xE9 avec l'attribut dir",
+        en: "Reading direction marked with the dir attribute"
+      },
+      summary: {
+        fr: `Tout contenu dont le sens de lecture diff\xE8re de celui de la page (texte arabe ou h\xE9breu dans une page de gauche \xE0 droite) doit \xEAtre encadr\xE9 par un \xE9l\xE9ment portant l'attribut dir ad\xE9quat (dir="rtl"), pour un affichage et un ordre de lecture corrects.`,
+        en: 'Any content whose reading direction differs from the page (Arabic or Hebrew inside a left-to-right page) must be wrapped in an element carrying the right dir attribute (dir="rtl") for correct rendering and reading order.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<p lang="fr">Salutation en arabe : \u0645\u0631\u062D\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645</p>',
+          good: '<p lang="fr">Salutation en arabe : <span dir="rtl" lang="ar">\u0645\u0631\u062D\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645</span></p>',
+          note: {
+            fr: `Sans dir="rtl", le texte bidirectionnel s'affiche et se restitue dans le mauvais ordre.`,
+            en: 'Without dir="rtl", bidirectional text is displayed and read back in the wrong order.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#8.10"
+    },
+    {
+      id: "structure-landmark-regions",
+      criterionId: "12.6",
+      wcag: ["1.3.1", "2.4.1", "4.1.2"],
+      title: {
+        fr: "Zones de regroupement identifi\xE9es par des rep\xE8res",
+        en: "Page regions identified as landmarks"
+      },
+      summary: {
+        fr: "Les zones r\xE9p\xE9t\xE9es d'un ensemble de pages (en-t\xEAte, navigation principale, contenu principal, pied de page) doivent \xEAtre balis\xE9es avec les \xE9l\xE9ments de rep\xE8re natifs (<header>, <nav>, <main>, <footer>) pour \xEAtre atteignables directement par les technologies d'assistance.",
+        en: "Recurring regions across a page set (header, main navigation, main content, footer) must use native landmark elements (<header>, <nav>, <main>, <footer>) so assistive tech can jump to them directly."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div class="header">\u2026</div><div class="nav">\u2026</div><div class="content">\u2026</div><div class="footer">\u2026</div>',
+          good: '<header>\u2026</header><nav aria-label="Navigation principale">\u2026</nav><main>\u2026</main><footer>\u2026</footer>',
+          note: {
+            fr: "Plusieurs <nav> sur une page se distinguent par un aria-label propre \xE0 chacun.",
+            en: "Multiple <nav> elements on one page are told apart by a distinct aria-label on each."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.6"
+    },
+    {
+      id: "keyboard-skip-link",
+      criterionId: "12.7",
+      wcag: ["2.4.1", "2.4.3", "3.2.3"],
+      title: {
+        fr: "Lien d'\xE9vitement vers le contenu principal",
+        en: "Skip link to main content"
+      },
+      summary: {
+        fr: "Chaque page doit fournir, comme premier \xE9l\xE9ment focalisable du <body>, un lien d'\xE9vitement pointant vers la zone de contenu principal (ancre vers l'id du <main>), pour que l'utilisateur clavier puisse sauter les blocs r\xE9p\xE9t\xE9s.",
+        en: "Every page must provide, as the first focusable element in <body>, a skip link targeting the main content area (anchor to the <main> id), so keyboard users can bypass repeated blocks."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: "<body><header><nav>\u2026</nav></header><main><h1>Bienvenue</h1></main></body>",
+          good: '<body><a href="#main-content" class="skip-link">Aller au contenu</a><header><nav>\u2026</nav></header><main id="main-content"><h1>Bienvenue</h1></main></body>',
+          note: {
+            fr: "Le lien doit cibler un id r\xE9el et redevenir visible \xE0 la prise de focus.",
+            en: "The link must target a real id and become visible again when focused."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.7"
+    },
+    {
+      id: "keyboard-tab-order",
+      criterionId: "12.8",
+      wcag: ["2.4.3"],
+      title: {
+        fr: "Ordre de tabulation coh\xE9rent",
+        en: "Coherent tab order"
+      },
+      summary: {
+        fr: `L'ordre de tabulation doit suivre l'ordre de lecture logique. Ne pas forcer la s\xE9quence avec un tabindex positif (> 0) ni la d\xE9saccorder via la r\xE9organisation CSS (flex order, float, position absolue). Utiliser tabindex="0" ou "-1" uniquement.`,
+        en: 'Tab order must follow the logical reading order. Never force the sequence with a positive tabindex (> 0) nor break it with CSS reordering (flex order, float, absolute positioning). Use only tabindex="0" or "-1".'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<form><label for="email">E-mail</label><input id="email" tabindex="2"><label for="nom">Nom</label><input id="nom" tabindex="1"></form>',
+          good: '<form><label for="nom">Nom</label><input id="nom"><label for="email">E-mail</label><input id="email"></form>',
+          note: {
+            fr: "Un tabindex positif place l'\xE9l\xE9ment en t\xEAte de s\xE9quence et casse l'ordre naturel du DOM.",
+            en: "A positive tabindex jumps the element to the front and breaks the natural DOM order."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.8"
+    },
+    {
+      id: "keyboard-no-trap",
+      criterionId: "12.9",
+      wcag: ["2.1.1", "2.1.2"],
+      title: {
+        fr: "Pas de pi\xE8ge au clavier",
+        en: "No keyboard trap"
+      },
+      summary: {
+        fr: "L'utilisateur doit toujours pouvoir sortir d'un composant au clavier seul (Tab, Maj+Tab, \xC9chap). Une bo\xEEte de dialogue qui capture le focus doit offrir une fermeture focalisable et g\xE9rer la touche \xC9chap, puis rendre le focus \xE0 l'\xE9l\xE9ment d\xE9clencheur.",
+        en: "Focus must always be able to leave a component with the keyboard alone (Tab, Shift+Tab, Escape). A dialog that captures focus must offer a focusable close control, handle Escape, then return focus to the triggering element."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div role="dialog" aria-modal="true" aria-label="Conditions" tabindex="-1"><p>Vous devez accepter les conditions.</p></div>',
+          good: '<div role="dialog" aria-modal="true" aria-label="Conditions" tabindex="-1"><p>Vous devez accepter les conditions.</p><button type="button" onclick="closeDialog()">Fermer</button></div>',
+          note: {
+            fr: "Sans fermeture focalisable ni gestion d'\xC9chap, le focus reste prisonnier de la modale.",
+            en: "Without a focusable close and Escape handling, focus stays trapped inside the modal."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.9"
+    },
+    {
+      id: "keyboard-single-key-shortcuts",
+      criterionId: "12.10",
+      wcag: ["2.1.4"],
+      title: {
+        fr: "Raccourcis clavier \xE0 une seule touche contr\xF4lables",
+        en: "Single-key shortcuts must be controllable"
+      },
+      summary: {
+        fr: "Un raccourci n'utilisant qu'une seule touche (lettre, chiffre, ponctuation, symbole) doit pouvoir \xEAtre d\xE9sactiv\xE9, reconfigur\xE9, ou n'\xEAtre actif que lorsque le composant concern\xE9 a le focus \u2014 sinon il se d\xE9clenche pendant la saisie.",
+        en: "A shortcut using a single character key (letter, number, punctuation, symbol) must be deactivatable, remappable, or active only while the relevant component has focus \u2014 otherwise it fires during typing."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "jsx",
+          bad: 'useEffect(() => {\n  const onKey = (e) => { if (e.key === "r") reply(); };\n  document.addEventListener("keydown", onKey);\n  return () => document.removeEventListener("keydown", onKey);\n}, []);',
+          good: 'useEffect(() => {\n  const onKey = (e) => { if (e.key === "r" && e.altKey) reply(); };\n  document.addEventListener("keydown", onKey);\n  return () => document.removeEventListener("keydown", onKey);\n}, []);',
+          note: {
+            fr: "Exiger un modificateur (Alt) ou limiter le raccourci au focus \xE9vite les d\xE9clenchements pendant la frappe.",
+            en: "Requiring a modifier (Alt) or scoping the shortcut to focus prevents triggers while typing."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.10"
+    },
+    {
+      id: "keyboard-hover-focus-mirror",
+      criterionId: "12.11",
+      wcag: ["2.1.1"],
+      title: {
+        fr: "Contenus additionnels atteignables au clavier",
+        en: "Hover/focus content reachable by keyboard"
+      },
+      summary: {
+        fr: "Tout contenu additionnel affich\xE9 au survol (sous-menu, infobulle, popup) doit aussi appara\xEEtre \xE0 la prise de focus clavier et rester consultable sans dispara\xEEtre. Refl\xE9ter :hover par :focus / :focus-within.",
+        en: "Any additional content shown on hover (submenu, tooltip, popup) must also appear on keyboard focus and stay readable without vanishing. Mirror :hover with :focus / :focus-within."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<style>.menu .submenu{display:none}.menu:hover .submenu{display:block}</style><ul class="menu"><li><a href="/produits">Produits</a><ul class="submenu"><li><a href="/produits/a">A</a></li></ul></li></ul>',
+          good: '<style>.menu .submenu{display:none}.menu:hover .submenu,.menu:focus-within .submenu{display:block}</style><ul class="menu"><li><a href="/produits">Produits</a><ul class="submenu"><li><a href="/produits/a">A</a></li></ul></li></ul>',
+          note: {
+            fr: "Sans :focus-within, le sous-menu n'appara\xEEt jamais pour un utilisateur clavier.",
+            en: "Without :focus-within, the submenu never appears for a keyboard user."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#12.11"
+    },
+    {
+      id: "time-limit-control",
+      criterionId: "13.1",
+      wcag: ["2.2.1", "2.2.2"],
+      title: {
+        fr: "Contr\xF4le des limites de temps",
+        en: "Control over time limits"
+      },
+      summary: {
+        fr: "Pour toute session avec expiration ou contenu \xE0 rafra\xEEchissement automatique, l'utilisateur doit \xEAtre averti au moins 20 secondes avant l'\xE9ch\xE9ance et pouvoir prolonger, d\xE9sactiver ou ajuster la limite de temps (hors cas particuliers comme les ench\xE8res en temps r\xE9el).",
+        en: "For any expiring session or auto-refreshing content, the user must be warned at least 20 seconds before the deadline and be able to extend, turn off, or adjust the time limit (real-time exceptions like auctions aside)."
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "jsx",
+          bad: "function Session() {\n  useEffect(() => {\n    const t = setTimeout(() => logout(), 30 * 60 * 1000);\n    return () => clearTimeout(t);\n  }, []);\n  return <main>Formulaire de d\xE9marche</main>;\n}",
+          good: 'function Session() {\n  const [warn, setWarn] = useState(false);\n  useEffect(() => {\n    const t = setTimeout(() => setWarn(true), 29 * 60 * 1000);\n    return () => clearTimeout(t);\n  }, []);\n  return (\n    <main>\n      {warn && (\n        <div role="alertdialog" aria-label="Session bient\xF4t expir\xE9e">\n          <p>Votre session expire dans 1 minute.</p>\n          <button type="button" onClick={extendSession}>Prolonger</button>\n        </div>\n      )}\n    </main>\n  );\n}',
+          note: {
+            fr: "Avertir avant l'expiration et offrir \xAB Prolonger \xBB \xE9vite la perte de donn\xE9es saisies.",
+            en: 'Warning before expiry and offering "Extend" prevents loss of entered data.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.1"
+    },
+    {
+      id: "cryptic-content-alternative",
+      criterionId: "13.5",
+      wcag: ["1.1.1"],
+      title: {
+        fr: "Alternative aux contenus cryptiques",
+        en: "Alternative for cryptic content"
+      },
+      summary: {
+        fr: `Tout contenu cryptique (\xE9motic\xF4ne texte, art ASCII, syntaxe symbolique) doit disposer d'une alternative textuelle pertinente via aria-label (avec role="img"), title ou le contexte adjacent, pour \xEAtre compris par les technologies d'assistance.`,
+        en: 'Any cryptic content (text emoticon, ASCII art, symbolic syntax) must have a relevant text alternative via aria-label (with role="img"), title, or adjacent context, so assistive tech can convey it.'
+      },
+      impact: "low",
+      examples: [
+        {
+          lang: "html",
+          bad: "<p>Service r\xE9tabli :-)</p>",
+          good: '<p>Service r\xE9tabli <span role="img" aria-label="sourire">:-)</span></p>',
+          note: {
+            fr: "Sans alternative, le lecteur d'\xE9cran \xE9pelle \xAB deux-points tiret parenth\xE8se \xBB.",
+            en: 'Without an alternative the screen reader spells out "colon dash parenthesis".'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.5"
+    },
+    {
+      id: "moving-content-control",
+      criterionId: "13.8",
+      wcag: ["2.2.1", "2.2.2"],
+      title: {
+        fr: "Contenus en mouvement ou clignotants contr\xF4lables",
+        en: "Moving or blinking content controllable"
+      },
+      summary: {
+        fr: "Tout contenu en mouvement, clignotant ou d\xE9filant automatiquement (carrousel, animation) d\xE9marr\xE9 sans action et durant plus de 5 secondes doit disposer d'un m\xE9canisme accessible de pause/arr\xEAt et respecter prefers-reduced-motion.",
+        en: "Any auto-started moving, blinking, or scrolling content (carousel, animation) lasting more than 5 seconds must offer an accessible pause/stop control and honor prefers-reduced-motion."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "jsx",
+          bad: '<div className="carousel auto-rotating" aria-label="Promotions">\n  <Slide>Offre 1</Slide>\n  <Slide>Offre 2</Slide>\n</div>',
+          good: '<section aria-label="Promotions">\n  <button type="button" onClick={togglePlay}>\n    {playing ? "Mettre en pause" : "Lire"}\n  </button>\n  <div className="carousel">\n    <Slide>Offre 1</Slide>\n    <Slide>Offre 2</Slide>\n  </div>\n</section>',
+          note: {
+            fr: "Un bouton pause explicite et le respect de prefers-reduced-motion rendent l'animation ma\xEEtrisable.",
+            en: "An explicit pause button plus honoring prefers-reduced-motion makes the animation controllable."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.8"
+    },
+    {
+      id: "orientation-not-locked",
+      criterionId: "13.9",
+      wcag: ["1.3.4"],
+      title: {
+        fr: "Contenu consultable dans les deux orientations",
+        en: "Content usable in both orientations"
+      },
+      summary: {
+        fr: "Le contenu doit rester consultable en orientation portrait et paysage. Ne pas verrouiller l'affichage \xE0 une seule orientation ni masquer le contenu derri\xE8re un message \xAB Tournez votre appareil \xBB (sauf n\xE9cessit\xE9 fonctionnelle essentielle).",
+        en: 'Content must stay usable in both portrait and landscape orientations. Do not lock the display to a single orientation nor hide content behind a "Rotate your device" message (unless an orientation is functionally essential).'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<style>@media (orientation: portrait){.app{display:none}.rotate-msg{display:block}}</style><div class="rotate-msg">Veuillez tourner votre appareil</div><main class="app">Contenu</main>',
+          good: '<style>.app{display:block}</style><main class="app">Contenu utilisable en portrait comme en paysage</main>',
+          note: {
+            fr: "Masquer le contenu en portrait exclut les utilisateurs dont l'appareil est fix\xE9 dans cette orientation.",
+            en: "Hiding content in portrait excludes users whose device is mounted in that orientation."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.9"
+    },
+    {
+      id: "complex-gestures-alternative",
+      criterionId: "13.10",
+      wcag: ["2.5.1"],
+      title: {
+        fr: "Alternative aux gestes complexes",
+        en: "Alternative to complex gestures"
+      },
+      summary: {
+        fr: "Toute fonctionnalit\xE9 activable par un geste complexe (multipoint comme le pincement, ou bas\xE9 sur une trajectoire comme le balayage) doit aussi pouvoir \xEAtre d\xE9clench\xE9e par un geste simple \xE0 un seul point (tap ou clic), par exemple via des boutons.",
+        en: "Any feature triggered by a complex gesture (multipoint like pinch, or path-based like swipe) must also be operable with a simple single-point gesture (tap or click), e.g. via buttons."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "jsx",
+          bad: '<div onTouchMove={handleSwipe} aria-label="Galerie">\n  <img src="photo1.jpg" alt="Vue de la plage" />\n</div>',
+          good: '<div aria-label="Galerie">\n  <img src="photo1.jpg" alt="Vue de la plage" />\n  <button type="button" onClick={prev}>Pr\xE9c\xE9dent</button>\n  <button type="button" onClick={next}>Suivant</button>\n</div>',
+          note: {
+            fr: "Des boutons Pr\xE9c\xE9dent/Suivant doublent le balayage pour les utilisateurs qui ne peuvent pas l'ex\xE9cuter.",
+            en: "Previous/Next buttons duplicate the swipe for users who cannot perform it."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.10"
+    },
+    {
+      id: "pointer-cancellation",
+      criterionId: "13.11",
+      wcag: ["2.5.2"],
+      title: {
+        fr: "Actions au pointeur annulables",
+        en: "Pointer actions can be cancelled"
+      },
+      summary: {
+        fr: "Une action d\xE9clench\xE9e par un dispositif de pointage doit se produire \xE0 l'\xE9v\xE9nement de rel\xE2chement (clic / mouseup / touchend) et non \xE0 l'appui (mousedown / touchstart), afin que l'utilisateur puisse annuler en \xE9loignant le pointeur \u2014 ou un m\xE9canisme d'annulation doit \xEAtre pr\xE9vu.",
+        en: "An action triggered by a pointer must fire on the up event (click / mouseup / touchend), not on the down event (mousedown / touchstart), so the user can abort by moving the pointer away \u2014 or an undo mechanism must exist."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "jsx",
+          bad: '<button type="button" onMouseDown={deleteItem}>Supprimer</button>',
+          good: '<button type="button" onClick={deleteItem}>Supprimer</button>',
+          note: {
+            fr: "onClick se d\xE9clenche au rel\xE2chement : l'utilisateur peut glisser hors du bouton pour annuler.",
+            en: "onClick fires on release: the user can drag off the button to cancel."
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.11"
+    },
+    {
+      id: "motion-actuation-alternative",
+      criterionId: "13.12",
+      wcag: ["2.5.4"],
+      title: {
+        fr: "Alternative aux fonctionnalit\xE9s bas\xE9es sur le mouvement",
+        en: "Alternative to motion-actuated features"
+      },
+      summary: {
+        fr: "Toute fonctionnalit\xE9 activ\xE9e par un mouvement de l'appareil (secousse, inclinaison) doit aussi \xEAtre disponible via un composant d'interface standard, et la d\xE9tection du mouvement doit pouvoir \xEAtre d\xE9sactiv\xE9e pour \xE9viter les d\xE9clenchements accidentels.",
+        en: "Any feature actuated by device motion (shake, tilt) must also be available through a standard UI control, and motion detection must be deactivatable to prevent accidental triggering."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "jsx",
+          bad: `function Editor() {
+  useEffect(() => {
+    window.addEventListener("devicemotion", onShakeUndo);
+    return () => window.removeEventListener("devicemotion", onShakeUndo);
+  }, []);
+  return <p>Secouez l'appareil pour annuler</p>;
+}`,
+          good: 'function Editor() {\n  return (\n    <div>\n      <p>Modifications en cours\u2026</p>\n      <button type="button" onClick={undo}>Annuler</button>\n    </div>\n  );\n}',
+          note: {
+            fr: "Un bouton \xAB Annuler \xBB offre l'\xE9quivalent de la secousse sans d\xE9pendre d'un capteur de mouvement.",
+            en: 'An "Undo" button offers the equivalent of the shake without relying on a motion sensor.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.12"
     }
   ]
 };

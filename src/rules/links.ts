@@ -97,4 +97,42 @@ const iconOnlyControlUnnamed: Rule = {
   },
 };
 
-export const linksRules: Rule[] = [linkEmptyName, buttonEmptyName, iconOnlyControlUnnamed];
+// A link/button whose ONLY accessible name comes from the title attribute. `title` is
+// restituted unreliably (hover only — not on touch, often not by keyboard/AT), so a control
+// named solely by it is effectively unlabeled in practice. (link-empty-name/button-empty-name
+// skip these because title technically yields a name, so this rule covers the gap.)
+const controlNameTitleOnly: Rule = {
+  id: "control-name-title-only",
+  criteria: ["4.1.2"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      const link = el.tag === "a" && hasAttr(el, "href");
+      if (!link && !isButton(el)) continue;
+      if (attr(el, "aria-hidden") === "true") continue;
+      const title = (attr(el, "title") ?? "").trim();
+      if (!title || title.includes("{")) continue; // no title, or dynamic value
+      if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue; // named by ARIA, title is supplementary
+      if (mayInjectContent(el)) continue; // name may come from a <slot>/child component
+      if (el.tag === "input" && (attr(el, "value") ?? "").trim()) continue; // value names the button
+      const hasContentName =
+        visibleText(el).trim() !== "" ||
+        descendants(el).some(
+          (d) =>
+            (d.tag === "img" && (attr(d, "alt") ?? "").trim() !== "") ||
+            (d.tag === "svg" && descendants(d).some((x) => x.tag === "title" && visibleText(x).trim() !== "")),
+        );
+      if (hasContentName) continue; // visible text / named image already provides the name
+      out.push({
+        criteriaId: "4.1.2",
+        el,
+        message: `${link ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title — title n'est pas restitué de façon fiable (survol uniquement).`,
+        remediation: `Donnez un intitulé via texte visible ou aria-label ; réservez title à une information complémentaire.`,
+      });
+    }
+    return out;
+  },
+};
+
+export const linksRules: Rule[] = [linkEmptyName, buttonEmptyName, iconOnlyControlUnnamed, controlNameTitleOnly];

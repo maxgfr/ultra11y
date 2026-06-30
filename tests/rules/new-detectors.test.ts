@@ -90,3 +90,47 @@ describe("page-scoped detectors still behave in a full document", () => {
     expect(findOf(html, "meta-refresh-redirect")).toHaveLength(1);
   });
 });
+
+describe("live-region-conflict (4.1.3)", () => {
+  it("flags an invalid aria-live value", () => {
+    const f = findOf(`<div aria-live="urgent">Erreur</div>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("4.1.3");
+  });
+  it("flags role=alert contradicted by aria-live=polite (majeur)", () => {
+    const f = findOf(`<div role="alert" aria-live="polite">Erreur</div>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.severity).toBe("majeur");
+  });
+  it("flags role=status contradicted by aria-live=assertive (mineur)", () => {
+    const f = findOf(`<p role="status" aria-live="assertive">3 résultats</p>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.severity).toBe("mineur");
+  });
+  it("does not flag consistent or plain live regions", () => {
+    expect(findOf(`<div role="alert">Erreur</div>`, "live-region-conflict")).toHaveLength(0);
+    expect(findOf(`<div aria-live="polite">Sauvegardé</div>`, "live-region-conflict")).toHaveLength(0);
+    expect(findOf(`<div role="status" aria-live="polite">ok</div>`, "live-region-conflict")).toHaveLength(0);
+  });
+  it("does not flag a dynamic aria-live value or a component prop (JSX)", () => {
+    expect(findOf(`<div aria-live={mode}>x</div>`, "live-region-conflict", "t.tsx")).toHaveLength(0);
+    expect(findOf(`<Toast aria-live="urgent">x</Toast>`, "live-region-conflict", "t.tsx")).toHaveLength(0);
+  });
+});
+
+describe("aria-invalid-no-description (3.3.1)", () => {
+  it("flags aria-invalid=true without a linked description", () => {
+    const f = findOf(`<input type="email" aria-invalid="true">`, "aria-invalid-no-description");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("3.3.1");
+  });
+  it("does not flag when aria-describedby or aria-errormessage links the error", () => {
+    expect(findOf(`<input aria-invalid="true" aria-describedby="e">`, "aria-invalid-no-description")).toHaveLength(0);
+    expect(findOf(`<input aria-invalid="true" aria-errormessage="e">`, "aria-invalid-no-description")).toHaveLength(0);
+  });
+  it("does not flag aria-invalid=false / absent, or a dynamic value (JSX)", () => {
+    expect(findOf(`<input aria-invalid="false">`, "aria-invalid-no-description")).toHaveLength(0);
+    expect(findOf(`<input type="text">`, "aria-invalid-no-description")).toHaveLength(0);
+    expect(findOf(`<input aria-invalid={hasError} />`, "aria-invalid-no-description", "t.tsx")).toHaveLength(0);
+  });
+});

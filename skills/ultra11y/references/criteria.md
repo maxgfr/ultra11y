@@ -113,7 +113,7 @@ levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 �
 
 | SC | Title | Level | Automatability | Rules | RGAA |
 |---|---|---|---|---|---|
-| 3.3.1 | Error Identification | A | judgment | — | 11.10 |
+| 3.3.1 | Error Identification | A | judgment | aria-invalid-no-description | 11.10 |
 | 3.3.2 | Labels or Instructions | A | judgment | — | 11.1, 11.2, 11.4, 11.5, 11.6, 11.7, 11.10 |
 | 3.3.3 | Error Suggestion | AA | judgment | — | 11.11 |
 | 3.3.4 | Error Prevention (Legal, Financial, Data) | AA | judgment | — | 11.12 |
@@ -125,4 +125,4 @@ levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 �
 | SC | Title | Level | Automatability | Rules | RGAA |
 |---|---|---|---|---|---|
 | 4.1.2 | Name, Role, Value | A | judgment | iframe-title-missing, invalid-aria-role, aria-ref-missing-id, redundant-aria, clickable-noninteractive, aria-required-children, aria-hidden-focusable, nested-interactive, duplicate-id, control-label-missing, placeholder-as-label, form-field-multiple-labels, select-has-option, button-empty-name, icon-only-control-unnamed | 1.2, 1.3, 1.9, 2.1, 2.2, 4.13, 5.3, 7.1, 7.2, 8.2, 9.1, 10.8, 11.1, 11.9, 12.6, 13.3, 13.4 |
-| 4.1.3 | Status Messages | AA | judgment | — | 7.5 |
+| 4.1.3 | Status Messages | AA | judgment | live-region-conflict | 7.5 |

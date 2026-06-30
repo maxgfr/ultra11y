@@ -886,7 +886,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: ["aria-invalid-no-description"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
       techniques: [
         "ARIA1",
@@ -1087,7 +1087,7 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: ["live-region-conflict"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
       techniques: ["ARIA19", "ARIA22", "ARIA23"]
     }
@@ -18718,6 +18718,52 @@ var nestedInteractive = {
     return out;
   }
 };
+var ROLE_LIVENESS = {
+  alert: "assertive",
+  alertdialog: "assertive",
+  status: "polite",
+  log: "polite",
+  timer: "off",
+  marquee: "off"
+};
+var VALID_LIVE = /* @__PURE__ */ new Set(["off", "polite", "assertive"]);
+var liveRegionConflict = {
+  id: "live-region-conflict",
+  criteria: ["4.1.3"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue;
+      const liveRaw = attr(el, "aria-live");
+      if (liveRaw === void 0 || liveRaw.includes("{")) continue;
+      const live = liveRaw.trim().toLowerCase();
+      if (!live) continue;
+      if (!VALID_LIVE.has(live)) {
+        out.push({
+          criteriaId: "4.1.3",
+          el,
+          message: `aria-live="${liveRaw}" invalide \u2014 seules les valeurs off, polite, assertive sont restitu\xE9es.`,
+          remediation: `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignor\xE9e.`
+        });
+        continue;
+      }
+      const role = (attr(el, "role") ?? "").trim().toLowerCase();
+      if (role.includes("{")) continue;
+      const want = ROLE_LIVENESS[role];
+      if (want && want !== live) {
+        out.push({
+          criteriaId: "4.1.3",
+          el,
+          severity: want === "assertive" ? "majeur" : "mineur",
+          message: `role="${role}" implique aria-live="${want}" mais aria-live="${live}" \u2014 message de statut restitu\xE9 de fa\xE7on incoh\xE9rente.`,
+          remediation: want === "assertive" ? `Laissez role="${role}" g\xE9rer la restitution (retirez aria-live) ou utilisez aria-live="assertive".` : `Alignez aria-live sur "${want}", coh\xE9rent avec role="${role}", ou retirez-le.`
+        });
+      }
+    }
+    return out;
+  }
+};
 var scriptsAriaRules = [
   invalidAriaRole,
   ariaRefMissingId,
@@ -18725,7 +18771,8 @@ var scriptsAriaRules = [
   clickableNoninteractive,
   ariaRequiredChildren,
   ariaHiddenFocusable,
-  nestedInteractive
+  nestedInteractive,
+  liveRegionConflict
 ];
 
 // src/rules/mandatory.ts
@@ -19320,7 +19367,38 @@ var labelForDangling = {
     return out;
   }
 };
-var formsRules = [controlLabelMissing, placeholderAsLabel, fieldsetLegendMissing, formFieldMultipleLabels, selectHasOption, labelForDangling];
+var ariaInvalidNoDescription = {
+  id: "aria-invalid-no-description",
+  criteria: ["3.3.1"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isFormField(el)) continue;
+      const invalid = attr(el, "aria-invalid");
+      if (invalid === void 0 || invalid.includes("{")) continue;
+      if (invalid.trim().toLowerCase() !== "true") continue;
+      if (hasAttr(el, "aria-describedby") || hasAttr(el, "aria-errormessage")) continue;
+      if (hasDynamicSpread(el)) continue;
+      out.push({
+        criteriaId: "3.3.1",
+        el,
+        message: `<${el.tag}> a aria-invalid="true" mais aucun aria-describedby/aria-errormessage \u2014 l'erreur est signal\xE9e sans \xEAtre reli\xE9e \xE0 son message.`,
+        remediation: `Reliez le message d'erreur au champ via aria-describedby (ou aria-errormessage) pointant vers le texte d'erreur.`
+      });
+    }
+    return out;
+  }
+};
+var formsRules = [
+  controlLabelMissing,
+  placeholderAsLabel,
+  fieldsetLegendMissing,
+  formFieldMultipleLabels,
+  selectHasOption,
+  labelForDangling,
+  ariaInvalidNoDescription
+];
 
 // src/rules/navigation.ts
 var skipLinkTargetMissing = {
@@ -24816,6 +24894,67 @@ var rgaa_default2 = {
         }
       ],
       reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.2"
+    },
+    {
+      id: "status-messages-restitution",
+      criterionId: "7.5",
+      wcag: ["4.1.3"],
+      title: {
+        fr: "Messages de statut restitu\xE9s par les technologies d'assistance",
+        en: "Status messages exposed to assistive technologies"
+      },
+      summary: {
+        fr: `Un message de statut (succ\xE8s, erreur, chargement, compteur de r\xE9sultats) doit \xEAtre annonc\xE9 sans d\xE9placer le focus, via role="status"/"alert" ou aria-live. Une erreur ou un message urgent doit \xEAtre assertif (role="alert" ou aria-live="assertive") ; une information non urgente reste polie (role="status" ou aria-live="polite"). Le r\xF4le et la valeur d'aria-live ne doivent pas se contredire.`,
+        en: 'A status message (success, error, loading, result counter) must be announced without moving focus, via role="status"/"alert" or aria-live. An error or urgent message must be assertive (role="alert" or aria-live="assertive"); non-urgent info stays polite (role="status" or aria-live="polite"). The role and the aria-live value must not contradict each other.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div aria-live="polite" class="alert-error">Le formulaire comporte des erreurs.</div>',
+          good: '<div role="alert">Le formulaire comporte des erreurs.</div>',
+          note: {
+            fr: 'Une erreur en aria-live="polite" est mise en file basse priorit\xE9 et peut \xEAtre manqu\xE9e ; role="alert" la restitue imm\xE9diatement (assertif).',
+            en: 'An error in aria-live="polite" is low-priority queued and may be missed; role="alert" announces it immediately (assertive).'
+          }
+        },
+        {
+          lang: "html",
+          bad: '<p role="status" aria-live="assertive">3 r\xE9sultats trouv\xE9s</p>',
+          good: '<p role="status">3 r\xE9sultats trouv\xE9s</p>',
+          note: {
+            fr: `role="status" implique d\xE9j\xE0 aria-live="polite" : un aria-live="assertive" contradictoire interrompt l'utilisateur pour une information non urgente.`,
+            en: 'role="status" already implies aria-live="polite"; a contradictory aria-live="assertive" interrupts the user for non-urgent information.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      id: "forms-error-association",
+      criterionId: "11.10",
+      wcag: ["3.3.1", "3.3.2"],
+      title: {
+        fr: "Erreur de saisie reli\xE9e au champ concern\xE9",
+        en: "Input error associated with its field"
+      },
+      summary: {
+        fr: `Chaque message d'erreur de saisie doit \xEAtre reli\xE9 programmatiquement \xE0 son champ : aria-invalid="true" sur le champ en erreur, et aria-describedby (ou aria-errormessage) pointant vers le texte de l'erreur. Un message visible mais non reli\xE9 n'est pas restitu\xE9 sur le champ par les lecteurs d'\xE9cran.`,
+        en: 'Each input error message must be programmatically associated with its field: aria-invalid="true" on the failing control, and aria-describedby (or aria-errormessage) pointing to the error text. A visible-but-unlinked message is not exposed on the field to screen readers.'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<label for="email">E-mail</label><input id="email" type="email" class="is-error"><p class="error">Adresse e-mail invalide.</p>',
+          good: '<label for="email">E-mail</label><input id="email" type="email" aria-invalid="true" aria-describedby="email-error"><p id="email-error">Adresse e-mail invalide.</p>',
+          note: {
+            fr: `L'erreur visible porte un id cible d'aria-describedby, et le champ aria-invalid="true" \u2014 l'association devient programmatique.`,
+            en: 'The visible error carries an id referenced by aria-describedby, and the field has aria-invalid="true" \u2014 the association becomes programmatic.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.10"
     }
   ]
 };

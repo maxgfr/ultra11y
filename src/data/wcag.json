@@ -871,7 +871,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["aria-invalid-no-description"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
       "techniques": [
         "ARIA1",
@@ -1072,7 +1072,7 @@
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["live-region-conflict"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
       "techniques": ["ARIA19", "ARIA22", "ARIA23"]
     }

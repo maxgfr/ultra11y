@@ -256,6 +256,67 @@
         }
       ],
       "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#13.2"
+    },
+    {
+      "id": "status-messages-restitution",
+      "criterionId": "7.5",
+      "wcag": ["4.1.3"],
+      "title": {
+        "fr": "Messages de statut restitués par les technologies d'assistance",
+        "en": "Status messages exposed to assistive technologies"
+      },
+      "summary": {
+        "fr": "Un message de statut (succès, erreur, chargement, compteur de résultats) doit être annoncé sans déplacer le focus, via role=\"status\"/\"alert\" ou aria-live. Une erreur ou un message urgent doit être assertif (role=\"alert\" ou aria-live=\"assertive\") ; une information non urgente reste polie (role=\"status\" ou aria-live=\"polite\"). Le rôle et la valeur d'aria-live ne doivent pas se contredire.",
+        "en": "A status message (success, error, loading, result counter) must be announced without moving focus, via role=\"status\"/\"alert\" or aria-live. An error or urgent message must be assertive (role=\"alert\" or aria-live=\"assertive\"); non-urgent info stays polite (role=\"status\" or aria-live=\"polite\"). The role and the aria-live value must not contradict each other."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div aria-live=\"polite\" class=\"alert-error\">Le formulaire comporte des erreurs.</div>",
+          "good": "<div role=\"alert\">Le formulaire comporte des erreurs.</div>",
+          "note": {
+            "fr": "Une erreur en aria-live=\"polite\" est mise en file basse priorité et peut être manquée ; role=\"alert\" la restitue immédiatement (assertif).",
+            "en": "An error in aria-live=\"polite\" is low-priority queued and may be missed; role=\"alert\" announces it immediately (assertive)."
+          }
+        },
+        {
+          "lang": "html",
+          "bad": "<p role=\"status\" aria-live=\"assertive\">3 résultats trouvés</p>",
+          "good": "<p role=\"status\">3 résultats trouvés</p>",
+          "note": {
+            "fr": "role=\"status\" implique déjà aria-live=\"polite\" : un aria-live=\"assertive\" contradictoire interrompt l'utilisateur pour une information non urgente.",
+            "en": "role=\"status\" already implies aria-live=\"polite\"; a contradictory aria-live=\"assertive\" interrupts the user for non-urgent information."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      "id": "forms-error-association",
+      "criterionId": "11.10",
+      "wcag": ["3.3.1", "3.3.2"],
+      "title": {
+        "fr": "Erreur de saisie reliée au champ concerné",
+        "en": "Input error associated with its field"
+      },
+      "summary": {
+        "fr": "Chaque message d'erreur de saisie doit être relié programmatiquement à son champ : aria-invalid=\"true\" sur le champ en erreur, et aria-describedby (ou aria-errormessage) pointant vers le texte de l'erreur. Un message visible mais non relié n'est pas restitué sur le champ par les lecteurs d'écran.",
+        "en": "Each input error message must be programmatically associated with its field: aria-invalid=\"true\" on the failing control, and aria-describedby (or aria-errormessage) pointing to the error text. A visible-but-unlinked message is not exposed on the field to screen readers."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<label for=\"email\">E-mail</label><input id=\"email\" type=\"email\" class=\"is-error\"><p class=\"error\">Adresse e-mail invalide.</p>",
+          "good": "<label for=\"email\">E-mail</label><input id=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-error\"><p id=\"email-error\">Adresse e-mail invalide.</p>",
+          "note": {
+            "fr": "L'erreur visible porte un id cible d'aria-describedby, et le champ aria-invalid=\"true\" — l'association devient programmatique.",
+            "en": "The visible error carries an id referenced by aria-describedby, and the field has aria-invalid=\"true\" — the association becomes programmatic."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.10"
     }
   ]
 }

@@ -133,12 +133,14 @@ const RULE_SC_COVERAGE = {
   "2.4.4": ["link-empty-name", "icon-only-control-unnamed"],
   "3.1.1": ["html-lang-missing", "lang-invalid"],
   "3.1.2": ["inline-lang-change-missing", "lang-invalid"],
+  "3.3.1": ["aria-invalid-no-description"],
   "4.1.2": [
     "iframe-title-missing", "invalid-aria-role", "aria-ref-missing-id", "redundant-aria",
     "clickable-noninteractive", "aria-required-children", "aria-hidden-focusable", "nested-interactive",
     "duplicate-id", "control-label-missing", "placeholder-as-label", "form-field-multiple-labels",
     "select-has-option", "button-empty-name", "icon-only-control-unnamed",
   ],
+  "4.1.3": ["live-region-conflict"],
 };
 
 function automatabilityOf(sc) {

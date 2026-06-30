@@ -6,7 +6,7 @@ import { join as join11, relative as relative3, sep as sep2 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
-var VERSION = "2.4.0";
+var VERSION = "2.4.1";
 var SCHEMA_VERSION = 2;
 
 // src/audit.ts

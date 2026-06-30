@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [2.4.1](https://github.com/maxgfr/ultra11y/compare/v2.4.0...v2.4.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **cli:** audit no longer writes audits/audit-latest.json unless --out is given ([5f0d39c](https://github.com/maxgfr/ultra11y/commit/5f0d39cbd03edfd2331920cf992d7a97d6648cbe))
+
 # [2.4.0](https://github.com/maxgfr/ultra11y/compare/v2.3.0...v2.4.0) (2026-06-30)
 
 

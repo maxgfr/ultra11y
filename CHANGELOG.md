@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.3.0](https://github.com/maxgfr/ultra11y/compare/v2.2.1...v2.3.0) (2026-06-30)
+
+
+### Bug Fixes
+
+* **build:** make the committed bundle reproducible across node_modules layouts ([79e1853](https://github.com/maxgfr/ultra11y/commit/79e185392b47cb38c777788b86fa8220c58e8f6b))
+
+
+### Features
+
+* **prd:** --gh-single files the whole audit as one consolidated GitHub issue ([665f145](https://github.com/maxgfr/ultra11y/commit/665f145fbeb3991e69fc6a1e1e8a9caddbf093f6)), closes [--#single](https://github.com/--/issues/single)
+
 ## [2.2.1](https://github.com/maxgfr/ultra11y/compare/v2.2.0...v2.2.1) (2026-06-29)
 
 

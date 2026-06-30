@@ -100,13 +100,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "img-alt-missing",
-        "canvas-fallback-missing",
-        "decorative-alt-misuse",
-        "input-image-alt-missing",
-        "object-embed-no-name"
-      ],
+      ruleIds: ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing", "object-embed-no-name"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
       techniques: [
         "ARIA10",
@@ -173,21 +167,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html",
-      techniques: [
-        "F30",
-        "F67",
-        "G158",
-        "G159",
-        "G166",
-        "G173",
-        "G58",
-        "G69",
-        "G78",
-        "G8",
-        "H96",
-        "SM6",
-        "SM7"
-      ]
+      techniques: ["F30", "F67", "G158", "G159", "G166", "G173", "G58", "G69", "G78", "G8", "H96", "SM6", "SM7"]
     },
     {
       sc: "1.2.2",
@@ -197,21 +177,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "media-no-track"
-      ],
+      ruleIds: ["media-no-track"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
-      techniques: [
-        "F74",
-        "F75",
-        "F8",
-        "G58",
-        "G87",
-        "G93",
-        "H95",
-        "SM11",
-        "SM12"
-      ]
+      techniques: ["F74", "F75", "F8", "G58", "G87", "G93", "H95", "SM11", "SM12"]
     },
     {
       sc: "1.2.3",
@@ -223,21 +191,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-or-media-alternative-prerecorded.html",
-      techniques: [
-        "F30",
-        "F67",
-        "G158",
-        "G159",
-        "G166",
-        "G173",
-        "G58",
-        "G69",
-        "G78",
-        "G8",
-        "H96",
-        "SM6",
-        "SM7"
-      ]
+      techniques: ["F30", "F67", "G158", "G159", "G166", "G173", "G58", "G69", "G78", "G8", "H96", "SM6", "SM7"]
     },
     {
       sc: "1.2.4",
@@ -260,17 +214,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-prerecorded.html",
-      techniques: [
-        "G173",
-        "G58",
-        "G78",
-        "G8",
-        "H96",
-        "SM1",
-        "SM2",
-        "SM6",
-        "SM7"
-      ]
+      techniques: ["G173", "G58", "G78", "G8", "H96", "SM1", "SM2", "SM6", "SM7"]
     },
     {
       sc: "1.3.1",
@@ -375,26 +319,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html",
-      techniques: [
-        "ARIA4",
-        "C18",
-        "C22",
-        "C6",
-        "C8",
-        "F1",
-        "F15",
-        "F32",
-        "F33",
-        "F34",
-        "F48",
-        "F49",
-        "G10",
-        "G135",
-        "G140",
-        "G57",
-        "G59",
-        "H56"
-      ]
+      techniques: ["ARIA4", "C18", "C22", "C6", "C8", "F1", "F15", "F32", "F33", "F34", "F48", "F49", "G10", "G135", "G140", "G57", "G59", "H56"]
     },
     {
       sc: "1.3.3",
@@ -406,12 +331,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html",
-      techniques: [
-        "F14",
-        "F26",
-        "G140",
-        "G96"
-      ]
+      techniques: ["F14", "F26", "G140", "G96"]
     },
     {
       sc: "1.3.4",
@@ -434,9 +354,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html",
-      techniques: [
-        "H98"
-      ]
+      techniques: ["H98"]
     },
     {
       sc: "1.4.1",
@@ -448,26 +366,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html",
-      techniques: [
-        "C15",
-        "F14",
-        "F26",
-        "F73",
-        "F78",
-        "G111",
-        "G117",
-        "G138",
-        "G14",
-        "G140",
-        "G149",
-        "G165",
-        "G182",
-        "G183",
-        "G195",
-        "G205",
-        "G96",
-        "SCR31"
-      ]
+      techniques: ["C15", "F14", "F26", "F73", "F78", "G111", "G117", "G138", "G14", "G140", "G149", "G165", "G182", "G183", "G195", "G205", "G96", "SCR31"]
     },
     {
       sc: "1.4.2",
@@ -477,17 +376,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: [
-        "autoplay-media"
-      ],
+      ruleIds: ["autoplay-media"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html",
-      techniques: [
-        "F23",
-        "F93",
-        "G170",
-        "G171",
-        "G60"
-      ]
+      techniques: ["F23", "F93", "G170", "G171", "G60"]
     },
     {
       sc: "1.4.3",
@@ -497,19 +388,9 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
-      ruleIds: [
-        "contrast-literal"
-      ],
+      ruleIds: ["contrast-literal"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
-      techniques: [
-        "C29",
-        "F24",
-        "G136",
-        "G145",
-        "G148",
-        "G174",
-        "G18"
-      ]
+      techniques: ["C29", "F24", "G136", "G145", "G148", "G174", "G18"]
     },
     {
       sc: "1.4.4",
@@ -519,22 +400,9 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
-      ruleIds: [
-        "meta-viewport-zoom-block"
-      ],
+      ruleIds: ["meta-viewport-zoom-block"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html",
-      techniques: [
-        "C12",
-        "C13",
-        "C14",
-        "C17",
-        "C28",
-        "F69",
-        "F80",
-        "G146",
-        "G179",
-        "SCR34"
-      ]
+      techniques: ["C12", "C13", "C14", "C17", "C28", "F69", "F80", "G146", "G179", "SCR34"]
     },
     {
       sc: "1.4.5",
@@ -546,12 +414,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html",
-      techniques: [
-        "C22",
-        "C30",
-        "G136",
-        "G140"
-      ]
+      techniques: ["C22", "C30", "G136", "G140"]
     },
     {
       sc: "1.4.10",
@@ -563,10 +426,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
-      techniques: [
-        "C34",
-        "C37"
-      ]
+      techniques: ["C34", "C37"]
     },
     {
       sc: "1.4.11",
@@ -578,15 +438,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
-      techniques: [
-        "F78",
-        "G145",
-        "G174",
-        "G18",
-        "G183",
-        "G195",
-        "G207"
-      ]
+      techniques: ["F78", "G145", "G174", "G18", "G183", "G195", "G207"]
     },
     {
       sc: "1.4.12",
@@ -598,12 +450,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
-      techniques: [
-        "C21",
-        "C35",
-        "C36",
-        "C8"
-      ]
+      techniques: ["C21", "C35", "C36", "C8"]
     },
     {
       sc: "1.4.13",
@@ -615,9 +462,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html",
-      techniques: [
-        "F95"
-      ]
+      techniques: ["F95"]
     },
     {
       sc: "2.1.1",
@@ -627,25 +472,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "clickable-noninteractive"
-      ],
+      ruleIds: ["clickable-noninteractive"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
-      techniques: [
-        "F10",
-        "F42",
-        "F54",
-        "F55",
-        "G202",
-        "G21",
-        "G4",
-        "G90",
-        "H91",
-        "SCR2",
-        "SCR20",
-        "SCR29",
-        "SCR35"
-      ]
+      techniques: ["F10", "F42", "F54", "F55", "G202", "G21", "G4", "G90", "H91", "SCR2", "SCR20", "SCR29", "SCR35"]
     },
     {
       sc: "2.1.2",
@@ -657,14 +486,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html",
-      techniques: [
-        "F10",
-        "G202",
-        "G21",
-        "G4",
-        "G90",
-        "H91"
-      ]
+      techniques: ["F10", "G202", "G21", "G4", "G90", "H91"]
     },
     {
       sc: "2.1.4",
@@ -676,10 +498,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/character-key-shortcuts.html",
-      techniques: [
-        "F99",
-        "G217"
-      ]
+      techniques: ["F99", "G217"]
     },
     {
       sc: "2.2.1",
@@ -689,9 +508,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "meta-refresh-redirect"
-      ],
+      ruleIds: ["meta-refresh-redirect"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html",
       techniques: [
         "F16",
@@ -734,10 +551,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "autoplay-media",
-        "blink-marquee"
-      ],
+      ruleIds: ["autoplay-media", "blink-marquee"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html",
       techniques: [
         "F16",
@@ -782,11 +596,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html",
-      techniques: [
-        "G15",
-        "G176",
-        "G19"
-      ]
+      techniques: ["G15", "G176", "G19"]
     },
     {
       sc: "2.4.1",
@@ -796,29 +606,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "skip-link-target-missing"
-      ],
+      ruleIds: ["skip-link-target-missing"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html",
-      techniques: [
-        "ARIA11",
-        "ARIA12",
-        "ARIA4",
-        "F15",
-        "F66",
-        "G1",
-        "G10",
-        "G115",
-        "G123",
-        "G124",
-        "G130",
-        "G135",
-        "G141",
-        "G59",
-        "H42",
-        "H69",
-        "SCR28"
-      ]
+      techniques: ["ARIA11", "ARIA12", "ARIA4", "F15", "F66", "G1", "G10", "G115", "G123", "G124", "G130", "G135", "G141", "G59", "H42", "H69", "SCR28"]
     },
     {
       sc: "2.4.2",
@@ -828,15 +618,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: [
-        "title-missing-empty"
-      ],
+      ruleIds: ["title-missing-empty"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
-      techniques: [
-        "G127",
-        "G88",
-        "H25"
-      ]
+      techniques: ["G127", "G88", "H25"]
     },
     {
       sc: "2.4.3",
@@ -846,30 +630,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "positive-tabindex"
-      ],
+      ruleIds: ["positive-tabindex"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
-      techniques: [
-        "C27",
-        "F1",
-        "F15",
-        "F44",
-        "F66",
-        "F85",
-        "G1",
-        "G10",
-        "G123",
-        "G124",
-        "G135",
-        "G140",
-        "G59",
-        "H4",
-        "SCR26",
-        "SCR27",
-        "SCR28",
-        "SCR37"
-      ]
+      techniques: ["C27", "F1", "F15", "F44", "F66", "F85", "G1", "G10", "G123", "G124", "G135", "G140", "G59", "H4", "SCR26", "SCR27", "SCR28", "SCR37"]
     },
     {
       sc: "2.4.4",
@@ -879,24 +642,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "link-empty-name",
-        "icon-only-control-unnamed"
-      ],
+      ruleIds: ["link-empty-name", "icon-only-control-unnamed"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html",
-      techniques: [
-        "ARIA7",
-        "ARIA8",
-        "F63",
-        "F89",
-        "G53",
-        "G91",
-        "H30",
-        "H78",
-        "H79",
-        "H80",
-        "H81"
-      ]
+      techniques: ["ARIA7", "ARIA8", "F63", "F89", "G53", "G91", "H30", "H78", "H79", "H80", "H81"]
     },
     {
       sc: "2.4.5",
@@ -908,12 +656,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/multiple-ways.html",
-      techniques: [
-        "G161",
-        "G61",
-        "G63",
-        "G64"
-      ]
+      techniques: ["G161", "G61", "G63", "G64"]
     },
     {
       sc: "2.4.6",
@@ -925,25 +668,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html",
-      techniques: [
-        "ARIA12",
-        "ARIA14",
-        "ARIA16",
-        "ARIA4",
-        "ARIA6",
-        "ARIA9",
-        "F68",
-        "F82",
-        "F86",
-        "G115",
-        "G130",
-        "G131",
-        "G141",
-        "G82",
-        "H42",
-        "H44",
-        "H65"
-      ]
+      techniques: ["ARIA12", "ARIA14", "ARIA16", "ARIA4", "ARIA6", "ARIA9", "F68", "F82", "F86", "G115", "G130", "G131", "G141", "G82", "H42", "H44", "H65"]
     },
     {
       sc: "2.4.7",
@@ -955,25 +680,7 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
-      techniques: [
-        "C15",
-        "F42",
-        "F54",
-        "F55",
-        "F73",
-        "F78",
-        "G149",
-        "G165",
-        "G183",
-        "G195",
-        "G202",
-        "G90",
-        "SCR2",
-        "SCR20",
-        "SCR29",
-        "SCR31",
-        "SCR35"
-      ]
+      techniques: ["C15", "F42", "F54", "F55", "F73", "F78", "G149", "G165", "G183", "G195", "G202", "G90", "SCR2", "SCR20", "SCR29", "SCR31", "SCR35"]
     },
     {
       sc: "2.4.11",
@@ -996,10 +703,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pointer-gestures.html",
-      techniques: [
-        "G215",
-        "G216"
-      ]
+      techniques: ["G215", "G216"]
     },
     {
       sc: "2.5.2",
@@ -1101,17 +805,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: [
-        "html-lang-missing",
-        "lang-invalid"
-      ],
+      ruleIds: ["html-lang-missing", "lang-invalid"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
-      techniques: [
-        "F15",
-        "G10",
-        "G135",
-        "H57"
-      ]
+      techniques: ["F15", "G10", "G135", "H57"]
     },
     {
       sc: "3.1.2",
@@ -1121,14 +817,9 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "inline-lang-change-missing",
-        "lang-invalid"
-      ],
+      ruleIds: ["inline-lang-change-missing", "lang-invalid"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html",
-      techniques: [
-        "H58"
-      ]
+      techniques: ["H58"]
     },
     {
       sc: "3.2.1",
@@ -1140,21 +831,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html",
-      techniques: [
-        "F22",
-        "F36",
-        "F37",
-        "F41",
-        "F55",
-        "F9",
-        "G107",
-        "G13",
-        "G76",
-        "G80",
-        "H32",
-        "H84",
-        "SCR19"
-      ]
+      techniques: ["F22", "F36", "F37", "F41", "F55", "F9", "G107", "G13", "G76", "G80", "H32", "H84", "SCR19"]
     },
     {
       sc: "3.2.2",
@@ -1166,20 +843,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/on-input.html",
-      techniques: [
-        "F22",
-        "F36",
-        "F37",
-        "F41",
-        "F9",
-        "G107",
-        "G13",
-        "G76",
-        "G80",
-        "H32",
-        "H84",
-        "SCR19"
-      ]
+      techniques: ["F22", "F36", "F37", "F41", "F9", "G107", "G13", "G76", "G80", "H32", "H84", "SCR19"]
     },
     {
       sc: "3.2.3",
@@ -1191,16 +855,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html",
-      techniques: [
-        "F66",
-        "G1",
-        "G123",
-        "G124",
-        "G59",
-        "G61",
-        "G63",
-        "SCR28"
-      ]
+      techniques: ["F66", "G1", "G123", "G124", "G59", "G61", "G63", "SCR28"]
     },
     {
       sc: "3.2.4",
@@ -1212,9 +867,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html",
-      techniques: [
-        "F31"
-      ]
+      techniques: ["F31"]
     },
     {
       sc: "3.2.6",
@@ -1235,9 +888,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [
-        "aria-invalid-no-description"
-      ],
+      ruleIds: ["aria-invalid-no-description"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
       techniques: [
         "ARIA1",
@@ -1311,13 +962,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html",
-      techniques: [
-        "G177",
-        "G84",
-        "G85",
-        "G89",
-        "H89"
-      ]
+      techniques: ["G177", "G84", "G85", "G89", "H89"]
     },
     {
       sc: "3.3.4",
@@ -1329,13 +974,7 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html",
-      techniques: [
-        "G155",
-        "G164",
-        "G168",
-        "G98",
-        "G99"
-      ]
+      techniques: ["G155", "G164", "G168", "G98", "G99"]
     },
     {
       sc: "3.3.7",
@@ -1451,15 +1090,9 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
-      ruleIds: [
-        "live-region-conflict"
-      ],
+      ruleIds: ["live-region-conflict"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
-      techniques: [
-        "ARIA19",
-        "ARIA22",
-        "ARIA23"
-      ]
+      techniques: ["ARIA19", "ARIA22", "ARIA23"]
     }
   ]
 };

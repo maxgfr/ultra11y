@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { writeFileSync, readFileSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main, parseArgs } from "../src/cli.js";
@@ -60,6 +60,30 @@ describe("main — command wiring", () => {
     const r = await run(["audit", `${FIX}conforming/good.html`, "--out", join(tmpdir(), "u11y-cli"), "--json"]);
     expect(r.code).toBe(0);
     expect(JSON.parse(r.out).tool).toBe("ultra11y");
+  });
+  it("audit without --out streams to stdout and writes no audits/ folder", async () => {
+    const cwd = process.cwd();
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-noout-"));
+    try {
+      process.chdir(tmp);
+      const r = await run(["audit", `${FIX}conforming/good.html`, "--json"]);
+      expect(r.code).toBe(0);
+      expect(JSON.parse(r.out).tool).toBe("ultra11y");
+      expect(existsSync(join(tmp, "audits"))).toBe(false); // no litter in the CWD
+    } finally {
+      process.chdir(cwd);
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+  it("audit --out <dir> persists audit-latest.json there", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-out-"));
+    try {
+      const r = await run(["audit", `${FIX}conforming/good.html`, "--out", tmp, "--json"]);
+      expect(r.code).toBe(0);
+      expect(existsSync(join(tmp, "audit-latest.json"))).toBe(true);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
   it("report without --in exits 2", async () => {
     expect((await run(["report"])).code).toBe(2);

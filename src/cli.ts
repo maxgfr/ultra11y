@@ -98,7 +98,8 @@ Commands:
              links BFS-crawled from a start URL) and aggregate the findings.
 
 Options:
-  --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
+  --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
+                     audit-latest.json here — a plain audit writes nothing without it
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit/fix: only include paths matching (comma-separated)
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
@@ -277,12 +278,18 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     onWarn: (m) => console.error(m),
   });
 
-  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
-  try {
-    mkdirSync(out, { recursive: true });
-    writeFileSync(join(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
-  } catch {
-    /* non-fatal: still print the result */
+  // Only persist audit-latest.json when an output dir is explicitly requested. A plain
+  // `audit` streams to stdout (--json / text summary) and must NOT litter the CWD with an
+  // audits/ folder. Chain via `audit … --out audits` when you want the file (e.g. for
+  // `scan --merge audits/audit-latest.json` or `report --in audits/audit-latest.json`).
+  if (typeof p.flags.out === "string") {
+    const out = p.flags.out;
+    try {
+      mkdirSync(out, { recursive: true });
+      writeFileSync(join(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    } catch {
+      /* non-fatal: still print the result */
+    }
   }
 
   // Regression-gate mode (used by the init hook / CI): diff against a committed

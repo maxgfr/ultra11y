@@ -91,7 +91,7 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 ```
 node scripts/ultra11y.mjs audit "src/**/*.html" --json > audit.json
 node scripts/ultra11y.mjs audit - < component.html          # HTML via stdin
-node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx        # JSX/TSX as a real AST
+node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx        # JSX/TSX as a real AST (streams to stdout; add --out audits to persist)
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph      # + imports & cross-file rules
 node scripts/ultra11y.mjs audit --changed --json            # only the git diff (large repo)
 node scripts/ultra11y.mjs audit "src/**" --no-default-excludes   # also audit test/spec/story markup
@@ -111,6 +111,7 @@ node scripts/ultra11y.mjs render                            # build→audit reci
 node scripts/ultra11y.mjs audit "dist/**/*.html"            # audit the RENDERED HTML (reliable for DSFR/MUI…)
 node scripts/ultra11y.mjs fix "src/**/*.html" --write --iterate    # fix and re-apply to a fixpoint
 node scripts/ultra11y.mjs init --hook --baseline            # regression gate (hook + baseline)
+node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx --out audits   # persist audits/audit-latest.json (for scan --merge / report --in)
 node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # Docker tier
 ```
 Machine output everywhere with `--json`. Reports default to English; `--lang fr` available.

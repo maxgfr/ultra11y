@@ -29110,7 +29110,8 @@ Commands:
              links BFS-crawled from a start URL) and aggregate the findings.
 
 Options:
-  --out <dir>        audit/report: output dir for AuditResult + report  (default: audits)
+  --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
+                     audit-latest.json here \u2014 a plain audit writes nothing without it
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit/fix: only include paths matching (comma-separated)
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
@@ -29264,11 +29265,13 @@ async function cmdAudit(p) {
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m)
   });
-  const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
-  try {
-    mkdirSync5(out, { recursive: true });
-    writeFileSync7(join11(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
-  } catch {
+  if (typeof p.flags.out === "string") {
+    const out = p.flags.out;
+    try {
+      mkdirSync5(out, { recursive: true });
+      writeFileSync7(join11(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+    } catch {
+    }
   }
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {

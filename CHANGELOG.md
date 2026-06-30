@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.4.0](https://github.com/maxgfr/ultra11y/compare/v2.3.0...v2.4.0) (2026-06-30)
+
+
+### Bug Fixes
+
+* **build:** rebuild bundle from formatted data files (check:build reproducibility) ([7936381](https://github.com/maxgfr/ultra11y/commit/793638109ea9251ae87f07cb2cfce6f60a22b8a6))
+* **skill:** trim SKILL.md description under the 1000-char install cap ([08b55d1](https://github.com/maxgfr/ultra11y/commit/08b55d1c0a6891f6cb8ced39a6a0305974a6d9e3))
+
+
+### Features
+
+* **rules,guidance:** exhaustive RGAA pack — 6 new detectors (42→48) + guidance for 90/106 criteria ([f6f2e33](https://github.com/maxgfr/ultra11y/commit/f6f2e33b24e01dc1c689669d12237364e6d6c21c))
+
 # [2.3.0](https://github.com/maxgfr/ultra11y/compare/v2.2.1...v2.3.0) (2026-06-30)
 
 

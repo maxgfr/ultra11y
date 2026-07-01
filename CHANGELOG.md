@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.6.0](https://github.com/maxgfr/ultra11y/compare/v2.5.0...v2.6.0) (2026-07-01)
+
+
+### Features
+
+* **render:** rendered-DOM capture pipeline for component-library a11y ([7610d44](https://github.com/maxgfr/ultra11y/commit/7610d44d966297b5cfc8bec02d95dd19a65beb74))
+
 # [2.5.0](https://github.com/maxgfr/ultra11y/compare/v2.4.1...v2.5.0) (2026-07-01)
 
 

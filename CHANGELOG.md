@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [2.7.1](https://github.com/maxgfr/ultra11y/compare/v2.7.0...v2.7.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* **rules,cli:** kill static-audit false positives + CLI silent-flag failures ([749c2e8](https://github.com/maxgfr/ultra11y/commit/749c2e817afa5e5d4a80a94d7b5450ccd19b589d))
+
 # [2.7.0](https://github.com/maxgfr/ultra11y/compare/v2.6.0...v2.7.0) (2026-07-01)
 
 

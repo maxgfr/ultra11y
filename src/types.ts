@@ -1,6 +1,6 @@
 // Single source of truth for shared types + the embedded version. sync-version.mjs
 // rewrites VERSION at release time (kept in lockstep with package.json + SKILL.md).
-export const VERSION = "2.7.0";
+export const VERSION = "2.7.1";
 export const SCHEMA_VERSION = 2;
 
 export type Lang = "fr" | "en";

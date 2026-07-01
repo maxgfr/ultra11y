@@ -105,8 +105,11 @@ const inlineLangChangeMissing: Rule = {
   },
 };
 
-// BCP47 primary subtag + optional subtags (syntactic validity only).
-const BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
+// BCP47 primary subtag + optional subtags (syntactic validity only). The primary
+// subtag is a 2-3 alpha language code, OR the `x`/`i` singleton that starts a
+// private-use (`x-klingon`) or grandfathered (`i-navajo`) tag — those legitimate
+// singletons must not be flagged invalid (the old /^[A-Za-z]{2,3}…/ rejected them).
+const BCP47 = /^([A-Za-z]{2,3}|[xXiI])(-[A-Za-z0-9]{1,8})*$/;
 
 const langInvalid: Rule = {
   id: "lang-invalid",

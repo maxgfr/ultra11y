@@ -38,6 +38,25 @@ describe("parseArgs", () => {
     expect(p.flags.out).toBe("x");
     expect(p.flags.jsx).toBe(true);
   });
+  it("parses --key=value, not only --key value", () => {
+    const p = parseArgs(["audit", "src", "--standard=rgaa", "--out=audits", "--fail-on=major"]);
+    expect(p.flags.standard).toBe("rgaa");
+    expect(p.flags.out).toBe("audits");
+    expect(p.flags["fail-on"]).toBe("major");
+    expect(p.unknown).toEqual([]);
+  });
+  it("records unknown/misspelled flags instead of silently accepting them", () => {
+    const p = parseArgs(["audit", "src", "--grph", "--jsonn"]);
+    expect(p.unknown).toContain("grph");
+    expect(p.unknown).toContain("jsonn");
+    expect(p.flags.graph).toBeUndefined();
+    expect(parseArgs(["audit", "src", "--graph", "--json", "--cross-file"]).unknown).toEqual([]);
+  });
+  it("accumulates repeated list flags (include/exclude/ext); non-list flags stay last-wins", () => {
+    expect(parseArgs(["audit", "src", "--include", "a", "--include", "b"]).flags.include).toBe("a,b");
+    expect(parseArgs(["audit", "src", "--ext", "tsx", "--ext", "jsx"]).flags.ext).toBe("tsx,jsx");
+    expect(parseArgs(["audit", "src", "--out", "a", "--out", "b"]).flags.out).toBe("b");
+  });
 });
 
 describe("main — help / version / unknown", () => {

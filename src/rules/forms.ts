@@ -209,7 +209,16 @@ const errorNotAssociated: Rule = {
     for (const el of doc.elements) {
       for (const a of ["aria-describedby", "aria-errormessage"]) {
         const v = attr(el, a);
-        if (v && !v.includes("{")) for (const id of v.split(/\s+/).filter(Boolean)) referenced.add(id);
+        if (!v) continue;
+        if (!v.includes("{")) {
+          for (const id of v.split(/\s+/).filter(Boolean)) referenced.add(id);
+        } else {
+          // Dynamic value, e.g. aria-describedby={error ? "women-error" : undefined}. The
+          // JSX parser keeps the raw `{…}` slice, so pull out any string-literal ids: a
+          // conditionally-applied describedby still associates the error (common React
+          // pattern) — otherwise the matching <p id="women-error"> is a false positive.
+          for (const m of v.matchAll(/["'`]([^"'`]+)["'`]/g)) for (const id of m[1]!.split(/\s+/).filter(Boolean)) referenced.add(id);
+        }
       }
     }
     const out: RuleFinding[] = [];

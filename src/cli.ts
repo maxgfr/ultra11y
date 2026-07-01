@@ -248,10 +248,53 @@ function valueFlagsFor(command: string): ReadonlySet<string> {
   return command === "init" ? INIT_VALUE_FLAGS : VALUE_FLAGS;
 }
 
+// Boolean flags documented in HELP (every valid flag that is NOT a value flag).
+// Paired with VALUE_FLAGS this is the full set of recognised long flags, used to
+// warn on unknown/misspelled ones instead of silently accepting them as no-ops.
+const BOOLEAN_FLAGS = new Set([
+  "changed",
+  "staged",
+  "jsx",
+  "graph",
+  "cross-file",
+  "json",
+  "quiet",
+  "no-default-excludes",
+  "no-captures",
+  "require-captures",
+  "scaffold",
+  "storybook",
+  "setup",
+  "coverage",
+  "write",
+  "dry-run",
+  "iterate",
+  "safe",
+  "hook",
+  "ci",
+  "list",
+  "generate",
+  "semantic",
+  "gh-issues",
+  "gh-single",
+  "override",
+  "local",
+  "docker",
+  "clean",
+  "help",
+  "version",
+]);
+const KNOWN_FLAGS: ReadonlySet<string> = new Set<string>([...VALUE_FLAGS, ...BOOLEAN_FLAGS]);
+// Long flags whose repetition should accumulate (comma-joined) rather than last-wins,
+// so `--include a --include b` keeps both. Non-list value flags stay last-wins.
+const LIST_FLAGS = new Set(["include", "exclude", "ext"]);
+
 export interface ParsedArgs {
   command: string;
   positionals: string[];
   flags: Record<string, string | boolean>;
+  /** long flags that are not recognised (neither value nor boolean) — main() warns. */
+  unknown: string[];
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
@@ -259,19 +302,34 @@ export function parseArgs(argv: string[]): ParsedArgs {
   const valueFlags = valueFlagsFor(command ?? "");
   const positionals: string[] = [];
   const flags: Record<string, string | boolean> = {};
+  const unknown: string[] = [];
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i]!;
     if (a.startsWith("--")) {
-      const key = a.slice(2);
-      if (valueFlags.has(key)) flags[key] = rest[++i] ?? "";
-      else flags[key] = true;
+      // Support both `--key value` and `--key=value`. Splitting on the first `=`
+      // means `--standard=rgaa` / `--out=audits` are parsed as values, not swallowed
+      // whole into a boolean no-op key ("standard=rgaa").
+      const eq = a.indexOf("=");
+      const key = eq === -1 ? a.slice(2) : a.slice(2, eq);
+      const inlineVal = eq === -1 ? undefined : a.slice(eq + 1);
+      let val: string | boolean;
+      if (inlineVal !== undefined) val = inlineVal;
+      else if (valueFlags.has(key)) val = rest[++i] ?? "";
+      else val = true;
+      const prev = flags[key];
+      if (LIST_FLAGS.has(key) && typeof prev === "string" && typeof val === "string") {
+        flags[key] = prev ? `${prev},${val}` : val; // accumulate repeated list flags
+      } else {
+        flags[key] = val;
+      }
+      if (!KNOWN_FLAGS.has(key)) unknown.push(key);
     } else if (a.startsWith("-") && a !== "-") {
       flags[a.slice(1)] = true;
     } else {
       positionals.push(a);
     }
   }
-  return { command: command ?? "", positionals, flags };
+  return { command: command ?? "", positionals, flags, unknown };
 }
 
 function langOf(flags: Record<string, string | boolean>): Lang {
@@ -1033,6 +1091,9 @@ export async function main(argv: string[]): Promise<number> {
     console.log(HELP);
     return 0;
   }
+  // Warn (never silently ignore) on misspelled/unknown flags so `--grph` or
+  // `--standrd rgaa` can't quietly leave cross-file/a standard disabled.
+  for (const f of p.unknown) console.error(`ultra11y: unknown flag --${f} (ignored). Run \`ultra11y --help\`.`);
 
   // Load any runtime standards packs (--pack / .ultra11yrc.json) BEFORE resolving
   // --standard, so an external pack is registered when stdOf/loadPack runs. A bad

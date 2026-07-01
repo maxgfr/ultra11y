@@ -79,3 +79,18 @@ describe("nested-interactive (7.1)", () => {
     expect(f[0]!.criteriaId).toBe("4.1.2");
   });
 });
+
+describe("status-message-not-assertive (7.5) — error/success precision", () => {
+  it("non-conforming: a polite ERROR alert with no role should be assertive", () => {
+    const f = findOf(`<div class="fr-alert fr-alert--error" aria-live="polite"><p>Erreur</p></div>`, "status-message-not-assertive");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("4.1.3");
+  });
+  it("conforming: a polite SUCCESS alert (polite is the correct pattern for a success status)", () => {
+    expect(findOf(`<div class="fr-alert fr-alert--success" aria-live="polite"><p>Enregistré</p></div>`, "status-message-not-assertive")).toHaveLength(0);
+  });
+  it("conforming: a polite INFO alert and a bare fr-alert (no error signal)", () => {
+    expect(findOf(`<div class="fr-alert fr-alert--info" aria-live="polite"><p>Info</p></div>`, "status-message-not-assertive")).toHaveLength(0);
+    expect(findOf(`<div class="fr-alert" aria-live="polite"><p>x</p></div>`, "status-message-not-assertive")).toHaveLength(0);
+  });
+});

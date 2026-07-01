@@ -38,6 +38,7 @@ export interface RuleFinding {
   remediation: string;
   severity?: Severity; // override the rule default
   selectorHint?: string; // override the derived selector
+  preliminary?: boolean; // provisional finding (target/name may resolve at composition/runtime)
 }
 
 export interface Rule {
@@ -86,8 +87,10 @@ export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFindi
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
     // edit by range and baseline diffing falls back to line/selector identity.
     ...(doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end }),
-    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human verification.
-    ...(doc.kind === "sfc" ? { preliminary: true } : {}),
+    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human
+    // verification. A rule may also mark an individual finding preliminary (e.g. a skip-link
+    // whose target legitimately lives in another component resolved at composition time).
+    ...(doc.kind === "sfc" || rf.preliminary ? { preliminary: true } : {}),
     // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
     // to the source component recorded in the capture's provenance.
     ...(doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}),

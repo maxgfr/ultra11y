@@ -44,6 +44,10 @@ const skipLinkTargetMissing: Rule = {
         el,
         message: `Lien interne href="${href}" — la cible #${id} n'existe pas dans la page (lien d'évitement/ancre cassé).`,
         remediation: `Ajoutez un élément avec id="${id}" (ex. <main id="${id}">) ou corrigez l'ancre.`,
+        // In a JSX/SFC component the target id often lives in a sibling/parent component
+        // resolved at composition time (or via --graph). Single-file source can't prove it
+        // missing, so flag it provisional rather than a hard NC. Full HTML pages stay firm.
+        preliminary: doc.kind !== "html",
       });
     }
     return out;

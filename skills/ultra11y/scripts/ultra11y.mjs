@@ -18456,8 +18456,10 @@ function toFinding(doc, ruleId, def, rf) {
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
     // edit by range and baseline diffing falls back to line/selector identity.
     ...doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end },
-    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human verification.
-    ...doc.kind === "sfc" ? { preliminary: true } : {},
+    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human
+    // verification. A rule may also mark an individual finding preliminary (e.g. a skip-link
+    // whose target legitimately lives in another component resolved at composition time).
+    ...doc.kind === "sfc" || rf.preliminary ? { preliminary: true } : {},
     // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
     // to the source component recorded in the capture's provenance.
     ...doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}
@@ -19086,7 +19088,7 @@ var liveRegionConflict = {
     return out;
   }
 };
-var ERROR_ALERT_CONTAINER = /(^|[-_ ])(error|alert|danger|invalid|fr-error|fr-alert)/i;
+var ERROR_ALERT_CONTAINER = /(^|[-_ ])(error|danger|invalid)/i;
 var statusMessageNotAssertive = {
   id: "status-message-not-assertive",
   criteria: ["4.1.3"],
@@ -19215,7 +19217,7 @@ var inlineLangChangeMissing = {
     return out;
   }
 };
-var BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
+var BCP47 = /^([A-Za-z]{2,3}|[xXiI])(-[A-Za-z0-9]{1,8})*$/;
 var langInvalid = {
   id: "lang-invalid",
   criteria: ["3.1.1", "3.1.2"],
@@ -19805,7 +19807,12 @@ var errorNotAssociated = {
     for (const el of doc.elements) {
       for (const a of ["aria-describedby", "aria-errormessage"]) {
         const v = attr(el, a);
-        if (v && !v.includes("{")) for (const id of v.split(/\s+/).filter(Boolean)) referenced.add(id);
+        if (!v) continue;
+        if (!v.includes("{")) {
+          for (const id of v.split(/\s+/).filter(Boolean)) referenced.add(id);
+        } else {
+          for (const m of v.matchAll(/["'`]([^"'`]+)["'`]/g)) for (const id of m[1].split(/\s+/).filter(Boolean)) referenced.add(id);
+        }
       }
     }
     const out = [];
@@ -19914,7 +19921,11 @@ var skipLinkTargetMissing = {
         criteriaId: "2.4.1",
         el,
         message: `Lien interne href="${href}" \u2014 la cible #${id} n'existe pas dans la page (lien d'\xE9vitement/ancre cass\xE9).`,
-        remediation: `Ajoutez un \xE9l\xE9ment avec id="${id}" (ex. <main id="${id}">) ou corrigez l'ancre.`
+        remediation: `Ajoutez un \xE9l\xE9ment avec id="${id}" (ex. <main id="${id}">) ou corrigez l'ancre.`,
+        // In a JSX/SFC component the target id often lives in a sibling/parent component
+        // resolved at composition time (or via --graph). Single-file source can't prove it
+        // missing, so flag it provisional rather than a hard NC. Full HTML pages stay firm.
+        preliminary: doc.kind !== "html"
       });
     }
     return out;
@@ -20052,7 +20063,8 @@ var metaViewportZoomBlock = {
       }
       const userScalable = pairs.get("user-scalable");
       const maxScale = pairs.get("maximum-scale");
-      const blocked = userScalable === "no" || userScalable === "0" || maxScale !== void 0 && Number(maxScale) < 2;
+      const maxScaleNum = maxScale !== void 0 && maxScale.trim() !== "" ? Number(maxScale) : Number.NaN;
+      const blocked = userScalable === "no" || userScalable === "0" || Number.isFinite(maxScaleNum) && maxScaleNum < 2;
       if (!blocked) continue;
       out.push({
         criteriaId: "1.4.4",
@@ -30097,24 +30109,71 @@ var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"))
 function valueFlagsFor(command) {
   return command === "init" ? INIT_VALUE_FLAGS : VALUE_FLAGS;
 }
+var BOOLEAN_FLAGS = /* @__PURE__ */ new Set([
+  "changed",
+  "staged",
+  "jsx",
+  "graph",
+  "cross-file",
+  "json",
+  "quiet",
+  "no-default-excludes",
+  "no-captures",
+  "require-captures",
+  "scaffold",
+  "storybook",
+  "setup",
+  "coverage",
+  "write",
+  "dry-run",
+  "iterate",
+  "safe",
+  "hook",
+  "ci",
+  "list",
+  "generate",
+  "semantic",
+  "gh-issues",
+  "gh-single",
+  "override",
+  "local",
+  "docker",
+  "clean",
+  "help",
+  "version"
+]);
+var KNOWN_FLAGS = /* @__PURE__ */ new Set([...VALUE_FLAGS, ...BOOLEAN_FLAGS]);
+var LIST_FLAGS = /* @__PURE__ */ new Set(["include", "exclude", "ext"]);
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   const valueFlags = valueFlagsFor(command ?? "");
   const positionals = [];
   const flags = {};
+  const unknown = [];
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a.startsWith("--")) {
-      const key = a.slice(2);
-      if (valueFlags.has(key)) flags[key] = rest[++i] ?? "";
-      else flags[key] = true;
+      const eq = a.indexOf("=");
+      const key = eq === -1 ? a.slice(2) : a.slice(2, eq);
+      const inlineVal = eq === -1 ? void 0 : a.slice(eq + 1);
+      let val;
+      if (inlineVal !== void 0) val = inlineVal;
+      else if (valueFlags.has(key)) val = rest[++i] ?? "";
+      else val = true;
+      const prev = flags[key];
+      if (LIST_FLAGS.has(key) && typeof prev === "string" && typeof val === "string") {
+        flags[key] = prev ? `${prev},${val}` : val;
+      } else {
+        flags[key] = val;
+      }
+      if (!KNOWN_FLAGS.has(key)) unknown.push(key);
     } else if (a.startsWith("-") && a !== "-") {
       flags[a.slice(1)] = true;
     } else {
       positionals.push(a);
     }
   }
-  return { command: command ?? "", positionals, flags };
+  return { command: command ?? "", positionals, flags, unknown };
 }
 function langOf(flags) {
   return flags.lang === "fr" ? "fr" : "en";
@@ -30754,6 +30813,7 @@ async function main(argv) {
     console.log(HELP);
     return 0;
   }
+  for (const f of p.unknown) console.error(`ultra11y: unknown flag --${f} (ignored). Run \`ultra11y --help\`.`);
   const packList = typeof p.flags.pack === "string" ? p.flags.pack.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const loaded = loadRuntimeStandards(process.cwd(), packList, (m) => console.error(m), p.flags.override === true);
   if (loaded.errors.length) {

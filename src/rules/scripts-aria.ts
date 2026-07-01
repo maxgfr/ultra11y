@@ -398,8 +398,12 @@ const liveRegionConflict: Rule = {
 // assertively. A status MESSAGE that reports an error should interrupt
 // (role="alert" / aria-live="assertive") so it is not queued and missed. This is the
 // `polite`-with-no-role case the existing live-region-conflict (role↔aria-live) leaves
-// open; only fired when the container's class/id marks it as an error/alert (low FP).
-const ERROR_ALERT_CONTAINER = /(^|[-_ ])(error|alert|danger|invalid|fr-error|fr-alert)/i;
+// open; only fired when the container's class/id marks it as an ERROR specifically.
+// The bare `alert`/`fr-alert` tokens are intentionally excluded: DSFR (and Bootstrap)
+// reuse them for success/info/warning variants — `fr-alert fr-alert--success` with
+// aria-live="polite" is the CORRECT status pattern, not a defect. `error`/`danger`/
+// `invalid` still match error variants (`fr-alert--error`, `fr-error`, `alert-danger`).
+const ERROR_ALERT_CONTAINER = /(^|[-_ ])(error|danger|invalid)/i;
 
 const statusMessageNotAssertive: Rule = {
   id: "status-message-not-assertive",

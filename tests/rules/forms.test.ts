@@ -59,3 +59,16 @@ describe("select-has-option (11.1)", () => {
     expect(findOf(`<select></select>`, "select-has-option")).toHaveLength(1);
   });
 });
+
+describe("error-not-associated — conditional aria-describedby (React pattern)", () => {
+  it('conforming: aria-describedby={cond ? "id" : undefined} associates the error (no FP)', () => {
+    const src = `<div><input aria-describedby={error ? "women-error" : undefined} aria-invalid={error ? true : undefined} /><p className="fr-error-text" id="women-error">Erreur</p></div>`;
+    expect(findOf(src, "error-not-associated", "Step.tsx")).toHaveLength(0);
+  });
+  it("still flags a truly orphan error <p> whose id no field references", () => {
+    const src = `<div><input aria-invalid={true} /><p className="fr-error-text" id="lonely-error">Erreur</p></div>`;
+    const f = findOf(src, "error-not-associated", "Step.tsx");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("3.3.1");
+  });
+});

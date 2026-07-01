@@ -22,3 +22,16 @@ describe("positive-tabindex (12.8)", () => {
     expect(f[0]!.criteriaId).toBe("2.4.3");
   });
 });
+
+describe("skip-link-target-missing — provisional in component sources", () => {
+  it("HTML page: a broken skip-link target is a firm NC (not preliminary)", () => {
+    const f = findOf(page(`<a href="#content">Aller au contenu</a><p>x</p>`), "skip-link-target-missing");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.preliminary).toBeUndefined();
+  });
+  it("JSX full document: a broken skip-link is preliminary (target may resolve at composition/--graph)", () => {
+    const f = findOf(`<html lang="fr"><body><a href="#content">Aller au contenu</a><p>x</p></body></html>`, "skip-link-target-missing", "Layout.tsx");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.preliminary).toBe(true);
+  });
+});

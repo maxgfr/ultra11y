@@ -75,3 +75,14 @@ describe("inline-lang-change-missing (8.7)", () => {
     expect(findOf(`<span lang="">Hello</span>`, "inline-lang-change-missing")).toHaveLength(1);
   });
 });
+
+describe("lang-invalid — private-use / grandfathered singletons", () => {
+  it("conforming: x-/i- singleton primary subtags are valid BCP-47", () => {
+    expect(findOf(`<span lang="x-klingon">x</span>`, "lang-invalid")).toHaveLength(0);
+    expect(findOf(`<span lang="i-navajo">x</span>`, "lang-invalid")).toHaveLength(0);
+  });
+  it("non-conforming: underscore and over-long primary subtags are still flagged", () => {
+    expect(findOf(`<span lang="en_US">x</span>`, "lang-invalid")).toHaveLength(1);
+    expect(findOf(`<span lang="francais">x</span>`, "lang-invalid")).toHaveLength(1);
+  });
+});

@@ -9,7 +9,7 @@ import { VERSION, SCHEMA_VERSION } from "./types.js";
 import { allSC, allGuidelines } from "./wcag.js";
 import { parseSource } from "./parse/source.js";
 import type { Doc, CaptureProvenance } from "./parse/html.js";
-import { computeCaptureCoverage } from "./capture.js";
+import { computeCaptureCoverage, enrichCaptureOrigins, readCaptureDir } from "./capture.js";
 import { isFullDocument } from "./rules/rule.js";
 import { runRules } from "./rules/registry.js";
 import { runCrossRules } from "./rules/cross-registry.js";
@@ -35,6 +35,7 @@ export interface AuditInput {
   maxFiles?: number; // hard cap on canonical files audited (logged truncation)
   graph?: boolean; // also run cross-file rules over a dependency graph (--graph)
   captureCoverage?: boolean; // compute scope.captureCoverage (implies a graph pass)
+  captureDir?: string; // dir scanned for the repo-wide capture set (coverage); default .ultra11y/captures
   noDefaultExcludes?: boolean; // also audit test/spec/story/__tests__ markup
   onWarn?: (msg: string) => void;
 }
@@ -305,6 +306,11 @@ export function runAudit(opts: AuditInput): AuditResult {
     ...(truncated ? { truncated } : {}),
     ...(duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}),
   });
-  if (opts.captureCoverage && graph) result.scope.captureCoverage = computeCaptureCoverage(graph, acc.captures);
+  if (graph) {
+    enrichCaptureOrigins(result.findings, graph); // anchor capture findings at the source component line
+    // Coverage is a repo-wide property: read the FULL capture set from the captures dir,
+    // not acc.captures (which is scoped to what THIS run audited — empty in --changed/--staged).
+    if (opts.captureCoverage) result.scope.captureCoverage = computeCaptureCoverage(graph, readCaptureDir(opts.captureDir ?? ".ultra11y/captures"));
+  }
   return result;
 }

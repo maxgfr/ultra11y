@@ -73,6 +73,14 @@ describe("captureSetup — executed against a fake DOM", () => {
       // deterministic filename + content dedup → a second identical run writes nothing new
       cb?.();
       expect(readdirSync(capDir)).toHaveLength(1);
+      // captureAs override → next capture is attributed to the given component/source
+      g.ultra11yCaptureAs("CustomBtn", "src/custom/Path.tsx");
+      cb?.();
+      const custom = readdirSync(capDir).find((x: string) => x.startsWith("CustomBtn__"));
+      expect(custom, "expected a CustomBtn__* capture from captureAs").toBeTruthy();
+      const chtml = readFileSync(join(capDir, custom as string), "utf8");
+      expect(chtml).toContain('component="CustomBtn"');
+      expect(chtml).toContain('source="src/custom/Path.tsx"');
     } finally {
       g.afterEach = saved.afterEach;
       g.document = saved.document;

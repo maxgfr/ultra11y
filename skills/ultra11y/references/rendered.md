@@ -46,6 +46,10 @@ node scripts/ultra11y.mjs audit              # auto-ingests .ultra11y/captures; 
 - **Commit `.ultra11y/captures`** and stage it with the source change so `audit --staged` (the
   pre-commit gate) verifies the real markup. `fix` never rewrites captures (generated output).
   Add `.gitattributes`: `.ultra11y/captures/*.html text eol=lf` for stable cross-platform diffs.
+- **Storybook**: with **portable stories** (composeStories) rendered in your test suite, the
+  harvester captures them for free. For per-story HTML produced another way (e.g.
+  `@storybook/test-runner`), `render --storybook [<storybook-static>] [--captures <html-dir>]`
+  attributes each file to its source component via the Storybook index, into `.ultra11y/captures`.
 - ultra11y renders nothing itself — your test toolchain (jsdom/happy-dom) does. Disable with `ULTRA11Y_CAPTURES=off`.
 
 ## Get rendered HTML

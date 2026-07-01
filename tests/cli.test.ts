@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { writeFileSync, readFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main, parseArgs } from "../src/cli.js";
@@ -232,6 +232,27 @@ describe("rendered captures — flags, coverage gate & render --coverage", () =>
     expect(cov.unattributed).toBe(1);
   });
 
+  it("auto-ingests .ultra11y/captures by default, and --no-captures suppresses it", async () => {
+    const cwd = process.cwd();
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-nocap-"));
+    try {
+      mkdirSync(join(tmp, ".ultra11y/captures"), { recursive: true });
+      writeFileSync(
+        join(tmp, ".ultra11y/captures/Button__x.html"),
+        '<!-- ultra11y:capture v="1" source="src/Button.tsx" component="Button" -->\n<button></button>',
+      );
+      writeFileSync(join(tmp, "page.html"), '<!doctype html><html lang="en"><head><title>t</title></head><body><p>x</p></body></html>');
+      process.chdir(tmp);
+      const on = JSON.parse((await run(["audit", ".", "--json"])).out);
+      expect(on.scope.captures?.files).toBe(1); // ingested by default
+      const off = JSON.parse((await run(["audit", ".", "--no-captures", "--json"])).out);
+      expect(off.scope.captures).toBeUndefined(); // suppressed (walk skips .ultra11y; no append)
+    } finally {
+      process.chdir(cwd);
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   it("render --setup writes the harvester and prints runner wiring", async () => {
     const tmp = mkdtempSync(join(tmpdir(), "u11y-setup-"));
     try {
@@ -241,6 +262,9 @@ describe("rendered captures — flags, coverage gate & render --coverage", () =>
       expect(existsSync(written)).toBe(true);
       expect(readFileSync(written, "utf8")).toContain("ultra11y:capture");
       expect(r.out).toContain("capture-setup.mjs");
+      // also writes .gitattributes so committed captures stay byte-stable
+      expect(existsSync(join(tmp, ".gitattributes"))).toBe(true);
+      expect(readFileSync(join(tmp, ".gitattributes"), "utf8")).toContain(".ultra11y/captures/*.html");
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

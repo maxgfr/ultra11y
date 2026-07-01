@@ -1,4 +1,4 @@
-import { realpathSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { realpathSync, writeFileSync, mkdirSync, existsSync, readFileSync, appendFileSync } from "node:fs";
 import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./types.js";
@@ -6,8 +6,18 @@ import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
 import { writePrd, prdUnits } from "./prd.js";
 import { ghAvailable, pushIssues, pushSingleIssue } from "./gh.js";
-import { detectFrameworks, renderPlan, ssrHarness, captureSetup, captureSetupPlan, detectTestRunner, type Detection } from "./render.js";
-import { computeCaptureCoverage, parseCaptureProvenance, type CaptureEntry } from "./capture.js";
+import {
+  detectFrameworks,
+  renderPlan,
+  ssrHarness,
+  captureSetup,
+  captureSetupPlan,
+  detectTestRunner,
+  parseStorybookIndex,
+  storyProvenance,
+  type Detection,
+} from "./render.js";
+import { computeCaptureCoverage, parseCaptureProvenance, formatCaptureComment, type CaptureEntry } from "./capture.js";
 import { buildGraphStreaming } from "./graph/build.js";
 import { discover } from "./discover.js";
 import { toPosix } from "./glob.js";
@@ -38,7 +48,7 @@ Usage:
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
-  ultra11y render   [<dir>] [--scaffold | --setup | --coverage] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
+  ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
@@ -72,8 +82,9 @@ Commands:
              zero-touch test-render capture harvester (one setupFiles line → every
              component your tests render is snapshotted to .ultra11y/captures and
              audited). --coverage reports which components have a rendered capture vs
-             which are still opaque-source-only blind spots. Then audit the produced
-             HTML, and use scan for the needs-rendering criteria.
+             which are still opaque-source-only blind spots. --storybook attributes
+             per-story HTML (via a storybook-static index) back to source components.
+             Then audit the produced HTML, and use scan for the needs-rendering criteria.
   criteria   Look up the reference offline. Core: one WCAG success criterion
              (criteria 1.4.3) or the full list grouped by guideline (--list).
              --standard <pack>: a pack criterion, a pack theme (--theme N), or its
@@ -146,6 +157,7 @@ Options:
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
   --setup            render: install the zero-touch test-render capture harvester (.ultra11y/capture-setup.mjs) + print the runner wiring
   --coverage         render: report rendered-capture coverage (covered vs blind-spot components); with --json emits the coverage object
+  --storybook        render: attribute per-story HTML (via storybook-static index.json) into .ultra11y/captures (point the HTML dir with --captures)
   --captures <dir>   audit/render: rendered-capture dir to ingest (default: .ultra11y/captures)
   --no-captures      audit: do NOT auto-detect/ingest the .ultra11y/captures dir
   --require-captures audit: gate — fail if any opaque/control component lacks a rendered capture (implies --graph)
@@ -332,6 +344,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : undefined,
     graph: p.flags.graph === true || p.flags["cross-file"] === true || requireCaptures,
     captureCoverage: requireCaptures,
+    captureDir: capturesDir,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m),
   });
@@ -369,7 +382,8 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     }
     const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
     const blindSpots = requireCaptures ? (result.scope.captureCoverage?.blindSpots ?? []) : [];
-    if (p.flags.json) console.log(JSON.stringify(diff, null, 2));
+    if (p.flags.json)
+      console.log(JSON.stringify(requireCaptures && result.scope.captureCoverage ? { ...diff, captureCoverage: result.scope.captureCoverage } : diff, null, 2));
     else {
       console.log(baselineSummary(diff, lang));
       if (requireCaptures && result.scope.captureCoverage) console.error(captureCoverageSummary(result.scope.captureCoverage, lang));
@@ -581,6 +595,96 @@ function cmdRender(p: ParsedArgs): number {
     }
     const tr = detectTestRunner(setupDeps, (f) => existsSync(join(root, f)));
     console.log(captureSetupPlan(tr, rel, lang));
+
+    // Keep committed captures byte-stable cross-platform + marked generated.
+    const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
+    const gaPath = join(root, ".gitattributes");
+    try {
+      const existing = existsSync(gaPath) ? readFileSync(gaPath, "utf8") : "";
+      if (!existing.includes(".ultra11y/captures/")) {
+        appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
+        console.log(lang === "fr" ? `.gitattributes : ajouté « ${gaLine} »` : `.gitattributes: added "${gaLine}"`);
+      }
+    } catch {
+      /* non-fatal */
+    }
+    // Captures must be committed for the gate — warn if .ultra11y is gitignored.
+    try {
+      const giPath = join(root, ".gitignore");
+      if (existsSync(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync(giPath, "utf8")))
+        console.error(
+          lang === "fr"
+            ? "⚠️ .ultra11y semble ignoré par .gitignore — les captures doivent être committées pour le gate (ajoutez « !.ultra11y/captures/ »)."
+            : '⚠️ .ultra11y appears gitignored — captures must be committed for the gate (add "!.ultra11y/captures/").',
+        );
+    } catch {
+      /* non-fatal */
+    }
+    return 0;
+  }
+  if (p.flags.storybook === true || typeof p.flags.storybook === "string") {
+    const sbDir = p.positionals[0] ?? "storybook-static";
+    const indexPath = existsSync(join(sbDir, "index.json")) ? join(sbDir, "index.json") : join(sbDir, "stories.json");
+    if (!existsSync(indexPath)) {
+      console.error(
+        lang === "fr"
+          ? `ultra11y render : aucun index Storybook (index.json/stories.json) dans ${sbDir}.`
+          : `ultra11y render: no Storybook index (index.json/stories.json) in ${sbDir}.`,
+      );
+      return 1;
+    }
+    const stories = parseStorybookIndex(readText(indexPath));
+    const provById = new Map(stories.map((s) => [s.id, storyProvenance(s)] as const));
+    const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : undefined;
+    const htmlDir = capturesFlag ?? sbDir;
+    const htmlFiles = existsSync(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
+    const outDir = ".ultra11y/captures";
+    let attributed = 0;
+    let skipped = 0;
+    for (const f of htmlFiles) {
+      const raw = readText(f);
+      if (parseCaptureProvenance(raw)) {
+        skipped++; // already attributed (its own provenance wins)
+        continue;
+      }
+      const base = f.replace(/^.*[/\\]/, "").replace(/\.html?$/i, "");
+      // Match the file to a story: exact basename, else the LONGEST story id that is a
+      // boundary-suffix of the basename (so one id never matches inside another's).
+      let hitId = provById.has(base) ? base : undefined;
+      if (!hitId) {
+        const cands = stories
+          .filter((s) => s.id && base.endsWith(s.id) && (base.length === s.id.length || /[^a-z0-9]/i.test(base[base.length - s.id.length - 1] ?? "")))
+          .sort((a, b) => b.id.length - a.id.length);
+        hitId = cands[0]?.id;
+      }
+      const prov = hitId ? provById.get(hitId) : undefined;
+      if (!prov?.sourceFile) {
+        skipped++;
+        continue;
+      }
+      try {
+        mkdirSync(outDir, { recursive: true });
+        // Name the output by the unique story id (not the flattened basename) so two
+        // story files with the same basename in different dirs never clobber.
+        writeFileSync(join(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}\n${raw}${raw.endsWith("\n") ? "" : "\n"}`);
+        attributed++;
+      } catch {
+        skipped++;
+      }
+    }
+    if (p.flags.json) console.log(JSON.stringify({ attributed, skipped, stories: stories.length, outDir }, null, 2));
+    else
+      console.log(
+        lang === "fr"
+          ? `Storybook : ${attributed} capture(s) attribuée(s), ${skipped} ignorée(s) → ${outDir} (${stories.length} stories)`
+          : `Storybook: ${attributed} capture(s) attributed, ${skipped} skipped → ${outDir} (${stories.length} stories)`,
+      );
+    if (attributed === 0 && !p.flags.json)
+      console.error(
+        lang === "fr"
+          ? `Aucun HTML de story attribuable dans ${htmlDir}. Produisez le HTML par story (@storybook/test-runner, ou portable stories + le harvester \`render --setup\`), ou pointez --captures <dir>.`
+          : `No attributable per-story HTML in ${htmlDir}. Produce per-story HTML (@storybook/test-runner, or portable stories + the \`render --setup\` harvester), or point --captures <dir>.`,
+      );
     return 0;
   }
   if (p.flags.coverage === true) {

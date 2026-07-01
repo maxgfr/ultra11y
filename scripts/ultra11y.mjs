@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync8 } from "fs";
+import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync8, readFileSync as readFileSync3, appendFileSync } from "fs";
 import { join as join11, relative as relative3, sep as sep2, dirname as dirname4 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
@@ -18171,7 +18171,7 @@ function extSet(extra) {
   }
   return set;
 }
-var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
+var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits", ".ultra11y"]);
 var TEST_DIR = /* @__PURE__ */ new Set(["__tests__", "__mocks__", ".storybook"]);
 var TEST_FILE = /\.(test|spec|stories|story|cy)\.[^./]+$/i;
 function isTestArtifact(rel) {
@@ -18295,8 +18295,19 @@ function expandInputs(inputs, opts = {}) {
 }
 
 // src/capture.ts
+function escapeCommentValue(s) {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/--/g, "&#45;&#45;");
+}
 function unescapeCommentValue(s) {
   return s.replace(/&#45;/g, "-").replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+}
+function formatCaptureComment(prov) {
+  const attrs = [`v="${prov.v || 1}"`];
+  if (prov.sourceFile) attrs.push(`source="${escapeCommentValue(prov.sourceFile)}"`);
+  if (prov.component) attrs.push(`component="${escapeCommentValue(prov.component)}"`);
+  if (prov.test) attrs.push(`test="${escapeCommentValue(prov.test)}"`);
+  if (prov.name) attrs.push(`name="${escapeCommentValue(prov.name)}"`);
+  return `<!-- ultra11y:capture ${attrs.join(" ")} -->`;
 }
 var SCAN_LIMIT = 4096;
 var MARKER = /<!--\s*ultra11y:capture\b([\s\S]*?)-->/;
@@ -18336,13 +18347,44 @@ function computeCaptureCoverage(graph, captures) {
       const key = `${node.file}#${def.name}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const isCovered = sigs.some((s) => pathMatch(s.sourceFile, node.file) && (!s.component || s.component === def.name || def.name === "default"));
+      const isCovered = sigs.some((s) => pathMatch(s.sourceFile, node.file) && (!s.component || s.component === def.name));
       (isCovered ? covered : blindSpots).push(key);
     }
   }
   covered.sort();
   blindSpots.sort();
   return { total: covered.length + blindSpots.length, covered, blindSpots, unattributed: captures.filter((c) => !c.provenance?.sourceFile).length };
+}
+function readCaptureDir(dir) {
+  let files;
+  try {
+    files = expandInputs([dir]);
+  } catch {
+    return [];
+  }
+  const out = [];
+  for (const f of files) {
+    if (!/\.html?$/i.test(f)) continue;
+    try {
+      out.push({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) });
+    } catch {
+    }
+  }
+  return out;
+}
+function enrichCaptureOrigins(findings, graph) {
+  for (const f of findings) {
+    const o = f.origin;
+    if (!o?.sourceFile || o.sourceLine !== void 0) continue;
+    for (const node of graph.nodes.values()) {
+      if (!pathMatch(toPosix(o.sourceFile), node.file)) continue;
+      const def = (o.component ? node.components.get(o.component) : void 0) ?? node.components.values().next().value;
+      if (def) {
+        o.sourceLine = def.line;
+        break;
+      }
+    }
+  }
 }
 
 // src/parse/source.ts
@@ -21146,7 +21188,10 @@ function runAudit(opts) {
     ...truncated ? { truncated } : {},
     ...duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}
   });
-  if (opts.captureCoverage && graph) result.scope.captureCoverage = computeCaptureCoverage(graph, acc.captures);
+  if (graph) {
+    enrichCaptureOrigins(result.findings, graph);
+    if (opts.captureCoverage) result.scope.captureCoverage = computeCaptureCoverage(graph, readCaptureDir(opts.captureDir ?? ".ultra11y/captures"));
+  }
   return result;
 }
 
@@ -24868,7 +24913,8 @@ var L = {
     rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
     sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
     captures: (n) => `${n} fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit, pas l'appel de composant.`,
-    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``
+    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``,
+    blindSpots: (n) => `${n} composant(s) sans capture rendue (angles morts) \u2014 audit\xE9s sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`
   },
   en: {
     title: (std) => `Accessibility audit report \u2014 ${std}`,
@@ -24903,7 +24949,8 @@ var L = {
     rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
     sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`,
     captures: (n) => `${n} rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML, not the component call.`,
-    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``
+    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``,
+    blindSpots: (n) => `${n} component(s) without a rendered capture (blind spots) \u2014 audited from opaque source only; audit their rendered DOM (\`render --setup\`).`
   }
 };
 function ncEntry(label, f, s) {
@@ -24912,7 +24959,8 @@ function ncEntry(label, f, s) {
   - _${s.fix} :_ ${f.remediation}`;
   if (!f.origin) return base;
   const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
-  const src = f.origin.sourceFile ?? f.origin.capture;
+  const srcFile = f.origin.sourceFile ?? f.origin.capture;
+  const src = f.origin.sourceFile && f.origin.sourceLine !== void 0 ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
   return `${base}
   - _${s.captureOf(comp, src)}_`;
 }
@@ -24931,6 +24979,7 @@ function render(r, lang, opts) {
   if (r.scope.rendered) out.push(`> \u{1F9E9} ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
   if (r.scope.sourceTemplate) out.push(`> \u{1F9E9} ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
   if (r.scope.captures) out.push(`> \u2705 ${s.captures(r.scope.captures.files)}`, "");
+  if (r.scope.captureCoverage?.blindSpots.length) out.push(`> \u26A0\uFE0F ${s.blindSpots(r.scope.captureCoverage.blindSpots.length)}`, "");
   const rows = opts.groups.flatMap((g) => g.rows);
   const labelOf = new Map(rows.map((row) => [row.id, row.label]));
   const th = s.th(opts.groupHead);
@@ -27926,6 +27975,14 @@ const OUT = process.env.ULTRA11Y_CAPTURES || ".ultra11y/captures";
 const afterEachFn = typeof globalThis.afterEach === "function" ? globalThis.afterEach : null;
 const hasDom = typeof document !== "undefined";
 
+// Optional per-test override, consumed by the NEXT capture \u2014 for a test file whose name
+// doesn't match the component, or a single test rendering several distinct components.
+//   import { captureAs } from ".ultra11y/capture-setup.mjs"; captureAs("Button", "src/Button.tsx")
+//   (or globalThis.ultra11yCaptureAs("Button")).
+let __override = null;
+export function captureAs(component, source) { __override = { component: component, source: source }; }
+if (typeof globalThis !== "undefined") globalThis.ultra11yCaptureAs = captureAs;
+
 if (OUT !== "off" && OUT !== "0") {
   if (!hasDom) {
     // Not a DOM test environment \u2014 nothing to serialize. Set environment: "jsdom".
@@ -27943,8 +28000,13 @@ if (OUT !== "off" && OUT !== "0") {
         const testPath = typeof st.testPath === "string" ? st.testPath : "";
         const name = typeof st.currentTestName === "string" ? st.currentTestName : "";
         const rel = testPath ? relative(process.cwd(), testPath).split("\\\\").join("/") : "";
-        const source = rel ? rel.replace(/\\.(test|spec)\\.([jt]sx?)$/i, ".$2") : "";
-        const component = source ? basename(source).replace(/\\.[jt]sx?$/i, "") : "";
+        let source = rel ? rel.replace(/\\.(test|spec)\\.([jt]sx?)$/i, ".$2") : "";
+        let component = source ? basename(source).replace(/\\.[jt]sx?$/i, "") : "";
+        if (__override) {
+          if (__override.component) component = __override.component;
+          if (__override.source) source = __override.source;
+          __override = null;
+        }
         const attrs = ['v="1"'];
         if (source) attrs.push('source="' + esc(source) + '"');
         if (component) attrs.push('component="' + esc(component) + '"');
@@ -27972,6 +28034,33 @@ if (OUT !== "off" && OUT !== "0") {
 }
 `;
 }
+function parseStorybookIndex(json) {
+  let data2;
+  try {
+    data2 = JSON.parse(json);
+  } catch {
+    return [];
+  }
+  const rec = data2;
+  const entries = rec?.entries ?? rec?.stories;
+  if (!entries || typeof entries !== "object") return [];
+  const out = [];
+  for (const [id, raw] of Object.entries(entries)) {
+    if (!raw || typeof raw !== "object") continue;
+    const e = raw;
+    if (e.type && e.type !== "story") continue;
+    out.push({ id: e.id ?? id, title: e.title, name: e.name, importPath: e.importPath });
+  }
+  return out;
+}
+function storyProvenance(story) {
+  const imp = story.importPath;
+  if (!imp) return void 0;
+  const sourceFile = imp.replace(/^\.\//, "").replace(/\.stories\.([jt]sx?)$/i, ".$1");
+  const fromTitle = story.title ? story.title.split("/").pop()?.trim() : void 0;
+  const component = fromTitle || sourceFile.replace(/^.*\//, "").replace(/\.[jt]sx?$/i, "");
+  return { v: 1, sourceFile, ...component ? { component } : {}, ...story.name ? { name: story.name } : {} };
+}
 function captureSetupPlan(tr, path, lang = "en") {
   const fr = lang === "fr";
   const out = [];
@@ -27997,7 +28086,7 @@ function captureSetupPlan(tr, path, lang = "en") {
   out.push(fr ? "Puis : lancez vos tests, committez .ultra11y/captures, et auditez :" : "Then: run your tests, commit .ultra11y/captures, and audit:");
   out.push(`  node scripts/ultra11y.mjs audit --require-captures        # ${fr ? "gate : composants sans capture" : "gate: components lacking a capture"}`);
   out.push(
-    `  git add .gitattributes .ultra11y   # ${fr ? "captures = sortie g\xE9n\xE9r\xE9e ; .gitattributes text eol=lf conseill\xE9" : "captures = generated output; add .gitattributes text eol=lf"}`
+    `  git add .ultra11y .gitattributes   # ${fr ? "committez les captures (+ .gitattributes g\xE9n\xE9r\xE9)" : "commit the captures (+ generated .gitattributes)"}`
   );
   return out.join("\n");
 }
@@ -29818,7 +29907,7 @@ Usage:
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
-  ultra11y render   [<dir>] [--scaffold | --setup | --coverage] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
+  ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
@@ -29852,8 +29941,9 @@ Commands:
              zero-touch test-render capture harvester (one setupFiles line \u2192 every
              component your tests render is snapshotted to .ultra11y/captures and
              audited). --coverage reports which components have a rendered capture vs
-             which are still opaque-source-only blind spots. Then audit the produced
-             HTML, and use scan for the needs-rendering criteria.
+             which are still opaque-source-only blind spots. --storybook attributes
+             per-story HTML (via a storybook-static index) back to source components.
+             Then audit the produced HTML, and use scan for the needs-rendering criteria.
   criteria   Look up the reference offline. Core: one WCAG success criterion
              (criteria 1.4.3) or the full list grouped by guideline (--list).
              --standard <pack>: a pack criterion, a pack theme (--theme N), or its
@@ -29926,6 +30016,7 @@ Options:
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
   --setup            render: install the zero-touch test-render capture harvester (.ultra11y/capture-setup.mjs) + print the runner wiring
   --coverage         render: report rendered-capture coverage (covered vs blind-spot components); with --json emits the coverage object
+  --storybook        render: attribute per-story HTML (via storybook-static index.json) into .ultra11y/captures (point the HTML dir with --captures)
   --captures <dir>   audit/render: rendered-capture dir to ingest (default: .ultra11y/captures)
   --no-captures      audit: do NOT auto-detect/ingest the .ultra11y/captures dir
   --require-captures audit: gate \u2014 fail if any opaque/control component lacks a rendered capture (implies --graph)
@@ -30077,6 +30168,7 @@ async function cmdAudit(p) {
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : void 0,
     graph: p.flags.graph === true || p.flags["cross-file"] === true || requireCaptures,
     captureCoverage: requireCaptures,
+    captureDir: capturesDir,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m)
   });
@@ -30105,7 +30197,8 @@ async function cmdAudit(p) {
     }
     const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
     const blindSpots2 = requireCaptures ? result.scope.captureCoverage?.blindSpots ?? [] : [];
-    if (p.flags.json) console.log(JSON.stringify(diff, null, 2));
+    if (p.flags.json)
+      console.log(JSON.stringify(requireCaptures && result.scope.captureCoverage ? { ...diff, captureCoverage: result.scope.captureCoverage } : diff, null, 2));
     else {
       console.log(baselineSummary(diff, lang));
       if (requireCaptures && result.scope.captureCoverage) console.error(captureCoverageSummary(result.scope.captureCoverage, lang));
@@ -30296,6 +30389,78 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     }
     const tr = detectTestRunner(setupDeps, (f) => existsSync8(join11(root, f)));
     console.log(captureSetupPlan(tr, rel, lang));
+    const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
+    const gaPath = join11(root, ".gitattributes");
+    try {
+      const existing = existsSync8(gaPath) ? readFileSync3(gaPath, "utf8") : "";
+      if (!existing.includes(".ultra11y/captures/")) {
+        appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
+        console.log(lang === "fr" ? `.gitattributes : ajout\xE9 \xAB ${gaLine} \xBB` : `.gitattributes: added "${gaLine}"`);
+      }
+    } catch {
+    }
+    try {
+      const giPath = join11(root, ".gitignore");
+      if (existsSync8(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync3(giPath, "utf8")))
+        console.error(
+          lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
+        );
+    } catch {
+    }
+    return 0;
+  }
+  if (p.flags.storybook === true || typeof p.flags.storybook === "string") {
+    const sbDir = p.positionals[0] ?? "storybook-static";
+    const indexPath = existsSync8(join11(sbDir, "index.json")) ? join11(sbDir, "index.json") : join11(sbDir, "stories.json");
+    if (!existsSync8(indexPath)) {
+      console.error(
+        lang === "fr" ? `ultra11y render : aucun index Storybook (index.json/stories.json) dans ${sbDir}.` : `ultra11y render: no Storybook index (index.json/stories.json) in ${sbDir}.`
+      );
+      return 1;
+    }
+    const stories = parseStorybookIndex(readText(indexPath));
+    const provById = new Map(stories.map((s) => [s.id, storyProvenance(s)]));
+    const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
+    const htmlDir = capturesFlag ?? sbDir;
+    const htmlFiles = existsSync8(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
+    const outDir = ".ultra11y/captures";
+    let attributed = 0;
+    let skipped = 0;
+    for (const f of htmlFiles) {
+      const raw = readText(f);
+      if (parseCaptureProvenance(raw)) {
+        skipped++;
+        continue;
+      }
+      const base = f.replace(/^.*[/\\]/, "").replace(/\.html?$/i, "");
+      let hitId = provById.has(base) ? base : void 0;
+      if (!hitId) {
+        const cands = stories.filter((s) => s.id && base.endsWith(s.id) && (base.length === s.id.length || /[^a-z0-9]/i.test(base[base.length - s.id.length - 1] ?? ""))).sort((a, b) => b.id.length - a.id.length);
+        hitId = cands[0]?.id;
+      }
+      const prov = hitId ? provById.get(hitId) : void 0;
+      if (!prov?.sourceFile) {
+        skipped++;
+        continue;
+      }
+      try {
+        mkdirSync5(outDir, { recursive: true });
+        writeFileSync7(join11(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
+${raw}${raw.endsWith("\n") ? "" : "\n"}`);
+        attributed++;
+      } catch {
+        skipped++;
+      }
+    }
+    if (p.flags.json) console.log(JSON.stringify({ attributed, skipped, stories: stories.length, outDir }, null, 2));
+    else
+      console.log(
+        lang === "fr" ? `Storybook : ${attributed} capture(s) attribu\xE9e(s), ${skipped} ignor\xE9e(s) \u2192 ${outDir} (${stories.length} stories)` : `Storybook: ${attributed} capture(s) attributed, ${skipped} skipped \u2192 ${outDir} (${stories.length} stories)`
+      );
+    if (attributed === 0 && !p.flags.json)
+      console.error(
+        lang === "fr" ? `Aucun HTML de story attribuable dans ${htmlDir}. Produisez le HTML par story (@storybook/test-runner, ou portable stories + le harvester \`render --setup\`), ou pointez --captures <dir>.` : `No attributable per-story HTML in ${htmlDir}. Produce per-story HTML (@storybook/test-runner, or portable stories + the \`render --setup\` harvester), or point --captures <dir>.`
+      );
     return 0;
   }
   if (p.flags.coverage === true) {

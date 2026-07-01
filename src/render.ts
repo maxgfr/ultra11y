@@ -6,6 +6,7 @@
 // runnable SSR-snapshot harness that uses the PROJECT'S OWN react-dom/server. The
 // emitted HTML is then audited by the normal `audit` command.
 import type { Lang } from "./types.js";
+import type { CaptureProvenance } from "./parse/html.js";
 
 export interface FrameworkHit {
   name: string;
@@ -172,6 +173,14 @@ const OUT = process.env.ULTRA11Y_CAPTURES || ".ultra11y/captures";
 const afterEachFn = typeof globalThis.afterEach === "function" ? globalThis.afterEach : null;
 const hasDom = typeof document !== "undefined";
 
+// Optional per-test override, consumed by the NEXT capture — for a test file whose name
+// doesn't match the component, or a single test rendering several distinct components.
+//   import { captureAs } from ".ultra11y/capture-setup.mjs"; captureAs("Button", "src/Button.tsx")
+//   (or globalThis.ultra11yCaptureAs("Button")).
+let __override = null;
+export function captureAs(component, source) { __override = { component: component, source: source }; }
+if (typeof globalThis !== "undefined") globalThis.ultra11yCaptureAs = captureAs;
+
 if (OUT !== "off" && OUT !== "0") {
   if (!hasDom) {
     // Not a DOM test environment — nothing to serialize. Set environment: "jsdom".
@@ -189,8 +198,13 @@ if (OUT !== "off" && OUT !== "0") {
         const testPath = typeof st.testPath === "string" ? st.testPath : "";
         const name = typeof st.currentTestName === "string" ? st.currentTestName : "";
         const rel = testPath ? relative(process.cwd(), testPath).split("\\\\").join("/") : "";
-        const source = rel ? rel.replace(/\\.(test|spec)\\.([jt]sx?)$/i, ".$2") : "";
-        const component = source ? basename(source).replace(/\\.[jt]sx?$/i, "") : "";
+        let source = rel ? rel.replace(/\\.(test|spec)\\.([jt]sx?)$/i, ".$2") : "";
+        let component = source ? basename(source).replace(/\\.[jt]sx?$/i, "") : "";
+        if (__override) {
+          if (__override.component) component = __override.component;
+          if (__override.source) source = __override.source;
+          __override = null;
+        }
         const attrs = ['v="1"'];
         if (source) attrs.push('source="' + esc(source) + '"');
         if (component) attrs.push('component="' + esc(component) + '"');
@@ -217,6 +231,46 @@ if (OUT !== "off" && OUT !== "0") {
   }
 }
 `;
+}
+
+export interface StorybookStory {
+  id: string;
+  title?: string;
+  name?: string;
+  importPath?: string;
+}
+
+/** Parse a Storybook `index.json` (v7+, `entries`) or `stories.json` (v6, `stories`) into
+ *  its story entries (docs/MDX entries dropped). Returns [] on anything malformed. */
+export function parseStorybookIndex(json: string): StorybookStory[] {
+  let data: unknown;
+  try {
+    data = JSON.parse(json);
+  } catch {
+    return [];
+  }
+  const rec = data as { entries?: Record<string, unknown>; stories?: Record<string, unknown> } | null;
+  const entries = rec?.entries ?? rec?.stories;
+  if (!entries || typeof entries !== "object") return [];
+  const out: StorybookStory[] = [];
+  for (const [id, raw] of Object.entries(entries)) {
+    if (!raw || typeof raw !== "object") continue; // tolerate null/garbage entry values
+    const e = raw as { id?: string; title?: string; name?: string; importPath?: string; type?: string };
+    if (e.type && e.type !== "story") continue; // skip docs/MDX entries (v7 `type`)
+    out.push({ id: e.id ?? id, title: e.title, name: e.name, importPath: e.importPath });
+  }
+  return out;
+}
+
+/** Best-effort provenance for a Storybook story: source from importPath (a `.stories.*`
+ *  file → its sibling component file), component from the title's last segment. */
+export function storyProvenance(story: StorybookStory): CaptureProvenance | undefined {
+  const imp = story.importPath;
+  if (!imp) return undefined;
+  const sourceFile = imp.replace(/^\.\//, "").replace(/\.stories\.([jt]sx?)$/i, ".$1");
+  const fromTitle = story.title ? story.title.split("/").pop()?.trim() : undefined;
+  const component = fromTitle || sourceFile.replace(/^.*\//, "").replace(/\.[jt]sx?$/i, "");
+  return { v: 1, sourceFile, ...(component ? { component } : {}), ...(story.name ? { name: story.name } : {}) };
 }
 
 /** Instructions printed by `render --setup` after writing the harvester. */
@@ -247,7 +301,7 @@ export function captureSetupPlan(tr: TestRunner, path: string, lang: Lang = "en"
   out.push(fr ? "Puis : lancez vos tests, committez .ultra11y/captures, et auditez :" : "Then: run your tests, commit .ultra11y/captures, and audit:");
   out.push(`  node scripts/ultra11y.mjs audit --require-captures        # ${fr ? "gate : composants sans capture" : "gate: components lacking a capture"}`);
   out.push(
-    `  git add .gitattributes .ultra11y   # ${fr ? "captures = sortie générée ; .gitattributes text eol=lf conseillé" : "captures = generated output; add .gitattributes text eol=lf"}`,
+    `  git add .ultra11y .gitattributes   # ${fr ? "committez les captures (+ .gitattributes généré)" : "commit the captures (+ generated .gitattributes)"}`,
   );
   return out.join("\n");
 }

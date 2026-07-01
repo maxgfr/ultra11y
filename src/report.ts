@@ -52,6 +52,8 @@ const L = {
       `Verdict source préliminaire : ${n} composant(s) ${exts} audité(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique — auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
     captures: (n: number) => `${n} fichier(s) de capture rendus audités à pleine fidélité (DOM réel) — le vrai HTML produit, pas l'appel de composant.`,
     captureOf: (comp: string, src: string) => `capture rendue de \`${comp}\` — source \`${src}\``,
+    blindSpots: (n: number) =>
+      `${n} composant(s) sans capture rendue (angles morts) — audités sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`,
   },
   en: {
     title: (std: string) => `Accessibility audit report — ${std}`,
@@ -90,6 +92,8 @@ const L = {
       `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis — audit the rendered output (\`render\` / \`scan\`) before concluding.`,
     captures: (n: number) => `${n} rendered capture file(s) audited at full fidelity (real DOM) — the true produced HTML, not the component call.`,
     captureOf: (comp: string, src: string) => `rendered capture of \`${comp}\` — source \`${src}\``,
+    blindSpots: (n: number) =>
+      `${n} component(s) without a rendered capture (blind spots) — audited from opaque source only; audit their rendered DOM (\`render --setup\`).`,
   },
 } as const;
 
@@ -112,7 +116,8 @@ function ncEntry(label: string, f: Finding, s: (typeof L)[Lang]): string {
   const base = `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${f.message}\n  - _${s.fix} :_ ${f.remediation}`;
   if (!f.origin) return base;
   const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
-  const src = f.origin.sourceFile ?? f.origin.capture;
+  const srcFile = f.origin.sourceFile ?? f.origin.capture;
+  const src = f.origin.sourceFile && f.origin.sourceLine !== undefined ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
   return `${base}\n  - _${s.captureOf(comp, src)}_`;
 }
 
@@ -133,6 +138,7 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   if (r.scope.rendered) out.push(`> 🧩 ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
   if (r.scope.sourceTemplate) out.push(`> 🧩 ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
   if (r.scope.captures) out.push(`> ✅ ${s.captures(r.scope.captures.files)}`, "");
+  if (r.scope.captureCoverage?.blindSpots.length) out.push(`> ⚠️ ${s.blindSpots(r.scope.captureCoverage.blindSpots.length)}`, "");
 
   const rows = opts.groups.flatMap((g) => g.rows);
   const labelOf = new Map(rows.map((row) => [row.id, row.label]));

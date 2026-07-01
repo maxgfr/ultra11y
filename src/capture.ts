@@ -13,7 +13,9 @@
 import type { CaptureProvenance } from "./parse/html.js";
 import type { DepGraph } from "./graph/graph.js";
 import type { ComponentDef } from "./graph/imports.js";
-import { toPosix } from "./glob.js";
+import type { Finding } from "./types.js";
+import { toPosix, expandInputs } from "./glob.js";
+import { readText } from "./util.js";
 
 // A capture's provenance comment must contain no literal `"` (it would end an
 // attribute value early) and no `--` digraph (it would end the HTML comment early).
@@ -30,6 +32,18 @@ export function unescapeCommentValue(s: string): string {
     .replace(/&lt;/g, "<")
     .replace(/&quot;/g, '"')
     .replace(/&amp;/g, "&");
+}
+
+/** Build a `<!-- ultra11y:capture … -->` provenance comment (escaped) — the inverse of
+ *  parseCaptureProvenance. Used by producers that attribute HTML after the fact (e.g. the
+ *  Storybook post-processor); the zero-touch harvester inlines the same scheme. */
+export function formatCaptureComment(prov: CaptureProvenance): string {
+  const attrs = [`v="${prov.v || 1}"`];
+  if (prov.sourceFile) attrs.push(`source="${escapeCommentValue(prov.sourceFile)}"`);
+  if (prov.component) attrs.push(`component="${escapeCommentValue(prov.component)}"`);
+  if (prov.test) attrs.push(`test="${escapeCommentValue(prov.test)}"`);
+  if (prov.name) attrs.push(`name="${escapeCommentValue(prov.name)}"`);
+  return `<!-- ultra11y:capture ${attrs.join(" ")} -->`;
 }
 
 // Only the head of the file can hold the marker (the harvester writes it first), so
@@ -100,11 +114,51 @@ export function computeCaptureCoverage(graph: DepGraph, captures: CaptureEntry[]
       const key = `${node.file}#${def.name}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const isCovered = sigs.some((s) => pathMatch(s.sourceFile, node.file) && (!s.component || s.component === def.name || def.name === "default"));
+      const isCovered = sigs.some((s) => pathMatch(s.sourceFile, node.file) && (!s.component || s.component === def.name));
       (isCovered ? covered : blindSpots).push(key);
     }
   }
   covered.sort();
   blindSpots.sort();
   return { total: covered.length + blindSpots.length, covered, blindSpots, unattributed: captures.filter((c) => !c.provenance?.sourceFile).length };
+}
+
+/** Read every capture (`.html`/`.htm`) under a directory into entries with parsed
+ *  provenance — the full repo-wide capture set for coverage, independent of what any
+ *  particular audit run scoped to. Returns [] when the directory is absent/empty. */
+export function readCaptureDir(dir: string): CaptureEntry[] {
+  let files: string[];
+  try {
+    files = expandInputs([dir]);
+  } catch {
+    return [];
+  }
+  const out: CaptureEntry[] = [];
+  for (const f of files) {
+    if (!/\.html?$/i.test(f)) continue;
+    try {
+      out.push({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) });
+    } catch {
+      /* unreadable — skip */
+    }
+  }
+  return out;
+}
+
+/** Resolve `origin.sourceLine` for capture findings from the component graph, so reports
+ *  anchor at the source component's definition line (not just the file). Mutates in place;
+ *  no-op for findings already resolved or without a source. */
+export function enrichCaptureOrigins(findings: Finding[], graph: DepGraph): void {
+  for (const f of findings) {
+    const o = f.origin;
+    if (!o?.sourceFile || o.sourceLine !== undefined) continue;
+    for (const node of graph.nodes.values()) {
+      if (!pathMatch(toPosix(o.sourceFile), node.file)) continue;
+      const def = (o.component ? node.components.get(o.component) : undefined) ?? node.components.values().next().value;
+      if (def) {
+        o.sourceLine = def.line;
+        break;
+      }
+    }
+  }
 }

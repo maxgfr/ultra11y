@@ -21,7 +21,10 @@ function extSet(extra: string[] | undefined): Set<string> {
   }
   return set;
 }
-const SKIP_DIR = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
+// `.ultra11y` (captures + generated setup) is never auto-walked: captures are ingested
+// only via the explicit `.ultra11y/captures` input the CLI appends (so `--no-captures`
+// genuinely opts out) or a direct `--captures <dir>` / coverage scan of that dir.
+const SKIP_DIR = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits", ".ultra11y"]);
 
 // Test / spec / story / mock markup is bad-by-design (intentionally non-conformant
 // fixtures, never shipped UI). Excluded by default to keep the audit focused on real

@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.7.0](https://github.com/maxgfr/ultra11y/compare/v2.6.0...v2.7.0) (2026-07-01)
+
+
+### Features
+
+* **render:** finish capture pipeline — sourceLine, gitattributes, captureAs, Storybook; fix review findings ([b969717](https://github.com/maxgfr/ultra11y/commit/b9697174ffd845cc96b994ff053e67539389f418)), closes [#1](https://github.com/maxgfr/ultra11y/issues/1) [#2](https://github.com/maxgfr/ultra11y/issues/2) [#3](https://github.com/maxgfr/ultra11y/issues/3) [#4](https://github.com/maxgfr/ultra11y/issues/4) [#5](https://github.com/maxgfr/ultra11y/issues/5) [#8](https://github.com/maxgfr/ultra11y/issues/8)
+
 # [2.6.0](https://github.com/maxgfr/ultra11y/compare/v2.5.0...v2.6.0) (2026-07-01)
 
 

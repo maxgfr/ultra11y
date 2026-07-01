@@ -1,0 +1,148 @@
+// Strict staged-snapshot mode (`--staged`) for audit/fix: the pre-commit gate reads
+// the exact index blobs (`git show :./path`), never the working tree, and fix
+// auto-applies + re-stages only fully-staged files. Reuses the temp-git harness from
+// discover.test.ts; every staged case chdir's into the repo (the git helpers use cwd).
+import { describe, it, expect, afterEach } from "vitest";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { gitStagedFiles, stagedContent, hasUnstagedChanges } from "../src/discover.js";
+import { runAudit } from "../src/audit.js";
+import { runFix } from "../src/fix.js";
+
+const tmps: string[] = [];
+function tmp(): string {
+  const d = mkdtempSync(join(tmpdir(), "u11y-staged-"));
+  tmps.push(d);
+  return d;
+}
+afterEach(() => {
+  for (const d of tmps.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+
+function initRepo(): string {
+  const repo = tmp();
+  const run = (...args: string[]): void => {
+    execFileSync("git", args, { cwd: repo, stdio: "ignore" });
+  };
+  run("init");
+  run("config", "user.email", "t@t.t");
+  run("config", "user.name", "t");
+  // A committed base so "staged vs HEAD" has a reference.
+  writeFileSync(join(repo, "base.html"), "<p>base</p>");
+  run("add", ".");
+  run("commit", "-m", "base");
+  return repo;
+}
+const git = (repo: string, ...args: string[]): string => execFileSync("git", args, { cwd: repo, encoding: "utf8" });
+
+function inRepo<T>(repo: string, fn: () => T): T {
+  const prev = process.cwd();
+  try {
+    process.chdir(repo);
+    return fn();
+  } finally {
+    process.chdir(prev);
+  }
+}
+
+describe("gitStagedFiles / stagedContent", () => {
+  it("lists only staged adds/mods, and reads the index blob (not untracked/unstaged)", () => {
+    const repo = initRepo();
+    writeFileSync(join(repo, "staged.html"), `<img src="x">`); // will be staged
+    writeFileSync(join(repo, "untracked.html"), `<img src="y">`); // never added
+    git(repo, "add", "staged.html");
+    // Modify a committed file in the working tree WITHOUT staging it.
+    writeFileSync(join(repo, "base.html"), "<p>edited but not staged</p>");
+
+    inRepo(repo, () => {
+      const staged = gitStagedFiles();
+      expect(staged).not.toBeNull();
+      const names = new Set(staged!.map((f) => f.split("/").pop()));
+      expect(names.has("staged.html")).toBe(true);
+      expect(names.has("untracked.html")).toBe(false); // untracked
+      expect(names.has("base.html")).toBe(false); // unstaged-only edit
+
+      expect(stagedContent("staged.html")).toBe(`<img src="x">`);
+      expect(stagedContent("untracked.html")).toBeNull(); // not in the index
+    });
+  });
+});
+
+describe("audit --staged reads the index, not the working tree", () => {
+  it("reports the staged snapshot even after the working-tree copy is fixed", () => {
+    const repo = initRepo();
+    writeFileSync(join(repo, "a.html"), `<img src="x">`); // missing alt — staged
+    git(repo, "add", "a.html");
+    // Now "fix" it only in the working tree (leave the index blob untouched).
+    writeFileSync(join(repo, "a.html"), `<img src="x" alt="a real caption">`);
+
+    inRepo(repo, () => {
+      const staged = runAudit({ inputs: ["."], staged: true });
+      expect(staged.findings.some((f) => f.ruleId === "img-alt-missing")).toBe(true); // from the index
+
+      const working = runAudit({ inputs: ["."], changed: true });
+      expect(working.findings.some((f) => f.ruleId === "img-alt-missing")).toBe(false); // working tree is clean
+    });
+  });
+
+  it("falls back to a working-tree scan with a warning outside a git repo", () => {
+    const dir = tmp(); // a plain dir, not a git repo
+    writeFileSync(join(dir, "a.html"), `<img src="x">`);
+    const warnings: string[] = [];
+    inRepo(dir, () => {
+      const r = runAudit({ inputs: ["."], staged: true, onWarn: (m) => warnings.push(m) });
+      expect(r.scope.files).toBeGreaterThanOrEqual(1); // still audited (fallback)
+    });
+    expect(warnings.some((w) => w.includes("git is unavailable"))).toBe(true);
+  });
+});
+
+describe("fix --staged --write", () => {
+  it("auto-fixes and re-stages a fully-staged file", () => {
+    const repo = initRepo();
+    writeFileSync(join(repo, "a.html"), `<div tabindex="5">go</div>`); // positive-tabindex (auto fix)
+    git(repo, "add", "a.html");
+
+    const r = inRepo(repo, () => runFix({ inputs: ["."], staged: true, safe: true, write: true }));
+    expect(r.totals.filesWritten).toBe(1);
+    expect(r.totals.filesRestaged).toBe(1);
+    // The fix landed in BOTH the index (what commits) and the working tree.
+    expect(git(repo, "show", ":./a.html")).toContain(`tabindex="0"`);
+    expect(git(repo, "diff", "--name-only").trim()).toBe(""); // working tree == index (no leftover unstaged diff)
+  });
+
+  it("never touches a partially-staged file (unstaged edits would be silently staged)", () => {
+    const repo = initRepo();
+    writeFileSync(join(repo, "a.html"), `<div tabindex="5">go</div>`);
+    git(repo, "add", "a.html"); // index = the fixable version
+    writeFileSync(join(repo, "a.html"), `<div tabindex="5">go</div>\n<!-- unstaged edit -->`); // working tree diverges
+
+    const r = inRepo(repo, () => {
+      expect(hasUnstagedChanges("a.html")).toBe(true);
+      return runFix({ inputs: ["."], staged: true, safe: true, write: true });
+    });
+    expect(r.totals.partialStageSkipped).toBe(1);
+    expect(r.totals.filesRestaged).toBe(0);
+    expect(r.totals.filesWritten).toBe(0);
+    // The unstaged working-tree edit survives untouched.
+    expect(git(repo, "diff", "--name-only")).toContain("a.html");
+  });
+
+  it("--safe leaves placeholder-only findings unfixed so the gate keeps blocking", () => {
+    const repo = initRepo();
+    writeFileSync(join(repo, "a.html"), `<img src="x">`); // img-alt-missing is placeholder-fixable
+    git(repo, "add", "a.html");
+
+    const { fixed, stillFailing } = inRepo(repo, () => {
+      const fixed = runFix({ inputs: ["."], staged: true, safe: true, write: true });
+      const stillFailing = runAudit({ inputs: ["."], staged: true });
+      return { fixed, stillFailing };
+    });
+    expect(fixed.totals.filesWritten).toBe(0); // no auto fix available; placeholder skipped under --safe
+    expect(stillFailing.findings.some((f) => f.ruleId === "img-alt-missing")).toBe(true);
+    // Index blob is unchanged — no TODO stub was committed.
+    expect(git(repo, "show", ":./a.html")).toBe(`<img src="x">`);
+  });
+});

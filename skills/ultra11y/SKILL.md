@@ -31,15 +31,24 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 > 2. **Native HTML first, ARIA last**; never duplicate implicit semantics.
 > 3. **Residual is explicit**: any *rendering*/*judgment* criterion not proven goes to
 >    "to assess manually", never silently marked conforming.
+> 4. **The FINAL rendered semantic HTML must be correct.** The engine sees only source; a
+>    component library (DSFR/MUI…) or `.vue`/`.svelte`/`.astro` SFC hides the real markup, so
+>    a green source audit is not proof. Verify the produced semantic HTML — install the
+>    zero-touch **capture** harvester (`render --setup`) so every component your tests render
+>    is serialized to `.ultra11y/captures` and audited, with `audit --require-captures` gating
+>    the blind spots. See `references/automation.md` / `rendered.md`.
 
 ## Choose by situation
 
 - **"Audit / compliance report"** → `node scripts/ultra11y.mjs audit … --json`, then
   `report`, then `check`; read **`references/audit.md`**.
 - **"Code rendered by a library (DSFR, MUI…) or a `.vue`/`.svelte`/`.astro` SFC / avoid
-  false negatives"** → audit the **produced HTML**, not the source template: `render`
-  (build→audit recipe or SSR snapshot `--scaffold`) then `audit` on the output, and `scan`
-  for computed rendering. SFC-source findings are flagged `preliminary` (a
+  false negatives"** → audit the **produced HTML**, not the source template. Easiest:
+  install the zero-touch **capture** harvester (`render --setup`) so your tests serialize
+  every rendered component to `.ultra11y/captures` (auto-ingested, findings attributed to the
+  source component; `render --coverage` and `audit --require-captures` track blind spots). Or
+  `render` (build→audit recipe or SSR snapshot `--scaffold`) then `audit` on the output, and
+  `scan` for computed rendering. SFC-source findings are flagged `preliminary` (a
   `scope.sourceTemplate` caveat); read **`references/rendered.md`**.
 - **"A finding looks wrong / false positive on a component"** → the engine auto-suppresses
   most component false positives (slot/prop-injected names, component children, dynamic
@@ -72,8 +81,12 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   codemods, proposes the rest without inventing anything); read **`references/fix.md`**.
 - **"Fix by priority, no regressions (correction phase)"** → `fix` (`--write`,
   `--iterate`) + the `prd` backlog, blocking→major→minor; read **`references/correction.md`**.
-- **"Automatic repo gate (hook / CI)"** → `init --hook`/`--ci`/`--baseline` (fails only
-  on NEW non-conformities); read **`references/automation.md`**.
+- **"Automatic repo gate (hook / CI)"** → `init --hook` writes a git pre-commit gate over
+  the **strict staged snapshot** (audits the exact index blobs, auto-applies safe fixes and
+  re-stages them, blocks only on judgment issues); `init --baseline`/`--ci` is the opt-in
+  "block only NEW non-conformities" variant. For library/SFC code, commit rendered
+  **captures** (`render --setup`) and stage them so the real semantic HTML is what's
+  checked (`audit --require-captures`); read **`references/automation.md`**.
 - **"Make this code accessible / review it"** → audit the snippet
   (`audit - < component.html`) native-first; read **`references/authoring.md`** and
   **`references/forbidden-patterns.md`**.
@@ -97,6 +110,7 @@ node scripts/ultra11y.mjs audit - < component.html          # HTML via stdin
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx        # JSX/TSX as a real AST (streams to stdout; add --out audits to persist)
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph      # + imports & cross-file rules
 node scripts/ultra11y.mjs audit --changed --json            # only the git diff (large repo)
+node scripts/ultra11y.mjs audit --staged --fail-on blocking # gate EXACTLY the staged snapshot (pre-commit)
 node scripts/ultra11y.mjs audit "src/**" --no-default-excludes   # also audit test/spec/story markup
 node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md
 node scripts/ultra11y.mjs report --in audit.json --standard rgaa       # derived RGAA report (France pack)
@@ -111,9 +125,14 @@ node scripts/ultra11y.mjs criteria --standard rgaa --theme 8   # a pack theme
 node scripts/ultra11y.mjs check  --report audits/wcag-YYYY-MM-DD.md
 node scripts/ultra11y.mjs verify --report audits/wcag-YYYY-MM-DD.md --semantic
 node scripts/ultra11y.mjs render                            # build→audit recipe (or --scaffold SSR)
+node scripts/ultra11y.mjs render --setup                    # install the zero-touch capture harvester (tests → .ultra11y/captures)
+node scripts/ultra11y.mjs render --coverage                 # which components have a rendered capture vs blind spots
+node scripts/ultra11y.mjs audit --require-captures          # gate: every opaque/control component must have a rendered capture
 node scripts/ultra11y.mjs audit "dist/**/*.html"            # audit the RENDERED HTML (reliable for DSFR/MUI…)
 node scripts/ultra11y.mjs fix "src/**/*.html" --write --iterate    # fix and re-apply to a fixpoint
-node scripts/ultra11y.mjs init --hook --baseline            # regression gate (hook + baseline)
+node scripts/ultra11y.mjs fix --staged --write --safe       # auto-apply SAFE fixes to staged files + re-stage
+node scripts/ultra11y.mjs init --hook                       # pre-commit gate: strict staged snapshot + safe auto-fix
+node scripts/ultra11y.mjs init --hook --baseline            # opt-in: regression gate (hook + baseline)
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx --out audits   # persist audits/audit-latest.json (for scan --merge / report --in)
 node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # dynamic tier (auto runtime)
 node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd packages/app --storage-state .auth/user.json  # no-Docker axe + probes, authed

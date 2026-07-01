@@ -8,7 +8,8 @@ import type { AuditResult, CriterionResult, Finding, ResidualRisk, Status, Guide
 import { VERSION, SCHEMA_VERSION } from "./types.js";
 import { allSC, allGuidelines } from "./wcag.js";
 import { parseSource } from "./parse/source.js";
-import type { Doc } from "./parse/html.js";
+import type { Doc, CaptureProvenance } from "./parse/html.js";
+import { computeCaptureCoverage } from "./capture.js";
 import { isFullDocument } from "./rules/rule.js";
 import { runRules } from "./rules/registry.js";
 import { runCrossRules } from "./rules/cross-registry.js";
@@ -29,9 +30,11 @@ export interface AuditInput {
   // scale controls
   changed?: boolean; // audit only git-changed files
   since?: string; // git ref to diff against (implies changed)
+  staged?: boolean; // audit exactly the staged index snapshot (strict pre-commit scope)
   dedup?: DedupMode; // collapse identical files to one canonical audit (default exact)
   maxFiles?: number; // hard cap on canonical files audited (logged truncation)
   graph?: boolean; // also run cross-file rules over a dependency graph (--graph)
+  captureCoverage?: boolean; // compute scope.captureCoverage (implies a graph pass)
   noDefaultExcludes?: boolean; // also audit test/spec/story/__tests__ markup
   onWarn?: (msg: string) => void;
 }
@@ -69,6 +72,7 @@ interface Accum {
   opaqueFiles: number; // count of source files that render such components
   sfcFiles: number; // .vue/.svelte/.astro source templates audited (verdicts preliminary)
   sfcExts: Set<string>; // which SFC extensions were seen
+  captures: { file: string; provenance: CaptureProvenance }[]; // rendered capture files audited
 }
 
 // Precompute the static success criteria + their applicability predicates once.
@@ -86,6 +90,7 @@ function newAccum(): Accum {
     opaqueFiles: 0,
     sfcFiles: 0,
     sfcExts: new Set(),
+    captures: [],
   };
 }
 
@@ -122,6 +127,7 @@ export function foldDoc(acc: Accum, doc: Doc, graph?: DepGraph): void {
     const e = doc.file.toLowerCase().match(/\.[a-z]+$/)?.[0];
     if (e) acc.sfcExts.add(e);
   }
+  if (doc.capture) acc.captures.push({ file: doc.file, provenance: doc.capture });
   acc.fileCount++;
 }
 
@@ -189,6 +195,14 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
       ...(extra.dedup ? { dedup: extra.dedup } : {}),
       ...(acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {}),
       ...(acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {}),
+      ...(acc.captures.length
+        ? {
+            captures: {
+              files: acc.captures.length,
+              components: [...new Set(acc.captures.map((c) => c.provenance.component).filter((x): x is string => !!x))].sort(),
+            },
+          }
+        : {}),
     },
     guidelines,
     criteria,
@@ -215,30 +229,33 @@ function hashContent(content: string, mode: Exclude<DedupMode, "off">): string {
  *  parse → fold → discard. Bounded memory, deterministic order. */
 export function runAudit(opts: AuditInput): AuditResult {
   const acc = newAccum();
-  // Content dedup is off in --changed mode: a changed file must always be audited,
-  // and it could otherwise collapse against an unchanged file we never read.
-  const dedupMode: DedupMode = opts.changed || opts.since ? "off" : (opts.dedup ?? "exact");
+  // Content dedup is off in --changed/--staged mode: a changed file must always be
+  // audited, and it could otherwise collapse against an unchanged file we never read.
+  const dedupMode: DedupMode = opts.changed || opts.since || opts.staged ? "off" : (opts.dedup ?? "exact");
   const seen = new Set<string>();
   let duplicateFiles = 0;
   let truncated: FinalizeExtra["truncated"];
 
-  const { files } = discover(opts.inputs, {
+  const { files, gitUnavailable, stagedContent } = discover(opts.inputs, {
     include: opts.include,
     exclude: opts.exclude,
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    staged: opts.staged,
     noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn,
   });
+  // In staged mode, read the index blob (from discovery) instead of the working tree.
+  const useStaged = opts.staged === true && !gitUnavailable;
 
   // Cross-file pass: build the dependency graph over the FULL scope (so a changed
   // file's references resolve into unchanged definitions), then run cross rules in
   // the audit loop below. Off by default — a plain audit is byte-identical.
   let graph: DepGraph | undefined;
-  if (opts.graph) {
+  if (opts.graph || opts.captureCoverage) {
     const graphFiles =
-      opts.changed || opts.since
+      opts.changed || opts.since || opts.staged
         ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files
         : files;
     graph = buildGraphStreaming(graphFiles);
@@ -257,10 +274,15 @@ export function runAudit(opts: AuditInput): AuditResult {
     }
     const file = files[i]!;
     let content: string;
-    try {
-      content = readText(file);
-    } catch {
-      continue; // unreadable / vanished between discovery and read
+    const staged = useStaged ? stagedContent?.get(file) : undefined;
+    if (staged !== undefined) {
+      content = staged;
+    } else {
+      try {
+        content = readText(file);
+      } catch {
+        continue; // unreadable / vanished between discovery and read
+      }
     }
     if (dedupMode !== "off") {
       const h = hashContent(content, dedupMode);
@@ -279,8 +301,10 @@ export function runAudit(opts: AuditInput): AuditResult {
     foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }), graph);
   }
 
-  return finalize(acc, opts.inputs, {
+  const result = finalize(acc, opts.inputs, {
     ...(truncated ? { truncated } : {}),
     ...(duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}),
   });
+  if (opts.captureCoverage && graph) result.scope.captureCoverage = computeCaptureCoverage(graph, acc.captures);
+  return result;
 }

@@ -23,10 +23,35 @@ output"). Treat those verdicts as provisional: audit the rendered HTML (a static
 build is ideal for SFCs) or `scan` a live page before concluding, and refute any source
 finding the rendered DOM disproves (`verify --apply`). See `references/false-positives.md`.
 
+## Zero-touch test-render captures (recommended)
+
+Rather than hand-write a render list, let your existing tests do the rendering. Install the
+capture harvester once and every component your tests already render is serialized to a
+provenance-tagged `.html` the static engine audits at full fidelity — the real markup a
+library/SFC emits, not its source call:
+
+```
+node scripts/ultra11y.mjs render --setup     # writes .ultra11y/capture-setup.mjs + prints the runner wiring
+# wire it into your runner (Vitest: setupFiles + globals:true; Jest: setupFilesAfterEnv), then:
+npm test                                      # every rendered component → .ultra11y/captures/*.html
+node scripts/ultra11y.mjs audit              # auto-ingests .ultra11y/captures; findings attribute to the source component
+```
+
+- **Attribution.** Each capture carries `<!-- ultra11y:capture source="src/Button.tsx" component="Button" … -->`,
+  so a finding on the rendered DOM is reported against the SOURCE component, not the anonymous
+  capture file. Storybook/manual dumps with no marker still audit as plain HTML.
+- **Coverage + gate.** `render --coverage` lists which components have a capture vs which are
+  still opaque-source-only blind spots; `audit --require-captures` fails when an opaque/control
+  component lacks one — so "all components" actually get rendered-DOM coverage.
+- **Commit `.ultra11y/captures`** and stage it with the source change so `audit --staged` (the
+  pre-commit gate) verifies the real markup. `fix` never rewrites captures (generated output).
+  Add `.gitattributes`: `.ultra11y/captures/*.html text eol=lf` for stable cross-platform diffs.
+- ultra11y renders nothing itself — your test toolchain (jsdom/happy-dom) does. Disable with `ULTRA11Y_CAPTURES=off`.
+
 ## Get rendered HTML
 
 `node scripts/ultra11y.mjs render [<dir>]` detects the framework and prints the
-"build → audit" recipe for the project (and flags the libraries it detects). Three routes,
+"build → audit" recipe for the project (and flags the libraries it detects). Other routes,
 simplest to most faithful:
 
 1. **Build output** (recommended): build the site/pages, then audit the emitted HTML with the
@@ -48,7 +73,8 @@ simplest to most faithful:
 
 ## Choosing
 
-- Components / design system → static Storybook **or** SSR snapshot, then `audit`.
+- Components WITH a test suite → zero-touch captures (`render --setup`), then `audit --require-captures`.
+- Components / design system (no tests) → static Storybook **or** SSR snapshot, then `audit`.
 - Full pages / SSG → build output (`dist`/`out`), then `audit`.
 - Rendering criteria (contrast, focus, zoom) → `scan` (browser).
 - In all cases, do not conclude "conforming" on a library component from the source: that is

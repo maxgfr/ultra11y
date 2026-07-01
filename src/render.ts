@@ -133,3 +133,121 @@ for (const { name, element } of COMPONENTS) {
 if (COMPONENTS.length === 0) console.error("ultra11y-render: COMPONENTS is empty — add your components, then re-run.");
 `;
 }
+
+export interface TestRunner {
+  runner: "vitest" | "jest" | null;
+  dom: "jsdom" | "happy-dom" | null;
+}
+
+/** Detect the test runner + DOM implementation from a deps map + config-file probe, so
+ *  `render --setup` can print the exact wiring (and warn when a DOM env is missing). */
+export function detectTestRunner(deps: Record<string, string>, has: (file: string) => boolean): TestRunner {
+  const dep = (n: string): boolean => Object.hasOwn(deps, n);
+  const runner: TestRunner["runner"] =
+    dep("vitest") || has("vitest.config.ts") || has("vitest.config.js") || has("vitest.config.mjs")
+      ? "vitest"
+      : dep("jest") || has("jest.config.ts") || has("jest.config.js") || has("jest.config.cjs") || has("jest.config.mjs")
+        ? "jest"
+        : null;
+  const dom: TestRunner["dom"] = dep("jsdom") ? "jsdom" : dep("happy-dom") ? "happy-dom" : null;
+  return { runner, dom };
+}
+
+/** The zero-touch capture harvester written by `render --setup`. Added ONCE to the test
+ *  runner's setup, its global afterEach serializes every rendered component's DOM to a
+ *  provenance-tagged .html the static engine audits. Dependency-free; runs in the user's
+ *  test process (jsdom/happy-dom document + node fs), embeds no framework. */
+export function captureSetup(): string {
+  return `// ultra11y capture harvester — zero-touch rendered-DOM snapshots for accessibility audit.
+// Add this ONCE to your test runner's setup; every component your tests render is then
+// serialized to .ultra11y/captures/*.html and audited by \`ultra11y audit\`. No per-test code.
+//   Vitest: test: { environment: "jsdom", globals: true, setupFiles: [".ultra11y/capture-setup.mjs"] }
+//   Jest:   testEnvironment: "jsdom", setupFilesAfterEnv: ["<rootDir>/.ultra11y/capture-setup.mjs"]
+// List it LAST so its afterEach runs BEFORE Testing-Library cleanup empties the DOM.
+// Off: ULTRA11Y_CAPTURES=off. Custom dir: ULTRA11Y_CAPTURES=path/to/dir.
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import { dirname, relative, basename } from "node:path";
+
+const OUT = process.env.ULTRA11Y_CAPTURES || ".ultra11y/captures";
+const afterEachFn = typeof globalThis.afterEach === "function" ? globalThis.afterEach : null;
+const hasDom = typeof document !== "undefined";
+
+if (OUT !== "off" && OUT !== "0") {
+  if (!hasDom) {
+    // Not a DOM test environment — nothing to serialize. Set environment: "jsdom".
+  } else if (!afterEachFn) {
+    process.stderr.write("ultra11y capture: afterEach is not global — enable Vitest \\\`globals: true\\\` (or use Jest setupFilesAfterEnv) so captures can register.\\n");
+  } else {
+    let written = 0;
+    const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/--/g, "&#45;&#45;");
+    afterEachFn(() => {
+      try {
+        if (typeof document === "undefined" || !document.body) return;
+        const html = document.body.innerHTML;
+        if (!html || !html.trim()) return;
+        const st = (globalThis.expect && globalThis.expect.getState && globalThis.expect.getState()) || {};
+        const testPath = typeof st.testPath === "string" ? st.testPath : "";
+        const name = typeof st.currentTestName === "string" ? st.currentTestName : "";
+        const rel = testPath ? relative(process.cwd(), testPath).split("\\\\").join("/") : "";
+        const source = rel ? rel.replace(/\\.(test|spec)\\.([jt]sx?)$/i, ".$2") : "";
+        const component = source ? basename(source).replace(/\\.[jt]sx?$/i, "") : "";
+        const attrs = ['v="1"'];
+        if (source) attrs.push('source="' + esc(source) + '"');
+        if (component) attrs.push('component="' + esc(component) + '"');
+        if (rel) attrs.push('test="' + esc(rel) + '"');
+        if (name) attrs.push('name="' + esc(name) + '"');
+        const content = "<!-- ultra11y:capture " + attrs.join(" ") + " -->\\n" + html + "\\n";
+        let h = 5381;
+        const keyStr = testPath + "::" + name;
+        for (let i = 0; i < keyStr.length; i++) h = ((h << 5) + h + keyStr.charCodeAt(i)) >>> 0;
+        const file = OUT + "/" + (component || "capture") + "__" + h.toString(36) + ".html";
+        mkdirSync(dirname(file), { recursive: true });
+        if (existsSync(file) && readFileSync(file, "utf8") === content) return; // unchanged — keep byte-stable
+        writeFileSync(file, content);
+        written++;
+      } catch {
+        // never fail a user's test because a capture could not be written
+      }
+    });
+    if (typeof process.on === "function")
+      process.on("exit", () => {
+        if (written === 0)
+          process.stderr.write("ultra11y capture: 0 captures written — ensure a DOM env (jsdom) and that this setup runs before Testing-Library cleanup (list it LAST in setupFiles).\\n");
+      });
+  }
+}
+`;
+}
+
+/** Instructions printed by `render --setup` after writing the harvester. */
+export function captureSetupPlan(tr: TestRunner, path: string, lang: Lang = "en"): string {
+  const fr = lang === "fr";
+  const out: string[] = [];
+  out.push(fr ? `Harnais de capture écrit : ${path}` : `Capture harvester written: ${path}`);
+  out.push("");
+  if (tr.runner === "jest") {
+    out.push(fr ? "Jest — ajoutez à votre config :" : "Jest — add to your config:");
+    out.push(`  testEnvironment: "jsdom",`);
+    out.push(`  setupFilesAfterEnv: ["<rootDir>/${path}"]   // ${fr ? "PAS setupFiles (afterEach doit exister)" : "NOT setupFiles (afterEach must exist)"}`);
+  } else {
+    out.push(fr ? "Vitest — ajoutez à vitest.config.ts (test:) :" : "Vitest — add to vitest.config.ts (test:):");
+    out.push(`  environment: "jsdom",`);
+    out.push(
+      `  globals: true,   // ${fr ? "requis : sans ça, afterEach n'est pas global et rien n'est capturé" : "required: without it afterEach is not global and nothing is captured"}`,
+    );
+    out.push(`  setupFiles: ["${path}"],   // ${fr ? "en DERNIER (avant le cleanup Testing-Library)" : "list LAST (before Testing-Library cleanup)"}`);
+  }
+  out.push("");
+  if (!tr.dom)
+    out.push(
+      fr
+        ? "⚠️ Aucun jsdom/happy-dom détecté — installez-en un et activez l'environnement DOM."
+        : "⚠️ No jsdom/happy-dom detected — install one and enable the DOM environment.",
+    );
+  out.push(fr ? "Puis : lancez vos tests, committez .ultra11y/captures, et auditez :" : "Then: run your tests, commit .ultra11y/captures, and audit:");
+  out.push(`  node scripts/ultra11y.mjs audit --require-captures        # ${fr ? "gate : composants sans capture" : "gate: components lacking a capture"}`);
+  out.push(
+    `  git add .gitattributes .ultra11y   # ${fr ? "captures = sortie générée ; .gitattributes text eol=lf conseillé" : "captures = generated output; add .gitattributes text eol=lf"}`,
+  );
+  return out.join("\n");
+}

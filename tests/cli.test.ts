@@ -105,6 +105,15 @@ describe("main — command wiring", () => {
     expect(parseArgs(["prd", "--in", "a.json", "--gh-issues"]).flags["gh-issues"]).toBe(true);
     expect(parseArgs(["prd", "--in", "a.json", "--gh-single"]).flags["gh-single"]).toBe(true);
   });
+  it("parses --staged/--safe as boolean flags (not value flags)", () => {
+    const a = parseArgs(["audit", "--staged", "--fail-on", "blocking"]);
+    expect(a.flags.staged).toBe(true);
+    expect(a.flags["fail-on"]).toBe("blocking"); // --staged did not swallow the next token
+    const f = parseArgs(["fix", "--staged", "--write", "--safe"]);
+    expect(f.flags.staged).toBe(true);
+    expect(f.flags.safe).toBe(true);
+    expect(f.flags.write).toBe(true);
+  });
   it("render --json prints framework detection and exits 0", async () => {
     const r = await run(["render", ".", "--json"]);
     expect(r.code).toBe(0);
@@ -185,6 +194,56 @@ describe("audit --fail-on gates a standalone audit (no --baseline)", () => {
   it("still exits 0 without --fail-on even with NCs", async () => {
     const r = await run(["audit", `${FIX}non-conforming/bad.html`, "--out", join(tmpdir(), "u11y-cli2"), "--json"]);
     expect(r.code).toBe(0);
+  });
+});
+
+describe("rendered captures — flags, coverage gate & render --coverage", () => {
+  const PROJ = `${FIX}capture-project`;
+  const CAPS = `${PROJ}/.ultra11y/captures`;
+
+  it("parses --captures as a value flag and --no-captures/--require-captures as booleans", () => {
+    const a = parseArgs(["audit", "src", "--captures", "caps", "--require-captures", "--fail-on", "blocking"]);
+    expect(a.flags.captures).toBe("caps");
+    expect(a.flags["require-captures"]).toBe(true);
+    expect(a.flags["fail-on"]).toBe("blocking"); // --require-captures did not swallow it
+    expect(parseArgs(["audit", "src", "--no-captures"]).flags["no-captures"]).toBe(true);
+    expect(parseArgs(["render", ".", "--coverage"]).flags.coverage).toBe(true);
+    expect(parseArgs(["render", ".", "--setup"]).flags.setup).toBe(true);
+  });
+
+  it("audit --require-captures exits 1 when a component lacks a capture", async () => {
+    const r = await run(["audit", `${PROJ}/src`, "--require-captures", "--captures", CAPS]);
+    expect(r.code).toBe(1);
+    expect(r.err).toContain("Menu"); // blind-spot component named
+  });
+
+  it("audit --require-captures exits 0 when every in-scope component is covered", async () => {
+    const r = await run(["audit", `${PROJ}/src/Button.tsx`, "--require-captures", "--captures", CAPS]);
+    expect(r.code).toBe(0);
+  });
+
+  it("render --coverage --json reports covered vs blind-spot components", async () => {
+    const r = await run(["render", PROJ, "--coverage", "--json"]);
+    expect(r.code).toBe(0);
+    const cov = JSON.parse(r.out);
+    expect(cov.total).toBe(3);
+    expect(cov.covered.some((k: string) => k.endsWith("Button.tsx#Button"))).toBe(true);
+    expect(cov.blindSpots).toHaveLength(2);
+    expect(cov.unattributed).toBe(1);
+  });
+
+  it("render --setup writes the harvester and prints runner wiring", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-setup-"));
+    try {
+      const r = await run(["render", tmp, "--setup"]);
+      expect(r.code).toBe(0);
+      const written = join(tmp, ".ultra11y/capture-setup.mjs");
+      expect(existsSync(written)).toBe(true);
+      expect(readFileSync(written, "utf8")).toContain("ultra11y:capture");
+      expect(r.out).toContain("capture-setup.mjs");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
 

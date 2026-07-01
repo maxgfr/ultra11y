@@ -50,6 +50,8 @@ const L = {
       `Verdict source préliminaire : ${n} fichier(s) rendent des composants de bibliothèque (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
     sourceTemplate: (n: number, exts: string) =>
       `Verdict source préliminaire : ${n} composant(s) ${exts} audité(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique — auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
+    captures: (n: number) => `${n} fichier(s) de capture rendus audités à pleine fidélité (DOM réel) — le vrai HTML produit, pas l'appel de composant.`,
+    captureOf: (comp: string, src: string) => `capture rendue de \`${comp}\` — source \`${src}\``,
   },
   en: {
     title: (std: string) => `Accessibility audit report — ${std}`,
@@ -86,6 +88,8 @@ const L = {
       `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
     sourceTemplate: (n: number, exts: string) =>
       `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis — audit the rendered output (\`render\` / \`scan\`) before concluding.`,
+    captures: (n: number) => `${n} rendered capture file(s) audited at full fidelity (real DOM) — the true produced HTML, not the component call.`,
+    captureOf: (comp: string, src: string) => `rendered capture of \`${comp}\` — source \`${src}\``,
   },
 } as const;
 
@@ -104,8 +108,12 @@ interface Group {
   rows: Row[];
 }
 
-function ncEntry(label: string, f: Finding, fixLabel: string): string {
-  return `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${f.message}\n  - _${fixLabel} :_ ${f.remediation}`;
+function ncEntry(label: string, f: Finding, s: (typeof L)[Lang]): string {
+  const base = `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${f.message}\n  - _${s.fix} :_ ${f.remediation}`;
+  if (!f.origin) return base;
+  const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
+  const src = f.origin.sourceFile ?? f.origin.capture;
+  return `${base}\n  - _${s.captureOf(comp, src)}_`;
 }
 
 // Shared renderer over normalized groups/rows — keeps the WCAG and pack reports identical
@@ -124,6 +132,7 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   if (r.scope.truncated) out.push(`> ✂️ ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> 🧩 ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
   if (r.scope.sourceTemplate) out.push(`> 🧩 ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
+  if (r.scope.captures) out.push(`> ✅ ${s.captures(r.scope.captures.files)}`, "");
 
   const rows = opts.groups.flatMap((g) => g.rows);
   const labelOf = new Map(rows.map((row) => [row.id, row.label]));
@@ -163,7 +172,7 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
       const group = sorted.filter((x) => x.f.severity === sev);
       if (!group.length) continue;
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const { f, label } of group) out.push(ncEntry(label, f, s.fix));
+      for (const { f, label } of group) out.push(ncEntry(label, f, s));
       out.push("");
     }
   }

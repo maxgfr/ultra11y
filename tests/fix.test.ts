@@ -108,6 +108,17 @@ describe("fix — dry-run vs write", () => {
     expect(ids.has("lang-invalid")).toBe(false); // and no NEW non-conformity swapped in
   });
 
+  it("never rewrites a rendered capture file (generated output)", () => {
+    const d = tmp();
+    const f = join(d, "Button__x.html");
+    const before = `<!-- ultra11y:capture v="1" source="src/Button.tsx" component="Button" -->\n<button role="button" tabindex="5">go</button>`;
+    writeFileSync(f, before);
+    const r = runFix({ inputs: [f], write: true });
+    expect(readFileSync(f, "utf8")).toBe(before); // untouched despite auto-fixable findings
+    expect(r.files[0]?.written).toBe(false);
+    expect(r.files[0]?.items).toHaveLength(0); // capture skipped entirely — no fix items
+  });
+
   it("--only limits which rules are auto-applied", () => {
     const d = tmp();
     const f = join(d, "p.html");

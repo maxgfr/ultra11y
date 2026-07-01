@@ -7,6 +7,7 @@ import { parseHtml, type Doc } from "./html.js";
 import { jsxToHtml } from "./jsx.js";
 import { parseJsxAst } from "./jsx-ast.js";
 import { jsxAstToDoc } from "./jsx-bridge.js";
+import { parseCaptureProvenance } from "../capture.js";
 
 export type SourceKind = "html" | "jsx" | "sfc";
 
@@ -29,5 +30,12 @@ export function parseSource(source: string, file: string, opts: { forceJsx?: boo
   }
   // SFC templates parse as HTML but keep component case (preserveCase) and a
   // distinct kind so the injected-content guards treat them like JSX, not HTML.
-  return parseHtml(source, file, false, kind === "sfc");
+  const doc = parseHtml(source, file, false, kind === "sfc");
+  // A rendered capture is real HTML (kind "html"): attach its provenance so findings
+  // are re-attributed to the source component. SFC/JSX are source, never captures.
+  if (kind === "html") {
+    const capture = parseCaptureProvenance(source);
+    if (capture) doc.capture = capture;
+  }
+  return doc;
 }

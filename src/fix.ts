@@ -8,7 +8,7 @@
 // stays proposal-only (its offsets index the transformed string, not the file).
 import { writeFileSync } from "node:fs";
 import type { Finding, Lang } from "./types.js";
-import { discover } from "./discover.js";
+import { discover, hasUnstagedChanges, gitAdd } from "./discover.js";
 import { parseSource } from "./parse/source.js";
 import { runRules } from "./rules/registry.js";
 import { readText } from "./util.js";
@@ -25,6 +25,8 @@ export interface FixInput {
   ext?: string[];
   changed?: boolean;
   since?: string;
+  staged?: boolean; // fix exactly the staged index snapshot; re-stage written files
+  safe?: boolean; // apply only genuinely-automatic codemods (skip placeholder/proposal)
   only?: string[]; // limit to these ruleIds
   write?: boolean; // default false → dry-run
   noDefaultExcludes?: boolean; // also fix test/spec/story/__tests__ markup
@@ -47,19 +49,33 @@ export interface FileFix {
   applied: number; // edits applied (auto + placeholder)
   written: boolean;
   regression: boolean; // gate tripped → not written
+  restaged?: boolean; // staged mode: written fix re-staged (git add)
+  skippedPartialStage?: boolean; // staged mode: had unstaged edits → not written (unsafe to re-stage)
 }
 
 export interface FixResult {
   files: FileFix[];
-  totals: { auto: number; placeholder: number; proposal: number; filesWritten: number; regressions: number };
+  totals: {
+    auto: number;
+    placeholder: number;
+    proposal: number;
+    filesWritten: number;
+    regressions: number;
+    filesRestaged: number;
+    partialStageSkipped: number;
+  };
 }
 
 function itemOf(f: Finding): FixItem {
   return { ruleId: f.ruleId, criteriaId: f.criteriaId, line: f.line, selectorHint: f.selectorHint, fixability: fixabilityOf(f.ruleId) };
 }
 
-function fixOne(file: string, source: string, opts: FixInput): FileFix {
+function fixOne(file: string, source: string, opts: FixInput, canWrite = true): FileFix {
   const doc = parseSource(source, file, { forceJsx: opts.forceJsx });
+  // Rendered captures are GENERATED output (serialized DOM). A codemod on them is
+  // meaningless and would be clobbered on the next test run — and in --staged mode we
+  // must never rewrite/re-stage a capture. Skip entirely (no items, no edits).
+  if (doc.capture) return { file, lossy: doc.lossy, items: [], diff: "", applied: 0, written: false, regression: false };
   const findings = runRules(doc);
   const items = findings.map(itemOf);
 
@@ -72,6 +88,10 @@ function fixOne(file: string, source: string, opts: FixInput): FileFix {
   if (!doc.lossy) {
     for (const f of findings) {
       if (opts.only && !opts.only.includes(f.ruleId)) continue;
+      // --safe: apply only genuinely-automatic codemods. Placeholder inserts (alt="TODO",
+      // lang="und", title="TODO") mechanically clear a finding with a stub that still
+      // needs a human/AI value — so skip them here, leaving those findings for the gate.
+      if (opts.safe && fixabilityOf(f.ruleId) !== "auto") continue;
       const cm = CODEMODS[f.ruleId];
       if (!cm?.build || f.sourceStart === undefined) continue;
       if (isJsxAst && !cm.jsxSafe) continue;
@@ -85,6 +105,7 @@ function fixOne(file: string, source: string, opts: FixInput): FileFix {
   let applied = 0;
   let written = false;
   let regression = false;
+  let skippedPartialStage = false;
 
   if (edits.length) {
     const { output, applied: n } = applyEdits(source, edits);
@@ -97,45 +118,70 @@ function fixOne(file: string, source: string, opts: FixInput): FileFix {
     const beforeKinds = new Set(findings.map((f) => f.ruleId));
     regression = after.length > findings.length || after.some((f) => !beforeKinds.has(f.ruleId));
     if (opts.write && !regression && file !== "<stdin>") {
-      writeFileSync(file, output);
-      written = true;
+      if (canWrite) {
+        writeFileSync(file, output);
+        written = true;
+      } else {
+        // Staged mode + unstaged edits: writing index-derived output over the working
+        // tree (and re-staging it) would silently stage those edits. Leave it to a human.
+        skippedPartialStage = true;
+        opts.onWarn?.(`ultra11y fix: ${file} has unstaged edits — not auto-fixed/re-staged; fix and stage it manually.`);
+      }
     }
     if (regression) opts.onWarn?.(`ultra11y fix: ${file} not written — fix would introduce a new non-conformity (regression gate).`);
   }
 
-  return { file, lossy: doc.lossy, items, diff, applied, written, regression };
+  return { file, lossy: doc.lossy, items, diff, applied, written, regression, ...(skippedPartialStage ? { skippedPartialStage } : {}) };
 }
 
 export function runFix(opts: FixInput): FixResult {
-  const { files } = discover(opts.inputs, {
+  const { files, gitUnavailable, stagedContent } = discover(opts.inputs, {
     include: opts.include,
     exclude: opts.exclude,
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    staged: opts.staged,
     noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn,
   });
+  const useStaged = opts.staged === true && !gitUnavailable;
 
   const out: FileFix[] = [];
   for (const file of files) {
     let src: string;
-    try {
-      src = readText(file);
-    } catch {
-      continue;
+    if (useStaged) {
+      const c = stagedContent?.get(file);
+      if (c === undefined) continue;
+      src = c;
+    } else {
+      try {
+        src = readText(file);
+      } catch {
+        continue;
+      }
     }
-    out.push(fixOne(file, src, opts));
+    // Only auto-fix + re-stage files whose working tree already matches the index;
+    // a partially-staged file is left untouched (its findings keep the gate blocking).
+    const canWrite = !(useStaged && hasUnstagedChanges(file));
+    const ff = fixOne(file, src, opts, canWrite);
+    if (useStaged && ff.written) {
+      gitAdd(file);
+      ff.restaged = true;
+    }
+    out.push(ff);
   }
   if (opts.inputs.includes("-") && opts.stdin !== undefined) {
     out.push(fixOne("<stdin>", opts.stdin, { ...opts, write: false }));
   }
 
-  const totals = { auto: 0, placeholder: 0, proposal: 0, filesWritten: 0, regressions: 0 };
+  const totals = { auto: 0, placeholder: 0, proposal: 0, filesWritten: 0, regressions: 0, filesRestaged: 0, partialStageSkipped: 0 };
   for (const ff of out) {
     for (const it of ff.items) totals[it.fixability]++;
     if (ff.written) totals.filesWritten++;
     if (ff.regression) totals.regressions++;
+    if (ff.restaged) totals.filesRestaged++;
+    if (ff.skippedPartialStage) totals.partialStageSkipped++;
   }
   return { files: out, totals };
 }
@@ -152,8 +198,8 @@ export function fixSummary(r: FixResult, lang: Lang = "fr", write = false): stri
   const t = r.totals;
   const head =
     lang === "fr"
-      ? `${write ? "Corrections appliquées" : "Corrections proposées (dry-run)"} : ${t.auto} auto, ${t.placeholder} à compléter, ${t.proposal} jugement · ${t.filesWritten} fichier(s) écrit(s)${t.regressions ? `, ${t.regressions} bloqué(s) par le garde anti-régression` : ""}.`
-      : `${write ? "Fixes applied" : "Proposed fixes (dry-run)"}: ${t.auto} auto, ${t.placeholder} fill-in, ${t.proposal} judgment · ${t.filesWritten} file(s) written${t.regressions ? `, ${t.regressions} blocked by the regression gate` : ""}.`;
+      ? `${write ? "Corrections appliquées" : "Corrections proposées (dry-run)"} : ${t.auto} auto, ${t.placeholder} à compléter, ${t.proposal} jugement · ${t.filesWritten} fichier(s) écrit(s)${t.filesRestaged ? `, ${t.filesRestaged} re-stagé(s)` : ""}${t.regressions ? `, ${t.regressions} bloqué(s) par le garde anti-régression` : ""}${t.partialStageSkipped ? `, ${t.partialStageSkipped} ignoré(s) (modifs non-stagées)` : ""}.`
+      : `${write ? "Fixes applied" : "Proposed fixes (dry-run)"}: ${t.auto} auto, ${t.placeholder} fill-in, ${t.proposal} judgment · ${t.filesWritten} file(s) written${t.filesRestaged ? `, ${t.filesRestaged} re-staged` : ""}${t.regressions ? `, ${t.regressions} blocked by the regression gate` : ""}${t.partialStageSkipped ? `, ${t.partialStageSkipped} skipped (unstaged edits)` : ""}.`;
   out.push(head, "");
   for (const ff of r.files) {
     const fixable = ff.items.filter((i) => i.fixability !== "proposal");

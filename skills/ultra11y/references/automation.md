@@ -1,41 +1,104 @@
 # Automate in the repo — `init` (hook / CI)
 
-ultra11y can stay an **on-demand** skill, or become a **regression gate** that runs on its own.
-`init` wires both (zero-dependency, no husky):
+ultra11y can stay an **on-demand** skill, or become a **gate** that runs on its own.
+`init` wires it (zero-dependency, no husky):
 
 ```
-node scripts/ultra11y.mjs init --baseline      # writes audits/baseline.json (the reference)
-node scripts/ultra11y.mjs init --hook          # .git/hooks/pre-commit
-node scripts/ultra11y.mjs init --ci            # .github/workflows/a11y.yml
-node scripts/ultra11y.mjs init                 # default: --hook + --baseline
+node scripts/ultra11y.mjs init --hook          # .git/hooks/pre-commit — strict STAGED gate (default)
+node scripts/ultra11y.mjs init                 # same as --hook
+node scripts/ultra11y.mjs init --ci            # .github/workflows/a11y.yml (PR diff vs base)
+node scripts/ultra11y.mjs init --baseline …    # opt into the legacy regression gate (below)
 ```
 
-## The principle: only block regressions
+## Default: strict staged snapshot + safe auto-fix
 
-The hook and CI actually run:
+The default pre-commit hook operates on **exactly what is about to be committed** — the
+**staged index blobs**, read with `git show :./<path>`, *not* the working-tree copy.
+It runs (fix first, then gate — so safe fixes are always applied, and only the judgment
+issues that remain can block):
 
 ```
-node scripts/ultra11y.mjs audit --changed --baseline audits/baseline.json --fail-on blocking
+node scripts/ultra11y.mjs fix   --staged --write --safe            # auto-apply SAFE fixes to the staged snapshot, re-stage
+node scripts/ultra11y.mjs audit --staged --fail-on blocking        # gate: block only if issues remain (need judgment)
 ```
 
-- `--changed` (or `--since <ref>` in CI) restricts the audit to the **diff** — proportional to
-  the change, not the repo.
-- `--baseline audits/baseline.json` is the committed snapshot of the known state. The gate
-  **only fails on NEW** non-conformities introduced by the diff, never on the existing backlog.
-  Stable finding identity: `(rule, criterion, file, source range)` — robust to line drift.
-- `--fail-on blocking|major|minor` sets the blocking threshold (default: `blocking`; the French
-  aliases `bloquant|majeur|mineur` are also accepted).
+Why fix-first: every auto-fixable rule (positive `tabindex`, redundant `role`,
+zoom-blocking viewport) is `major`/`minor`, while the `blocking` findings (missing `alt`,
+missing label) are exactly the ones a codemod must **not** guess. So the safe pass cleans
+up and re-stages what it can, and the gate blocks only on the human-judgment remainder.
 
-## Setup
+- **`--staged`** scopes to staged adds/mods only (not untracked, not unstaged-only edits)
+  and audits the exact bytes a commit would record — including `.gitattributes` clean
+  filters. `--staged` wins over `--changed`/`--since`.
+- **`--safe`** applies only genuinely-**automatic** codemods. Placeholder inserts
+  (`alt="TODO"`, `lang="und"`, `title="TODO"`) are **not** applied: a stub would clear the
+  finding mechanically while still needing a real value, so those (and judgment proposals)
+  are left in place and keep the gate blocking.
+- **Auto-fix + re-stage** happens only for **fully-staged** files (working tree == index).
+  A **partially-staged** file (unstaged edits present) is left untouched — writing
+  index-derived output over it and `git add`-ing would silently stage those edits — so its
+  findings keep the gate blocking with a message to stage/fix it manually.
+- The commit proceeds only when no blocking issue remains after the safe pass. One-off
+  bypass: `SKIP_A11Y=1 git commit …`. Engine path override: `ULTRA11Y=/path/to/ultra11y.mjs`.
 
-1. `init --baseline` then **commit `audits/baseline.json`** (without a reference, any diff
-   non-conformity at the threshold blocks).
-2. `init --hook` for the local gate (pre-commit). One-off bypass: `SKIP_A11Y=1 git commit …`.
-   When the hook flags, open the cited code, complete the judgment, or run `fix --changed
-   --write` (see `references/fix.md`).
-3. `init --ci` for the PR gate (GitHub Actions, on the diff vs the target branch).
-4. Refresh the baseline as you burn down backlog: `init --baseline` again.
+**When the hook blocks on judgment issues** (alt relevance, link purpose, labels,
+heading structure) the agent should: open the cited **staged** code, apply the *real*
+fix (not a placeholder), `git add` the file, and re-commit — or run `fix --staged
+--write` to lay down placeholders and then fill them in.
 
-> The gate relies on the static engine. The **rendering** (contrast, focus, zoom) and
-> **judgment** criteria still need checking in the full audit — the gate stops mechanical
-> regressions, it does not replace human review.
+## MUST: the FINAL, rendered semantic HTML has to be correct
+
+The static engine only sees **source**. When markup comes from a **component library**
+(DSFR, MUI, Chakra…) or a `.vue`/`.svelte`/`.astro` SFC, the real **semantic HTML** only
+exists **after rendering** — the source `<Button/>` tells you nothing about the `<button>`
+(or `<div role>`) it emits. A green staged gate on opaque component source is **not**
+proof of an accessible result.
+
+**So make the produced semantic HTML the thing you gate — with rendered CAPTURES.** A
+capture is the *rendered* DOM serialized to `.html` and committed, so the gate audits the
+true markup, not the component call. Zero-touch setup (your tests do the rendering):
+
+```
+node scripts/ultra11y.mjs render --setup             # install the capture harvester into your test runner
+npm test                                              # every rendered component → .ultra11y/captures/*.html (provenance-tagged)
+node scripts/ultra11y.mjs audit --require-captures    # gate: every opaque/control component must have a capture
+```
+
+- **Attribution + coverage.** A finding on a capture is reported against the SOURCE
+  component (via its `<!-- ultra11y:capture … -->` provenance), not the capture file.
+  `render --coverage` shows covered vs blind-spot components; `--require-captures` turns any
+  remaining blind spot into a failure.
+- **Stage the captures alongside the source change** so `audit --staged` covers them — the
+  gate then sees the real `<button>`/`<nav>`/heading structure/labels, catching regressions
+  the opaque source hides. `fix` never rewrites captures (generated output). Storybook/build
+  HTML and manual Testing-Library dumps also work — anything under `.ultra11y/captures`, or
+  point `--captures <dir>`.
+- In CI, audit the **built** output (`audit "dist/**/*.html"`), and use `scan` for the
+  computed rendering criteria (contrast, focus, zoom). See `references/rendered.md`.
+
+Treat this as a hard rule: **do not sign off on a component/SFC change from the source
+audit alone — verify the rendered semantic HTML, and prefer committed captures so the
+gate keeps verifying it.**
+
+## Opt-in: baseline regression gate (legacy)
+
+For large existing backlogs, keep the original "only block NEW regressions" gate. It is
+opt-in via `--baseline` (or an explicit `--fail-on`), and is what `--ci` uses:
+
+```
+node scripts/ultra11y.mjs init --baseline      # writes audits/baseline.json (commit it)
+node scripts/ultra11y.mjs init --hook --baseline
+node scripts/ultra11y.mjs init --ci            # audit --since <base> --baseline … in Actions
+```
+
+The hook/CI then run `audit --changed --baseline audits/baseline.json --fail-on blocking`:
+the audit is restricted to the **diff**, and only **NEW** non-conformities at/above the
+threshold fail — the existing backlog never blocks. Finding identity `(rule, criterion,
+file, source range)` is robust to line drift. **Commit `audits/baseline.json`** (add a
+`!audits/baseline.json` negation if `audits/` is git-ignored) and refresh it as you burn
+down backlog. `--fail-on blocking|major|minor` sets the threshold (French aliases
+`bloquant|majeur|mineur` accepted).
+
+> Either gate relies on the **static** engine. The **rendering** (contrast, focus, zoom)
+> and **judgment** criteria still need checking in the full audit — the gate stops
+> mechanical regressions, it does not replace human review.

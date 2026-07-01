@@ -2,7 +2,7 @@
 
 // src/cli.ts
 import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync8 } from "fs";
-import { join as join11, relative as relative3, sep as sep2 } from "path";
+import { join as join11, relative as relative3, sep as sep2, dirname as dirname4 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -18134,6 +18134,217 @@ function opaqueLibrarySpecifiers(ast, elements) {
   return [...opaque].sort();
 }
 
+// src/glob.ts
+import { existsSync, readdirSync, statSync } from "fs";
+import { join, sep } from "path";
+
+// src/util.ts
+import { readFileSync } from "fs";
+import { extname } from "path";
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function today() {
+  return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+}
+function readText(path) {
+  return readFileSync(path, "utf8");
+}
+function ext(path) {
+  return extname(path).toLowerCase();
+}
+async function readStdin() {
+  const chunks = [];
+  for await (const chunk of process.stdin) chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+// src/glob.ts
+var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
+function extSet(extra) {
+  const set = new Set(DEFAULT_EXT);
+  for (const raw of extra ?? []) {
+    for (const e of raw.split(",")) {
+      const t2 = e.trim().toLowerCase();
+      if (t2) set.add(t2.startsWith(".") ? t2 : `.${t2}`);
+    }
+  }
+  return set;
+}
+var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
+var TEST_DIR = /* @__PURE__ */ new Set(["__tests__", "__mocks__", ".storybook"]);
+var TEST_FILE = /\.(test|spec|stories|story|cy)\.[^./]+$/i;
+function isTestArtifact(rel) {
+  if (TEST_FILE.test(rel)) return true;
+  return rel.split("/").some((seg) => TEST_DIR.has(seg));
+}
+function globToRegExp(glob) {
+  let re = "";
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === "*") {
+      if (glob[i + 1] === "*") {
+        i++;
+        if (glob[i + 1] === "/") {
+          i++;
+          re += "(?:.*/)?";
+        } else {
+          re += ".*";
+        }
+      } else {
+        re += "[^/]*";
+      }
+    } else if (c === "?") {
+      re += "[^/]";
+    } else {
+      re += escapeRegExp(c);
+    }
+  }
+  return new RegExp(`^${re}$`);
+}
+function compileGlobs(globs) {
+  if (!globs || globs.length === 0) return null;
+  const res = globs.flatMap((g) => g.split(",")).map((g) => g.trim()).filter(Boolean).map(globToRegExp);
+  return (rel) => res.some((r) => r.test(rel));
+}
+var toPosix = (p) => p.split(sep).join("/");
+var hasGlob = (s) => /[*?]/.test(s);
+function makeFilter(opts = {}) {
+  const include = compileGlobs(opts.include);
+  const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
+  return (file) => {
+    if (!exts.has(ext(file))) return false;
+    const rel = toPosix(file);
+    if (include && !include(rel)) return false;
+    if (exclude?.(rel)) return false;
+    if (!opts.noDefaultExcludes && isTestArtifact(rel) && !(include && include(rel))) return false;
+    return true;
+  };
+}
+function inScopeMatcher(inputs) {
+  const scopes = inputs.filter((i) => i !== "-" && i !== ".");
+  if (!scopes.length) return null;
+  const globMatch = compileGlobs(scopes.filter(hasGlob));
+  const prefixes = scopes.filter((i) => !hasGlob(i)).map((p) => toPosix(p).replace(/\/+$/, ""));
+  return (file) => {
+    const rel = toPosix(file);
+    if (globMatch?.(rel)) return true;
+    return prefixes.some((p) => rel === p || rel.startsWith(`${p}/`));
+  };
+}
+function walk(dir, acc) {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const e of entries) {
+    if (e.isDirectory()) {
+      if (SKIP_DIR.has(e.name)) continue;
+      walk(join(dir, e.name), acc);
+    } else if (e.isFile()) {
+      acc.push(join(dir, e.name));
+    }
+  }
+}
+function staticBase(glob) {
+  const idx = glob.search(/[*?]/);
+  const head = idx === -1 ? glob : glob.slice(0, idx);
+  const slash = head.lastIndexOf("/");
+  return slash === -1 ? "." : head.slice(0, slash) || ".";
+}
+function expandInputs(inputs, opts = {}) {
+  const include = compileGlobs(opts.include);
+  const exclude = compileGlobs(opts.exclude);
+  const exts = extSet(opts.ext);
+  const files = /* @__PURE__ */ new Set();
+  const explicit = /* @__PURE__ */ new Set();
+  for (const input of inputs) {
+    if (input === "-") continue;
+    if (hasGlob(input)) {
+      const re = globToRegExp(input);
+      const acc = [];
+      walk(staticBase(input), acc);
+      for (const f of acc) if (re.test(toPosix(f)) && exts.has(ext(f))) files.add(f);
+    } else if (existsSync(input)) {
+      if (statSync(input).isDirectory()) {
+        const acc = [];
+        walk(input, acc);
+        for (const f of acc) if (exts.has(ext(f))) files.add(f);
+      } else if (exts.has(ext(input))) {
+        files.add(input);
+        explicit.add(input);
+      }
+    }
+  }
+  let list = [...files];
+  if (include) list = list.filter((f) => include(toPosix(f)));
+  if (exclude) list = list.filter((f) => !exclude(toPosix(f)));
+  if (!opts.noDefaultExcludes) {
+    const before = list.length;
+    list = list.filter((f) => {
+      const rel = toPosix(f);
+      return !isTestArtifact(rel) || explicit.has(f) || include != null && include(rel);
+    });
+    const dropped = before - list.length;
+    if (dropped) opts.onWarn?.(`ultra11y: skipped ${dropped} test/spec/story file(s) \u2014 pass --no-default-excludes to audit them.`);
+  }
+  return list.sort();
+}
+
+// src/capture.ts
+function unescapeCommentValue(s) {
+  return s.replace(/&#45;/g, "-").replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+}
+var SCAN_LIMIT = 4096;
+var MARKER = /<!--\s*ultra11y:capture\b([\s\S]*?)-->/;
+var PAIR = /(\w+)="([^"]*)"/g;
+function parseCaptureProvenance(source) {
+  const head = source.length > SCAN_LIMIT ? source.slice(0, SCAN_LIMIT) : source;
+  const m = MARKER.exec(head);
+  if (!m) return void 0;
+  const body = m[1] ?? "";
+  const kv = /* @__PURE__ */ new Map();
+  PAIR.lastIndex = 0;
+  for (let p = PAIR.exec(body); p; p = PAIR.exec(body)) {
+    kv.set(p[1], unescapeCommentValue(p[2]));
+  }
+  const vRaw = kv.get("v");
+  const v = vRaw ? Number.parseInt(vRaw, 10) : 1;
+  return {
+    v: Number.isFinite(v) ? v : 1,
+    ...kv.has("source") ? { sourceFile: kv.get("source") } : {},
+    ...kv.has("component") ? { component: kv.get("component") } : {},
+    ...kv.has("test") ? { test: kv.get("test") } : {},
+    ...kv.has("name") ? { name: kv.get("name") } : {}
+  };
+}
+function pathMatch(a, b) {
+  return a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+}
+function computeCaptureCoverage(graph, captures) {
+  const sigs = captures.map((c) => c.provenance).filter((p) => !!p?.sourceFile).map((p) => ({ sourceFile: toPosix(p.sourceFile), component: p.component }));
+  const covered = [];
+  const blindSpots = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const node of graph.nodes.values()) {
+    const opaque = node.opaqueComponents.length > 0;
+    for (const def of new Set(node.components.values())) {
+      if (!def.hasControl && !opaque) continue;
+      const key = `${node.file}#${def.name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const isCovered = sigs.some((s) => pathMatch(s.sourceFile, node.file) && (!s.component || s.component === def.name || def.name === "default"));
+      (isCovered ? covered : blindSpots).push(key);
+    }
+  }
+  covered.sort();
+  blindSpots.sort();
+  return { total: covered.length + blindSpots.length, covered, blindSpots, unattributed: captures.filter((c) => !c.provenance?.sourceFile).length };
+}
+
 // src/parse/source.ts
 function detectKind(file, forceJsx = false) {
   if (forceJsx) return "jsx";
@@ -18148,7 +18359,12 @@ function parseSource(source, file, opts = {}) {
     if (ast) return jsxAstToDoc(ast, source, file);
     return parseHtml(jsxToHtml(source), file, true);
   }
-  return parseHtml(source, file, false, kind === "sfc");
+  const doc = parseHtml(source, file, false, kind === "sfc");
+  if (kind === "html") {
+    const capture = parseCaptureProvenance(source);
+    if (capture) doc.capture = capture;
+  }
+  return doc;
 }
 
 // src/rules/rule.ts
@@ -18199,7 +18415,10 @@ function toFinding(doc, ruleId, def, rf) {
     // edit by range and baseline diffing falls back to line/selector identity.
     ...doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end },
     // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human verification.
-    ...doc.kind === "sfc" ? { preliminary: true } : {}
+    ...doc.kind === "sfc" ? { preliminary: true } : {},
+    // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
+    // to the source component recorded in the capture's provenance.
+    ...doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}
   };
 }
 
@@ -20066,168 +20285,6 @@ function crossToFinding(doc, ruleId, def, cf) {
 
 // src/graph/resolve.ts
 import { dirname, join as join2 } from "path";
-
-// src/glob.ts
-import { existsSync, readdirSync, statSync } from "fs";
-import { join, sep } from "path";
-
-// src/util.ts
-import { readFileSync } from "fs";
-import { extname } from "path";
-function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-function today() {
-  return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-}
-function readText(path) {
-  return readFileSync(path, "utf8");
-}
-function ext(path) {
-  return extname(path).toLowerCase();
-}
-async function readStdin() {
-  const chunks = [];
-  for await (const chunk of process.stdin) chunks.push(chunk);
-  return Buffer.concat(chunks).toString("utf8");
-}
-
-// src/glob.ts
-var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
-function extSet(extra) {
-  const set = new Set(DEFAULT_EXT);
-  for (const raw of extra ?? []) {
-    for (const e of raw.split(",")) {
-      const t2 = e.trim().toLowerCase();
-      if (t2) set.add(t2.startsWith(".") ? t2 : `.${t2}`);
-    }
-  }
-  return set;
-}
-var SKIP_DIR = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits"]);
-var TEST_DIR = /* @__PURE__ */ new Set(["__tests__", "__mocks__", ".storybook"]);
-var TEST_FILE = /\.(test|spec|stories|story|cy)\.[^./]+$/i;
-function isTestArtifact(rel) {
-  if (TEST_FILE.test(rel)) return true;
-  return rel.split("/").some((seg) => TEST_DIR.has(seg));
-}
-function globToRegExp(glob) {
-  let re = "";
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i];
-    if (c === "*") {
-      if (glob[i + 1] === "*") {
-        i++;
-        if (glob[i + 1] === "/") {
-          i++;
-          re += "(?:.*/)?";
-        } else {
-          re += ".*";
-        }
-      } else {
-        re += "[^/]*";
-      }
-    } else if (c === "?") {
-      re += "[^/]";
-    } else {
-      re += escapeRegExp(c);
-    }
-  }
-  return new RegExp(`^${re}$`);
-}
-function compileGlobs(globs) {
-  if (!globs || globs.length === 0) return null;
-  const res = globs.flatMap((g) => g.split(",")).map((g) => g.trim()).filter(Boolean).map(globToRegExp);
-  return (rel) => res.some((r) => r.test(rel));
-}
-var toPosix = (p) => p.split(sep).join("/");
-var hasGlob = (s) => /[*?]/.test(s);
-function makeFilter(opts = {}) {
-  const include = compileGlobs(opts.include);
-  const exclude = compileGlobs(opts.exclude);
-  const exts = extSet(opts.ext);
-  return (file) => {
-    if (!exts.has(ext(file))) return false;
-    const rel = toPosix(file);
-    if (include && !include(rel)) return false;
-    if (exclude?.(rel)) return false;
-    if (!opts.noDefaultExcludes && isTestArtifact(rel) && !(include && include(rel))) return false;
-    return true;
-  };
-}
-function inScopeMatcher(inputs) {
-  const scopes = inputs.filter((i) => i !== "-" && i !== ".");
-  if (!scopes.length) return null;
-  const globMatch = compileGlobs(scopes.filter(hasGlob));
-  const prefixes = scopes.filter((i) => !hasGlob(i)).map((p) => toPosix(p).replace(/\/+$/, ""));
-  return (file) => {
-    const rel = toPosix(file);
-    if (globMatch?.(rel)) return true;
-    return prefixes.some((p) => rel === p || rel.startsWith(`${p}/`));
-  };
-}
-function walk(dir, acc) {
-  let entries;
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const e of entries) {
-    if (e.isDirectory()) {
-      if (SKIP_DIR.has(e.name)) continue;
-      walk(join(dir, e.name), acc);
-    } else if (e.isFile()) {
-      acc.push(join(dir, e.name));
-    }
-  }
-}
-function staticBase(glob) {
-  const idx = glob.search(/[*?]/);
-  const head = idx === -1 ? glob : glob.slice(0, idx);
-  const slash = head.lastIndexOf("/");
-  return slash === -1 ? "." : head.slice(0, slash) || ".";
-}
-function expandInputs(inputs, opts = {}) {
-  const include = compileGlobs(opts.include);
-  const exclude = compileGlobs(opts.exclude);
-  const exts = extSet(opts.ext);
-  const files = /* @__PURE__ */ new Set();
-  const explicit = /* @__PURE__ */ new Set();
-  for (const input of inputs) {
-    if (input === "-") continue;
-    if (hasGlob(input)) {
-      const re = globToRegExp(input);
-      const acc = [];
-      walk(staticBase(input), acc);
-      for (const f of acc) if (re.test(toPosix(f)) && exts.has(ext(f))) files.add(f);
-    } else if (existsSync(input)) {
-      if (statSync(input).isDirectory()) {
-        const acc = [];
-        walk(input, acc);
-        for (const f of acc) if (exts.has(ext(f))) files.add(f);
-      } else if (exts.has(ext(input))) {
-        files.add(input);
-        explicit.add(input);
-      }
-    }
-  }
-  let list = [...files];
-  if (include) list = list.filter((f) => include(toPosix(f)));
-  if (exclude) list = list.filter((f) => !exclude(toPosix(f)));
-  if (!opts.noDefaultExcludes) {
-    const before = list.length;
-    list = list.filter((f) => {
-      const rel = toPosix(f);
-      return !isTestArtifact(rel) || explicit.has(f) || include != null && include(rel);
-    });
-    const dropped = before - list.length;
-    if (dropped) opts.onWarn?.(`ultra11y: skipped ${dropped} test/spec/story file(s) \u2014 pass --no-default-excludes to audit them.`);
-  }
-  return list.sort();
-}
-
-// src/graph/resolve.ts
 var EXT_ORDER = [".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte", ".astro", ".html", ".htm"];
 function candidates(base) {
   const out = [base];
@@ -20665,7 +20722,8 @@ function extractGraphNode(ast, doc, file) {
     }
     if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
   }
-  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang };
+  const opaqueComponents = doc.opaqueComponents ?? [];
+  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
   const body = asNodes((asNode(ast.program) ?? ast).body);
   const register2 = (def) => {
     if (!components.has(def.name)) components.set(def.name, def);
@@ -20717,7 +20775,7 @@ function extractGraphNode(ast, doc, file) {
       }
     }
   }
-  return { file: posix, imports, components, definesIds, providesHtmlLang };
+  return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
 }
 
 // src/graph/tsconfig.ts
@@ -20804,9 +20862,9 @@ function buildGraphStreaming(files) {
 import { existsSync as existsSync3 } from "fs";
 import { execFileSync } from "child_process";
 import { join as join4, relative as relative2 } from "path";
-function git(args) {
+function git(args, maxBuffer) {
   try {
-    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], ...maxBuffer ? { maxBuffer } : {} });
   } catch {
     return null;
   }
@@ -20830,6 +20888,24 @@ function gitChangedFiles(ref) {
   const cwd = process.cwd();
   return [...out].map((p) => relative2(cwd, join4(repoRoot2, p)));
 }
+function gitStagedFiles() {
+  const top = git(["rev-parse", "--show-toplevel"]);
+  if (top === null) return null;
+  const out = git(["diff", "--cached", "--name-only", "--diff-filter=d"]);
+  if (out === null) return null;
+  const repoRoot2 = top.trim();
+  const cwd = process.cwd();
+  return out.split("\n").map((s) => s.trim()).filter(Boolean).map((p) => relative2(cwd, join4(repoRoot2, p)));
+}
+function stagedContent(file) {
+  return git(["show", `:./${toPosix(file)}`], 32 * 1024 * 1024);
+}
+function hasUnstagedChanges(file) {
+  return !!git(["diff", "--name-only", "--", file])?.trim();
+}
+function gitAdd(file) {
+  git(["add", "--", file]);
+}
 var TIER0 = /(^|\/)(layout|template|_app|_document|app|main|index)[.\-/]|(^|\/)(layouts?|templates?)\//i;
 var TIER1 = /(^|\/)(components?|shared|ui|design-system|ds|partials?|includes?)\//i;
 function priority(file) {
@@ -20842,10 +20918,28 @@ function byPriorityThenPath(a, b) {
   return priority(a) - priority(b) || (a < b ? -1 : a > b ? 1 : 0);
 }
 function discover(inputs, opts = {}) {
-  const changedMode = !!(opts.changed || opts.since);
+  const changedMode = !!(opts.changed || opts.since || opts.staged);
   let files;
   let gitUnavailable = false;
-  if (changedMode) {
+  let staged;
+  if (opts.staged) {
+    const stagedFiles = gitStagedFiles();
+    if (stagedFiles === null) {
+      gitUnavailable = true;
+      opts.onWarn?.("ultra11y: --staged requested but git is unavailable here \u2014 falling back to a full scan.");
+      files = expandInputs(inputs, opts);
+    } else {
+      const filter = makeFilter(opts);
+      const inScope = inScopeMatcher(inputs);
+      const scoped = stagedFiles.filter((f) => filter(f) && (!inScope || inScope(f)));
+      staged = /* @__PURE__ */ new Map();
+      for (const f of scoped) {
+        const c = stagedContent(f);
+        if (c !== null) staged.set(f, c);
+      }
+      files = [...staged.keys()];
+    }
+  } else if (changedMode) {
     const changed = gitChangedFiles(opts.since);
     if (changed === null) {
       gitUnavailable = true;
@@ -20860,7 +20954,7 @@ function discover(inputs, opts = {}) {
     files = expandInputs(inputs, opts);
   }
   files = [...new Set(files)].sort(byPriorityThenPath);
-  return { files, changedMode, gitUnavailable };
+  return { files, changedMode, gitUnavailable, ...staged ? { stagedContent: staged } : {} };
 }
 
 // src/audit.ts
@@ -20886,7 +20980,8 @@ function newAccum() {
     opaqueLibs: /* @__PURE__ */ new Set(),
     opaqueFiles: 0,
     sfcFiles: 0,
-    sfcExts: /* @__PURE__ */ new Set()
+    sfcExts: /* @__PURE__ */ new Set(),
+    captures: []
   };
 }
 function foldDoc(acc, doc, graph) {
@@ -20917,6 +21012,7 @@ function foldDoc(acc, doc, graph) {
     const e = doc.file.toLowerCase().match(/\.[a-z]+$/)?.[0];
     if (e) acc.sfcExts.add(e);
   }
+  if (doc.capture) acc.captures.push({ file: doc.file, provenance: doc.capture });
   acc.fileCount++;
 }
 function finalize(acc, inputs, extra = {}) {
@@ -20970,7 +21066,13 @@ function finalize(acc, inputs, extra = {}) {
       ...extra.truncated ? { truncated: extra.truncated } : {},
       ...extra.dedup ? { dedup: extra.dedup } : {},
       ...acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {},
-      ...acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {}
+      ...acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {},
+      ...acc.captures.length ? {
+        captures: {
+          files: acc.captures.length,
+          components: [...new Set(acc.captures.map((c) => c.provenance.component).filter((x) => !!x))].sort()
+        }
+      } : {}
     },
     guidelines,
     criteria,
@@ -20985,22 +21087,24 @@ function hashContent(content, mode) {
 }
 function runAudit(opts) {
   const acc = newAccum();
-  const dedupMode = opts.changed || opts.since ? "off" : opts.dedup ?? "exact";
+  const dedupMode = opts.changed || opts.since || opts.staged ? "off" : opts.dedup ?? "exact";
   const seen = /* @__PURE__ */ new Set();
   let duplicateFiles = 0;
   let truncated;
-  const { files } = discover(opts.inputs, {
+  const { files, gitUnavailable, stagedContent: stagedContent2 } = discover(opts.inputs, {
     include: opts.include,
     exclude: opts.exclude,
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    staged: opts.staged,
     noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn
   });
+  const useStaged = opts.staged === true && !gitUnavailable;
   let graph;
-  if (opts.graph) {
-    const graphFiles = opts.changed || opts.since ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files : files;
+  if (opts.graph || opts.captureCoverage) {
+    const graphFiles = opts.changed || opts.since || opts.staged ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files : files;
     graph = buildGraphStreaming(graphFiles);
   }
   for (let i = 0; i < files.length; i++) {
@@ -21014,10 +21118,15 @@ function runAudit(opts) {
     }
     const file = files[i];
     let content;
-    try {
-      content = readText(file);
-    } catch {
-      continue;
+    const staged = useStaged ? stagedContent2?.get(file) : void 0;
+    if (staged !== void 0) {
+      content = staged;
+    } else {
+      try {
+        content = readText(file);
+      } catch {
+        continue;
+      }
     }
     if (dedupMode !== "off") {
       const h = hashContent(content, dedupMode);
@@ -21033,10 +21142,12 @@ function runAudit(opts) {
   if (opts.inputs.includes("-") && opts.stdin !== void 0 && !(opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles)) {
     foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }), graph);
   }
-  return finalize(acc, opts.inputs, {
+  const result = finalize(acc, opts.inputs, {
     ...truncated ? { truncated } : {},
     ...duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}
   });
+  if (opts.captureCoverage && graph) result.scope.captureCoverage = computeCaptureCoverage(graph, acc.captures);
+  return result;
 }
 
 // src/report.ts
@@ -24755,7 +24866,9 @@ var L = {
     duplicate: "doublon(s) identique(s) ignor\xE9(s)",
     truncated: (l, t2, s) => `P\xE9rim\xE8tre tronqu\xE9 : ${l}/${t2} fichiers audit\xE9s (priorit\xE9 d'abord), ${s} ignor\xE9(s). \xC9largir avec --max-files.`,
     rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
-    sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`
+    sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
+    captures: (n) => `${n} fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit, pas l'appel de composant.`,
+    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``
   },
   en: {
     title: (std) => `Accessibility audit report \u2014 ${std}`,
@@ -24788,13 +24901,20 @@ var L = {
     duplicate: "identical duplicate(s) skipped",
     truncated: (l, t2, s) => `Scope truncated: ${l}/${t2} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`,
     rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
-    sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`
+    sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`,
+    captures: (n) => `${n} rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML, not the component call.`,
+    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``
   }
 };
-function ncEntry(label, f, fixLabel) {
-  return `- **${label}** \u2014 \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)
+function ncEntry(label, f, s) {
+  const base = `- **${label}** \u2014 \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)
   - ${f.message}
-  - _${fixLabel} :_ ${f.remediation}`;
+  - _${s.fix} :_ ${f.remediation}`;
+  if (!f.origin) return base;
+  const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
+  const src = f.origin.sourceFile ?? f.origin.capture;
+  return `${base}
+  - _${s.captureOf(comp, src)}_`;
 }
 function render(r, lang, opts) {
   const s = L[lang];
@@ -24810,6 +24930,7 @@ function render(r, lang, opts) {
   if (r.scope.truncated) out.push(`> \u2702\uFE0F ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> \u{1F9E9} ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
   if (r.scope.sourceTemplate) out.push(`> \u{1F9E9} ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
+  if (r.scope.captures) out.push(`> \u2705 ${s.captures(r.scope.captures.files)}`, "");
   const rows = opts.groups.flatMap((g) => g.rows);
   const labelOf = new Map(rows.map((row) => [row.id, row.label]));
   const th = s.th(opts.groupHead);
@@ -24841,7 +24962,7 @@ function render(r, lang, opts) {
       const group = sorted.filter((x) => x.f.severity === sev);
       if (!group.length) continue;
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const { f, label } of group) out.push(ncEntry(label, f, s.fix));
+      for (const { f, label } of group) out.push(ncEntry(label, f, s));
       out.push("");
     }
   }
@@ -27784,6 +27905,102 @@ for (const { name, element } of COMPONENTS) {
 if (COMPONENTS.length === 0) console.error("ultra11y-render: COMPONENTS is empty \u2014 add your components, then re-run.");
 `;
 }
+function detectTestRunner(deps, has2) {
+  const dep = (n) => Object.hasOwn(deps, n);
+  const runner = dep("vitest") || has2("vitest.config.ts") || has2("vitest.config.js") || has2("vitest.config.mjs") ? "vitest" : dep("jest") || has2("jest.config.ts") || has2("jest.config.js") || has2("jest.config.cjs") || has2("jest.config.mjs") ? "jest" : null;
+  const dom = dep("jsdom") ? "jsdom" : dep("happy-dom") ? "happy-dom" : null;
+  return { runner, dom };
+}
+function captureSetup() {
+  return `// ultra11y capture harvester \u2014 zero-touch rendered-DOM snapshots for accessibility audit.
+// Add this ONCE to your test runner's setup; every component your tests render is then
+// serialized to .ultra11y/captures/*.html and audited by \`ultra11y audit\`. No per-test code.
+//   Vitest: test: { environment: "jsdom", globals: true, setupFiles: [".ultra11y/capture-setup.mjs"] }
+//   Jest:   testEnvironment: "jsdom", setupFilesAfterEnv: ["<rootDir>/.ultra11y/capture-setup.mjs"]
+// List it LAST so its afterEach runs BEFORE Testing-Library cleanup empties the DOM.
+// Off: ULTRA11Y_CAPTURES=off. Custom dir: ULTRA11Y_CAPTURES=path/to/dir.
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import { dirname, relative, basename } from "node:path";
+
+const OUT = process.env.ULTRA11Y_CAPTURES || ".ultra11y/captures";
+const afterEachFn = typeof globalThis.afterEach === "function" ? globalThis.afterEach : null;
+const hasDom = typeof document !== "undefined";
+
+if (OUT !== "off" && OUT !== "0") {
+  if (!hasDom) {
+    // Not a DOM test environment \u2014 nothing to serialize. Set environment: "jsdom".
+  } else if (!afterEachFn) {
+    process.stderr.write("ultra11y capture: afterEach is not global \u2014 enable Vitest \\\`globals: true\\\` (or use Jest setupFilesAfterEnv) so captures can register.\\n");
+  } else {
+    let written = 0;
+    const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/--/g, "&#45;&#45;");
+    afterEachFn(() => {
+      try {
+        if (typeof document === "undefined" || !document.body) return;
+        const html = document.body.innerHTML;
+        if (!html || !html.trim()) return;
+        const st = (globalThis.expect && globalThis.expect.getState && globalThis.expect.getState()) || {};
+        const testPath = typeof st.testPath === "string" ? st.testPath : "";
+        const name = typeof st.currentTestName === "string" ? st.currentTestName : "";
+        const rel = testPath ? relative(process.cwd(), testPath).split("\\\\").join("/") : "";
+        const source = rel ? rel.replace(/\\.(test|spec)\\.([jt]sx?)$/i, ".$2") : "";
+        const component = source ? basename(source).replace(/\\.[jt]sx?$/i, "") : "";
+        const attrs = ['v="1"'];
+        if (source) attrs.push('source="' + esc(source) + '"');
+        if (component) attrs.push('component="' + esc(component) + '"');
+        if (rel) attrs.push('test="' + esc(rel) + '"');
+        if (name) attrs.push('name="' + esc(name) + '"');
+        const content = "<!-- ultra11y:capture " + attrs.join(" ") + " -->\\n" + html + "\\n";
+        let h = 5381;
+        const keyStr = testPath + "::" + name;
+        for (let i = 0; i < keyStr.length; i++) h = ((h << 5) + h + keyStr.charCodeAt(i)) >>> 0;
+        const file = OUT + "/" + (component || "capture") + "__" + h.toString(36) + ".html";
+        mkdirSync(dirname(file), { recursive: true });
+        if (existsSync(file) && readFileSync(file, "utf8") === content) return; // unchanged \u2014 keep byte-stable
+        writeFileSync(file, content);
+        written++;
+      } catch {
+        // never fail a user's test because a capture could not be written
+      }
+    });
+    if (typeof process.on === "function")
+      process.on("exit", () => {
+        if (written === 0)
+          process.stderr.write("ultra11y capture: 0 captures written \u2014 ensure a DOM env (jsdom) and that this setup runs before Testing-Library cleanup (list it LAST in setupFiles).\\n");
+      });
+  }
+}
+`;
+}
+function captureSetupPlan(tr, path, lang = "en") {
+  const fr = lang === "fr";
+  const out = [];
+  out.push(fr ? `Harnais de capture \xE9crit : ${path}` : `Capture harvester written: ${path}`);
+  out.push("");
+  if (tr.runner === "jest") {
+    out.push(fr ? "Jest \u2014 ajoutez \xE0 votre config :" : "Jest \u2014 add to your config:");
+    out.push(`  testEnvironment: "jsdom",`);
+    out.push(`  setupFilesAfterEnv: ["<rootDir>/${path}"]   // ${fr ? "PAS setupFiles (afterEach doit exister)" : "NOT setupFiles (afterEach must exist)"}`);
+  } else {
+    out.push(fr ? "Vitest \u2014 ajoutez \xE0 vitest.config.ts (test:) :" : "Vitest \u2014 add to vitest.config.ts (test:):");
+    out.push(`  environment: "jsdom",`);
+    out.push(
+      `  globals: true,   // ${fr ? "requis : sans \xE7a, afterEach n'est pas global et rien n'est captur\xE9" : "required: without it afterEach is not global and nothing is captured"}`
+    );
+    out.push(`  setupFiles: ["${path}"],   // ${fr ? "en DERNIER (avant le cleanup Testing-Library)" : "list LAST (before Testing-Library cleanup)"}`);
+  }
+  out.push("");
+  if (!tr.dom)
+    out.push(
+      fr ? "\u26A0\uFE0F Aucun jsdom/happy-dom d\xE9tect\xE9 \u2014 installez-en un et activez l'environnement DOM." : "\u26A0\uFE0F No jsdom/happy-dom detected \u2014 install one and enable the DOM environment."
+    );
+  out.push(fr ? "Puis : lancez vos tests, committez .ultra11y/captures, et auditez :" : "Then: run your tests, commit .ultra11y/captures, and audit:");
+  out.push(`  node scripts/ultra11y.mjs audit --require-captures        # ${fr ? "gate : composants sans capture" : "gate: components lacking a capture"}`);
+  out.push(
+    `  git add .gitattributes .ultra11y   # ${fr ? "captures = sortie g\xE9n\xE9r\xE9e ; .gitattributes text eol=lf conseill\xE9" : "captures = generated output; add .gitattributes text eol=lf"}`
+  );
+  return out.join("\n");
+}
 
 // src/criteria.ts
 var AUTO_LABEL = {
@@ -29029,8 +29246,9 @@ function unifiedDiff(file, before, after, ctx = 2) {
 function itemOf(f) {
   return { ruleId: f.ruleId, criteriaId: f.criteriaId, line: f.line, selectorHint: f.selectorHint, fixability: fixabilityOf(f.ruleId) };
 }
-function fixOne(file, source, opts) {
+function fixOne(file, source, opts, canWrite = true) {
   const doc = parseSource(source, file, { forceJsx: opts.forceJsx });
+  if (doc.capture) return { file, lossy: doc.lossy, items: [], diff: "", applied: 0, written: false, regression: false };
   const findings = runRules(doc);
   const items = findings.map(itemOf);
   const edits = [];
@@ -29038,6 +29256,7 @@ function fixOne(file, source, opts) {
   if (!doc.lossy) {
     for (const f of findings) {
       if (opts.only && !opts.only.includes(f.ruleId)) continue;
+      if (opts.safe && fixabilityOf(f.ruleId) !== "auto") continue;
       const cm = CODEMODS[f.ruleId];
       if (!cm?.build || f.sourceStart === void 0) continue;
       if (isJsxAst && !cm.jsxSafe) continue;
@@ -29050,6 +29269,7 @@ function fixOne(file, source, opts) {
   let applied = 0;
   let written = false;
   let regression = false;
+  let skippedPartialStage = false;
   if (edits.length) {
     const { output, applied: n } = applyEdits(source, edits);
     applied = n;
@@ -29058,41 +29278,62 @@ function fixOne(file, source, opts) {
     const beforeKinds = new Set(findings.map((f) => f.ruleId));
     regression = after.length > findings.length || after.some((f) => !beforeKinds.has(f.ruleId));
     if (opts.write && !regression && file !== "<stdin>") {
-      writeFileSync5(file, output);
-      written = true;
+      if (canWrite) {
+        writeFileSync5(file, output);
+        written = true;
+      } else {
+        skippedPartialStage = true;
+        opts.onWarn?.(`ultra11y fix: ${file} has unstaged edits \u2014 not auto-fixed/re-staged; fix and stage it manually.`);
+      }
     }
     if (regression) opts.onWarn?.(`ultra11y fix: ${file} not written \u2014 fix would introduce a new non-conformity (regression gate).`);
   }
-  return { file, lossy: doc.lossy, items, diff, applied, written, regression };
+  return { file, lossy: doc.lossy, items, diff, applied, written, regression, ...skippedPartialStage ? { skippedPartialStage } : {} };
 }
 function runFix(opts) {
-  const { files } = discover(opts.inputs, {
+  const { files, gitUnavailable, stagedContent: stagedContent2 } = discover(opts.inputs, {
     include: opts.include,
     exclude: opts.exclude,
     ext: opts.ext,
     changed: opts.changed,
     since: opts.since,
+    staged: opts.staged,
     noDefaultExcludes: opts.noDefaultExcludes,
     onWarn: opts.onWarn
   });
+  const useStaged = opts.staged === true && !gitUnavailable;
   const out = [];
   for (const file of files) {
     let src;
-    try {
-      src = readText(file);
-    } catch {
-      continue;
+    if (useStaged) {
+      const c = stagedContent2?.get(file);
+      if (c === void 0) continue;
+      src = c;
+    } else {
+      try {
+        src = readText(file);
+      } catch {
+        continue;
+      }
     }
-    out.push(fixOne(file, src, opts));
+    const canWrite = !(useStaged && hasUnstagedChanges(file));
+    const ff = fixOne(file, src, opts, canWrite);
+    if (useStaged && ff.written) {
+      gitAdd(file);
+      ff.restaged = true;
+    }
+    out.push(ff);
   }
   if (opts.inputs.includes("-") && opts.stdin !== void 0) {
     out.push(fixOne("<stdin>", opts.stdin, { ...opts, write: false }));
   }
-  const totals = { auto: 0, placeholder: 0, proposal: 0, filesWritten: 0, regressions: 0 };
+  const totals = { auto: 0, placeholder: 0, proposal: 0, filesWritten: 0, regressions: 0, filesRestaged: 0, partialStageSkipped: 0 };
   for (const ff of out) {
     for (const it of ff.items) totals[it.fixability]++;
     if (ff.written) totals.filesWritten++;
     if (ff.regression) totals.regressions++;
+    if (ff.restaged) totals.filesRestaged++;
+    if (ff.skippedPartialStage) totals.partialStageSkipped++;
   }
   return { files: out, totals };
 }
@@ -29104,7 +29345,7 @@ var FIX_LABEL = {
 function fixSummary(r, lang = "fr", write = false) {
   const out = [];
   const t2 = r.totals;
-  const head = lang === "fr" ? `${write ? "Corrections appliqu\xE9es" : "Corrections propos\xE9es (dry-run)"} : ${t2.auto} auto, ${t2.placeholder} \xE0 compl\xE9ter, ${t2.proposal} jugement \xB7 ${t2.filesWritten} fichier(s) \xE9crit(s)${t2.regressions ? `, ${t2.regressions} bloqu\xE9(s) par le garde anti-r\xE9gression` : ""}.` : `${write ? "Fixes applied" : "Proposed fixes (dry-run)"}: ${t2.auto} auto, ${t2.placeholder} fill-in, ${t2.proposal} judgment \xB7 ${t2.filesWritten} file(s) written${t2.regressions ? `, ${t2.regressions} blocked by the regression gate` : ""}.`;
+  const head = lang === "fr" ? `${write ? "Corrections appliqu\xE9es" : "Corrections propos\xE9es (dry-run)"} : ${t2.auto} auto, ${t2.placeholder} \xE0 compl\xE9ter, ${t2.proposal} jugement \xB7 ${t2.filesWritten} fichier(s) \xE9crit(s)${t2.filesRestaged ? `, ${t2.filesRestaged} re-stag\xE9(s)` : ""}${t2.regressions ? `, ${t2.regressions} bloqu\xE9(s) par le garde anti-r\xE9gression` : ""}${t2.partialStageSkipped ? `, ${t2.partialStageSkipped} ignor\xE9(s) (modifs non-stag\xE9es)` : ""}.` : `${write ? "Fixes applied" : "Proposed fixes (dry-run)"}: ${t2.auto} auto, ${t2.placeholder} fill-in, ${t2.proposal} judgment \xB7 ${t2.filesWritten} file(s) written${t2.filesRestaged ? `, ${t2.filesRestaged} re-staged` : ""}${t2.regressions ? `, ${t2.regressions} blocked by the regression gate` : ""}${t2.partialStageSkipped ? `, ${t2.partialStageSkipped} skipped (unstaged edits)` : ""}.`;
   out.push(head, "");
   for (const ff of r.files) {
     const fixable = ff.items.filter((i) => i.fixability !== "proposal");
@@ -29170,6 +29411,29 @@ function repoRoot() {
     return null;
   }
 }
+function stagedHookScript(enginePath, failOn) {
+  const sev = EN_SEV[failOn];
+  return `#!/bin/sh
+# ultra11y accessibility gate (strict staged snapshot) \u2014 generated by \`ultra11y init --hook\`.
+# Operates on EXACTLY the staged index blobs (what the commit records, not the working
+# tree): first auto-applies SAFE deterministic fixes and re-stages them, then blocks the
+# commit only if issues >= ${sev} remain that need judgment (alt text, link purpose,
+# labels). Bypass once with: SKIP_A11Y=1 git commit ...
+[ -n "$SKIP_A11Y" ] && exit 0
+ULTRA11Y=\${ULTRA11Y:-'${enginePath}'}
+command -v node >/dev/null 2>&1 || { echo "ultra11y: node not found \u2014 skipping a11y gate." >&2; exit 0; }
+# 1) Auto-apply safe deterministic fixes to the staged snapshot and re-stage them
+#    (silent no-op when nothing is auto-fixable; warnings, if any, go to stderr).
+node "$ULTRA11Y" fix --staged --write --safe >/dev/null
+# 2) Gate: allow the commit unless issues >= ${sev} remain (these need judgment).
+node "$ULTRA11Y" audit --staged --fail-on ${sev} >/dev/null 2>&1 && exit 0
+echo "ultra11y: accessibility issues >= ${sev} remain in staged changes \u2014 they need judgment:" >&2
+node "$ULTRA11Y" audit --staged --fail-on ${sev} >&2
+echo "  Apply the real fix on the staged files (or invoke the ultra11y skill), re-stage, and commit again." >&2
+echo "  Bypass once with: SKIP_A11Y=1 git commit ..." >&2
+exit 1
+`;
+}
 function hookScript(enginePath, failOn) {
   return `#!/bin/sh
 # ultra11y accessibility regression gate \u2014 generated by \`ultra11y init --hook\`.
@@ -29207,11 +29471,11 @@ jobs:
         run: node "${enginePath}" audit --since "origin/\${{ github.base_ref }}" --baseline audits/baseline.json --fail-on ${EN_SEV[failOn]}
 `;
 }
-function writeHook(root, enginePath, failOn) {
+function writeHook(root, enginePath, failOn, mode = "staged") {
   const dir = join9(root, ".git", "hooks");
   mkdirSync4(dir, { recursive: true });
   const path = join9(dir, "pre-commit");
-  writeFileSync6(path, hookScript(enginePath, failOn));
+  writeFileSync6(path, mode === "baseline" ? hookScript(enginePath, failOn) : stagedHookScript(enginePath, failOn));
   chmodSync(path, 493);
   return path;
 }
@@ -29235,7 +29499,8 @@ var STR = {
     residualTitle: "\xC0 \xE9valuer manuellement (jugement / rendu)",
     manualNote: "crit\xE8res non d\xE9cidables par le moteur \u2014 \xE0 compl\xE9ter par une revue humaine.",
     renderedNote: "fichier(s) rendent des composants de biblioth\xE8que non analys\xE9s en source \u2014 auditez le build (render) ou scan",
-    sfcNote: "composant(s) .vue/.svelte/.astro audit\xE9(s) en SOURCE (template) \u2014 slots et liaisons dynamiques invisibles : verdict pr\xE9liminaire, auditez le rendu (render/scan)"
+    sfcNote: "composant(s) .vue/.svelte/.astro audit\xE9(s) en SOURCE (template) \u2014 slots et liaisons dynamiques invisibles : verdict pr\xE9liminaire, auditez le rendu (render/scan)",
+    capturesNote: "fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit"
   },
   en: {
     summaryTitle: "WCAG 2.2 AA audit (ultra11y static engine)",
@@ -29247,7 +29512,8 @@ var STR = {
     residualTitle: "To assess manually (judgment / rendering)",
     manualNote: "criteria the engine cannot decide \u2014 complete with a human review.",
     renderedNote: "file(s) render component-library output not analysed from source \u2014 audit the build (render) or scan",
-    sfcNote: ".vue/.svelte/.astro file(s) audited as SOURCE (template) \u2014 slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)"
+    sfcNote: ".vue/.svelte/.astro file(s) audited as SOURCE (template) \u2014 slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)",
+    capturesNote: "rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML"
   }
 };
 function t(lang, key) {
@@ -29278,6 +29544,25 @@ function auditSummary(r, lang) {
   lines.push(`${t(lang, "residualTitle")} : ${r.residualRisks.length} ${t(lang, "manualNote")}`);
   if (r.scope.rendered) lines.push(`\u{1F9E9} ${r.scope.rendered.files} ${t(lang, "renderedNote")} (${r.scope.rendered.opaqueLibraries.join(", ")}).`);
   if (r.scope.sourceTemplate) lines.push(`\u{1F9E9} ${r.scope.sourceTemplate.files} ${t(lang, "sfcNote")} (${r.scope.sourceTemplate.extensions.join(", ")}).`);
+  if (r.scope.captures) lines.push(`\u2705 ${r.scope.captures.files} ${t(lang, "capturesNote")}.`);
+  return lines.join("\n");
+}
+function captureCoverageSummary(cov, lang) {
+  const fr = lang === "fr";
+  const lines = [];
+  if (cov.total === 0) {
+    lines.push(fr ? "Couverture captures : aucun composant \xE0 couvrir dans le p\xE9rim\xE8tre." : "Capture coverage: no components to cover in scope.");
+  } else {
+    lines.push(
+      fr ? `Couverture captures : ${cov.covered.length}/${cov.total} composant(s) couvert(s) par un rendu.` : `Capture coverage: ${cov.covered.length}/${cov.total} component(s) covered by a render.`
+    );
+    if (cov.blindSpots.length) {
+      lines.push(fr ? "Angles morts (audit\xE9s sur source opaque uniquement) :" : "Blind spots (audited from opaque source only):");
+      for (const k of cov.blindSpots) lines.push(`  \xB7 ${k}`);
+    }
+  }
+  if (cov.unattributed)
+    lines.push(fr ? `${cov.unattributed} capture(s) sans provenance (non rattach\xE9e\xB7s).` : `${cov.unattributed} capture(s) without provenance (unattributed).`);
   return lines.join("\n");
 }
 
@@ -29529,14 +29814,15 @@ non-conformities. RGAA (France) and other country standards are pluggable packs
 
 Usage:
   ultra11y audit    <globs\u2026 | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr] [--no-default-excludes]
-  ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+  ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+  ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
-  ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang en|fr]
+  ultra11y render   [<dir>] [--scaffold | --setup | --coverage] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
-  ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
+  ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
   ultra11y scan     <url|file\u2026> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
@@ -29562,8 +29848,12 @@ Commands:
   render     Get RENDERED HTML to audit (so component libraries like DSFR are
              checked as the HTML they emit, not their JSX sources): detect the
              framework and print the build\u2192audit recipe, or --scaffold a
-             react-dom/server SSR snapshot harness to fill in. Then audit the
-             produced HTML, and use scan for the needs-rendering criteria.
+             react-dom/server SSR snapshot harness to fill in. --setup installs the
+             zero-touch test-render capture harvester (one setupFiles line \u2192 every
+             component your tests render is snapshotted to .ultra11y/captures and
+             audited). --coverage reports which components have a rendered capture vs
+             which are still opaque-source-only blind spots. Then audit the produced
+             HTML, and use scan for the needs-rendering criteria.
   criteria   Look up the reference offline. Core: one WCAG success criterion
              (criteria 1.4.3) or the full list grouped by guideline (--list).
              --standard <pack>: a pack criterion, a pack theme (--theme N), or its
@@ -29579,11 +29869,13 @@ Commands:
              judgment-only proposals. --dry-run (default) prints a diff; --write
              applies, but only after a re-audit proves no new NC; on real-AST JSX
              only jsxSafe codemods apply (never name-rewriting). --iterate loops to a fixpoint.
-  init       Wire ultra11y into the repo as a regression gate (zero-dep, no husky):
-             a git pre-commit --hook (audit --changed, vs HEAD) and/or a GitHub
-             Actions --ci job (audit --since the PR base ref), both gating against
-             --baseline so only NEW blocking NCs fail; --baseline writes
-             audits/baseline.json (the committed reference).
+  init       Wire ultra11y into the repo (zero-dep, no husky). Default --hook is a git
+             pre-commit gate over the STRICT STAGED SNAPSHOT: audits exactly the staged
+             index blobs, auto-applies safe fixes (fix --staged --write --safe) and
+             re-stages them, blocking only on issues that need judgment. Opt into the
+             legacy regression gate with --baseline (audit --changed vs a committed
+             audits/baseline.json, only NEW NCs fail) \u2014 also used by the --ci job
+             (audit --since the PR base ref).
   pack       Author/verify a runtime standards pack. 'pack check <pack.json>
              [--guidance <g.json>]' runs the validator + guidance gate (every
              criterion maps to well-formed WCAG SCs, every guidance entry resolves to
@@ -29614,8 +29906,9 @@ Options:
   --jsx              audit/fix: force JSX/TSX parsing for inputs of any extension
   --graph            audit: also resolve imports + run cross-file rules (alias --cross-file)
   --cross-file       audit: alias of --graph
-  --changed          audit/fix: only files changed vs HEAD (git; for hooks/CI)
+  --changed          audit/fix: only files changed vs HEAD (git; staged+unstaged+untracked, working tree)
   --since <ref>      audit/fix: only files changed vs the given git ref
+  --staged           audit/fix: only STAGED files, read from the index blob (exact commit snapshot; wins over --changed)
   --max-files <n>    audit: cap canonical files audited (logged truncation, no silent drop)
   --dedup <mode>     audit: collapse identical files \u2014 exact|normalized|off  (default: exact)
   --standard <pack>  report/prd/criteria/check/verify: WCAG core (default) or a pack
@@ -29631,13 +29924,19 @@ Options:
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
+  --setup            render: install the zero-touch test-render capture harvester (.ultra11y/capture-setup.mjs) + print the runner wiring
+  --coverage         render: report rendered-capture coverage (covered vs blind-spot components); with --json emits the coverage object
+  --captures <dir>   audit/render: rendered-capture dir to ingest (default: .ultra11y/captures)
+  --no-captures      audit: do NOT auto-detect/ingest the .ultra11y/captures dir
+  --require-captures audit: gate \u2014 fail if any opaque/control component lacks a rendered capture (implies --graph)
   --write            fix: apply fixes to disk (default is a dry-run diff)
   --iterate          fix: with --write, re-audit + re-apply mechanical fixes until stable (bounded)
   --dry-run          fix: preview only \u2014 never write (this is the default)
+  --safe             fix: apply only genuinely-automatic codemods (skip TODO placeholders / judgment proposals)
   --only <ids>       fix: limit auto-fixes to these rule ids (comma-separated)
   --baseline <file>  audit/init: regression-gate vs / write this baseline AuditResult
   --fail-on <sev>    audit/init: gate severity \u2014 blocking|major|minor (fr aliases accepted)  (default: blocking)
-  --hook             init: write a git pre-commit accessibility gate
+  --hook             init: write a git pre-commit accessibility gate (staged snapshot + auto-fix by default)
   --ci               init: write a GitHub Actions accessibility gate
   --report <file>    check/verify: the report markdown to gate
   --theme <N>        criteria: with --standard <pack>, list the pack's theme N
@@ -29700,7 +29999,8 @@ var VALUE_FLAGS = /* @__PURE__ */ new Set([
   "guidance",
   "runtime",
   "cwd",
-  "storage-state"
+  "storage-state",
+  "captures"
 ]);
 var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
 function valueFlagsFor(command) {
@@ -29752,8 +30052,19 @@ async function cmdAudit(p) {
   const stdin = inputs.includes("-") ? await readStdin() : void 0;
   const since = typeof p.flags.since === "string" ? p.flags.since : void 0;
   const dedupFlag = p.flags.dedup;
+  const lang = langOf(p.flags);
+  const requireCaptures = p.flags["require-captures"] === true;
+  const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
+  const capturesDir = capturesFlag ?? ".ultra11y/captures";
+  const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== void 0;
+  const useCaptures = p.flags["no-captures"] !== true && !inputs.includes("-") && !scopedToDiff && (capturesFlag !== void 0 || existsSync8(capturesDir)) && !inputs.includes(capturesDir);
+  const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
+  if (useCaptures)
+    console.error(
+      lang === "fr" ? `ultra11y audit : captures rendues ing\xE9r\xE9es depuis ${capturesDir}.` : `ultra11y audit: ingesting rendered captures from ${capturesDir}.`
+    );
   const result = runAudit({
-    inputs,
+    inputs: auditInputs,
     stdin,
     forceJsx: p.flags.jsx === true,
     include: asList(p.flags.include),
@@ -29761,9 +30072,11 @@ async function cmdAudit(p) {
     ext: asList(p.flags.ext),
     changed: p.flags.changed === true || since !== void 0,
     since,
+    staged: p.flags.staged === true,
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : void 0,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : void 0,
-    graph: p.flags.graph === true || p.flags["cross-file"] === true,
+    graph: p.flags.graph === true || p.flags["cross-file"] === true || requireCaptures,
+    captureCoverage: requireCaptures,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m)
   });
@@ -29791,24 +30104,31 @@ async function cmdAudit(p) {
       }
     }
     const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
+    const blindSpots2 = requireCaptures ? result.scope.captureCoverage?.blindSpots ?? [] : [];
     if (p.flags.json) console.log(JSON.stringify(diff, null, 2));
-    else console.log(baselineSummary(diff, langOf(p.flags)));
-    return diff.ok ? 0 : 1;
-  }
-  if (p.flags["fail-on"] !== void 0) {
-    const failOn = parseFailOn(p.flags["fail-on"]);
-    const failing = findingsAtOrAbove(result.findings, failOn);
-    if (p.flags.json) console.log(JSON.stringify(result, null, 2));
     else {
-      console.log(auditSummary(result, langOf(p.flags)));
-      if (failing.length)
-        console.error(langOf(p.flags) === "fr" ? `\u2717 ${failing.length} non-conformit\xE9(s) \u2265 ${failOn}.` : `\u2717 ${failing.length} non-conformity(ies) \u2265 ${failOn}.`);
+      console.log(baselineSummary(diff, lang));
+      if (requireCaptures && result.scope.captureCoverage) console.error(captureCoverageSummary(result.scope.captureCoverage, lang));
     }
-    return failing.length ? 1 : 0;
+    return diff.ok && blindSpots2.length === 0 ? 0 : 1;
   }
+  const failOnSet = p.flags["fail-on"] !== void 0;
+  const failOn = failOnSet ? parseFailOn(p.flags["fail-on"]) : void 0;
+  const failing = failOn ? findingsAtOrAbove(result.findings, failOn) : [];
+  const blindSpots = requireCaptures ? result.scope.captureCoverage?.blindSpots ?? [] : [];
   if (p.flags.json) console.log(JSON.stringify(result, null, 2));
-  else console.log(auditSummary(result, langOf(p.flags)));
-  return 0;
+  else {
+    console.log(auditSummary(result, lang));
+    if (requireCaptures && result.scope.captureCoverage) console.error(captureCoverageSummary(result.scope.captureCoverage, lang));
+    if (failOnSet && failing.length)
+      console.error(lang === "fr" ? `\u2717 ${failing.length} non-conformit\xE9(s) \u2265 ${failOn}.` : `\u2717 ${failing.length} non-conformity(ies) \u2265 ${failOn}.`);
+    if (requireCaptures && blindSpots.length)
+      console.error(
+        lang === "fr" ? `\u2717 ${blindSpots.length} composant(s) sans capture rendue.` : `\u2717 ${blindSpots.length} component(s) without a rendered capture.`
+      );
+  }
+  if (!failOnSet && !requireCaptures) return 0;
+  return failing.length || blindSpots.length ? 1 : 0;
 }
 function cmdInit(p) {
   const root = repoRoot() ?? process.cwd();
@@ -29819,11 +30139,10 @@ function cmdInit(p) {
   } catch {
   }
   const failOn = parseFailOn(p.flags["fail-on"]);
+  const legacy = p.flags.baseline === true || p.flags["fail-on"] !== void 0;
   const want = { hook: p.flags.hook === true, ci: p.flags.ci === true, baseline: p.flags.baseline === true };
-  if (!want.hook && !want.ci && !want.baseline) {
-    want.hook = true;
-    want.baseline = true;
-  }
+  if (!want.hook && !want.ci && !want.baseline) want.hook = true;
+  if (legacy) want.baseline = true;
   const wrote = [];
   if (want.baseline) {
     const inputs = p.positionals.length ? p.positionals : ["."];
@@ -29833,10 +30152,11 @@ function cmdInit(p) {
     writeFileSync7(bp, JSON.stringify(result, null, 2) + "\n");
     wrote.push(bp);
   }
-  if (want.hook) wrote.push(writeHook(root, engineRel, failOn));
+  if (want.hook) wrote.push(writeHook(root, engineRel, failOn, legacy ? "baseline" : "staged"));
   if (want.ci) wrote.push(writeCi(root, engineRel, failOn));
   for (const w of wrote) console.log(`ultra11y init: wrote ${w}`);
-  console.log(`ultra11y init: done. Commit audits/baseline.json so the gate has a reference.`);
+  if (want.baseline) console.log(`ultra11y init: done. Commit audits/baseline.json so the gate has a reference.`);
+  else console.log(`ultra11y init: done. The pre-commit gate audits staged changes and auto-applies safe fixes (bypass once with SKIP_A11Y=1).`);
   return 0;
 }
 function cmdCriteria(p) {
@@ -29955,6 +30275,41 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     );
     return 0;
   }
+  if (p.flags.setup === true) {
+    const rel = ".ultra11y/capture-setup.mjs";
+    const out = join11(root, rel);
+    try {
+      mkdirSync5(dirname4(out), { recursive: true });
+      writeFileSync7(out, captureSetup());
+    } catch (e) {
+      console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
+      return 1;
+    }
+    let setupDeps = {};
+    const setupPkg = join11(root, "package.json");
+    if (existsSync8(setupPkg)) {
+      try {
+        const pkg = JSON.parse(readText(setupPkg));
+        setupDeps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
+      } catch {
+      }
+    }
+    const tr = detectTestRunner(setupDeps, (f) => existsSync8(join11(root, f)));
+    console.log(captureSetupPlan(tr, rel, lang));
+    return 0;
+  }
+  if (p.flags.coverage === true) {
+    const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
+    const capturesDir = capturesFlag ?? join11(root, ".ultra11y/captures");
+    const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: asList(p.flags.ext) }).files;
+    const graph = buildGraphStreaming(sourceFiles);
+    const capFiles = existsSync8(capturesDir) ? discover([capturesDir]).files : [];
+    const entries = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));
+    const cov = computeCaptureCoverage(graph, entries);
+    if (p.flags.json) console.log(JSON.stringify(cov, null, 2));
+    else console.log(captureCoverageSummary(cov, lang));
+    return 0;
+  }
   let deps = {};
   const pkgPath = join11(root, "package.json");
   if (existsSync8(pkgPath)) {
@@ -30068,6 +30423,8 @@ async function cmdFix(p) {
     ext: asList(p.flags.ext),
     changed: p.flags.changed === true || since !== void 0,
     since,
+    staged: p.flags.staged === true,
+    safe: p.flags.safe === true,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     only: typeof onlyFlag === "string" ? onlyFlag.split(",").map((s) => s.trim()).filter(Boolean) : void 0,
     write,

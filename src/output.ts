@@ -1,6 +1,7 @@
 // Output helpers: a tiny fr/en string table and the human-readable `audit`
 // summary (the --json path prints the AuditResult verbatim instead).
 import type { AuditResult, Lang, Severity } from "./types.js";
+import type { CaptureCoverage } from "./capture.js";
 
 type Key =
   | "summaryTitle"
@@ -12,7 +13,8 @@ type Key =
   | "residualTitle"
   | "manualNote"
   | "renderedNote"
-  | "sfcNote";
+  | "sfcNote"
+  | "capturesNote";
 
 const STR: Record<Lang, Record<Key, string>> = {
   fr: {
@@ -27,6 +29,7 @@ const STR: Record<Lang, Record<Key, string>> = {
     renderedNote: "fichier(s) rendent des composants de bibliothèque non analysés en source — auditez le build (render) ou scan",
     sfcNote:
       "composant(s) .vue/.svelte/.astro audité(s) en SOURCE (template) — slots et liaisons dynamiques invisibles : verdict préliminaire, auditez le rendu (render/scan)",
+    capturesNote: "fichier(s) de capture rendus audités à pleine fidélité (DOM réel) — le vrai HTML produit",
   },
   en: {
     summaryTitle: "WCAG 2.2 AA audit (ultra11y static engine)",
@@ -40,6 +43,7 @@ const STR: Record<Lang, Record<Key, string>> = {
     renderedNote: "file(s) render component-library output not analysed from source — audit the build (render) or scan",
     sfcNote:
       ".vue/.svelte/.astro file(s) audited as SOURCE (template) — slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)",
+    capturesNote: "rendered capture file(s) audited at full fidelity (real DOM) — the true produced HTML",
   },
 };
 
@@ -73,5 +77,29 @@ export function auditSummary(r: AuditResult, lang: Lang): string {
   lines.push(`${t(lang, "residualTitle")} : ${r.residualRisks.length} ${t(lang, "manualNote")}`);
   if (r.scope.rendered) lines.push(`🧩 ${r.scope.rendered.files} ${t(lang, "renderedNote")} (${r.scope.rendered.opaqueLibraries.join(", ")}).`);
   if (r.scope.sourceTemplate) lines.push(`🧩 ${r.scope.sourceTemplate.files} ${t(lang, "sfcNote")} (${r.scope.sourceTemplate.extensions.join(", ")}).`);
+  if (r.scope.captures) lines.push(`✅ ${r.scope.captures.files} ${t(lang, "capturesNote")}.`);
+  return lines.join("\n");
+}
+
+/** Human-readable rendered-capture coverage: covered vs opaque-source-only blind spots.
+ *  Reused by `audit --require-captures` (as a gate note) and `render --coverage`. */
+export function captureCoverageSummary(cov: CaptureCoverage, lang: Lang): string {
+  const fr = lang === "fr";
+  const lines: string[] = [];
+  if (cov.total === 0) {
+    lines.push(fr ? "Couverture captures : aucun composant à couvrir dans le périmètre." : "Capture coverage: no components to cover in scope.");
+  } else {
+    lines.push(
+      fr
+        ? `Couverture captures : ${cov.covered.length}/${cov.total} composant(s) couvert(s) par un rendu.`
+        : `Capture coverage: ${cov.covered.length}/${cov.total} component(s) covered by a render.`,
+    );
+    if (cov.blindSpots.length) {
+      lines.push(fr ? "Angles morts (audités sur source opaque uniquement) :" : "Blind spots (audited from opaque source only):");
+      for (const k of cov.blindSpots) lines.push(`  · ${k}`);
+    }
+  }
+  if (cov.unattributed)
+    lines.push(fr ? `${cov.unattributed} capture(s) sans provenance (non rattachée·s).` : `${cov.unattributed} capture(s) without provenance (unattributed).`);
   return lines.join("\n");
 }

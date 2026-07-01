@@ -35,6 +35,10 @@ export interface FileGraphNode {
   components: Map<string, ComponentDef>; // by local/export name, plus a "default" alias
   definesIds: string[]; // literal id="…" anywhere in the file
   providesHtmlLang: boolean; // an <html> with a lang attribute (literal or expression)
+  // Component-LIBRARY specifiers this file renders (e.g. "@codegouvfr/react-dsfr/Button").
+  // A non-empty list marks the file as a rendered-output BLIND SPOT for coverage: the
+  // real HTML lives in node_modules, so its components need a rendered capture to audit.
+  opaqueComponents: string[];
 }
 
 const NAME_PROPS = new Set(["aria-label", "aria-labelledby", "title", "label", "alt"]);
@@ -222,7 +226,8 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): F
     if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
   }
 
-  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang };
+  const opaqueComponents = doc.opaqueComponents ?? [];
+  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
 
   const body = asNodes((asNode(ast.program) ?? ast).body);
   const register = (def: ComponentDef): void => {
@@ -278,5 +283,5 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): F
     }
   }
 
-  return { file: posix, imports, components, definesIds, providesHtmlLang };
+  return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
 }

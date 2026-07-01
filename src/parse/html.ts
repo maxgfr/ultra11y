@@ -44,10 +44,26 @@ export interface Doc {
   // node_modules and is invisible to source analysis — a source verdict is
   // therefore incomplete for them (surfaced as a scope caveat, never silent).
   opaqueComponents?: string[];
+  // Set when this Doc is a RENDERED capture file (real DOM serialized from a test/
+  // build) carrying a `<!-- ultra11y:capture … -->` provenance comment. Its findings
+  // are ground truth (not preliminary) and re-attributed to the source component via
+  // `Finding.origin`. Optional/additive; absent for ordinary source/HTML files.
+  capture?: CaptureProvenance;
   roots: HNode[];
   elements: El[];
   byId: Map<string, El>;
   lineStarts: number[];
+}
+
+// Provenance recorded in a rendered capture's leading HTML comment, linking the
+// serialized DOM back to the source component that produced it. All fields but the
+// format version are best-effort (the harvester derives them heuristically).
+export interface CaptureProvenance {
+  v: number; // provenance format version (starts at 1)
+  sourceFile?: string; // repo-relative source, e.g. "src/Button.tsx"
+  component?: string; // best-effort component name, e.g. "Button"
+  test?: string; // originating test file, e.g. "src/Button.test.tsx"
+  name?: string; // originating test title
 }
 
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);

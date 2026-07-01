@@ -115,6 +115,11 @@ export interface Finding {
   // PRELIMINARY verdict to confirm against the rendered output, not a certainty.
   // Optional/additive (no schemaVersion bump); absent = full-confidence static finding.
   preliminary?: boolean;
+  // Set when this finding was raised on a RENDERED capture file (real serialized DOM)
+  // and re-attributed to the source component that produced it. `file`/`sourceStart`
+  // still index the capture bytes (so `fix` and baseline diffing stay stable); origin
+  // points back to the source. Optional/additive (no schemaVersion bump).
+  origin?: { capture: string; sourceFile?: string; component?: string; sourceLine?: number };
 }
 
 export interface CriterionResult {
@@ -161,6 +166,14 @@ export interface AuditResult {
     // snippets and dynamic bindings are invisible to static analysis, so findings on
     // them are PRELIMINARY — audit the rendered output (`render`/`scan`) to confirm.
     sourceTemplate?: { files: number; extensions: string[] };
+    // Set when RENDERED capture files (real serialized DOM) were audited at full
+    // fidelity — the true markup a component library / SFC emits, not its source call.
+    captures?: { files: number; components: string[] };
+    // Set by the coverage pass (`--require-captures` / `render --coverage`): which
+    // components have a rendered capture vs which are still opaque-source-only blind
+    // spots. Keys are "posix/path#Component". `unattributed` = capture files with no
+    // resolvable source (no provenance) — audited, but not credited to a component.
+    captureCoverage?: { total: number; covered: string[]; blindSpots: string[]; unattributed: number };
   };
   guidelines: GuidelineTally[];
   criteria: CriterionResult[];

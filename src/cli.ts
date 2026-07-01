@@ -1,12 +1,16 @@
 import { realpathSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./types.js";
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
 import { writePrd, prdUnits } from "./prd.js";
 import { ghAvailable, pushIssues, pushSingleIssue } from "./gh.js";
-import { detectFrameworks, renderPlan, ssrHarness, type Detection } from "./render.js";
+import { detectFrameworks, renderPlan, ssrHarness, captureSetup, captureSetupPlan, detectTestRunner, type Detection } from "./render.js";
+import { computeCaptureCoverage, parseCaptureProvenance, type CaptureEntry } from "./capture.js";
+import { buildGraphStreaming } from "./graph/build.js";
+import { discover } from "./discover.js";
+import { toPosix } from "./glob.js";
 import { runCriteria, renderCriteriaReference } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
@@ -15,7 +19,7 @@ import { runScanLocal, runScanManyLocal, runCrawlScanLocal, localAvailable } fro
 import { runFix, fixSummary } from "./fix.js";
 import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } from "./baseline.js";
 import { repoRoot, writeHook, writeCi } from "./init.js";
-import { auditSummary } from "./output.js";
+import { auditSummary, captureCoverageSummary } from "./output.js";
 import { resolveStandard, type StandardId } from "./standards/index.js";
 import { loadRuntimeStandards } from "./config.js";
 import { runPackCheck, packScaffold } from "./pack.js";
@@ -30,14 +34,15 @@ non-conformities. RGAA (France) and other country standards are pluggable packs
 
 Usage:
   ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr] [--no-default-excludes]
-  ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+  ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+  ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
-  ultra11y render   [<dir>] [--scaffold] [--out <file>] [--json] [--lang en|fr]
+  ultra11y render   [<dir>] [--scaffold | --setup | --coverage] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
-  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
+  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
   ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
@@ -63,8 +68,12 @@ Commands:
   render     Get RENDERED HTML to audit (so component libraries like DSFR are
              checked as the HTML they emit, not their JSX sources): detect the
              framework and print the build→audit recipe, or --scaffold a
-             react-dom/server SSR snapshot harness to fill in. Then audit the
-             produced HTML, and use scan for the needs-rendering criteria.
+             react-dom/server SSR snapshot harness to fill in. --setup installs the
+             zero-touch test-render capture harvester (one setupFiles line → every
+             component your tests render is snapshotted to .ultra11y/captures and
+             audited). --coverage reports which components have a rendered capture vs
+             which are still opaque-source-only blind spots. Then audit the produced
+             HTML, and use scan for the needs-rendering criteria.
   criteria   Look up the reference offline. Core: one WCAG success criterion
              (criteria 1.4.3) or the full list grouped by guideline (--list).
              --standard <pack>: a pack criterion, a pack theme (--theme N), or its
@@ -80,11 +89,13 @@ Commands:
              judgment-only proposals. --dry-run (default) prints a diff; --write
              applies, but only after a re-audit proves no new NC; on real-AST JSX
              only jsxSafe codemods apply (never name-rewriting). --iterate loops to a fixpoint.
-  init       Wire ultra11y into the repo as a regression gate (zero-dep, no husky):
-             a git pre-commit --hook (audit --changed, vs HEAD) and/or a GitHub
-             Actions --ci job (audit --since the PR base ref), both gating against
-             --baseline so only NEW blocking NCs fail; --baseline writes
-             audits/baseline.json (the committed reference).
+  init       Wire ultra11y into the repo (zero-dep, no husky). Default --hook is a git
+             pre-commit gate over the STRICT STAGED SNAPSHOT: audits exactly the staged
+             index blobs, auto-applies safe fixes (fix --staged --write --safe) and
+             re-stages them, blocking only on issues that need judgment. Opt into the
+             legacy regression gate with --baseline (audit --changed vs a committed
+             audits/baseline.json, only NEW NCs fail) — also used by the --ci job
+             (audit --since the PR base ref).
   pack       Author/verify a runtime standards pack. 'pack check <pack.json>
              [--guidance <g.json>]' runs the validator + guidance gate (every
              criterion maps to well-formed WCAG SCs, every guidance entry resolves to
@@ -115,8 +126,9 @@ Options:
   --jsx              audit/fix: force JSX/TSX parsing for inputs of any extension
   --graph            audit: also resolve imports + run cross-file rules (alias --cross-file)
   --cross-file       audit: alias of --graph
-  --changed          audit/fix: only files changed vs HEAD (git; for hooks/CI)
+  --changed          audit/fix: only files changed vs HEAD (git; staged+unstaged+untracked, working tree)
   --since <ref>      audit/fix: only files changed vs the given git ref
+  --staged           audit/fix: only STAGED files, read from the index blob (exact commit snapshot; wins over --changed)
   --max-files <n>    audit: cap canonical files audited (logged truncation, no silent drop)
   --dedup <mode>     audit: collapse identical files — exact|normalized|off  (default: exact)
   --standard <pack>  report/prd/criteria/check/verify: WCAG core (default) or a pack
@@ -132,13 +144,19 @@ Options:
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
+  --setup            render: install the zero-touch test-render capture harvester (.ultra11y/capture-setup.mjs) + print the runner wiring
+  --coverage         render: report rendered-capture coverage (covered vs blind-spot components); with --json emits the coverage object
+  --captures <dir>   audit/render: rendered-capture dir to ingest (default: .ultra11y/captures)
+  --no-captures      audit: do NOT auto-detect/ingest the .ultra11y/captures dir
+  --require-captures audit: gate — fail if any opaque/control component lacks a rendered capture (implies --graph)
   --write            fix: apply fixes to disk (default is a dry-run diff)
   --iterate          fix: with --write, re-audit + re-apply mechanical fixes until stable (bounded)
   --dry-run          fix: preview only — never write (this is the default)
+  --safe             fix: apply only genuinely-automatic codemods (skip TODO placeholders / judgment proposals)
   --only <ids>       fix: limit auto-fixes to these rule ids (comma-separated)
   --baseline <file>  audit/init: regression-gate vs / write this baseline AuditResult
   --fail-on <sev>    audit/init: gate severity — blocking|major|minor (fr aliases accepted)  (default: blocking)
-  --hook             init: write a git pre-commit accessibility gate
+  --hook             init: write a git pre-commit accessibility gate (staged snapshot + auto-fix by default)
   --ci               init: write a GitHub Actions accessibility gate
   --report <file>    check/verify: the report markdown to gate
   --theme <N>        criteria: with --standard <pack>, list the pack's theme N
@@ -206,6 +224,7 @@ const VALUE_FLAGS = new Set([
   "runtime",
   "cwd",
   "storage-state",
+  "captures",
 ]);
 // `init` treats --baseline as a boolean selector ("write the baseline"), not a
 // path, so it must NOT consume the following token. audit/fix keep it as a value
@@ -277,8 +296,30 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   const stdin = inputs.includes("-") ? await readStdin() : undefined;
   const since = typeof p.flags.since === "string" ? (p.flags.since as string) : undefined;
   const dedupFlag = p.flags.dedup;
+  const lang = langOf(p.flags);
+
+  // Rendered captures: ingest the .ultra11y/captures dir (or --captures <dir>) alongside
+  // the source so the audit covers the REAL DOM component libraries/SFCs emit. In
+  // --staged/--changed mode the captures are picked up naturally as staged/changed .html,
+  // so only auto-append in a full scan. --no-captures opts out.
+  const requireCaptures = p.flags["require-captures"] === true;
+  const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : undefined;
+  const capturesDir = capturesFlag ?? ".ultra11y/captures";
+  const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== undefined;
+  const useCaptures =
+    p.flags["no-captures"] !== true &&
+    !inputs.includes("-") &&
+    !scopedToDiff &&
+    (capturesFlag !== undefined || existsSync(capturesDir)) &&
+    !inputs.includes(capturesDir);
+  const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
+  if (useCaptures)
+    console.error(
+      lang === "fr" ? `ultra11y audit : captures rendues ingérées depuis ${capturesDir}.` : `ultra11y audit: ingesting rendered captures from ${capturesDir}.`,
+    );
+
   const result = runAudit({
-    inputs,
+    inputs: auditInputs,
     stdin,
     forceJsx: p.flags.jsx === true,
     include: asList(p.flags.include),
@@ -286,9 +327,11 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     ext: asList(p.flags.ext),
     changed: p.flags.changed === true || since !== undefined,
     since,
+    staged: p.flags.staged === true,
     dedup: dedupFlag === "normalized" || dedupFlag === "off" ? dedupFlag : undefined,
     maxFiles: typeof p.flags["max-files"] === "string" ? Number(p.flags["max-files"]) : undefined,
-    graph: p.flags.graph === true || p.flags["cross-file"] === true,
+    graph: p.flags.graph === true || p.flags["cross-file"] === true || requireCaptures,
+    captureCoverage: requireCaptures,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m),
   });
@@ -325,29 +368,36 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
       }
     }
     const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
+    const blindSpots = requireCaptures ? (result.scope.captureCoverage?.blindSpots ?? []) : [];
     if (p.flags.json) console.log(JSON.stringify(diff, null, 2));
-    else console.log(baselineSummary(diff, langOf(p.flags)));
-    return diff.ok ? 0 : 1;
+    else {
+      console.log(baselineSummary(diff, lang));
+      if (requireCaptures && result.scope.captureCoverage) console.error(captureCoverageSummary(result.scope.captureCoverage, lang));
+    }
+    return diff.ok && blindSpots.length === 0 ? 0 : 1;
   }
 
-  // Standalone gate: `--fail-on` without a baseline gates the WHOLE audit by exit
-  // code (linter-style), not just newly-introduced findings. Only triggers when
-  // --fail-on is passed explicitly, so a plain `audit` still always exits 0.
-  if (p.flags["fail-on"] !== undefined) {
-    const failOn = parseFailOn(p.flags["fail-on"]);
-    const failing = findingsAtOrAbove(result.findings, failOn);
-    if (p.flags.json) console.log(JSON.stringify(result, null, 2));
-    else {
-      console.log(auditSummary(result, langOf(p.flags)));
-      if (failing.length)
-        console.error(langOf(p.flags) === "fr" ? `✗ ${failing.length} non-conformité(s) ≥ ${failOn}.` : `✗ ${failing.length} non-conformity(ies) ≥ ${failOn}.`);
-    }
-    return failing.length ? 1 : 0;
-  }
+  // Standalone gates (linter-style, no baseline): `--fail-on` gates the whole audit by
+  // finding severity; `--require-captures` gates on rendered-capture blind spots. Both
+  // compose; a plain audit (neither flag) always exits 0.
+  const failOnSet = p.flags["fail-on"] !== undefined;
+  const failOn = failOnSet ? parseFailOn(p.flags["fail-on"]) : undefined;
+  const failing = failOn ? findingsAtOrAbove(result.findings, failOn) : [];
+  const blindSpots = requireCaptures ? (result.scope.captureCoverage?.blindSpots ?? []) : [];
 
   if (p.flags.json) console.log(JSON.stringify(result, null, 2));
-  else console.log(auditSummary(result, langOf(p.flags)));
-  return 0;
+  else {
+    console.log(auditSummary(result, lang));
+    if (requireCaptures && result.scope.captureCoverage) console.error(captureCoverageSummary(result.scope.captureCoverage, lang));
+    if (failOnSet && failing.length)
+      console.error(lang === "fr" ? `✗ ${failing.length} non-conformité(s) ≥ ${failOn}.` : `✗ ${failing.length} non-conformity(ies) ≥ ${failOn}.`);
+    if (requireCaptures && blindSpots.length)
+      console.error(
+        lang === "fr" ? `✗ ${blindSpots.length} composant(s) sans capture rendue.` : `✗ ${blindSpots.length} component(s) without a rendered capture.`,
+      );
+  }
+  if (!failOnSet && !requireCaptures) return 0;
+  return failing.length || blindSpots.length ? 1 : 0;
 }
 
 function cmdInit(p: ParsedArgs): number {
@@ -360,11 +410,12 @@ function cmdInit(p: ParsedArgs): number {
     /* keep as-is */
   }
   const failOn = parseFailOn(p.flags["fail-on"]);
+  // The baseline regression gate is opt-in via --baseline or an explicit --fail-on;
+  // otherwise init wires the default strict-staged auto-fixing hook (no baseline needed).
+  const legacy = p.flags.baseline === true || p.flags["fail-on"] !== undefined;
   const want = { hook: p.flags.hook === true, ci: p.flags.ci === true, baseline: p.flags.baseline === true };
-  if (!want.hook && !want.ci && !want.baseline) {
-    want.hook = true;
-    want.baseline = true; // sensible default: local gate + its baseline
-  }
+  if (!want.hook && !want.ci && !want.baseline) want.hook = true; // default: the staged auto-fix gate
+  if (legacy) want.baseline = true; // the regression gate needs its committed reference
   const wrote: string[] = [];
   if (want.baseline) {
     const inputs = p.positionals.length ? p.positionals : ["."];
@@ -374,10 +425,11 @@ function cmdInit(p: ParsedArgs): number {
     writeFileSync(bp, JSON.stringify(result, null, 2) + "\n");
     wrote.push(bp);
   }
-  if (want.hook) wrote.push(writeHook(root, engineRel, failOn));
+  if (want.hook) wrote.push(writeHook(root, engineRel, failOn, legacy ? "baseline" : "staged"));
   if (want.ci) wrote.push(writeCi(root, engineRel, failOn));
   for (const w of wrote) console.log(`ultra11y init: wrote ${w}`);
-  console.log(`ultra11y init: done. Commit audits/baseline.json so the gate has a reference.`);
+  if (want.baseline) console.log(`ultra11y init: done. Commit audits/baseline.json so the gate has a reference.`);
+  else console.log(`ultra11y init: done. The pre-commit gate audits staged changes and auto-applies safe fixes (bypass once with SKIP_A11Y=1).`);
   return 0;
 }
 
@@ -507,6 +559,42 @@ function cmdRender(p: ParsedArgs): number {
     );
     return 0;
   }
+  if (p.flags.setup === true) {
+    const rel = ".ultra11y/capture-setup.mjs";
+    const out = join(root, rel);
+    try {
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, captureSetup());
+    } catch (e) {
+      console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
+      return 1;
+    }
+    let setupDeps: Record<string, string> = {};
+    const setupPkg = join(root, "package.json");
+    if (existsSync(setupPkg)) {
+      try {
+        const pkg = JSON.parse(readText(setupPkg)) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+        setupDeps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+      } catch {
+        /* detection just sees no deps */
+      }
+    }
+    const tr = detectTestRunner(setupDeps, (f) => existsSync(join(root, f)));
+    console.log(captureSetupPlan(tr, rel, lang));
+    return 0;
+  }
+  if (p.flags.coverage === true) {
+    const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : undefined;
+    const capturesDir = capturesFlag ?? join(root, ".ultra11y/captures");
+    const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: asList(p.flags.ext) }).files;
+    const graph = buildGraphStreaming(sourceFiles);
+    const capFiles = existsSync(capturesDir) ? discover([capturesDir]).files : [];
+    const entries: CaptureEntry[] = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));
+    const cov = computeCaptureCoverage(graph, entries);
+    if (p.flags.json) console.log(JSON.stringify(cov, null, 2));
+    else console.log(captureCoverageSummary(cov, lang));
+    return 0;
+  }
   let deps: Record<string, string> = {};
   const pkgPath = join(root, "package.json");
   if (existsSync(pkgPath)) {
@@ -630,6 +718,8 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
     ext: asList(p.flags.ext),
     changed: p.flags.changed === true || since !== undefined,
     since,
+    staged: p.flags.staged === true,
+    safe: p.flags.safe === true,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     only:
       typeof onlyFlag === "string"

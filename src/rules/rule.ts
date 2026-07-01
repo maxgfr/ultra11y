@@ -88,5 +88,8 @@ export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFindi
     ...(doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end }),
     // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human verification.
     ...(doc.kind === "sfc" ? { preliminary: true } : {}),
+    // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
+    // to the source component recorded in the capture's provenance.
+    ...(doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}),
   };
 }

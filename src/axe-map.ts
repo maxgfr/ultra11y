@@ -2,8 +2,28 @@
 // `wcag<abc>` tags per rule, so this curated map only carries deliberate choices
 // (e.g. color-contrast → 1.4.3, the needs-rendering SC the static engine can't
 // decide); everything else falls back to axe's own wcag tags, then to 4.1.2.
-import type { Severity } from "./types.js";
+import type { DynamicEngine, Severity } from "./types.js";
 import { hasSC } from "./wcag.js";
+
+// The local runtime's bespoke probes (scan --local) → the WCAG SC each evidences.
+// These are the needs-rendering criteria axe-core does not decide on its own; the
+// probe raises a definite NC only when it OBSERVES the failure in the rendered page
+// (a clean probe leaves the SC `manual`, never silently Conforming).
+export const PROBE_WCAG: Record<Exclude<DynamicEngine, "axe" | "reflow">, string> = {
+  "focus-visible": "2.4.7", // Focus Visible — focusing a control produces no visible change
+  "reflow-zoom": "1.4.4", // Resize Text / 200% zoom — content clipped/lost when enlarged
+  "text-spacing": "1.4.12", // Text Spacing — clipping/overlap under the WCAG spacing override
+  hover: "1.4.13", // Content on Hover or Focus — not dismissible/hoverable/persistent
+};
+
+// Probe severities are deliberately conservative: focus + zoom are real blockers
+// (majeur); spacing/hover are heuristic, so minor by default (tunable).
+export const PROBE_SEVERITY: Record<Exclude<DynamicEngine, "axe" | "reflow">, Severity> = {
+  "focus-visible": "majeur",
+  "reflow-zoom": "majeur",
+  "text-spacing": "mineur",
+  hover: "mineur",
+};
 
 export const AXE_WCAG: Record<string, string> = {
   // images

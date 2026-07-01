@@ -107,4 +107,38 @@ const layoutTableDataMarkup: Rule = {
   },
 };
 
-export const tablesRules: Rule[] = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup];
+// A sortable column header that doesn't expose its sort state. When a <th>
+// (or role=columnheader) contains a real sort control (button/link) AND signals
+// sorting (a sort/tri class or label) but carries no aria-sort, AT cannot restitute
+// the current sort order (WCAG 1.3.1). Layout tables are skipped.
+const SORT_SIGNAL = /sort|trier|tri\b/i;
+const isSortControl = (e: El): boolean => e.tag === "button" || (e.tag === "a" && hasAttr(e, "href")) || (attr(e, "role") ?? "").trim() === "button";
+const signalsSort = (e: El): boolean => SORT_SIGNAL.test(`${attr(e, "class") ?? ""} ${attr(e, "aria-label") ?? ""}`) || hasAttr(e, "data-sort");
+
+const sortableHeaderNoAriaSort: Rule = {
+  id: "sortable-header-no-aria-sort",
+  criteria: ["1.3.1"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      const isHeader = el.tag === "th" || (attr(el, "role") ?? "").trim() === "columnheader";
+      if (!isHeader) continue;
+      if (hasAttr(el, "aria-sort")) continue; // already declares sort state (any value)
+      const table = ancestors(el).find((a) => a.tag === "table");
+      if (table && isLayoutTable(table)) continue;
+      const desc = descendants(el);
+      if (!isSortControl(el) && !desc.some(isSortControl)) continue; // no actual sort control
+      if (!signalsSort(el) && !desc.some(signalsSort)) continue; // nothing marks it as sortable
+      out.push({
+        criteriaId: "1.3.1",
+        el,
+        message: `En-tête de colonne triable sans aria-sort — l'état de tri (croissant/décroissant) n'est pas restitué.`,
+        remediation: `Ajoutez aria-sort="none|ascending|descending" sur le <th> trié, et masquez le glyphe de tri (aria-hidden="true").`,
+      });
+    }
+    return out;
+  },
+};
+
+export const tablesRules: Rule[] = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup, sortableHeaderNoAriaSort];

@@ -1,6 +1,7 @@
 // Theme 11 — Forms: every field has a programmatic label + group/structure checks.
 import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, hasDynamicSpread, descendants, visibleText } from "../parse/html.js";
+import { isIntrinsic } from "../parse/jsx-bridge.js";
 import { controlLabel, isFormField, mayInjectContent } from "../name.js";
 
 // The element's WHOLE content is a slot/snippet passthrough — a DIRECT `<slot>` child or
@@ -193,6 +194,94 @@ const ariaInvalidNoDescription: Rule = {
   },
 };
 
+// The complement of aria-invalid-no-description: a VISIBLE error-text node that carries
+// a stable id but is referenced by NO field (no aria-describedby/aria-errormessage points
+// at it). The error is shown but not programmatically tied to its field (WCAG 3.3.1).
+// Only fired on a literal, present id with no literal referrer — provable, low FP.
+const ERROR_TEXT_CLASS = /(^|[-_ ])(fr-error-text|fr-message--error|error-text|error-message|field-error|invalid-feedback)/i;
+
+const errorNotAssociated: Rule = {
+  id: "error-not-associated",
+  criteria: ["3.3.1"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const referenced = new Set<string>();
+    for (const el of doc.elements) {
+      for (const a of ["aria-describedby", "aria-errormessage"]) {
+        const v = attr(el, a);
+        if (v && !v.includes("{")) for (const id of v.split(/\s+/).filter(Boolean)) referenced.add(id);
+      }
+    }
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      const cls = attr(el, "class");
+      if (!cls || !ERROR_TEXT_CLASS.test(cls)) continue;
+      const id = (attr(el, "id") ?? "").trim();
+      if (!id || id.includes("{")) continue; // no stable literal id to reference — not provable
+      if (referenced.has(id)) continue; // already linked to a field
+      if (hasDynamicSpread(el)) continue;
+      out.push({
+        criteriaId: "3.3.1",
+        el,
+        message: `Message d'erreur (id="${id}") relié à aucun champ — aucun aria-describedby/aria-errormessage ne le référence.`,
+        remediation: `Sur le champ concerné, ajoutez aria-describedby="${id}" (ou aria-errormessage) et aria-invalid="true".`,
+      });
+    }
+    return out;
+  },
+};
+
+// WCAG 1.3.5 (identify input purpose) + 4.1.2 (state). Two provable, conservative gaps:
+//  (i)  an identify-purpose <input> (email/tel, or a purpose token in name/id) with no
+//       autocomplete attribute — the field's purpose is not exposed programmatically.
+//  (ii) a CUSTOM widget (role=textbox/combobox/checkbox/… on an intrinsic non-native
+//       element) marked required by class but missing aria-required — required state lost.
+const PURPOSE_TYPES = new Set(["email", "tel"]);
+const PURPOSE_TOKENS = /(e-?mail|tel(ephone)?|phone|mobile|postal|zip|address|street|city|country)/i;
+const SKIP_INPUT_TYPES = new Set(["search", "hidden", "submit", "reset", "button", "password", "checkbox", "radio", "file", "range", "color"]);
+const CUSTOM_WIDGET_ROLES = new Set(["textbox", "combobox", "checkbox", "radio", "switch", "spinbutton"]);
+const REQUIRED_SIGNAL = /(^|[-_ ])(required|mandatory|is-required)/i;
+
+const fieldPurposeIncomplete: Rule = {
+  id: "field-purpose-incomplete",
+  criteria: ["1.3.5", "4.1.2"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      // (i) identify-purpose input without autocomplete (1.3.5)
+      if (el.tag === "input") {
+        const type = (attr(el, "type") ?? "text").toLowerCase();
+        if (!type.includes("{") && !SKIP_INPUT_TYPES.has(type)) {
+          const nameId = `${attr(el, "name") ?? ""} ${attr(el, "id") ?? ""}`;
+          const purpose = PURPOSE_TYPES.has(type) || PURPOSE_TOKENS.test(nameId);
+          if (purpose && !hasAttr(el, "autocomplete") && !hasDynamicSpread(el)) {
+            out.push({
+              criteriaId: "1.3.5",
+              el,
+              message: `Champ d'identification (${type === "email" || type === "tel" ? `type="${type}"` : "name/id"}) sans autocomplete — objet du champ non exposé.`,
+              remediation: `Ajoutez un autocomplete approprié (ex. email, tel, name, postal-code, street-address) — WCAG 1.3.5.`,
+            });
+          }
+        }
+      }
+      // (ii) custom required widget without aria-required (4.1.2)
+      const role = (attr(el, "role") ?? "").trim().toLowerCase();
+      if (isIntrinsic(el.tag) && CUSTOM_WIDGET_ROLES.has(role) && REQUIRED_SIGNAL.test(attr(el, "class") ?? "")) {
+        if (!hasAttr(el, "aria-required") && !hasAttr(el, "required") && !hasDynamicSpread(el)) {
+          out.push({
+            criteriaId: "4.1.2",
+            el,
+            message: `Widget personnalisé (role="${role}") requis sans aria-required — l'état requis n'est pas restitué.`,
+            remediation: `Ajoutez aria-required="true" sur le widget personnalisé requis.`,
+          });
+        }
+      }
+    }
+    return out;
+  },
+};
+
 export const formsRules: Rule[] = [
   controlLabelMissing,
   placeholderAsLabel,
@@ -201,4 +290,6 @@ export const formsRules: Rule[] = [
   selectHasOption,
   labelForDangling,
   ariaInvalidNoDescription,
+  errorNotAssociated,
+  fieldPurposeIncomplete,
 ];

@@ -10,7 +10,8 @@ import { detectFrameworks, renderPlan, ssrHarness, type Detection } from "./rend
 import { runCriteria, renderCriteriaReference } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
-import { runScan, runCrawlScan, mergeDynamic, cleanDynamic } from "./scan.js";
+import { runScan, runScanMany, runCrawlScan, mergeDynamic, cleanDynamic, dockerAvailable } from "./scan.js";
+import { runScanLocal, runScanManyLocal, runCrawlScanLocal, localAvailable } from "./scan-local.js";
 import { runFix, fixSummary } from "./fix.js";
 import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } from "./baseline.js";
 import { repoRoot, writeHook, writeCi } from "./init.js";
@@ -39,8 +40,8 @@ Usage:
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
-  ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
-  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
+  ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
+  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--runtime …] [--cwd <dir>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
@@ -90,9 +91,13 @@ Commands:
              a real criterion, every code example parses) — the anti-hallucination
              gate for AI-ingested packs. 'pack scaffold' prints a blank pack to fill.
              Load packs at audit/report time with --pack (or .ultra11yrc.json).
-  scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
-             decide the needs-rendering criteria the static engine can't — computed
-             contrast (1.4.3), 320px reflow (1.4.10) — over a URL or HTML file.
+  scan       OPTIONAL dynamic tier: run axe-core in a headless browser to decide the
+             needs-rendering criteria the static engine can't — computed contrast
+             (1.4.3), 320px reflow (1.4.10) — over a URL or HTML file. The local
+             runtime (--runtime local, default when Playwright resolves from --cwd;
+             no Docker) additionally probes focus visibility (2.4.7), 200% zoom
+             (1.4.4), text spacing (1.4.12), content on hover (1.4.13) and target
+             size (2.5.8), and accepts --storage-state for authenticated pages.
              --merge folds the findings into a static AuditResult (manual → C/NC).
              --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
              links BFS-crawled from a start URL) and aggregate the findings.
@@ -146,7 +151,14 @@ Options:
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
   --depth <n>        scan: crawl link-hop depth from the start URL          (default: 2)
   --max <n>          scan: cap on pages scanned (sitemap/crawl)             (default: 50)
-  --docker           scan: run the dynamic tier in Docker (default; built on first use)
+  --runtime <mode>   scan: local (host/target Playwright, no Docker) | docker | auto
+                     (default: auto — local if Playwright resolves from --cwd, else Docker)
+  --local            scan: alias of --runtime local
+  --docker           scan: alias of --runtime docker (built on first use)
+  --cwd <dir>        scan: --runtime local resolves @playwright/test + @axe-core/playwright
+                     (and the browser) from here (e.g. --cwd packages/app)
+  --storage-state <file>  scan: --runtime local — Playwright storageState JSON for
+                     authenticated pages (e.g. test-results/.auth/user.json)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
   --lang en|fr       output language                                     (default: en)
@@ -191,6 +203,9 @@ const VALUE_FLAGS = new Set([
   "pack",
   "format",
   "guidance",
+  "runtime",
+  "cwd",
+  "storage-state",
 ]);
 // `init` treats --baseline as a boolean selector ("write the baseline"), not a
 // path, so it must NOT consume the following token. audit/fix keep it as a value
@@ -668,6 +683,36 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     );
     return 0;
   }
+  // Resolve the execution runtime. `auto` (default) prefers the local host/target
+  // Playwright (no Docker) when it resolves from --cwd, else falls back to Docker.
+  const cwd = typeof p.flags.cwd === "string" && p.flags.cwd ? (p.flags.cwd as string) : process.cwd();
+  const storageState = typeof p.flags["storage-state"] === "string" && p.flags["storage-state"] ? (p.flags["storage-state"] as string) : undefined;
+  const runtimeFlag = typeof p.flags.runtime === "string" && p.flags.runtime ? (p.flags.runtime as string) : p.flags.local === true ? "local" : p.flags.docker === true ? "docker" : "auto";
+  if (!["auto", "local", "docker"].includes(runtimeFlag)) {
+    console.error(`ultra11y scan: --runtime must be local, docker, or auto (got "${runtimeFlag}").`);
+    return 2;
+  }
+  let useLocal: boolean;
+  if (runtimeFlag === "local") useLocal = true;
+  else if (runtimeFlag === "docker") useLocal = false;
+  else if (localAvailable(cwd)) useLocal = true;
+  else if (dockerAvailable()) useLocal = false;
+  else {
+    console.error(
+      lang === "fr"
+        ? "ultra11y scan : aucun runtime disponible — ni Playwright local (passez --cwd vers un projet avec @playwright/test + @axe-core/playwright installés), ni Docker. Voir --runtime."
+        : "ultra11y scan: no runtime available — neither a local Playwright (pass --cwd at a project with @playwright/test + @axe-core/playwright installed) nor Docker. See --runtime.",
+    );
+    return 1;
+  }
+  if (storageState && !useLocal) {
+    console.error(
+      lang === "fr"
+        ? "ultra11y scan : --storage-state n'est pris en charge qu'avec --runtime local — ignoré pour le runtime Docker."
+        : "ultra11y scan: --storage-state is only supported with --runtime local — ignored for the Docker runtime.",
+    );
+  }
+
   const sitemap = typeof p.flags.sitemap === "string" ? (p.flags.sitemap as string) : undefined;
   const crawl = typeof p.flags.crawl === "string" ? (p.flags.crawl as string) : undefined;
   let dynamic: DynamicResult;
@@ -675,14 +720,18 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     if (sitemap || crawl) {
       const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : undefined;
       const max = typeof p.flags.max === "string" ? Number(p.flags.max) : undefined;
-      dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
+      dynamic = useLocal ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang }) : await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
-      const target = p.positionals.find((a) => a !== "-");
-      if (!target) {
-        console.error("ultra11y scan: provide a URL or HTML file, --sitemap <url>, --crawl <url>, or --clean.");
+      const targets = p.positionals.filter((a) => a !== "-");
+      if (targets.length === 0) {
+        console.error("ultra11y scan: provide one or more URLs/HTML files, --sitemap <url>, --crawl <url>, or --clean.");
         return 2;
       }
-      dynamic = runScan({ target });
+      if (useLocal) {
+        dynamic = targets.length === 1 ? await runScanLocal({ target: targets[0]!, cwd, storageState, lang }) : await runScanManyLocal(targets, { cwd, storageState, lang });
+      } else {
+        dynamic = targets.length === 1 ? runScan({ target: targets[0]! }) : runScanMany(targets);
+      }
     }
   } catch (e) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);

@@ -9,9 +9,9 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, existsSync, statSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { AuditResult, DynamicFinding, DynamicResult, Lang, Severity } from "./types.js";
+import type { AuditResult, DynamicEngine, DynamicFinding, DynamicResult, Lang, Severity } from "./types.js";
 import { allGuidelines } from "./wcag.js";
-import { scForAxe, severityFromImpact } from "./axe-map.js";
+import { PROBE_SEVERITY, PROBE_WCAG, scForAxe, severityFromImpact } from "./axe-map.js";
 import { parseSitemapUrls, crawlUrls } from "./crawl.js";
 import { today } from "./util.js";
 
@@ -127,11 +127,34 @@ export function cleanDynamic(tag = IMAGE_TAG): CleanResult {
   return { imageRemoved, tempContextsRemoved: cleanTempContexts() };
 }
 
-interface RunnerOutput {
+/** One observation from a residual-criteria probe (local runtime only). */
+export interface ProbeHit {
+  selector: string;
+  html: string;
+  detail: string;
+}
+
+export interface RunnerOutput {
   url: string;
   violations: { id: string; impact: string | null; help: string; tags?: string[]; nodes: { target: string[]; html: string }[] }[];
   reflow: { horizontalScroll: boolean };
+  // Residual-criteria probes — populated ONLY by the local runtime (scan-local.ts);
+  // the Docker RUNNER never sets them, so its RunnerOutput is unchanged. Optional so
+  // every existing caller/test (which omits them) stays valid.
+  focusVisible?: ProbeHit[];
+  reflowZoom?: ProbeHit[];
+  textSpacing?: ProbeHit[];
+  hover?: ProbeHit[];
 }
+
+// RunnerOutput key ↔ probe engine, so a clean Docker output (no probe arrays) folds
+// exactly as before and the local output adds the residual-criteria findings.
+const PROBE_FIELDS: { key: keyof RunnerOutput; engine: Exclude<DynamicEngine, "axe" | "reflow"> }[] = [
+  { key: "focusVisible", engine: "focus-visible" },
+  { key: "reflowZoom", engine: "reflow-zoom" },
+  { key: "textSpacing", engine: "text-spacing" },
+  { key: "hover", engine: "hover" },
+];
 
 function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {
   const args = ["run", "--rm"];
@@ -152,7 +175,7 @@ function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {
   return JSON.parse(line) as RunnerOutput;
 }
 
-export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = "en"): DynamicResult {
+export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = "en", engine = "axe-core@playwright (docker)"): DynamicResult {
   const page = out.url || target;
   const findings: DynamicFinding[] = [];
   for (const v of out.violations) {
@@ -188,7 +211,27 @@ export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = 
       page,
     });
   }
-  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
+  // Residual-criteria probes (local runtime). Each hit the probe OBSERVED becomes a
+  // definite NC on the SC it evidences; an absent/empty array contributes nothing.
+  for (const { key, engine: probe } of PROBE_FIELDS) {
+    const hits = out[key] as ProbeHit[] | undefined;
+    if (!hits) continue;
+    const severity = PROBE_SEVERITY[probe];
+    for (const h of hits) {
+      findings.push({
+        criteriaId: PROBE_WCAG[probe],
+        axeRule: probe,
+        impact: severity === "majeur" ? "serious" : "minor",
+        severity,
+        message: h.detail,
+        selector: h.selector || "—",
+        snippet: h.html ?? "",
+        engine: probe,
+        page,
+      });
+    }
+  }
+  return { tool: "ultra11y", engine, target, date: today(), findings };
 }
 
 export interface ScanOpts {
@@ -284,7 +327,7 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
     const c = byId.get(df.criteriaId);
     if (!c) continue;
     const finding = {
-      ruleId: df.engine === "reflow" ? "dyn-reflow" : `axe:${df.axeRule}`,
+      ruleId: df.engine === "axe" ? `axe:${df.axeRule}` : `dyn-${df.engine}`,
       criteriaId: df.criteriaId,
       file: df.page ?? dynamic.target,
       line: 0,

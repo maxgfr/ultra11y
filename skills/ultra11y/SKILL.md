@@ -1,6 +1,6 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 48 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, landmarks, invalid ARIA, live regions, error association, positive tabindex — deciding what it can; YOU supply judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`), with `pack check` gating AI-ingested packs. JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports; `prd` emits a fix backlog or PRD doc; check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
+description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 53 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, landmarks, invalid ARIA, live regions, error association, positive tabindex — deciding what it can; YOU supply judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`), with `pack check` gating AI-ingested packs. JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports; `prd` emits a fix backlog or PRD doc; check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
 license: MIT
 metadata:
   version: 2.4.1
@@ -83,8 +83,11 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   `report`/`prd`/`criteria`/`check`/`verify`; see **`references/standards.md`** and
   **`references/methodology.md`**.
 - **"High-assurance audit"** → `verify --report … --semantic`; see **`references/verify.md`**.
-- **"Check contrast / rendering (optional Docker tier)"** → `scan <url> --merge …`
-  (axe-core in a headless browser); see **`references/dynamic.md`**.
+- **"Check contrast / rendering (dynamic tier)"** → `scan <url> --merge …` (axe-core in a
+  headless browser). `--runtime local` (default when Playwright resolves from `--cwd`, **no
+  Docker**) also probes focus visibility (2.4.7), 200% zoom (1.4.4), text spacing (1.4.12) and
+  content-on-hover (1.4.13) (target size 2.5.8 via axe), and takes `--storage-state` for
+  authenticated pages; see **`references/dynamic.md`**.
 
 ## Command cheat sheet
 
@@ -112,7 +115,8 @@ node scripts/ultra11y.mjs audit "dist/**/*.html"            # audit the RENDERED
 node scripts/ultra11y.mjs fix "src/**/*.html" --write --iterate    # fix and re-apply to a fixpoint
 node scripts/ultra11y.mjs init --hook --baseline            # regression gate (hook + baseline)
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx --out audits   # persist audits/audit-latest.json (for scan --merge / report --in)
-node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # Docker tier
+node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # dynamic tier (auto runtime)
+node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd packages/app --storage-state .auth/user.json  # no-Docker axe + probes, authed
 ```
 Machine output everywhere with `--json`. Reports default to English; `--lang fr` available.
 
@@ -166,7 +170,11 @@ risk is named.
 
 Static engine: offline, deterministic, install-free; inputs are HTML + JSX/TSX (real AST,
 cross-file analysis via `--graph`) + stdin. The **rendering** criteria (computed contrast,
-reflow) are covered by the optional `scan` tier (axe-core in Docker); **focus visible**,
-200% text zoom and content-on-hover stay in human review (residual risk). Data: WCAG 2.2 ©
+reflow) are covered by the optional `scan` tier (axe-core, Docker **or** `--runtime local`).
+The local runtime additionally **probes** focus visibility (2.4.7), 200% text zoom (1.4.4),
+text spacing (1.4.12) and content-on-hover (1.4.13) — observed in the rendered page, raised
+as NC only when the failure is seen (a clean probe leaves the SC `manual`, never silently
+conforming); reading order and alt relevance stay human judgment.
+Data: WCAG 2.2 ©
 W3C (W3C Document License); the RGAA pack is RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab
 2.0 (see `NOTICE`).

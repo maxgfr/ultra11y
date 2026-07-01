@@ -186,3 +186,77 @@ describe("object-embed-no-name (1.1.1)", () => {
     expect(findOf(`<embed src="a.svg" aria-hidden="true">`, "object-embed-no-name")).toHaveLength(0);
   });
 });
+
+describe("status-message-not-assertive (4.1.3)", () => {
+  it("flags an error container with aria-live=polite and no role", () => {
+    const f = findOf(`<div class="fr-alert fr-alert--error" aria-live="polite">Erreur serveur</div>`, "status-message-not-assertive");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("4.1.3");
+  });
+  it("does not flag a polite container that is not an error/alert", () => {
+    expect(findOf(`<div class="results" aria-live="polite">3 résultats</div>`, "status-message-not-assertive")).toHaveLength(0);
+  });
+  it("does not overlap live-region-conflict (a role is present) or a dynamic value", () => {
+    expect(findOf(`<div role="status" class="fr-error" aria-live="polite">x</div>`, "status-message-not-assertive")).toHaveLength(0);
+    expect(findOf(`<div className="fr-error" aria-live={mode}>x</div>`, "status-message-not-assertive", "t.tsx")).toHaveLength(0);
+  });
+});
+
+describe("error-not-associated (3.3.1)", () => {
+  it("flags an error-text node with an id referenced by no field", () => {
+    const f = findOf(`<input type="text"><p class="fr-error-text" id="email-error">Email invalide</p>`, "error-not-associated");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("3.3.1");
+  });
+  it("does not flag when a field references the error via aria-describedby", () => {
+    expect(findOf(`<input aria-describedby="email-error"><p class="fr-error-text" id="email-error">x</p>`, "error-not-associated")).toHaveLength(0);
+  });
+  it("does not flag an error node without an id (not provable)", () => {
+    expect(findOf(`<p class="fr-error-text">Email invalide</p>`, "error-not-associated")).toHaveLength(0);
+  });
+});
+
+describe("field-purpose-incomplete (1.3.5 / 4.1.2)", () => {
+  it("flags an email/tel input without autocomplete (1.3.5)", () => {
+    const f = findOf(`<input type="email">`, "field-purpose-incomplete");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("1.3.5");
+  });
+  it("flags a purpose-named text input without autocomplete", () => {
+    expect(findOf(`<input type="text" name="postal-code">`, "field-purpose-incomplete")).toHaveLength(1);
+  });
+  it("does not flag when autocomplete is present, a search field, or a generic text field", () => {
+    expect(findOf(`<input type="email" autocomplete="email">`, "field-purpose-incomplete")).toHaveLength(0);
+    expect(findOf(`<input type="search">`, "field-purpose-incomplete")).toHaveLength(0);
+    expect(findOf(`<input type="text" name="comment">`, "field-purpose-incomplete")).toHaveLength(0);
+  });
+  it("flags a custom required widget without aria-required (4.1.2)", () => {
+    const f = findOf(`<div role="checkbox" class="field required"></div>`, "field-purpose-incomplete");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("4.1.2");
+  });
+});
+
+describe("sortable-header-no-aria-sort (1.3.1)", () => {
+  it("flags a sortable th with a sort control but no aria-sort", () => {
+    const f = findOf(`<table><tr><th><button class="sort">Nom</button></th></tr></table>`, "sortable-header-no-aria-sort");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("1.3.1");
+  });
+  it("does not flag when aria-sort is present, or a plain th with no sort control", () => {
+    expect(findOf(`<table><tr><th aria-sort="none"><button class="sort">Nom</button></th></tr></table>`, "sortable-header-no-aria-sort")).toHaveLength(0);
+    expect(findOf(`<table><tr><th scope="col">Nom</th></tr></table>`, "sortable-header-no-aria-sort")).toHaveLength(0);
+  });
+});
+
+describe("chart-no-accessible-name (1.1.1)", () => {
+  it("flags a charting container with no accessible name", () => {
+    const f = findOf(`<div class="recharts-wrapper"><svg class="recharts-surface"></svg></div>`, "chart-no-accessible-name");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("1.1.1");
+  });
+  it("does not flag when wrapped in role=img with a label, or an aria-label is present", () => {
+    expect(findOf(`<div role="img" aria-label="Courbe"><div class="recharts-wrapper"></div></div>`, "chart-no-accessible-name")).toHaveLength(0);
+    expect(findOf(`<div class="echarts" aria-label="Répartition"></div>`, "chart-no-accessible-name")).toHaveLength(0);
+  });
+});

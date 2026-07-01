@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync7 } from "fs";
+import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync8 } from "fs";
 import { join as join11, relative as relative3, sep as sep2 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
@@ -100,7 +100,14 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["img-alt-missing", "canvas-fallback-missing", "decorative-alt-misuse", "input-image-alt-missing", "object-embed-no-name"],
+      ruleIds: [
+        "img-alt-missing",
+        "canvas-fallback-missing",
+        "decorative-alt-misuse",
+        "input-image-alt-missing",
+        "object-embed-no-name",
+        "chart-no-accessible-name"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
       techniques: [
         "ARIA10",
@@ -167,7 +174,21 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html",
-      techniques: ["F30", "F67", "G158", "G159", "G166", "G173", "G58", "G69", "G78", "G8", "H96", "SM6", "SM7"]
+      techniques: [
+        "F30",
+        "F67",
+        "G158",
+        "G159",
+        "G166",
+        "G173",
+        "G58",
+        "G69",
+        "G78",
+        "G8",
+        "H96",
+        "SM6",
+        "SM7"
+      ]
     },
     {
       sc: "1.2.2",
@@ -177,9 +198,21 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["media-no-track"],
+      ruleIds: [
+        "media-no-track"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
-      techniques: ["F74", "F75", "F8", "G58", "G87", "G93", "H95", "SM11", "SM12"]
+      techniques: [
+        "F74",
+        "F75",
+        "F8",
+        "G58",
+        "G87",
+        "G93",
+        "H95",
+        "SM11",
+        "SM12"
+      ]
     },
     {
       sc: "1.2.3",
@@ -191,7 +224,21 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-or-media-alternative-prerecorded.html",
-      techniques: ["F30", "F67", "G158", "G159", "G166", "G173", "G58", "G69", "G78", "G8", "H96", "SM6", "SM7"]
+      techniques: [
+        "F30",
+        "F67",
+        "G158",
+        "G159",
+        "G166",
+        "G173",
+        "G58",
+        "G69",
+        "G78",
+        "G8",
+        "H96",
+        "SM6",
+        "SM7"
+      ]
     },
     {
       sc: "1.2.4",
@@ -214,7 +261,17 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-prerecorded.html",
-      techniques: ["G173", "G58", "G78", "G8", "H96", "SM1", "SM2", "SM6", "SM7"]
+      techniques: [
+        "G173",
+        "G58",
+        "G78",
+        "G8",
+        "H96",
+        "SM1",
+        "SM2",
+        "SM6",
+        "SM7"
+      ]
     },
     {
       sc: "1.3.1",
@@ -236,7 +293,8 @@ var wcag_default = {
         "empty-heading",
         "label-for-dangling",
         "missing-main-landmark",
-        "multiple-main-landmark"
+        "multiple-main-landmark",
+        "sortable-header-no-aria-sort"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       techniques: [
@@ -319,7 +377,26 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html",
-      techniques: ["ARIA4", "C18", "C22", "C6", "C8", "F1", "F15", "F32", "F33", "F34", "F48", "F49", "G10", "G135", "G140", "G57", "G59", "H56"]
+      techniques: [
+        "ARIA4",
+        "C18",
+        "C22",
+        "C6",
+        "C8",
+        "F1",
+        "F15",
+        "F32",
+        "F33",
+        "F34",
+        "F48",
+        "F49",
+        "G10",
+        "G135",
+        "G140",
+        "G57",
+        "G59",
+        "H56"
+      ]
     },
     {
       sc: "1.3.3",
@@ -331,7 +408,12 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html",
-      techniques: ["F14", "F26", "G140", "G96"]
+      techniques: [
+        "F14",
+        "F26",
+        "G140",
+        "G96"
+      ]
     },
     {
       sc: "1.3.4",
@@ -352,9 +434,13 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: [
+        "field-purpose-incomplete"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html",
-      techniques: ["H98"]
+      techniques: [
+        "H98"
+      ]
     },
     {
       sc: "1.4.1",
@@ -366,7 +452,26 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html",
-      techniques: ["C15", "F14", "F26", "F73", "F78", "G111", "G117", "G138", "G14", "G140", "G149", "G165", "G182", "G183", "G195", "G205", "G96", "SCR31"]
+      techniques: [
+        "C15",
+        "F14",
+        "F26",
+        "F73",
+        "F78",
+        "G111",
+        "G117",
+        "G138",
+        "G14",
+        "G140",
+        "G149",
+        "G165",
+        "G182",
+        "G183",
+        "G195",
+        "G205",
+        "G96",
+        "SCR31"
+      ]
     },
     {
       sc: "1.4.2",
@@ -376,9 +481,17 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: ["autoplay-media"],
+      ruleIds: [
+        "autoplay-media"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html",
-      techniques: ["F23", "F93", "G170", "G171", "G60"]
+      techniques: [
+        "F23",
+        "F93",
+        "G170",
+        "G171",
+        "G60"
+      ]
     },
     {
       sc: "1.4.3",
@@ -388,9 +501,19 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
-      ruleIds: ["contrast-literal"],
+      ruleIds: [
+        "contrast-literal"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
-      techniques: ["C29", "F24", "G136", "G145", "G148", "G174", "G18"]
+      techniques: [
+        "C29",
+        "F24",
+        "G136",
+        "G145",
+        "G148",
+        "G174",
+        "G18"
+      ]
     },
     {
       sc: "1.4.4",
@@ -400,9 +523,22 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
-      ruleIds: ["meta-viewport-zoom-block"],
+      ruleIds: [
+        "meta-viewport-zoom-block"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html",
-      techniques: ["C12", "C13", "C14", "C17", "C28", "F69", "F80", "G146", "G179", "SCR34"]
+      techniques: [
+        "C12",
+        "C13",
+        "C14",
+        "C17",
+        "C28",
+        "F69",
+        "F80",
+        "G146",
+        "G179",
+        "SCR34"
+      ]
     },
     {
       sc: "1.4.5",
@@ -414,7 +550,12 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html",
-      techniques: ["C22", "C30", "G136", "G140"]
+      techniques: [
+        "C22",
+        "C30",
+        "G136",
+        "G140"
+      ]
     },
     {
       sc: "1.4.10",
@@ -426,7 +567,10 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
-      techniques: ["C34", "C37"]
+      techniques: [
+        "C34",
+        "C37"
+      ]
     },
     {
       sc: "1.4.11",
@@ -438,7 +582,15 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
-      techniques: ["F78", "G145", "G174", "G18", "G183", "G195", "G207"]
+      techniques: [
+        "F78",
+        "G145",
+        "G174",
+        "G18",
+        "G183",
+        "G195",
+        "G207"
+      ]
     },
     {
       sc: "1.4.12",
@@ -450,7 +602,12 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
-      techniques: ["C21", "C35", "C36", "C8"]
+      techniques: [
+        "C21",
+        "C35",
+        "C36",
+        "C8"
+      ]
     },
     {
       sc: "1.4.13",
@@ -462,7 +619,9 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html",
-      techniques: ["F95"]
+      techniques: [
+        "F95"
+      ]
     },
     {
       sc: "2.1.1",
@@ -472,9 +631,25 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["clickable-noninteractive"],
+      ruleIds: [
+        "clickable-noninteractive"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
-      techniques: ["F10", "F42", "F54", "F55", "G202", "G21", "G4", "G90", "H91", "SCR2", "SCR20", "SCR29", "SCR35"]
+      techniques: [
+        "F10",
+        "F42",
+        "F54",
+        "F55",
+        "G202",
+        "G21",
+        "G4",
+        "G90",
+        "H91",
+        "SCR2",
+        "SCR20",
+        "SCR29",
+        "SCR35"
+      ]
     },
     {
       sc: "2.1.2",
@@ -486,7 +661,14 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html",
-      techniques: ["F10", "G202", "G21", "G4", "G90", "H91"]
+      techniques: [
+        "F10",
+        "G202",
+        "G21",
+        "G4",
+        "G90",
+        "H91"
+      ]
     },
     {
       sc: "2.1.4",
@@ -498,7 +680,10 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/character-key-shortcuts.html",
-      techniques: ["F99", "G217"]
+      techniques: [
+        "F99",
+        "G217"
+      ]
     },
     {
       sc: "2.2.1",
@@ -508,7 +693,9 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["meta-refresh-redirect"],
+      ruleIds: [
+        "meta-refresh-redirect"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html",
       techniques: [
         "F16",
@@ -551,7 +738,10 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["autoplay-media", "blink-marquee"],
+      ruleIds: [
+        "autoplay-media",
+        "blink-marquee"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html",
       techniques: [
         "F16",
@@ -596,7 +786,11 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html",
-      techniques: ["G15", "G176", "G19"]
+      techniques: [
+        "G15",
+        "G176",
+        "G19"
+      ]
     },
     {
       sc: "2.4.1",
@@ -606,9 +800,29 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["skip-link-target-missing"],
+      ruleIds: [
+        "skip-link-target-missing"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html",
-      techniques: ["ARIA11", "ARIA12", "ARIA4", "F15", "F66", "G1", "G10", "G115", "G123", "G124", "G130", "G135", "G141", "G59", "H42", "H69", "SCR28"]
+      techniques: [
+        "ARIA11",
+        "ARIA12",
+        "ARIA4",
+        "F15",
+        "F66",
+        "G1",
+        "G10",
+        "G115",
+        "G123",
+        "G124",
+        "G130",
+        "G135",
+        "G141",
+        "G59",
+        "H42",
+        "H69",
+        "SCR28"
+      ]
     },
     {
       sc: "2.4.2",
@@ -618,9 +832,15 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: ["title-missing-empty"],
+      ruleIds: [
+        "title-missing-empty"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
-      techniques: ["G127", "G88", "H25"]
+      techniques: [
+        "G127",
+        "G88",
+        "H25"
+      ]
     },
     {
       sc: "2.4.3",
@@ -630,9 +850,30 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["positive-tabindex"],
+      ruleIds: [
+        "positive-tabindex"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
-      techniques: ["C27", "F1", "F15", "F44", "F66", "F85", "G1", "G10", "G123", "G124", "G135", "G140", "G59", "H4", "SCR26", "SCR27", "SCR28", "SCR37"]
+      techniques: [
+        "C27",
+        "F1",
+        "F15",
+        "F44",
+        "F66",
+        "F85",
+        "G1",
+        "G10",
+        "G123",
+        "G124",
+        "G135",
+        "G140",
+        "G59",
+        "H4",
+        "SCR26",
+        "SCR27",
+        "SCR28",
+        "SCR37"
+      ]
     },
     {
       sc: "2.4.4",
@@ -642,9 +883,24 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["link-empty-name", "icon-only-control-unnamed"],
+      ruleIds: [
+        "link-empty-name",
+        "icon-only-control-unnamed"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html",
-      techniques: ["ARIA7", "ARIA8", "F63", "F89", "G53", "G91", "H30", "H78", "H79", "H80", "H81"]
+      techniques: [
+        "ARIA7",
+        "ARIA8",
+        "F63",
+        "F89",
+        "G53",
+        "G91",
+        "H30",
+        "H78",
+        "H79",
+        "H80",
+        "H81"
+      ]
     },
     {
       sc: "2.4.5",
@@ -656,7 +912,12 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/multiple-ways.html",
-      techniques: ["G161", "G61", "G63", "G64"]
+      techniques: [
+        "G161",
+        "G61",
+        "G63",
+        "G64"
+      ]
     },
     {
       sc: "2.4.6",
@@ -668,7 +929,25 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html",
-      techniques: ["ARIA12", "ARIA14", "ARIA16", "ARIA4", "ARIA6", "ARIA9", "F68", "F82", "F86", "G115", "G130", "G131", "G141", "G82", "H42", "H44", "H65"]
+      techniques: [
+        "ARIA12",
+        "ARIA14",
+        "ARIA16",
+        "ARIA4",
+        "ARIA6",
+        "ARIA9",
+        "F68",
+        "F82",
+        "F86",
+        "G115",
+        "G130",
+        "G131",
+        "G141",
+        "G82",
+        "H42",
+        "H44",
+        "H65"
+      ]
     },
     {
       sc: "2.4.7",
@@ -680,7 +959,25 @@ var wcag_default = {
       automatability: "needs-rendering",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
-      techniques: ["C15", "F42", "F54", "F55", "F73", "F78", "G149", "G165", "G183", "G195", "G202", "G90", "SCR2", "SCR20", "SCR29", "SCR31", "SCR35"]
+      techniques: [
+        "C15",
+        "F42",
+        "F54",
+        "F55",
+        "F73",
+        "F78",
+        "G149",
+        "G165",
+        "G183",
+        "G195",
+        "G202",
+        "G90",
+        "SCR2",
+        "SCR20",
+        "SCR29",
+        "SCR31",
+        "SCR35"
+      ]
     },
     {
       sc: "2.4.11",
@@ -703,7 +1000,10 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/pointer-gestures.html",
-      techniques: ["G215", "G216"]
+      techniques: [
+        "G215",
+        "G216"
+      ]
     },
     {
       sc: "2.5.2",
@@ -805,9 +1105,17 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "static",
-      ruleIds: ["html-lang-missing", "lang-invalid"],
+      ruleIds: [
+        "html-lang-missing",
+        "lang-invalid"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
-      techniques: ["F15", "G10", "G135", "H57"]
+      techniques: [
+        "F15",
+        "G10",
+        "G135",
+        "H57"
+      ]
     },
     {
       sc: "3.1.2",
@@ -817,9 +1125,14 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["inline-lang-change-missing", "lang-invalid"],
+      ruleIds: [
+        "inline-lang-change-missing",
+        "lang-invalid"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html",
-      techniques: ["H58"]
+      techniques: [
+        "H58"
+      ]
     },
     {
       sc: "3.2.1",
@@ -831,7 +1144,21 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html",
-      techniques: ["F22", "F36", "F37", "F41", "F55", "F9", "G107", "G13", "G76", "G80", "H32", "H84", "SCR19"]
+      techniques: [
+        "F22",
+        "F36",
+        "F37",
+        "F41",
+        "F55",
+        "F9",
+        "G107",
+        "G13",
+        "G76",
+        "G80",
+        "H32",
+        "H84",
+        "SCR19"
+      ]
     },
     {
       sc: "3.2.2",
@@ -843,7 +1170,20 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/on-input.html",
-      techniques: ["F22", "F36", "F37", "F41", "F9", "G107", "G13", "G76", "G80", "H32", "H84", "SCR19"]
+      techniques: [
+        "F22",
+        "F36",
+        "F37",
+        "F41",
+        "F9",
+        "G107",
+        "G13",
+        "G76",
+        "G80",
+        "H32",
+        "H84",
+        "SCR19"
+      ]
     },
     {
       sc: "3.2.3",
@@ -855,7 +1195,16 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html",
-      techniques: ["F66", "G1", "G123", "G124", "G59", "G61", "G63", "SCR28"]
+      techniques: [
+        "F66",
+        "G1",
+        "G123",
+        "G124",
+        "G59",
+        "G61",
+        "G63",
+        "SCR28"
+      ]
     },
     {
       sc: "3.2.4",
@@ -867,7 +1216,9 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html",
-      techniques: ["F31"]
+      techniques: [
+        "F31"
+      ]
     },
     {
       sc: "3.2.6",
@@ -888,7 +1239,10 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: ["aria-invalid-no-description"],
+      ruleIds: [
+        "aria-invalid-no-description",
+        "error-not-associated"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
       techniques: [
         "ARIA1",
@@ -962,7 +1316,13 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html",
-      techniques: ["G177", "G84", "G85", "G89", "H89"]
+      techniques: [
+        "G177",
+        "G84",
+        "G85",
+        "G89",
+        "H89"
+      ]
     },
     {
       sc: "3.3.4",
@@ -974,7 +1334,13 @@ var wcag_default = {
       automatability: "judgment",
       ruleIds: [],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html",
-      techniques: ["G155", "G164", "G168", "G98", "G99"]
+      techniques: [
+        "G155",
+        "G164",
+        "G168",
+        "G98",
+        "G99"
+      ]
     },
     {
       sc: "3.3.7",
@@ -1022,7 +1388,8 @@ var wcag_default = {
         "select-has-option",
         "button-empty-name",
         "icon-only-control-unnamed",
-        "control-name-title-only"
+        "control-name-title-only",
+        "field-purpose-incomplete"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
       techniques: [
@@ -1090,9 +1457,16 @@ var wcag_default = {
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
-      ruleIds: ["live-region-conflict"],
+      ruleIds: [
+        "live-region-conflict",
+        "status-message-not-assertive"
+      ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
-      techniques: ["ARIA19", "ARIA22", "ARIA23"]
+      techniques: [
+        "ARIA19",
+        "ARIA22",
+        "ARIA23"
+      ]
     }
   ]
 };
@@ -18399,7 +18773,35 @@ var objectEmbedNoName = {
     return out;
   }
 };
-var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing, objectEmbedNoName];
+var CHART_CLASS = /(^|[-_ ])(chart|graph|recharts|highcharts|chart-?js|plotly|nivo|apexcharts|echarts|d3)/i;
+var chartNoAccessibleName = {
+  id: "chart-no-accessible-name",
+  criteria: ["1.1.1"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "svg" && el.tag !== "div") continue;
+      const cls = attr(el, "class") ?? "";
+      if (!CHART_CLASS.test(cls)) continue;
+      if (isHidden(el)) continue;
+      if (hasDynamicSpread(el)) continue;
+      if (ancestors(el).some((a) => CHART_CLASS.test(attr(a, "class") ?? ""))) continue;
+      if (named(el) || accessibleName(el, doc).trim() !== "") continue;
+      const fig = ancestors(el).find((a) => a.tag === "figure");
+      if (fig && descendants(fig).some((d) => d.tag === "figcaption" && visibleText(d))) continue;
+      if (ancestors(el).some((a) => (attr(a, "role") ?? "") === "img" && (named(a) || (attr(a, "aria-label") ?? "").trim()))) continue;
+      out.push({
+        criteriaId: "1.1.1",
+        el,
+        message: `Graphique (<${el.tag}> ${cls.trim().split(/\s+/)[0]}) sans nom accessible \u2014 alternative textuelle manquante.`,
+        remediation: `Enveloppez le graphique dans <div role="img" aria-label="\u2026"> d\xE9crivant la tendance (ou ajoutez un <title>/aria-label).`
+      });
+    }
+    return out;
+  }
+};
+var imagesRules = [imgAltMissing, decorativeAltMisuse, canvasFallbackMissing, inputImageAltMissing, objectEmbedNoName, chartNoAccessibleName];
 
 // src/rules/frames.ts
 var iframeTitleMissing = {
@@ -18788,6 +19190,31 @@ var liveRegionConflict = {
     return out;
   }
 };
+var ERROR_ALERT_CONTAINER = /(^|[-_ ])(error|alert|danger|invalid|fr-error|fr-alert)/i;
+var statusMessageNotAssertive = {
+  id: "status-message-not-assertive",
+  criteria: ["4.1.3"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue;
+      const liveRaw = attr(el, "aria-live");
+      if (liveRaw === void 0 || liveRaw.includes("{")) continue;
+      if (liveRaw.trim().toLowerCase() !== "polite") continue;
+      if (hasAttr(el, "role")) continue;
+      const signal = (attr(el, "class") ?? "") + " " + (attr(el, "id") ?? "");
+      if (!ERROR_ALERT_CONTAINER.test(signal)) continue;
+      out.push({
+        criteriaId: "4.1.3",
+        el,
+        message: `Conteneur d'erreur/alerte en aria-live="polite" \u2014 un message d'erreur doit \xEAtre restitu\xE9 de fa\xE7on assertive.`,
+        remediation: `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annonc\xE9 imm\xE9diatement.`
+      });
+    }
+    return out;
+  }
+};
 var scriptsAriaRules = [
   invalidAriaRole,
   ariaRefMissingId,
@@ -18796,7 +19223,8 @@ var scriptsAriaRules = [
   ariaRequiredChildren,
   ariaHiddenFocusable,
   nestedInteractive,
-  liveRegionConflict
+  liveRegionConflict,
+  statusMessageNotAssertive
 ];
 
 // src/rules/mandatory.ts
@@ -19158,7 +19586,35 @@ var layoutTableDataMarkup = {
     return out;
   }
 };
-var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup];
+var SORT_SIGNAL = /sort|trier|tri\b/i;
+var isSortControl = (e) => e.tag === "button" || e.tag === "a" && hasAttr(e, "href") || (attr(e, "role") ?? "").trim() === "button";
+var signalsSort = (e) => SORT_SIGNAL.test(`${attr(e, "class") ?? ""} ${attr(e, "aria-label") ?? ""}`) || hasAttr(e, "data-sort");
+var sortableHeaderNoAriaSort = {
+  id: "sortable-header-no-aria-sort",
+  criteria: ["1.3.1"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      const isHeader = el.tag === "th" || (attr(el, "role") ?? "").trim() === "columnheader";
+      if (!isHeader) continue;
+      if (hasAttr(el, "aria-sort")) continue;
+      const table = ancestors(el).find((a) => a.tag === "table");
+      if (table && isLayoutTable(table)) continue;
+      const desc = descendants(el);
+      if (!isSortControl(el) && !desc.some(isSortControl)) continue;
+      if (!signalsSort(el) && !desc.some(signalsSort)) continue;
+      out.push({
+        criteriaId: "1.3.1",
+        el,
+        message: `En-t\xEAte de colonne triable sans aria-sort \u2014 l'\xE9tat de tri (croissant/d\xE9croissant) n'est pas restitu\xE9.`,
+        remediation: `Ajoutez aria-sort="none|ascending|descending" sur le <th> tri\xE9, et masquez le glyphe de tri (aria-hidden="true").`
+      });
+    }
+    return out;
+  }
+};
+var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup, sortableHeaderNoAriaSort];
 
 // src/rules/links.ts
 function hasIconChild(el) {
@@ -19443,6 +19899,79 @@ var ariaInvalidNoDescription = {
     return out;
   }
 };
+var ERROR_TEXT_CLASS = /(^|[-_ ])(fr-error-text|fr-message--error|error-text|error-message|field-error|invalid-feedback)/i;
+var errorNotAssociated = {
+  id: "error-not-associated",
+  criteria: ["3.3.1"],
+  severity: "majeur",
+  run(doc) {
+    const referenced = /* @__PURE__ */ new Set();
+    for (const el of doc.elements) {
+      for (const a of ["aria-describedby", "aria-errormessage"]) {
+        const v = attr(el, a);
+        if (v && !v.includes("{")) for (const id of v.split(/\s+/).filter(Boolean)) referenced.add(id);
+      }
+    }
+    const out = [];
+    for (const el of doc.elements) {
+      const cls = attr(el, "class");
+      if (!cls || !ERROR_TEXT_CLASS.test(cls)) continue;
+      const id = (attr(el, "id") ?? "").trim();
+      if (!id || id.includes("{")) continue;
+      if (referenced.has(id)) continue;
+      if (hasDynamicSpread(el)) continue;
+      out.push({
+        criteriaId: "3.3.1",
+        el,
+        message: `Message d'erreur (id="${id}") reli\xE9 \xE0 aucun champ \u2014 aucun aria-describedby/aria-errormessage ne le r\xE9f\xE9rence.`,
+        remediation: `Sur le champ concern\xE9, ajoutez aria-describedby="${id}" (ou aria-errormessage) et aria-invalid="true".`
+      });
+    }
+    return out;
+  }
+};
+var PURPOSE_TYPES = /* @__PURE__ */ new Set(["email", "tel"]);
+var PURPOSE_TOKENS = /(e-?mail|tel(ephone)?|phone|mobile|postal|zip|address|street|city|country)/i;
+var SKIP_INPUT_TYPES = /* @__PURE__ */ new Set(["search", "hidden", "submit", "reset", "button", "password", "checkbox", "radio", "file", "range", "color"]);
+var CUSTOM_WIDGET_ROLES = /* @__PURE__ */ new Set(["textbox", "combobox", "checkbox", "radio", "switch", "spinbutton"]);
+var REQUIRED_SIGNAL = /(^|[-_ ])(required|mandatory|is-required)/i;
+var fieldPurposeIncomplete = {
+  id: "field-purpose-incomplete",
+  criteria: ["1.3.5", "4.1.2"],
+  severity: "mineur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag === "input") {
+        const type = (attr(el, "type") ?? "text").toLowerCase();
+        if (!type.includes("{") && !SKIP_INPUT_TYPES.has(type)) {
+          const nameId = `${attr(el, "name") ?? ""} ${attr(el, "id") ?? ""}`;
+          const purpose = PURPOSE_TYPES.has(type) || PURPOSE_TOKENS.test(nameId);
+          if (purpose && !hasAttr(el, "autocomplete") && !hasDynamicSpread(el)) {
+            out.push({
+              criteriaId: "1.3.5",
+              el,
+              message: `Champ d'identification (${type === "email" || type === "tel" ? `type="${type}"` : "name/id"}) sans autocomplete \u2014 objet du champ non expos\xE9.`,
+              remediation: `Ajoutez un autocomplete appropri\xE9 (ex. email, tel, name, postal-code, street-address) \u2014 WCAG 1.3.5.`
+            });
+          }
+        }
+      }
+      const role = (attr(el, "role") ?? "").trim().toLowerCase();
+      if (isIntrinsic(el.tag) && CUSTOM_WIDGET_ROLES.has(role) && REQUIRED_SIGNAL.test(attr(el, "class") ?? "")) {
+        if (!hasAttr(el, "aria-required") && !hasAttr(el, "required") && !hasDynamicSpread(el)) {
+          out.push({
+            criteriaId: "4.1.2",
+            el,
+            message: `Widget personnalis\xE9 (role="${role}") requis sans aria-required \u2014 l'\xE9tat requis n'est pas restitu\xE9.`,
+            remediation: `Ajoutez aria-required="true" sur le widget personnalis\xE9 requis.`
+          });
+        }
+      }
+    }
+    return out;
+  }
+};
 var formsRules = [
   controlLabelMissing,
   placeholderAsLabel,
@@ -19450,7 +19979,9 @@ var formsRules = [
   formFieldMultipleLabels,
   selectHasOption,
   labelForDangling,
-  ariaInvalidNoDescription
+  ariaInvalidNoDescription,
+  errorNotAssociated,
+  fieldPurposeIncomplete
 ];
 
 // src/rules/navigation.ts
@@ -27951,6 +28482,22 @@ import { tmpdir } from "os";
 import { join as join8, resolve as resolve2 } from "path";
 
 // src/axe-map.ts
+var PROBE_WCAG = {
+  "focus-visible": "2.4.7",
+  // Focus Visible — focusing a control produces no visible change
+  "reflow-zoom": "1.4.4",
+  // Resize Text / 200% zoom — content clipped/lost when enlarged
+  "text-spacing": "1.4.12",
+  // Text Spacing — clipping/overlap under the WCAG spacing override
+  hover: "1.4.13"
+  // Content on Hover or Focus — not dismissible/hoverable/persistent
+};
+var PROBE_SEVERITY = {
+  "focus-visible": "majeur",
+  "reflow-zoom": "majeur",
+  "text-spacing": "mineur",
+  hover: "mineur"
+};
 var AXE_WCAG = {
   // images
   "image-alt": "1.1.1",
@@ -28212,6 +28759,12 @@ function cleanDynamic(tag = IMAGE_TAG) {
   }
   return { imageRemoved, tempContextsRemoved: cleanTempContexts() };
 }
+var PROBE_FIELDS = [
+  { key: "focusVisible", engine: "focus-visible" },
+  { key: "reflowZoom", engine: "reflow-zoom" },
+  { key: "textSpacing", engine: "text-spacing" },
+  { key: "hover", engine: "hover" }
+];
 function runRunner(target, isFile, tag) {
   const args = ["run", "--rm"];
   if (isFile) args.push("-v", `${resolve2(target)}:${MOUNT}:ro`);
@@ -28227,7 +28780,7 @@ function runRunner(target, isFile, tag) {
   const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
   return JSON.parse(line);
 }
-function toDynamicResult(out, target, lang = "en") {
+function toDynamicResult(out, target, lang = "en", engine = "axe-core@playwright (docker)") {
   const page = out.url || target;
   const findings = [];
   for (const v of out.violations) {
@@ -28260,7 +28813,25 @@ function toDynamicResult(out, target, lang = "en") {
       page
     });
   }
-  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target, date: today(), findings };
+  for (const { key, engine: probe } of PROBE_FIELDS) {
+    const hits = out[key];
+    if (!hits) continue;
+    const severity = PROBE_SEVERITY[probe];
+    for (const h of hits) {
+      findings.push({
+        criteriaId: PROBE_WCAG[probe],
+        axeRule: probe,
+        impact: severity === "majeur" ? "serious" : "minor",
+        severity,
+        message: h.detail,
+        selector: h.selector || "\u2014",
+        snippet: h.html ?? "",
+        engine: probe,
+        page
+      });
+    }
+  }
+  return { tool: "ultra11y", engine, target, date: today(), findings };
 }
 function runScan(opts) {
   const isUrl = /^https?:\/\//i.test(opts.target);
@@ -28323,7 +28894,7 @@ function mergeDynamic(audit, dynamic, lang = "en") {
     const c = byId2.get(df.criteriaId);
     if (!c) continue;
     const finding = {
-      ruleId: df.engine === "reflow" ? "dyn-reflow" : `axe:${df.axeRule}`,
+      ruleId: df.engine === "axe" ? `axe:${df.axeRule}` : `dyn-${df.engine}`,
       criteriaId: df.criteriaId,
       file: df.page ?? dynamic.target,
       line: 0,
@@ -28357,6 +28928,276 @@ function mergeDynamic(audit, dynamic, lang = "en") {
   merged.conformancePct = decided.length === 0 ? 100 : Math.round(conform / decided.length * 100);
   merged.findings.sort((a, b) => sevRank[b.severity] - sevRank[a.severity]);
   return merged;
+}
+
+// src/scan-local.ts
+import { existsSync as existsSync5, statSync as statSync3 } from "fs";
+import { createRequire } from "module";
+import { resolve as resolve3 } from "path";
+var LOCAL_ENGINE = "axe-core@playwright (local)";
+var PW_SPEC = "@playwright/test";
+var AXE_SPEC = "@axe-core/playwright";
+function localAvailable(cwd) {
+  try {
+    const req = createRequire(resolve3(cwd, "package.json"));
+    req.resolve(PW_SPEC);
+    req.resolve(AXE_SPEC);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function resolveLocalDeps(cwd) {
+  let chromium;
+  let AxeBuilder;
+  try {
+    const req = createRequire(resolve3(cwd, "package.json"));
+    const pw = req(PW_SPEC);
+    const axeMod = req(AXE_SPEC);
+    chromium = pw.chromium;
+    AxeBuilder = axeMod.default ?? axeMod;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(
+      `Playwright not resolvable from "${cwd}". Pass --cwd <dir> at a project with @playwright/test + @axe-core/playwright installed (e.g. --cwd packages/app), or use --runtime docker. (${msg})`
+    );
+  }
+  if (!chromium || typeof AxeBuilder !== "function") {
+    throw new Error(`Resolved Playwright/@axe-core/playwright from "${cwd}" but they did not expose chromium / AxeBuilder. Check the installed versions, or use --runtime docker.`);
+  }
+  return { chromium, AxeBuilder };
+}
+async function launchChromium(chromium) {
+  try {
+    return await chromium.launch({ args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/Executable doesn'?t exist|playwright install|browserType\.launch/i.test(msg)) {
+      throw new Error(`Could not launch Chromium for the resolved Playwright. Install it from the --cwd project: \`npx playwright install chromium\`. (${msg})`);
+    }
+    throw e;
+  }
+}
+var PRELUDE = `
+const __sel = (e) => {
+  if (!e || !e.tagName) return '\u2014';
+  const t = e.tagName.toLowerCase();
+  if (e.id) return t + '#' + e.id;
+  const c = typeof e.className === 'string' ? e.className.trim().split(/\\s+/)[0] : '';
+  return c ? t + '.' + c : t;
+};
+const __vis = (e) => {
+  const r = e.getBoundingClientRect();
+  if (r.width <= 4 || r.height <= 4) return false; // tiny / 1px sr-only boxes
+  const s = getComputedStyle(e);
+  if (s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) === 0) return false;
+  // visually-hidden "screen-reader-only" pattern (clip rect / clip-path inset) \u2014 present in
+  // the a11y tree but not painted; must not be measured for clipping/target-size.
+  if (s.clip && s.clip !== 'auto' && s.clip !== 'rect(auto, auto, auto, auto)') return false;
+  if (s.clipPath && (s.clipPath.indexOf('inset(100%') >= 0 || s.clipPath.indexOf('inset(50%') >= 0)) return false;
+  return true;
+};
+const __html = (e) => (e.outerHTML || '').slice(0, 160);
+`;
+var REFLOW_PROBE = `(() => {
+  const el = document.scrollingElement || document.documentElement;
+  return { horizontalScroll: el.scrollWidth > el.clientWidth + 2 };
+})()`;
+var REFLOW_ZOOM_PROBE = `(() => { ${PRELUDE}
+  const root = document.documentElement;
+  const prev = root.style.fontSize;
+  root.style.fontSize = '200%';
+  const hits = [];
+  for (const e of Array.from(document.querySelectorAll('p,li,h1,h2,h3,h4,h5,h6,td,th,button,a,label,span'))) {
+    if (!__vis(e)) continue;
+    if ((e.textContent || '').trim().length < 8) continue;
+    const s = getComputedStyle(e);
+    const clip = s.overflow === 'hidden' || s.overflowY === 'hidden' || s.overflowX === 'hidden';
+    const noWrap = s.whiteSpace === 'nowrap' || s.textOverflow === 'ellipsis';
+    if ((clip || noWrap) && (e.scrollHeight > e.clientHeight + 6 || e.scrollWidth > e.clientWidth + 6)) {
+      hits.push({ selector: __sel(e), html: __html(e), detail: 'Texte tronqu\xE9/masqu\xE9 \xE0 200% (conteneur overflow:hidden / nowrap) \u2014 perte de contenu au zoom (1.4.4).' });
+    }
+    if (hits.length >= 12) break;
+  }
+  root.style.fontSize = prev;
+  return hits;
+})()`;
+var TEXT_SPACING_CSS = "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }";
+var TEXT_SPACING_PROBE = `(() => { ${PRELUDE}
+  const hits = [];
+  for (const e of Array.from(document.querySelectorAll('p,li,span,a,button,h1,h2,h3,h4,h5,h6,td,th,label,div'))) {
+    if (!__vis(e)) continue;
+    if ((e.textContent || '').trim().length < 8) continue;
+    const s = getComputedStyle(e);
+    const clipped = (s.overflowX === 'hidden' || s.overflowY === 'hidden' || s.overflow === 'hidden') && (e.scrollHeight > e.clientHeight + 2 || e.scrollWidth > e.clientWidth + 2);
+    const ellipsis = s.textOverflow === 'ellipsis' && e.scrollWidth > e.clientWidth + 2;
+    if (clipped || ellipsis) {
+      hits.push({ selector: __sel(e), html: __html(e), detail: 'Texte tronqu\xE9/masqu\xE9 sous l\\'espacement de texte WCAG 1.4.12 \u2014 perte de contenu.' });
+    }
+    if (hits.length >= 20) break;
+  }
+  return hits;
+})()`;
+var FOCUS_SETUP_PROBE = `(() => { ${PRELUDE}
+  const sel = 'a[href],button:not([disabled]),input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[role=button]:not([disabled])';
+  const snap = (e) => { const s = getComputedStyle(e); return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|'); };
+  window.__u11yF = {};
+  let n = 0;
+  for (const e of Array.from(document.querySelectorAll(sel))) {
+    if (!__vis(e)) continue;
+    const key = 'k' + n;
+    e.setAttribute('data-u11y-f', key);
+    window.__u11yF[key] = { rest: snap(e), sel: __sel(e), html: __html(e) };
+    n++;
+    if (n >= 120) break;
+  }
+  return n;
+})()`;
+var FOCUS_CHECK_PROBE = `(() => {
+  const e = document.activeElement;
+  if (!e || e === document.body || e === document.documentElement) return null;
+  const key = e.getAttribute && e.getAttribute('data-u11y-f');
+  if (!key || !window.__u11yF || !window.__u11yF[key]) return null;
+  const s = getComputedStyle(e);
+  const now = [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|');
+  const rec = window.__u11yF[key];
+  return { key: key, changed: now !== rec.rest, selector: rec.sel, html: rec.html };
+})()`;
+var HOVER_SETUP_PROBE = `(() => { ${PRELUDE}
+  const out = [];
+  let n = 0;
+  for (const e of Array.from(document.querySelectorAll('[aria-describedby]'))) {
+    const id = (e.getAttribute('aria-describedby') || '').split(/\\s+/)[0];
+    if (!id) continue;
+    const t = document.getElementById(id);
+    if (!t) continue;
+    const s = getComputedStyle(t);
+    const hidden = s.display === 'none' || s.visibility === 'hidden' || t.getBoundingClientRect().height === 0;
+    if (!hidden) continue;
+    const key = 'h' + n;
+    e.setAttribute('data-u11y-h', key);
+    out.push({ key: key, target: id, selector: __sel(e) });
+    n++;
+    if (n >= 10) break;
+  }
+  return out;
+})()`;
+function hoverVisibleExpr(id, wantHidden = false) {
+  const j = JSON.stringify(id);
+  return `(() => { const t = document.getElementById(${j}); if (!t) return ${wantHidden ? "true" : "false"}; const s = getComputedStyle(t); const shown = s.display !== 'none' && s.visibility !== 'hidden' && t.getBoundingClientRect().height > 0; return ${wantHidden ? "!shown" : "shown"}; })()`;
+}
+async function probeFocusVisible(page) {
+  const count = await page.evaluate(FOCUS_SETUP_PROBE);
+  if (!count) return [];
+  const hits = [];
+  const seen = /* @__PURE__ */ new Set();
+  const limit = Math.min(count + 2, 130);
+  for (let i = 0; i < limit; i++) {
+    await page.keyboard.press("Tab");
+    const r = await page.evaluate(FOCUS_CHECK_PROBE);
+    if (!r) continue;
+    if (seen.has(r.key)) break;
+    seen.add(r.key);
+    if (!r.changed) {
+      hits.push({ selector: r.selector, html: r.html, detail: "Le focus clavier ne produit aucun changement visible (outline/box-shadow/bordure/fond) \u2014 focus non visible (2.4.7)." });
+    }
+    if (hits.length >= 20) break;
+  }
+  return hits;
+}
+async function probeHover(page) {
+  const triggers = await page.evaluate(HOVER_SETUP_PROBE);
+  const hits = [];
+  for (const tr of triggers) {
+    try {
+      await page.hover(`[data-u11y-h="${tr.key}"]`);
+    } catch {
+      continue;
+    }
+    await page.waitForTimeout(150);
+    const shown = await page.evaluate(hoverVisibleExpr(tr.target));
+    if (!shown) continue;
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(100);
+    const dismissed = await page.evaluate(hoverVisibleExpr(tr.target, true));
+    await page.mouse.move(2, 2).catch(() => {
+    });
+    if (!dismissed) {
+      hits.push({ selector: tr.selector, html: "", detail: `Le contenu r\xE9v\xE9l\xE9 au survol (aria-describedby #${tr.target}) ne se masque pas avec \xC9chap \u2014 Contenu au survol ou au focus (1.4.13).` });
+    }
+    if (hits.length >= 8) break;
+  }
+  return hits;
+}
+var AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
+async function runOnPage(browser, AxeBuilder, target, isFile, storageState) {
+  const context = await browser.newContext(storageState ? { storageState } : {});
+  const page = await context.newPage();
+  try {
+    const url = isFile ? "file://" + resolve3(target) : target;
+    await page.goto(url, { waitUntil: "load", timeout: 45e3 });
+    await page.waitForLoadState("networkidle", { timeout: 8e3 }).catch(() => {
+    });
+    await page.waitForTimeout(1200);
+    const axeRes = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+    const violations = axeRes.violations.map((v) => ({
+      id: v.id,
+      impact: v.impact ?? null,
+      help: v.help,
+      tags: v.tags,
+      nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target.map(String), html: (n.html || "").slice(0, 200) }))
+    }));
+    const focusVisible = await probeFocusVisible(page).catch(() => []);
+    const hover = await probeHover(page).catch(() => []);
+    const reflowZoom = await page.evaluate(REFLOW_ZOOM_PROBE).catch(() => []);
+    await page.setViewportSize({ width: 320, height: 800 }).catch(() => {
+    });
+    const reflow = await page.evaluate(REFLOW_PROBE).catch(() => ({ horizontalScroll: false }));
+    await page.setViewportSize({ width: 1280, height: 900 }).catch(() => {
+    });
+    await page.addStyleTag({ content: TEXT_SPACING_CSS }).catch(() => {
+    });
+    const textSpacing = await page.evaluate(TEXT_SPACING_PROBE).catch(() => []);
+    return { url: page.url() || target, violations, reflow, focusVisible, hover, reflowZoom, textSpacing };
+  } finally {
+    await context.close();
+  }
+}
+async function runScanLocal(opts) {
+  const isUrl = /^https?:\/\//i.test(opts.target);
+  if (!isUrl && !existsSync5(opts.target)) {
+    throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
+  }
+  const isFile = !isUrl && statSync3(opts.target).isFile();
+  const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
+  const browser = await launchChromium(chromium);
+  try {
+    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, opts.storageState);
+    return toDynamicResult(out, opts.target, opts.lang ?? "en", LOCAL_ENGINE);
+  } finally {
+    await browser.close();
+  }
+}
+async function runScanManyLocal(urls, opts) {
+  const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
+  const browser = await launchChromium(chromium);
+  const findings = [];
+  try {
+    for (const url of urls) {
+      const out = await runOnPage(browser, AxeBuilder, url, false, opts.storageState);
+      findings.push(...toDynamicResult(out, url, opts.lang ?? "en", LOCAL_ENGINE).findings);
+    }
+  } finally {
+    await browser.close();
+  }
+  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${urls.length} page(s)`, date: today(), findings };
+}
+async function runCrawlScanLocal(opts) {
+  const urls = await discoverUrls(opts);
+  if (urls.length === 0) {
+    throw new Error("No URL to scan (empty/unreachable sitemap, or entry page with no same-origin link).");
+  }
+  return runScanManyLocal(urls, opts);
 }
 
 // src/fix.ts
@@ -28794,11 +29635,11 @@ function auditSummary(r, lang) {
 }
 
 // src/config.ts
-import { existsSync as existsSync6, statSync as statSync3 } from "fs";
+import { existsSync as existsSync7, statSync as statSync4 } from "fs";
 import { join as join10, isAbsolute } from "path";
 
 // src/pack.ts
-import { existsSync as existsSync5 } from "fs";
+import { existsSync as existsSync6 } from "fs";
 function exampleParses(ex) {
   for (const code2 of [ex.bad, ex.good]) {
     if (!code2) continue;
@@ -28866,7 +29707,7 @@ function checkGuidance(ds, pack) {
 function runPackCheck(packPath, guidancePath) {
   const errors = [];
   const warnings = [];
-  if (!existsSync5(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
+  if (!existsSync6(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
   let raw;
   try {
     raw = JSON.parse(readText(packPath));
@@ -28876,7 +29717,7 @@ function runPackCheck(packPath, guidancePath) {
   const v = validatePack(raw);
   for (const issue of v.issues) (issue.severity === "error" ? errors : warnings).push(`${issue.path ? `${issue.path}: ` : ""}${issue.message}`);
   if (v.ok && v.pack && guidancePath) {
-    if (!existsSync5(guidancePath)) {
+    if (!existsSync6(guidancePath)) {
       errors.push(`guidance file not found: ${guidancePath}`);
     } else {
       let gRaw;
@@ -28922,7 +29763,7 @@ function packScaffold() {
 var CONFIG_FILE = ".ultra11yrc.json";
 function loadConfig(cwd) {
   const p = join10(cwd, CONFIG_FILE);
-  if (!existsSync6(p)) return null;
+  if (!existsSync7(p)) return null;
   let parsed;
   try {
     parsed = JSON.parse(readText(p));
@@ -28935,16 +29776,16 @@ function loadConfig(cwd) {
   return parsed;
 }
 function packPaths(path) {
-  if (!existsSync6(path)) return null;
-  if (statSync3(path).isDirectory()) {
+  if (!existsSync7(path)) return null;
+  if (statSync4(path).isDirectory()) {
     const pack = join10(path, "pack.json");
-    if (!existsSync6(pack)) return null;
+    if (!existsSync7(pack)) return null;
     const glossary = join10(path, "glossary.json");
     const guidance = join10(path, "guidance.json");
     return {
       pack,
-      glossary: existsSync6(glossary) ? glossary : void 0,
-      guidance: existsSync6(guidance) ? guidance : void 0
+      glossary: existsSync7(glossary) ? glossary : void 0,
+      guidance: existsSync7(guidance) ? guidance : void 0
     };
   }
   return { pack: path };
@@ -28994,7 +29835,7 @@ ${formatIssues(v.issues).join("\n")}`);
   return result;
 }
 function loadGuidanceFile(path, result, onWarn) {
-  if (!existsSync6(path)) {
+  if (!existsSync7(path)) {
     onWarn(`ultra11y: guidance ${path} not found \u2014 skipping.`);
     return;
   }
@@ -29051,8 +29892,8 @@ Usage:
   ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
-  ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
-  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--merge <audit.json>] [--json]
+  ultra11y scan     <url|file\u2026> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
+  ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--runtime \u2026] [--cwd <dir>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
 Commands:
@@ -29102,9 +29943,13 @@ Commands:
              a real criterion, every code example parses) \u2014 the anti-hallucination
              gate for AI-ingested packs. 'pack scaffold' prints a blank pack to fill.
              Load packs at audit/report time with --pack (or .ultra11yrc.json).
-  scan       OPTIONAL dynamic tier: run axe-core in a headless browser (Docker) to
-             decide the needs-rendering criteria the static engine can't \u2014 computed
-             contrast (1.4.3), 320px reflow (1.4.10) \u2014 over a URL or HTML file.
+  scan       OPTIONAL dynamic tier: run axe-core in a headless browser to decide the
+             needs-rendering criteria the static engine can't \u2014 computed contrast
+             (1.4.3), 320px reflow (1.4.10) \u2014 over a URL or HTML file. The local
+             runtime (--runtime local, default when Playwright resolves from --cwd;
+             no Docker) additionally probes focus visibility (2.4.7), 200% zoom
+             (1.4.4), text spacing (1.4.12), content on hover (1.4.13) and target
+             size (2.5.8), and accepts --storage-state for authenticated pages.
              --merge folds the findings into a static AuditResult (manual \u2192 C/NC).
              --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
              links BFS-crawled from a start URL) and aggregate the findings.
@@ -29158,7 +30003,14 @@ Options:
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
   --depth <n>        scan: crawl link-hop depth from the start URL          (default: 2)
   --max <n>          scan: cap on pages scanned (sitemap/crawl)             (default: 50)
-  --docker           scan: run the dynamic tier in Docker (default; built on first use)
+  --runtime <mode>   scan: local (host/target Playwright, no Docker) | docker | auto
+                     (default: auto \u2014 local if Playwright resolves from --cwd, else Docker)
+  --local            scan: alias of --runtime local
+  --docker           scan: alias of --runtime docker (built on first use)
+  --cwd <dir>        scan: --runtime local resolves @playwright/test + @axe-core/playwright
+                     (and the browser) from here (e.g. --cwd packages/app)
+  --storage-state <file>  scan: --runtime local \u2014 Playwright storageState JSON for
+                     authenticated pages (e.g. test-results/.auth/user.json)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
   --lang en|fr       output language                                     (default: en)
@@ -29198,7 +30050,10 @@ var VALUE_FLAGS = /* @__PURE__ */ new Set([
   "split",
   "pack",
   "format",
-  "guidance"
+  "guidance",
+  "runtime",
+  "cwd",
+  "storage-state"
 ]);
 var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
 function valueFlagsFor(command) {
@@ -29276,7 +30131,7 @@ async function cmdAudit(p) {
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
-    if (existsSync7(baselineFlag)) {
+    if (existsSync8(baselineFlag)) {
       try {
         const parsed = JSON.parse(readText(baselineFlag));
         if (isCurrentAudit(parsed)) baseline = parsed;
@@ -29455,14 +30310,14 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   let deps = {};
   const pkgPath = join11(root, "package.json");
-  if (existsSync7(pkgPath)) {
+  if (existsSync8(pkgPath)) {
     try {
       const pkg = JSON.parse(readText(pkgPath));
       deps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
     } catch {
     }
   }
-  const detection = detectFrameworks(deps, (f) => existsSync7(join11(root, f)));
+  const detection = detectFrameworks(deps, (f) => existsSync8(join11(root, f)));
   if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
   else console.log(renderPlan(detection, lang));
   return 0;
@@ -29604,6 +30459,29 @@ async function cmdScan(p) {
     );
     return 0;
   }
+  const cwd = typeof p.flags.cwd === "string" && p.flags.cwd ? p.flags.cwd : process.cwd();
+  const storageState = typeof p.flags["storage-state"] === "string" && p.flags["storage-state"] ? p.flags["storage-state"] : void 0;
+  const runtimeFlag = typeof p.flags.runtime === "string" && p.flags.runtime ? p.flags.runtime : p.flags.local === true ? "local" : p.flags.docker === true ? "docker" : "auto";
+  if (!["auto", "local", "docker"].includes(runtimeFlag)) {
+    console.error(`ultra11y scan: --runtime must be local, docker, or auto (got "${runtimeFlag}").`);
+    return 2;
+  }
+  let useLocal;
+  if (runtimeFlag === "local") useLocal = true;
+  else if (runtimeFlag === "docker") useLocal = false;
+  else if (localAvailable(cwd)) useLocal = true;
+  else if (dockerAvailable()) useLocal = false;
+  else {
+    console.error(
+      lang === "fr" ? "ultra11y scan : aucun runtime disponible \u2014 ni Playwright local (passez --cwd vers un projet avec @playwright/test + @axe-core/playwright install\xE9s), ni Docker. Voir --runtime." : "ultra11y scan: no runtime available \u2014 neither a local Playwright (pass --cwd at a project with @playwright/test + @axe-core/playwright installed) nor Docker. See --runtime."
+    );
+    return 1;
+  }
+  if (storageState && !useLocal) {
+    console.error(
+      lang === "fr" ? "ultra11y scan : --storage-state n'est pris en charge qu'avec --runtime local \u2014 ignor\xE9 pour le runtime Docker." : "ultra11y scan: --storage-state is only supported with --runtime local \u2014 ignored for the Docker runtime."
+    );
+  }
   const sitemap = typeof p.flags.sitemap === "string" ? p.flags.sitemap : void 0;
   const crawl = typeof p.flags.crawl === "string" ? p.flags.crawl : void 0;
   let dynamic;
@@ -29611,14 +30489,18 @@ async function cmdScan(p) {
     if (sitemap || crawl) {
       const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : void 0;
       const max = typeof p.flags.max === "string" ? Number(p.flags.max) : void 0;
-      dynamic = await runCrawlScan({ sitemap, crawl, depth, max });
+      dynamic = useLocal ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang }) : await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
-      const target = p.positionals.find((a) => a !== "-");
-      if (!target) {
-        console.error("ultra11y scan: provide a URL or HTML file, --sitemap <url>, --crawl <url>, or --clean.");
+      const targets = p.positionals.filter((a) => a !== "-");
+      if (targets.length === 0) {
+        console.error("ultra11y scan: provide one or more URLs/HTML files, --sitemap <url>, --crawl <url>, or --clean.");
         return 2;
       }
-      dynamic = runScan({ target });
+      if (useLocal) {
+        dynamic = targets.length === 1 ? await runScanLocal({ target: targets[0], cwd, storageState, lang }) : await runScanManyLocal(targets, { cwd, storageState, lang });
+      } else {
+        dynamic = targets.length === 1 ? runScan({ target: targets[0] }) : runScanMany(targets);
+      }
     }
   } catch (e) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);

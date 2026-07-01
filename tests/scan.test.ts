@@ -45,6 +45,37 @@ describe("toDynamicResult", () => {
   });
 });
 
+describe("toDynamicResult — residual-criteria probes (local runtime)", () => {
+  const out = {
+    url: "https://exemple.fr",
+    violations: [],
+    reflow: { horizontalScroll: false },
+    focusVisible: [{ selector: "button.x", html: "<button>", detail: "no focus indicator" }],
+    textSpacing: [{ selector: "p.z", html: "<p>", detail: "clipped" }],
+    hover: [],
+    reflowZoom: [{ selector: "document", html: "", detail: "200% scroll" }],
+  };
+  const dyn = toDynamicResult(out, "https://exemple.fr", "en", "axe-core@playwright (local)");
+  it("maps each probe to its WCAG SC + severity", () => {
+    expect(dyn.findings.find((f) => f.engine === "focus-visible")?.criteriaId).toBe("2.4.7");
+    expect(dyn.findings.find((f) => f.engine === "text-spacing")?.criteriaId).toBe("1.4.12");
+    expect(dyn.findings.find((f) => f.engine === "reflow-zoom")?.criteriaId).toBe("1.4.4");
+    expect(dyn.findings.find((f) => f.engine === "focus-visible")?.severity).toBe("majeur");
+    expect(dyn.findings.find((f) => f.engine === "text-spacing")?.severity).toBe("mineur");
+  });
+  it("carries the local engine label", () => {
+    expect(dyn.engine).toBe("axe-core@playwright (local)");
+  });
+  it("merges probe findings into the static audit, upgrading manual SCs to NC with a dyn- ruleId", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    expect(audit.criteria.find((c) => c.id === "2.4.7")?.status).toBe("manual");
+    const merged = mergeDynamic(audit, dyn);
+    expect(merged.criteria.find((c) => c.id === "2.4.7")?.status).toBe("NC");
+    expect(merged.findings.some((f) => f.ruleId === "dyn-focus-visible")).toBe(true);
+    expect(merged.residualRisks.some((r) => r.criteriaId === "2.4.7")).toBe(false);
+  });
+});
+
 describe("cleanTempContexts", () => {
   it("removes leftover dynamic build contexts from the temp dir", () => {
     const a = mkdtempSync(join(tmpdir(), "ultra11y-dyn-"));

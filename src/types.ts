@@ -172,7 +172,13 @@ export interface AuditResult {
   conformancePct: number;
 }
 
-// ---- optional Docker dynamic tier (axe-core in a headless browser)
+// ---- optional dynamic tier (axe-core in a headless browser): Docker image, or a
+// host/target Playwright resolved at runtime (`scan --local`). `engine` widens from
+// the axe + 320px-reflow pair to the bespoke residual-criteria probes the local
+// runtime adds (focus visibility, 200% zoom reflow, text spacing, content-on-hover)
+// — the criteria axe alone cannot decide. (Target size 2.5.8 is left to axe's own rule.)
+export type DynamicEngine = "axe" | "reflow" | "focus-visible" | "reflow-zoom" | "text-spacing" | "hover";
+
 export interface DynamicFinding {
   criteriaId: string;
   axeRule: string;
@@ -181,7 +187,7 @@ export interface DynamicFinding {
   message: string;
   selector: string;
   snippet: string;
-  engine: "axe" | "reflow";
+  engine: DynamicEngine;
   page?: string; // the scanned URL/page this finding came from (multi-page crawl)
 }
 

@@ -394,6 +394,38 @@ const liveRegionConflict: Rule = {
   },
 };
 
+// An error/alert container announced politely (aria-live="polite") instead of
+// assertively. A status MESSAGE that reports an error should interrupt
+// (role="alert" / aria-live="assertive") so it is not queued and missed. This is the
+// `polite`-with-no-role case the existing live-region-conflict (role↔aria-live) leaves
+// open; only fired when the container's class/id marks it as an error/alert (low FP).
+const ERROR_ALERT_CONTAINER = /(^|[-_ ])(error|alert|danger|invalid|fr-error|fr-alert)/i;
+
+const statusMessageNotAssertive: Rule = {
+  id: "status-message-not-assertive",
+  criteria: ["4.1.3"],
+  severity: "mineur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      if (!isIntrinsic(el.tag)) continue; // a component's aria-live/role is a prop, not the HTML attr
+      const liveRaw = attr(el, "aria-live");
+      if (liveRaw === undefined || liveRaw.includes("{")) continue; // absent or dynamic value
+      if (liveRaw.trim().toLowerCase() !== "polite") continue; // only polite is at issue here
+      if (hasAttr(el, "role")) continue; // role-driven liveness is live-region-conflict's job
+      const signal = (attr(el, "class") ?? "") + " " + (attr(el, "id") ?? "");
+      if (!ERROR_ALERT_CONTAINER.test(signal)) continue;
+      out.push({
+        criteriaId: "4.1.3",
+        el,
+        message: `Conteneur d'erreur/alerte en aria-live="polite" — un message d'erreur doit être restitué de façon assertive.`,
+        remediation: `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annoncé immédiatement.`,
+      });
+    }
+    return out;
+  },
+};
+
 export const scriptsAriaRules: Rule[] = [
   invalidAriaRole,
   ariaRefMissingId,
@@ -403,4 +435,5 @@ export const scriptsAriaRules: Rule[] = [
   ariaHiddenFocusable,
   nestedInteractive,
   liveRegionConflict,
+  statusMessageNotAssertive,
 ];

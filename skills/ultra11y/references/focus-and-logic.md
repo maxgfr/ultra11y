@@ -46,8 +46,12 @@ the *actual source* matters most.
    about the keyboard/focus/interaction behaviour above. Decide `supported` / `partial` /
    `refuted` with a concrete cited reason (`file:line` + what the keyboard user experiences).
    What needs a rendered DOM (focus *visible*, *not obscured*) stays a named residual risk or
-   goes through the `scan` Docker tier (`references/dynamic.md`) — never marked conforming on
-   a guess.
+   goes through the `scan` dynamic tier (`references/dynamic.md`). The local runtime
+   (`scan --runtime local`) now **probes focus visibility (2.4.7)** directly — tabbing through
+   focusables and flagging any whose computed style does not change on focus — alongside 200%
+   zoom (1.4.4), text spacing (1.4.12) and content-on-hover (1.4.13). A
+   probe finding is a real NC; a clean probe still leaves the SC `manual` — never marked
+   conforming on a guess.
 4. **`verify --apply`** to gate: an unjudged or refuted focus/logic claim fails.
 
 The rule that never bends: a focus/interaction criterion you could not verify by reading the

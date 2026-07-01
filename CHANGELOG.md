@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.5.0](https://github.com/maxgfr/ultra11y/compare/v2.4.1...v2.5.0) (2026-07-01)
+
+
+### Features
+
+* **scan:** local no-Docker axe runtime + residual-criteria probes; 5 new static rules ([1d29dc3](https://github.com/maxgfr/ultra11y/commit/1d29dc3bb301cc1e2798115609db872bb3c44eb9))
+
 ## [2.4.1](https://github.com/maxgfr/ultra11y/compare/v2.4.0...v2.4.1) (2026-06-30)
 
 

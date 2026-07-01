@@ -687,7 +687,14 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
   // Playwright (no Docker) when it resolves from --cwd, else falls back to Docker.
   const cwd = typeof p.flags.cwd === "string" && p.flags.cwd ? (p.flags.cwd as string) : process.cwd();
   const storageState = typeof p.flags["storage-state"] === "string" && p.flags["storage-state"] ? (p.flags["storage-state"] as string) : undefined;
-  const runtimeFlag = typeof p.flags.runtime === "string" && p.flags.runtime ? (p.flags.runtime as string) : p.flags.local === true ? "local" : p.flags.docker === true ? "docker" : "auto";
+  const runtimeFlag =
+    typeof p.flags.runtime === "string" && p.flags.runtime
+      ? (p.flags.runtime as string)
+      : p.flags.local === true
+        ? "local"
+        : p.flags.docker === true
+          ? "docker"
+          : "auto";
   if (!["auto", "local", "docker"].includes(runtimeFlag)) {
     console.error(`ultra11y scan: --runtime must be local, docker, or auto (got "${runtimeFlag}").`);
     return 2;
@@ -720,7 +727,9 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     if (sitemap || crawl) {
       const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : undefined;
       const max = typeof p.flags.max === "string" ? Number(p.flags.max) : undefined;
-      dynamic = useLocal ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang }) : await runCrawlScan({ sitemap, crawl, depth, max });
+      dynamic = useLocal
+        ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang })
+        : await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
       const targets = p.positionals.filter((a) => a !== "-");
       if (targets.length === 0) {
@@ -728,7 +737,10 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
         return 2;
       }
       if (useLocal) {
-        dynamic = targets.length === 1 ? await runScanLocal({ target: targets[0]!, cwd, storageState, lang }) : await runScanManyLocal(targets, { cwd, storageState, lang });
+        dynamic =
+          targets.length === 1
+            ? await runScanLocal({ target: targets[0]!, cwd, storageState, lang })
+            : await runScanManyLocal(targets, { cwd, storageState, lang });
       } else {
         dynamic = targets.length === 1 ? runScan({ target: targets[0]! }) : runScanMany(targets);
       }

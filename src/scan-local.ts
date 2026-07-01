@@ -59,7 +59,9 @@ export function resolveLocalDeps(cwd: string): LocalDeps {
     );
   }
   if (!chromium || typeof AxeBuilder !== "function") {
-    throw new Error(`Resolved Playwright/@axe-core/playwright from "${cwd}" but they did not expose chromium / AxeBuilder. Check the installed versions, or use --runtime docker.`);
+    throw new Error(
+      `Resolved Playwright/@axe-core/playwright from "${cwd}" but they did not expose chromium / AxeBuilder. Check the installed versions, or use --runtime docker.`,
+    );
   }
   return { chromium, AxeBuilder };
 }
@@ -70,7 +72,9 @@ async function launchChromium(chromium: Any): Promise<Any> {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (/Executable doesn'?t exist|playwright install|browserType\.launch/i.test(msg)) {
-      throw new Error(`Could not launch Chromium for the resolved Playwright. Install it from the --cwd project: \`npx playwright install chromium\`. (${msg})`);
+      throw new Error(
+        `Could not launch Chromium for the resolved Playwright. Install it from the --cwd project: \`npx playwright install chromium\`. (${msg})`,
+      );
     }
     throw e;
   }
@@ -136,7 +140,8 @@ const REFLOW_ZOOM_PROBE = `(() => { ${PRELUDE}
 })()`;
 
 // 1.4.12 Text Spacing override (line-height 1.5, letter 0.12em, word 0.16em, p 2em).
-const TEXT_SPACING_CSS = "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }";
+const TEXT_SPACING_CSS =
+  "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }";
 const TEXT_SPACING_PROBE = `(() => { ${PRELUDE}
   const hits = [];
   for (const e of Array.from(document.querySelectorAll('p,li,span,a,button,h1,h2,h3,h4,h5,h6,td,th,label,div'))) {
@@ -223,7 +228,11 @@ async function probeFocusVisible(page: Any): Promise<ProbeHit[]> {
     if (seen.has(r.key)) break; // wrapped around the tab ring
     seen.add(r.key);
     if (!r.changed) {
-      hits.push({ selector: r.selector, html: r.html, detail: "Le focus clavier ne produit aucun changement visible (outline/box-shadow/bordure/fond) — focus non visible (2.4.7)." });
+      hits.push({
+        selector: r.selector,
+        html: r.html,
+        detail: "Le focus clavier ne produit aucun changement visible (outline/box-shadow/bordure/fond) — focus non visible (2.4.7).",
+      });
     }
     if (hits.length >= 20) break;
   }
@@ -247,7 +256,11 @@ async function probeHover(page: Any): Promise<ProbeHit[]> {
     const dismissed = (await page.evaluate(hoverVisibleExpr(tr.target, true))) as boolean;
     await page.mouse.move(2, 2).catch(() => {});
     if (!dismissed) {
-      hits.push({ selector: tr.selector, html: "", detail: `Le contenu révélé au survol (aria-describedby #${tr.target}) ne se masque pas avec Échap — Contenu au survol ou au focus (1.4.13).` });
+      hits.push({
+        selector: tr.selector,
+        html: "",
+        detail: `Le contenu révélé au survol (aria-describedby #${tr.target}) ne se masque pas avec Échap — Contenu au survol ou au focus (1.4.13).`,
+      });
     }
     if (hits.length >= 8) break;
   }

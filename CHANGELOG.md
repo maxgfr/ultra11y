@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.8.0](https://github.com/maxgfr/ultra11y/compare/v2.7.1...v2.8.0) (2026-07-06)
+
+
+### Features
+
+* **prd:** default to an auditor conformance block, modular per-standard vocabulary ([373f438](https://github.com/maxgfr/ultra11y/commit/373f43850d60710c6f5e1402a111b8a406557d23))
+
 ## [2.7.1](https://github.com/maxgfr/ultra11y/compare/v2.7.0...v2.7.1) (2026-07-01)
 
 

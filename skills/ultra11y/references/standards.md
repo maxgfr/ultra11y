@@ -9,10 +9,26 @@ gated; a pack report is a *derived view* projected from the same audit.
 
 - **Core = WCAG 2.2 AA.** 55 success criteria (Level A + AA), the engine's canonical key.
   SC ids/titles/levels are derived from the W3C source (https://github.com/w3c/wcag).
+  **French SC/guideline/principle titles are the official W3C AUTHORIZED translation**
+  (https://www.w3.org/Translations/WCAG22-fr/, vendored at `scripts/vendor/wcag-2.2-fr.json`)
+  baked into the dataset — `--lang fr` output cites the normative French wording, never a
+  machine translation (the build fails if a core-AA title is missing).
 - **Packs = country standards.** Each pack (`src/data/standards/<key>.json`) declares its
   own localized criteria and, per criterion, the WCAG SC ids it maps to. The engine audits
   WCAG; `derivePackResults` projects that onto the pack's criteria with the same
   NC-dominates rule. A pack carries **no** engine rules or automatability — only the mapping.
+- **The SC universe backs validation and scoping.** Alongside the AA core the engine ships
+  the full WCAG 2.x SC universe (every real SC at every level, plus the removed ones, from
+  the same vendored W3C source). A pack criterion may legitimately map to a real
+  out-of-core SC (an AAA criterion, or the removed `4.1.1`): validation accepts it with a
+  warning, and a criterion whose mapping is ENTIRELY out-of-core derives as **out of engine
+  scope** — status `manual` with a dedicated justification (never a silent NA). Shipped
+  example: **RGAA 8.1** (doctype → the removed 4.1.1). A well-formed id that never existed
+  (`9.9.9`) is rejected outright. See `references/packs.md`.
+- **Pack locales ≠ the CLI's `Lang`.** A pack's `LocaleString`s may carry any BCP-47-ish
+  tag (`pt-BR`, `nl-BE`…) — vocabulary and locales are decoupled from the CLI's own
+  `--lang fr|en` UI frame (whose `auto` default resolves conversation → repo `<html lang>`
+  → the pack's `defaultLocale` → English).
 
 ## Using a pack
 

@@ -21,7 +21,9 @@ any hallucinated non-conformity.
    ```
    or on a snippet: `node scripts/ultra11y.mjs audit - < page.html --json`.
    The `AuditResult` classes each success criterion as `C` / `NC` / `NA` (static) or
-   `manual` (rendering / judgment, listed in `residualRisks`).
+   `manual` (rendering / judgment, listed in `residualRisks`). It also records the repo's
+   declared language(s) as `scope.langs` (the primary `<html lang>` subtags seen, most
+   frequent first, e.g. `["fr"]`) — the repo signal `--lang auto` resolves from downstream.
 3. **Triage the results:**
    - engine `NC` = confirmed candidates (each finding cites `file:line`);
    - `manual` *needs-rendering* criteria (contrast 1.4.3, focus visible 2.4.7, reflow
@@ -36,10 +38,15 @@ any hallucinated non-conformity.
    ```
    node scripts/ultra11y.mjs report --in audit.json --out audits
    ```
-   → `audits/wcag-YYYY-MM-DD.md` (5 sections, see `references/methodology.md`). For a
-   country standard, add `--standard rgaa` (see `references/standards.md`). Add `--json`
-   to `report` for a machine summary (`{path, conformancePct, date, standard}`) instead of
-   just the path.
+   → `audits/wcag-YYYY-MM-DD.md` (5 sections, see `references/methodology.md`); section 2
+   renders one **auditor conformance block** per NC criterion (theme, criterion + official
+   wording, test(s), WCAG mapping + level, finding, expected state, verification,
+   `file:line` occurrences), grouped by severity — the SAME block `prd` and `--gh-issues`
+   emit (see `references/prd.md`), so report and backlog never drift. For a country
+   standard, add `--standard rgaa` (see `references/standards.md`). Pass `--lang` to match
+   your conversation; without it, `auto` resolves the audit's `scope.langs` → the
+   standard's default locale → English. Add `--json` to `report` for a machine summary
+   (`{path, conformancePct, date, standard}`) instead of just the path.
 6. **Check integrity:**
    ```
    node scripts/ultra11y.mjs check --report audits/wcag-YYYY-MM-DD.md

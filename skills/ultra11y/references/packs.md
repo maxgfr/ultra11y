@@ -39,12 +39,29 @@ node scripts/ultra11y.mjs pack scaffold > ./packs/mypack.json     # a blank, val
 `pack check` fails (exit 1) on any error: a missing required field, a `key` that collides
 with the reserved core `wcag`, an `idPattern` that won't compile, a theme `count` that
 disagrees with its criteria, a criterion whose `wcag` SC is **not a recognized WCAG
-success criterion** (a fabricated `9.9.9` fails; any REAL WCAG SC outside the shipped 2.2
-AA core — a WCAG AAA criterion, or an obsolete/removed one like `4.1.1` — is tolerated as
-a documented out-of-core mapping, with a warning, per the full WCAG 2.x SC universe), and
-— with `--guidance` — a guidance entry whose `criterionId` doesn't resolve to a real pack
-criterion, or whose code example won't parse. This is what makes an AI-authored pack
-trustworthy: the model proposes, the deterministic gate refuses fabrication.
+success criterion**, and — with `--guidance` — a guidance entry whose `criterionId`
+doesn't resolve to a real pack criterion, or whose code example won't parse. This is what
+makes an AI-authored pack trustworthy: the model proposes, the deterministic gate refuses
+fabrication.
+
+**SC classification runs against the full WCAG 2.x universe** — every real 2.x success
+criterion at every level (A/AA/AAA) plus the removed ones, vendored from the same W3C
+source as the AA core (never invented, no id ever special-cased):
+
+- **core** (in the WCAG 2.2 AA core) — the normal case; the engine can audit it.
+- **out-of-core** (a real SC outside the AA core, e.g. an AAA criterion) or **removed**
+  (the obsolete `4.1.1 Parsing`) — accepted with a *warning*. At report/derive time a pack
+  criterion whose mapping is ENTIRELY out-of-core/removed is classed **out of engine
+  scope**: status `manual` with a dedicated out-of-scope justification (`outOfScope: true`
+  from `derivePackResults`), never a silent NA and never a fabricated verdict. RGAA 8.1
+  (doctype → the removed 4.1.1) is the shipped example.
+- **unknown** (a well-formed id that never existed — `9.9.9`) — **rejected** (error).
+
+**Pack locales are free-form.** `LocaleString` keys are BCP-47-ish tags (`fr`, `en`,
+`pt-BR`, `nl-BE`…) validated by shape only — a pack may be authored in any language,
+independent of the CLI's own `--lang fr|en` UI frame. The pack's `defaultLocale` also
+feeds the CLI's `--lang auto` fallback chain (used when it is `fr`/`en` and neither an
+explicit `--lang` nor a repo `<html lang>` signal decided the output language).
 
 ## AI-assisted ingestion of any rule source (the primary path)
 

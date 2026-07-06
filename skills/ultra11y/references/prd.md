@@ -2,7 +2,12 @@
 
 `prd` turns an `AuditResult` into an **auditor-legible conformance backlog**, grouped by WCAG
 success criterion (or, with `--standard <pack>`, by a country standard's criteria). It is the
-"action" counterpart of `report` (which is the compliance document).
+"action" counterpart of `report` (which is the compliance document) — and they are not just
+similar, they render the literal **same auditor block** (`src/auditor.ts` `renderAuditorUnit`,
+fed by the same `prdUnits`): `report`'s "Non-conformities by priority" section (§2) IS one of
+these blocks per NC criterion, grouped by severity exactly like the `prd` backlog and the
+`--gh-issues`/`--gh-single` issue bodies. Change the block once, all four deliverables change
+together — there is no separate "report wording" to keep in sync.
 
 ```
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --json > audit.json

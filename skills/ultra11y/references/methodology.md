@@ -49,8 +49,11 @@ content, so the verdict is provisional — confirm against the rendered DOM or r
 ## Report format (`report`)
 
 `audits/wcag-YYYY-MM-DD.md` has 5 sections: (1) synthesis by WCAG guideline
-(C/NC/NA/to assess), (2) non-conformities by priority, (3) conforming criteria,
-(4) justified not-applicable criteria, (5) criteria to assess manually.
+(C/NC/NA/to assess), (2) non-conformities by priority — one **auditor conformance block**
+per NC criterion (theme, criterion + official wording, test(s), WCAG mapping + level,
+finding, expected state, verification, `file:line` occurrences), the SAME block `prd` and
+`--gh-issues` emit (see `references/prd.md`), (3) conforming criteria, (4) justified
+not-applicable criteria, (5) criteria to assess manually.
 
 ## Worldwide: WCAG core, country standards as packs
 

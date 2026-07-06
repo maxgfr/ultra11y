@@ -68,11 +68,16 @@ node scripts/ultra11y.mjs audit --require-captures    # gate: every opaque/contr
   component (via its `<!-- ultra11y:capture … -->` provenance), not the capture file.
   `render --coverage` shows covered vs blind-spot components; `--require-captures` turns any
   remaining blind spot into a failure.
-- **Stage the captures alongside the source change** so `audit --staged` covers them — the
-  gate then sees the real `<button>`/`<nav>`/heading structure/labels, catching regressions
-  the opaque source hides. `fix` never rewrites captures (generated output). Storybook/build
-  HTML and manual Testing-Library dumps also work — anything under `.ultra11y/captures`, or
-  point `--captures <dir>`.
+- **The gate sees the captures for the diffed components automatically.** In
+  `--changed`/`--staged`/`--since` mode the audit pulls in the committed captures whose
+  provenance points at a diffed source file (a capture is rarely itself part of the diff —
+  the SOURCE changed, its capture usually didn't), so the pre-commit gate audits the real
+  `<button>`/`<nav>`/heading structure/labels for every touched component, catching
+  regressions the opaque source hides. After a component change, re-run your tests so its
+  capture refreshes, and stage the refreshed capture with the source. `fix` never rewrites
+  captures (generated output). Storybook/build HTML and manual Testing-Library dumps also
+  work — anything under `.ultra11y/captures`, or point `--captures <dir>` (`--no-captures`
+  opts out entirely).
 - In CI, audit the **built** output (`audit "dist/**/*.html"`), and use `scan` for the
   computed rendering criteria (contrast, focus, zoom). See `references/rendered.md`.
 

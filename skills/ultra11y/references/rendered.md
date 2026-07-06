@@ -43,14 +43,21 @@ node scripts/ultra11y.mjs audit              # auto-ingests .ultra11y/captures; 
 - **Coverage + gate.** `render --coverage` lists which components have a capture vs which are
   still opaque-source-only blind spots; `audit --require-captures` fails when an opaque/control
   component lacks one — so "all components" actually get rendered-DOM coverage.
-- **Commit `.ultra11y/captures`** and stage it with the source change so `audit --staged` (the
-  pre-commit gate) verifies the real markup. `fix` never rewrites captures (generated output).
-  Add `.gitattributes`: `.ultra11y/captures/*.html text eol=lf` for stable cross-platform diffs.
+- **Commit `.ultra11y/captures`.** In diff-scoped mode (`--changed`/`--staged`/`--since`) the
+  audit automatically pulls in the captures whose provenance points at a diffed source file —
+  the pre-commit gate sees the real rendered markup for a touched component even though the
+  (unchanged) capture itself isn't part of the diff. After a component change, re-run your
+  tests so its capture refreshes, and stage the refreshed capture with the source change.
+  `fix` never rewrites captures (generated output). Add `.gitattributes`:
+  `.ultra11y/captures/*.html text eol=lf` for stable cross-platform diffs.
 - **Storybook**: with **portable stories** (composeStories) rendered in your test suite, the
   harvester captures them for free. For per-story HTML produced another way (e.g.
   `@storybook/test-runner`), `render --storybook [<storybook-static>] [--captures <html-dir>]`
   attributes each file to its source component via the Storybook index, into `.ultra11y/captures`.
 - ultra11y renders nothing itself — your test toolchain (jsdom/happy-dom) does. Disable with `ULTRA11Y_CAPTURES=off`.
+- The harvester pipeline is covered by a real end-to-end test in ultra11y's own suite (a
+  spawned vitest+jsdom project renders, the capture lands with correct provenance, and the
+  engine ingests it) — the escaping scheme it embeds is locked byte-identical to the parser's.
 
 ## Get rendered HTML
 

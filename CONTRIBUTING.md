@@ -67,7 +67,16 @@ Shape (see `src/standards/types.ts` for the authoritative types):
 Rules of the road:
 - **`title`/`name` are `LocaleString`s** (`{ "en": "…", "fr": "…" }`). The pack's `defaultLocale`
   is mandatory on each; **English is strongly recommended** for worldwide readability. A national
-  standard that is genuinely single-language (like RGAA, fr-only) is fine.
+  standard that is genuinely single-language (like RGAA, fr-only) is fine. Locale keys are
+  free-form BCP-47-ish tags (`pt-BR`, `nl-BE`, …) validated by shape only — a pack's languages
+  are decoupled from the CLI's own `--lang fr|en` UI frame. When `defaultLocale` is `fr`/`en`,
+  it also feeds the CLI's `--lang auto` fallback chain (conversation → repo `<html lang>` →
+  the pack's `defaultLocale` → English).
+- **`idPattern` is the gate's id grammar.** `check` and `verify` build their criterion-citation
+  regex FROM your pack's own `idPattern` (capture groups are neutralized automatically), so ANY
+  id shape works out of the box — RGAA's `8.3`, a Section-508-style `E205.4`, whatever your
+  standard uses. There is no fixed 2-segment constraint; the only requirement is that the
+  pattern compiles and every criterion id matches it (`pack check` verifies both).
 - **`wcag` holds bare 3-segment SC ids** (`"1.4.3"`, not `"1.4.3 Contrast (Minimum) (AA)"`).
 - A criterion may map to a WCAG SC outside the 2.2 **AA** core (e.g. an AAA SC, or 4.1.1 Parsing
   which 2.2 removed) — real WCAG SCs the full WCAG universe recognizes (`src/wcag.ts`

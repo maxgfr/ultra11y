@@ -30,8 +30,11 @@ node scripts/ultra11y.mjs fix page.html --only positive-tabindex --write
   are dropped, never misapplied.
 - **Anti-regression gate**: after `--write`, the file is re-audited; if a fix **introduced** a
   new non-conformity, it is **not** written.
-- **JSX/TSX never rewritten**: offsets point into the transformed HTML (lossy), not the `.tsx`;
-  on those files `fix` stays **proposal-only** — edit by hand.
+- **JSX/TSX: safe codemods only.** `.jsx`/`.tsx` parse to a real AST whose offsets index the
+  original file, so `fix --write` applies the codemods marked **jsxSafe** (attribute removal /
+  insertion of React-valid props) — it never rewrites an attribute name (`tabIndex={5}` is
+  never turned into `tabindex="0"`). Only the rare **lossy** fallback (a file the AST parser
+  could not parse at all) stays proposal-only.
 
 ## Fix order (native-first)
 

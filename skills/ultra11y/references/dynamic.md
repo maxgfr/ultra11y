@@ -43,8 +43,13 @@ node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd packa
 node scripts/ultra11y.mjs report --in audits/audit-latest.json --out audits
 ```
 
-`--storage-state` is **local-only** (ignored, with a warning, for Docker). Produce the file with
-Playwright (e.g. an e2e auth setup that logs in and `context.storageState({ path })`).
+`--storage-state` is **local-only**. Combining it with an **explicit** `--runtime docker` (or
+the `--docker` alias) is an unsupported combination and errors out (exit 2) — the Docker tier
+cannot use a Playwright storageState, and scanning unauthenticated would silently defeat the
+flag. Under `--runtime auto` that happens to fall back to Docker (no local Playwright
+resolved), it degrades with a warning instead — you didn't ask for Docker specifically.
+Produce the file with Playwright (e.g. an e2e auth setup that logs in and
+`context.storageState({ path })`).
 
 ### Cover many pages (crawl)
 

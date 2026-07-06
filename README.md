@@ -1,6 +1,6 @@
 # ultra11y
 
-> Audit HTML/CSS/JSX against **WCAG 2.2 AA** accessibility and produce a dated compliance report — or author/review accessible markup without regressions. A [skills.sh](https://skills.sh) agent skill: a deterministic, zero-dependency static engine **plus** the agent's judgment, with `check`/`verify` gates against hallucinated non-conformities. **WCAG is the worldwide core; country standards (RGAA, …) are pluggable in-repo packs.**
+> Audit HTML/CSS/JSX against **WCAG 2.2 AA** accessibility and produce a dated compliance report — or author/review accessible markup without regressions. A [skills.sh](https://skills.sh) agent skill: a deterministic, zero-dependency static engine **plus** the agent's judgment, with `check`/`verify` gates against hallucinated non-conformities. **The central deliverable is the auditor conformance block** — theme, criterion + official wording, test(s), WCAG mapping + level, finding, expected state, verification, `file:line` occurrences — rendered identically by the `report` (compliance doc), the `prd` backlog and the GitHub issues, in the active standard's vocabulary and **in your language** (`--lang auto` follows the conversation/repo). **WCAG is the worldwide core; country standards (RGAA, …) are pluggable in-repo packs.**
 
 ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — 42 machine-detectable checks tied to the WCAG 2.2 success criteria — and is explicit about everything it cannot decide:
 
@@ -23,11 +23,11 @@ node scripts/ultra11y.mjs --help
 ## Commands
 
 ```
-ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr]
+ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang auto|en|fr]
 ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
-ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
-ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
+ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang auto|en|fr]
+ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
+ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
 ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
 ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
 ultra11y fix      <globs… | ->  [--write] [--iterate] [--changed | --since <ref>] [--only <ids>] [--jsx] [--json]

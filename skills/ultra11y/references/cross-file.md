@@ -23,6 +23,20 @@ node scripts/ultra11y.mjs audit --changed --graph     # git diff, graph over the
   in hand. The whole repo is never held in memory: O(number of files) small nodes.
 - **`--changed --graph`**: the graph indexes the **whole** scope (to resolve a reference into
   an unchanged definition), but only the diffed files are audited.
+- **Plain `.ts`/`.js` modules are graphed, never audited.** The graph's own discovery widens
+  to `.ts`/`.js`/`.mjs`/`.cjs` on top of the markup allowlist: a **barrel**
+  (`components/index.ts` re-exporting `Button.tsx`) or a plain-JS component definition is
+  real cross-file structure that imports resolve through — chained re-exports
+  (`export { Button } from "./Button"`, barrels of barrels) are followed to the real
+  definition. Those files feed imports/re-exports/definitions/ids into the graph but never
+  enter the audit loop (no markup rule ever runs on them).
+- **`.vue`/`.svelte`/`.astro` SFCs are first-class graph nodes.** Parsed with component case
+  preserved (same as the audit); the file's own `<script>` block — or an `.astro` file's
+  `---…---` **frontmatter** — is parsed separately as a script AST for its imports; and each
+  SFC synthesizes a self component definition (PascalCase basename), so a `.tsx` importing
+  `./Widget.vue` resolves cross-file and the SFC counts in capture coverage. Astro
+  frontmatter is also stripped (offset-preserving) before the template parse, so frontmatter
+  TypeScript (`Array<string>`) never produces phantom elements or findings.
 - **Import resolution**: relative specifiers (`./IconButton`), **tsconfig-paths aliases**
   (`@/components/Icon`, read from the nearest `tsconfig.json`'s `baseUrl`/`paths`), and
   **namespace members** (`<UI.Button/>` from `import * as UI`) all resolve to a discovered

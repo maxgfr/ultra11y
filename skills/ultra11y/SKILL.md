@@ -1,6 +1,6 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 53 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, landmarks, invalid ARIA, live regions, error association, positive tabindex — deciding what it can; YOU supply judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`), with `pack check` gating AI-ingested packs. JSX/TSX parse to a real AST; `audit --graph` resolves cross-file imports; `prd` emits an auditor backlog (per standard) or PRD doc; check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
+description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated auditor-conformance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 53 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — deciding what it can; YOU supply judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`), gated by `pack check`. JSX/TSX parse to a real AST (`audit --graph` cross-file); `report`/`prd`/`--gh-issues` share one auditor conformance block per criterion, in --lang (auto-detected otherwise); check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
 license: MIT
 metadata:
   version: 2.8.0
@@ -45,7 +45,8 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 ## Choose by situation
 
 - **"Audit / compliance report"** → `node scripts/ultra11y.mjs audit … --json`, then
-  `report`, then `check`; read **`references/audit.md`**.
+  `report` (synthesis table + one **auditor conformance block** per NC criterion — same
+  block `prd`/`--gh-issues` use), then `check`; read **`references/audit.md`**.
 - **"Code rendered by a library (DSFR, MUI…) or a `.vue`/`.svelte`/`.astro` SFC / avoid
   false negatives"** → audit the **produced HTML**, not the source template. Easiest:
   install the zero-touch **capture** harvester (`render --setup`) so your tests serialize
@@ -64,12 +65,13 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   `audit --graph` resolves imports and applies cross-file rules (an icon-only component
   used without a name, an anchor target in another file…), no browser; read
   **`references/cross-file.md`**.
-- **"Generate the fix markdown / PRDs (→ GitHub issues)"** → `prd` (auditor conformance
-  backlog by default — theme/criterion/test/WCAG+level/finding/expected/verification in the
-  active standard's vocabulary, `--lang fr|en`; `--split criterion`, `--format doc` for a
-  product-requirements doc, `--format remediation` for the legacy dev backlog, `--gh-issues`
-  for one issue per criterion or `--gh-single` for a single consolidated issue via the `gh`
-  CLI); read **`references/prd.md`**.
+- **"Generate the fix markdown / PRDs (→ GitHub issues)"** → `prd` (the SAME auditor
+  conformance block `report`'s NC section renders — theme/criterion/test/WCAG+level/
+  finding/expected/verification in the active standard's vocabulary — as a backlog);
+  `--split criterion`, `--format doc` for a product-requirements doc, `--format remediation`
+  for the legacy dev backlog, `--gh-issues` for one issue per criterion (that block as the
+  body) or `--gh-single` for a single consolidated issue via the `gh` CLI); read
+  **`references/prd.md`**.
 - **"Plug or author a standards pack (RGAA & beyond), AI-ingest external rules"** →
   `--pack`/`.ultra11yrc.json` to load at runtime, `pack check` to gate it (the
   anti-hallucination guardrail), `pack scaffold` to start one; concrete before/after
@@ -117,10 +119,10 @@ node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph      # + imports & cross-
 node scripts/ultra11y.mjs audit --changed --json            # only the git diff (large repo)
 node scripts/ultra11y.mjs audit --staged --fail-on blocking # gate EXACTLY the staged snapshot (pre-commit)
 node scripts/ultra11y.mjs audit "src/**" --no-default-excludes   # also audit test/spec/story markup
-node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md
+node scripts/ultra11y.mjs report --in audit.json --out audits          # → audits/wcag-YYYY-MM-DD.md (auditor block per NC criterion)
 node scripts/ultra11y.mjs report --in audit.json --standard rgaa       # derived RGAA report (France pack)
-node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # auditor backlog (+ one GitHub issue per criterion)
-node scripts/ultra11y.mjs prd    --in audit.json --gh-single          # auditor backlog (+ ONE consolidated GitHub issue)
+node scripts/ultra11y.mjs prd    --in audit.json --gh-issues           # SAME auditor block as a backlog (+ one GitHub issue per criterion)
+node scripts/ultra11y.mjs prd    --in audit.json --gh-single          # SAME auditor block (+ ONE consolidated GitHub issue)
 node scripts/ultra11y.mjs prd    --in audit.json --format doc          # product-requirements doc (epics/stories/AC)
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --pack ./packs/section508.json   # load an external pack at runtime
 node scripts/ultra11y.mjs pack check ./packs/section508.json --guidance ./packs/section508.guidance.json   # gate an (AI-)authored pack
@@ -164,6 +166,12 @@ drive the judgment and content stages:
    gate), then hand-apply the judgment/content fixes (alt, labels, structure) guided by
    `references/correction.md`.
 4. **Re-audit** (on the render where relevant) and repeat.
+5. **Deliver the auditor block.** `report` (compliance doc: synthesis + one auditor
+   conformance block — theme/criterion/test/WCAG+level/finding/expected/verification —
+   per NC criterion) and `prd` (the same blocks as an actionable backlog, `--gh-issues`
+   filing one GitHub issue per criterion with that identical block) are two views of the
+   ONE building block, in the language of this conversation (pass `--lang` explicitly —
+   Core rule 5).
 
 **Stop** when `check` and `verify --apply` are green again and only explicitly-named
 residual risks remain. (To automate the outer cadence, the harness `/loop` command can

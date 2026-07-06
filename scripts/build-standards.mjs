@@ -255,19 +255,17 @@ function automatabilityOf(sc) {
   return "judgment";
 }
 
-// Best-effort, language-NEUTRAL technique seeds: roll up any shipped standards pack's
-// criteria (or the legacy src/data/rgaa.json) onto the WCAG SCs they map to. Only the
-// W3C technique CODES (e.g. "H36", "ARIA6") are carried — they are language-neutral, so
-// the WCAG core stays English-clean. Localized test PROSE stays in the packs; the WCAG
-// `verify` worklist grounds on these codes + each SC's W3C Understanding URL instead.
+// Best-effort, language-NEUTRAL technique seeds: roll up every shipped standards pack's
+// criteria onto the WCAG SCs they map to. Only the W3C technique CODES (e.g. "H36",
+// "ARIA6") are carried — they are language-neutral, so the WCAG core stays
+// English-clean. Localized test PROSE stays in the packs; the WCAG `verify` worklist
+// grounds on these codes + each SC's W3C Understanding URL instead.
 function seedFromPacks() {
   const techniques = {}; // sc -> string[]
   const sources = [];
   if (existsSync(PACKS_DIR)) {
     for (const f of readdirSync(PACKS_DIR)) if (f.endsWith(".json") && !f.endsWith(".glossary.json")) sources.push(join(PACKS_DIR, f));
   }
-  const legacy = join(DATA, "rgaa.json");
-  if (!sources.length && existsSync(legacy)) sources.push(legacy);
   for (const path of sources) {
     let pack;
     try {
@@ -276,7 +274,7 @@ function seedFromPacks() {
       continue;
     }
     for (const c of pack.criteria || []) {
-      // Pack maps to bare SC ids ("1.1.1"); legacy rgaa.json carries "1.1.1 Title (A)".
+      // Packs map to bare SC ids, e.g. "1.1.1".
       const scs = (c.wcag || []).map((w) => String(w).trim().split(/\s+/)[0]);
       for (const sc of scs) if (Array.isArray(c.techniques)) (techniques[sc] ??= []).push(...c.techniques);
     }
@@ -377,7 +375,7 @@ function build() {
       const id = String(w).trim().split(/\s+/)[0];
       if (!all.has(id)) dangling.add(id);
     }
-    if (dangling.size) console.warn(`build-standards: ${path} maps to SCs absent from WCAG 2.2 AA core: ${[...dangling].sort().join(", ")} (expected for dropped/AAA SCs like 4.1.1)`);
+    if (dangling.size) console.warn(`build-standards: ${path} maps to SCs absent from WCAG 2.2 AA core: ${[...dangling].sort().join(", ")} (expected for out-of-core SCs — WCAG AAA or removed/obsolete)`);
   }
 
   const tally = { static: 0, "needs-rendering": 0, judgment: 0 };

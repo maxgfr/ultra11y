@@ -40,6 +40,14 @@ describe("contrast-literal (3.2)", () => {
     expect(findOf(`<p style="color:#888;background:#fff;font-size:24px">large</p>`, "contrast-literal")).toHaveLength(0);
   });
 
+  it("uses the exact 14pt-bold threshold (18.66px), not 18.5px, for bold large text (WCAG 1.4.3)", () => {
+    // #888 on #fff ≈ 3.55:1 — fails normal (4.5), would pass large (3.0). 18.5px bold is
+    // BELOW the real 14pt-bold cutoff (18.66px) and must stay held to the normal
+    // threshold; 18.66px bold is large and passes at 3:1.
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:18.5px;font-weight:bold">just under</p>`, "contrast-literal")).toHaveLength(1);
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:18.66px;font-weight:bold">exact cutoff</p>`, "contrast-literal")).toHaveLength(0);
+  });
+
   it("ignores elements without their own visible text", () => {
     expect(findOf(`<div style="color:#999;background:#fff"><span>only child text</span></div>`, "contrast-literal")).toHaveLength(1);
   });

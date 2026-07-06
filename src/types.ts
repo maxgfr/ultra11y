@@ -3,6 +3,10 @@
 export const VERSION = "2.8.0";
 export const SCHEMA_VERSION = 2;
 
+// Lang = the UI FRAME's language — the `L` localization tables each module (report,
+// check, verify, criteria…) renders in. NOT a country pack's own locale set, which may
+// carry any BCP-47-ish tag ("de", "pt-BR"…) — see `LocaleString` in
+// src/standards/types.ts for that decoupled, per-pack concept.
 export type Lang = "fr" | "en";
 export type Severity = "bloquant" | "majeur" | "mineur";
 // C = conforme, NC = non conforme, NA = non applicable, manual = à évaluer
@@ -10,36 +14,6 @@ export type Severity = "bloquant" | "majeur" | "mineur";
 export type Status = "C" | "NC" | "NA" | "manual";
 export type Automatability = "static" | "needs-rendering" | "judgment";
 export type ParserKind = "html" | "css" | "jsx" | "cross";
-
-// ---- RGAA reference data (src/data/rgaa.json, produced by scripts/fetch-rgaa.mjs)
-export interface Criterion {
-  id: string; // dotted "<theme>.<n>", e.g. "1.1"
-  theme: number; // 1..13
-  title: string; // French, may contain [term](#glossary-anchor) links
-  titlePlain: string; // anchors reduced to their label
-  tests: Record<string, string[]>;
-  wcag: string[]; // e.g. ["1.1.1 Non-text Content (A)"]
-  techniques: string[]; // e.g. ["H36", "H37"]
-  technicalNote?: string[];
-  particularCases?: string[];
-  automatability: Automatability;
-  ruleIds: string[]; // engine rules contributing to this criterion
-}
-
-export interface Theme {
-  number: number;
-  name: string;
-  count: number;
-}
-
-export interface RgaaData {
-  rgaaVersion: string; // "4.1.2"
-  wcagVersion: string; // "2.1"
-  source: string;
-  license: string;
-  themes: Theme[];
-  criteria: Criterion[];
-}
 
 export interface GlossaryEntry {
   title: string;

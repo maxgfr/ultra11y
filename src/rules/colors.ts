@@ -74,11 +74,12 @@ function isBold(el: El): boolean {
   return false;
 }
 
-/** RGAA 3.2 "large text": ≥ 24px, or ≥ 18.5px when bold. */
+/** WCAG 1.4.3's "large scale text": ≥ 24px (18pt) regular, or ≥ 18.66px (14pt) bold —
+ *  the exact 14pt-bold cutoff, not the commonly-rounded 18.5px. */
 function isLarge(el: El): boolean {
   const px = fontPx(el);
   if (px === null) return false;
-  return px >= 24 || (px >= 18.5 && isBold(el));
+  return px >= 24 || (px >= 18.66 && isBold(el));
 }
 
 function hasDirectText(el: El): boolean {

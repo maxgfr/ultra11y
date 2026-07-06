@@ -165,11 +165,11 @@ const labelForDangling: Rule = {
   },
 };
 
-// A control flagged aria-invalid="true" must point AT the error text (aria-describedby
-// or aria-errormessage) so assistive tech can restitute *why* it is invalid. aria-invalid
-// alone announces "invalid" with no reason — the error is signalled but not associated
-// (WCAG 3.3.1 Error Identification). The inverse case (visible error text not linked at all)
-// is a judgment call left to the auditor (see RGAA 11.10 guidance).
+// WCAG 3.3.1 Error Identification: a control flagged aria-invalid="true" must point AT
+// the error text (aria-describedby or aria-errormessage) so assistive tech can restitute
+// *why* it is invalid. aria-invalid alone announces "invalid" with no reason — the error
+// is signalled but not associated (cross-referenced by RGAA 11.10). The inverse case
+// (visible error text not linked at all) is a judgment call left to the auditor.
 const ariaInvalidNoDescription: Rule = {
   id: "aria-invalid-no-description",
   criteria: ["3.3.1"],

@@ -52,10 +52,17 @@ describe("gh helpers", () => {
     expect(issueTitle(unit("8.3", "Langue de page"), "RGAA")).toBe("[a11y] RGAA 8.3 — Langue de page");
   });
 
-  it("issueBody includes the WCAG refs, occurrences, remediation, and the related definition site", () => {
-    const body = issueBody(unit("4.1.2", "X"), "fr");
-    expect(body).toContain("**WCAG** : 1.1.1");
+  it("issueBody renders the auditor block by default (finding, expected, occurrences, related site)", () => {
+    const body = issueBody(unit("4.1.2", "X"), "fr", "wcag");
+    expect(body).toContain("Constat"); // finding label (fr), not the dev "Correction"
     expect(body).toContain("`src/page.tsx:5`");
+    expect(body).toContain("Passez aria-label"); // the remediation surfaces as "Attendu"
+    expect(body).toContain("`src/IconButton.tsx:2`");
+  });
+
+  it("issueBody --format remediation keeps the legacy dev body with WCAG refs", () => {
+    const body = issueBody(unit("4.1.2", "X"), "fr", "wcag", "remediation");
+    expect(body).toContain("**WCAG** : 1.1.1");
     expect(body).toContain("Passez aria-label");
     expect(body).toContain("`src/IconButton.tsx:2`");
   });

@@ -27,6 +27,26 @@ export interface PackCriterion {
   wcag: string[]; // bare WCAG SC ids this criterion maps to, e.g. ["1.1.1", "4.1.2"]
 }
 
+// The localized DISPLAY vocabulary a standard uses when its audit is rendered for an
+// AUDITOR (the `prd` auditor block + GitHub issues): the NOUNS the standard gives to a
+// theme, a criterion, a test, and its three conformance verdicts, plus an optional
+// section heading and a bespoke normative note. Every field is optional and localized —
+// missing terms fall back to a generic default and the WCAG core keeps its own set (see
+// src/standards/vocabulary.ts), so a pack that omits `vocabulary` still renders. This is
+// what lets the auditor output speak each country's language rather than hardcoding RGAA
+// ("Thématique / Critère / Test / C-NC-NA") or WCAG ("Principle · Guideline / Success
+// criterion / Technique / Pass-Fail").
+export interface PackVocabulary {
+  theme?: LocaleString; // grouping noun, e.g. RGAA "Thématique"
+  criterion?: LocaleString; // item noun, e.g. "Critère"
+  test?: LocaleString; // sub-item noun, e.g. "Test"
+  conformant?: LocaleString; // verdict, e.g. "Conforme (C)"
+  nonConformant?: LocaleString; // verdict, e.g. "Non conforme (NC)"
+  notApplicable?: LocaleString; // verdict, e.g. "Non applicable (NA)"
+  auditorHeading?: LocaleString; // section/doc title, e.g. "Critère d'accessibilité"
+  normativeNote?: LocaleString; // overrides the composed "Lecture auditeur — …" blockquote
+}
+
 export interface StandardPack {
   key: string; // unique slug, e.g. "rgaa" (may not be the reserved core key "wcag")
   name: string; // short display name, e.g. "RGAA"
@@ -41,6 +61,7 @@ export interface StandardPack {
   source: string;
   attribution: string;
   idPattern: string; // regex (string) the pack's criterion ids match
+  vocabulary?: PackVocabulary; // localized auditor-display terms (optional; defaults apply)
   themes: PackTheme[];
   criteria: PackCriterion[];
 }

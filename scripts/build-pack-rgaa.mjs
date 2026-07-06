@@ -113,6 +113,17 @@ async function main() {
     source: "https://github.com/DISIC/accessibilite.numerique.gouv.fr",
     attribution: "RGAA 4.1.2 © DINUM (Direction interministérielle du numérique) — Licence Ouverte / Etalab 2.0",
     idPattern: "^\\d+\\.\\d+$",
+    // Auditor-display vocabulary (FR): the nouns an RGAA auditor reads. Rendered by the
+    // `prd` auditor block + GitHub issues; see src/standards/vocabulary.ts.
+    vocabulary: {
+      theme: { fr: "Thématique" },
+      criterion: { fr: "Critère" },
+      test: { fr: "Test" },
+      conformant: { fr: "Conforme (C)" },
+      nonConformant: { fr: "Non conforme (NC)" },
+      notApplicable: { fr: "Non applicable (NA)" },
+      auditorHeading: { fr: "Critère d’accessibilité" },
+    },
     themes,
     criteria,
   };

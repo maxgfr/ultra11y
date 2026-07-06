@@ -28,6 +28,28 @@ node scripts/ultra11y.mjs check    --report audits/rgaa-YYYY-MM-DD.md --standard
 
 An unknown `--standard` value errors out (never a silent fallback to WCAG).
 
+## Auditor vocabulary
+
+The `prd` **auditor block** (the default output) and the **GitHub issues** it files are
+rendered with the **active standard's own vocabulary** — the nouns an auditor of that standard
+reads. A pack declares them under an optional `vocabulary` object (`LocaleString`s):
+
+| term | RGAA (fr) | WCAG core (en) | fallback |
+|---|---|---|---|
+| `theme` | Thématique | Principle · Guideline | Theme |
+| `criterion` | Critère | Success criterion | Criterion |
+| `test` | Test | Technique | Test |
+| `conformant` | Conforme (C) | Pass | Conformant |
+| `nonConformant` | Non conforme (NC) | Fail | Non-conformant |
+| `notApplicable` | Non applicable (NA) | Not applicable | Not applicable |
+| `auditorHeading` | Critère d'accessibilité | Accessibility criterion | Accessibility criterion |
+
+Every field is optional: what a pack omits falls back to a generic default, the WCAG core keeps
+its own built-in set (it is not a pack), and `--lang fr|en` picks the locale. So a new country
+pack ships its terminology and the auditor output speaks its language with **no engine change** —
+the modular seam that makes `prd` work for each country, not just France. Resolution lives in
+`src/standards/vocabulary.ts`; the RGAA terms are set in `scripts/build-pack-rgaa.mjs`.
+
 ## Shipped packs
 
 - **RGAA 4.1.2** (`--standard rgaa`) — France, © DINUM, Licence Ouverte / Etalab 2.0.

@@ -10,6 +10,7 @@ import { getSC, guidelineTitle, techniques as scTechniques } from "./wcag.js";
 import { type StandardId, isCore, loadPack, derivePackResults, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
 import { guidanceForWcag, guidanceForCriterion } from "./guidance/index.js";
 import type { GuidanceEntry } from "./guidance/types.js";
+import { renderAuditorBacklog, renderAuditorPerCriterion } from "./auditor.js";
 
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
 const SEV_RANK: Record<Severity, number> = { bloquant: 0, majeur: 1, mineur: 2 };
@@ -319,11 +320,15 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
   return out.join("\n");
 }
 
+// Output shape: `audit` (DEFAULT) = the auditor conformance block (src/auditor.ts);
+// `remediation` = the dev backlog above (kept for back-compat); `doc` = the user-story PRD.
+export type PrdFormat = "audit" | "remediation" | "doc";
+
 export interface PrdOpts {
   out: string;
   lang: Lang;
   split?: "criterion";
-  format?: "doc";
+  format?: PrdFormat;
   standard: StandardId;
 }
 
@@ -335,9 +340,12 @@ export function writePrd(r: AuditResult, opts: PrdOpts): string[] {
     writeFileSync(p, renderPrdDoc(r, opts.lang, opts.standard));
     return [p];
   }
+  const remediation = opts.format === "remediation";
+  const perCriterion = remediation ? renderPerCriterion : renderAuditorPerCriterion;
+  const backlog = remediation ? renderBacklog : renderAuditorBacklog;
   if (opts.split === "criterion") {
     const paths: string[] = [];
-    for (const f of renderPerCriterion(r, opts.lang, opts.standard)) {
+    for (const f of perCriterion(r, opts.lang, opts.standard)) {
       const p = join(opts.out, f.name);
       writeFileSync(p, f.content);
       paths.push(p);
@@ -345,6 +353,6 @@ export function writePrd(r: AuditResult, opts: PrdOpts): string[] {
     return paths;
   }
   const p = join(opts.out, `prd-${r.date}.md`);
-  writeFileSync(p, renderBacklog(r, opts.lang, opts.standard));
+  writeFileSync(p, backlog(r, opts.lang, opts.standard));
   return [p];
 }

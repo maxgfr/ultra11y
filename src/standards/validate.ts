@@ -178,6 +178,31 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
     );
   }
 
+  // Optional auditor-display vocabulary. Absent → the generic/core defaults apply (never an
+  // error). Present → each supplied term must be a LocaleString carrying at least the default
+  // locale; a partial/unknown/malformed term is a WARNING (the default is used), never a hard
+  // failure — a pack should not be blocked over presentation strings.
+  if (p.vocabulary !== undefined) {
+    if (typeof p.vocabulary !== "object" || p.vocabulary === null || Array.isArray(p.vocabulary)) {
+      warn("vocabulary", "vocabulary must be an object of localized terms — ignored");
+    } else {
+      const VOC_KEYS = ["theme", "criterion", "test", "conformant", "nonConformant", "notApplicable", "auditorHeading", "normativeNote"];
+      const voc = p.vocabulary as Record<string, unknown>;
+      for (const k of Object.keys(voc)) {
+        if (!VOC_KEYS.includes(k)) {
+          warn(`vocabulary.${k}`, `unknown vocabulary term "${k}" (ignored)`);
+          continue;
+        }
+        const term = voc[k] as Record<string, unknown> | undefined;
+        if (typeof term !== "object" || term === null || Array.isArray(term)) {
+          warn(`vocabulary.${k}`, `term "${k}" must be a localized object (e.g. { "${loc}": "…" }) — default used`);
+        } else if (typeof term[loc] !== "string") {
+          warn(`vocabulary.${k}`, `term "${k}" has no string for the default locale "${loc}" — default used`);
+        }
+      }
+    }
+  }
+
   return done();
 }
 

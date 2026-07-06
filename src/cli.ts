@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./types.js";
 import { runAudit } from "./audit.js";
 import { writeReport } from "./report.js";
-import { writePrd, prdUnits } from "./prd.js";
+import { writePrd, prdUnits, type PrdFormat } from "./prd.js";
 import { ghAvailable, pushIssues, pushSingleIssue } from "./gh.js";
 import {
   detectFrameworks,
@@ -47,7 +47,7 @@ Usage:
   ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
@@ -70,9 +70,12 @@ Commands:
              non-conformities by priority, conforming + not-applicable lists.
              --standard <pack> writes a derived report for a country standard
              (e.g. --standard rgaa → audits/rgaa-YYYY-MM-DD.md).
-  prd        Turn an AuditResult into an actionable "fixes to do" backlog
-             (audits/prd-YYYY-MM-DD.md), grouped by criterion and sectioned by
-             priority; --split criterion writes one PRD file per criterion;
+  prd        Turn an AuditResult into an AUDITOR conformance backlog
+             (audits/prd-YYYY-MM-DD.md), one entry per criterion rendered with the
+             active standard's vocabulary (RGAA "Thématique/Critère/Test", WCAG core
+             "Principle·Guideline/Success criterion/Technique") — theme, criterion +
+             official wording, test(s), WCAG mapping + level, finding, expected state,
+             verification. --split criterion writes one file per criterion;
              --gh-issues files one de-duplicated GitHub issue per criterion, or
              --gh-single files the whole audit as a single issue (gh CLI).
   render     Get RENDERED HTML to audit (so component libraries like DSFR are
@@ -149,8 +152,10 @@ Options:
                      comma-separated, validated before use (see references/packs.md)
   --override         --pack: allow a runtime pack key to replace a built-in/loaded standard
   --guidance <file>  pack check: the guidance dataset JSON to gate alongside the pack
-  --format <mode>    prd: 'doc' emits a product-requirements document (epics, user
-                     stories, Given/When/Then); default is the fix backlog
+  --format <mode>    prd: 'audit' (default) emits the auditor conformance block (per
+                     the active standard's vocabulary) for the backlog AND GitHub issues;
+                     'doc' emits a product-requirements document (epics, user stories,
+                     Given/When/Then); 'remediation' emits the legacy dev fix backlog
   --split <mode>     prd: split the backlog — currently only 'criterion' (one file per criterion)
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
@@ -582,7 +587,7 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const lang = langOf(p.flags);
   const split = p.flags.split === "criterion" ? "criterion" : undefined;
-  const format = p.flags.format === "doc" ? "doc" : undefined;
+  const format: PrdFormat = p.flags.format === "doc" ? "doc" : p.flags.format === "remediation" ? "remediation" : "audit";
   const paths = writePrd(result, { out, lang, split, format, standard });
   const json = p.flags.json === true;
   if (!json) for (const path of paths) console.log(path);
@@ -600,7 +605,8 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
     } else if (units.length === 0) {
       if (!json) console.error(`ultra11y prd: ${flag} skipped — no findings to file.`);
     } else {
-      gh = ghMode === "single" ? pushSingleIssue(units, lang, standard) : pushIssues(units, lang, standard);
+      const issueFormat = format === "remediation" ? "remediation" : "audit";
+      gh = ghMode === "single" ? pushSingleIssue(units, lang, standard, issueFormat) : pushIssues(units, lang, standard, issueFormat);
       if (!json)
         console.log(
           lang === "fr"

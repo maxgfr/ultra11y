@@ -12,6 +12,29 @@
   "source": "https://github.com/DISIC/accessibilite.numerique.gouv.fr",
   "attribution": "RGAA 4.1.2 © DINUM (Direction interministérielle du numérique) — Licence Ouverte / Etalab 2.0",
   "idPattern": "^\\d+\\.\\d+$",
+  "vocabulary": {
+    "theme": {
+      "fr": "Thématique"
+    },
+    "criterion": {
+      "fr": "Critère"
+    },
+    "test": {
+      "fr": "Test"
+    },
+    "conformant": {
+      "fr": "Conforme (C)"
+    },
+    "nonConformant": {
+      "fr": "Non conforme (NC)"
+    },
+    "notApplicable": {
+      "fr": "Non applicable (NA)"
+    },
+    "auditorHeading": {
+      "fr": "Critère d’accessibilité"
+    }
+  },
   "themes": [
     {
       "number": 1,

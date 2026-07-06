@@ -1,38 +1,42 @@
-# PRD / fix backlog (`prd`) + GitHub issues
+# Auditor backlog (`prd`) + GitHub issues
 
-`prd` turns an `AuditResult` into the **markdown of fixes to do**, grouped by WCAG success
-criterion (or, with `--standard <pack>`, by a country standard's criteria). It is the
+`prd` turns an `AuditResult` into an **auditor-legible conformance backlog**, grouped by WCAG
+success criterion (or, with `--standard <pack>`, by a country standard's criteria). It is the
 "action" counterpart of `report` (which is the compliance document).
 
 ```
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --graph --json > audit.json
-node scripts/ultra11y.mjs prd --in audit.json                     # single backlog (default)
-node scripts/ultra11y.mjs prd --in audit.json --split criterion   # one PRD per criterion
-node scripts/ultra11y.mjs prd --in audit.json --gh-issues         # + one GitHub issue per criterion
-node scripts/ultra11y.mjs prd --in audit.json --gh-single         # + ONE consolidated GitHub issue (whole audit)
-node scripts/ultra11y.mjs prd --in audit.json --standard rgaa     # backlog keyed by the RGAA pack
-node scripts/ultra11y.mjs prd --in audit.json --format doc        # product-requirements doc (epics/stories/AC)
+node scripts/ultra11y.mjs prd --in audit.json                      # auditor backlog (default)
+node scripts/ultra11y.mjs prd --in audit.json --split criterion    # one file per criterion
+node scripts/ultra11y.mjs prd --in audit.json --gh-issues          # + one GitHub issue per criterion
+node scripts/ultra11y.mjs prd --in audit.json --gh-single          # + ONE consolidated GitHub issue (whole audit)
+node scripts/ultra11y.mjs prd --in audit.json --standard rgaa --lang fr   # rendered with the RGAA (fr) vocabulary
+node scripts/ultra11y.mjs prd --in audit.json --format doc         # product-requirements doc (epics/stories/AC)
+node scripts/ultra11y.mjs prd --in audit.json --format remediation # legacy dev fix-backlog
 ```
 
 ## Output
 
-- **Default (fix backlog)**: one document `audits/prd-YYYY-MM-DD.md`, sectioned by priority
-  (🔴 blocking → 🟠 major → 🟡 minor). Each criterion becomes a block: title + WCAG ref,
-  fix(es), an **effort estimate** (S/M/L from Σ severity-weighted occurrences), a
-  **before/after example** drawn from the implementation guidance (see
-  `references/guidance.md`), then a **checklist** of occurrences (`file:line`), with the
-  **definition site** (`related`) when a cross-file flag carries one.
+- **Default (`--format audit`) — the auditor conformance block**: one document
+  `audits/prd-YYYY-MM-DD.md`, sectioned by priority (🔴 blocking → 🟠 major → 🟡 minor). Each
+  criterion becomes an entry rendered **with the active standard's vocabulary** (see
+  `references/standards.md` → *Auditor vocabulary*): **theme** (RGAA *Thématique* / WCAG core
+  *Principle · Guideline*), **criterion** + its official wording, **test(s)** (RGAA test
+  numbers `11.6.1` / WCAG techniques), **WCAG** mapping + level, the **finding** (non-conformity,
+  labelled with the standard's *non-conformant* verdict), the **expected** conformant state, a
+  **verification** method, and the occurrence **checklist** (`file:line`) with the cross-file
+  **definition site** (`related`) when present. Localized by `--lang fr|en`. The **GitHub issues**
+  below use this same block by default.
+- **`--format remediation` (legacy dev backlog)**: the previous developer-oriented block —
+  fix(es), an **effort estimate** (S/M/L), a **before/after example** from the implementation
+  guidance (`references/guidance.md`), and the occurrence checklist.
 - **`--format doc` (product-requirements doc)**: `audits/prd-doc-YYYY-MM-DD.md` — epics
-  grouped by theme (WCAG guideline, or the pack theme under `--standard`), one **user
-  story** per criterion, **Given/When/Then** acceptance criteria templated from the real SC
-  title/techniques (anchored to W3C text, never invented outcomes), and the occurrence task
-  list. Hand it to a dev team or pair it with `--gh-issues`.
-- **`--split criterion`**: a `prd-<criterion>-YYYY-MM-DD.md` file per criterion with
-  non-conformities (handy for batching).
+  grouped by theme, one **user story** per criterion, **Given/When/Then** acceptance criteria
+  templated from the real SC title/techniques (anchored to W3C text), and the task list.
+- **`--split criterion`**: a `prd-<criterion>-YYYY-MM-DD.md` file per criterion (handy for batching).
 - The markdown is **always** written, even with `--gh-issues`.
 - **`--json`**: emits a machine-readable object instead of the file paths —
-  `{paths, units, gh?}` where `units` is the structured per-criterion backlog (title,
-  severity, occurrences, before/after) an agent can consume directly.
+  `{paths, units, gh?}` where `units` is the structured per-criterion backlog an agent can consume.
 
 ## GitHub issues (`--gh-issues` / `--gh-single`, opt-in)
 
@@ -40,13 +44,14 @@ node scripts/ultra11y.mjs prd --in audit.json --format doc        # product-requ
   ultra11y.
 - **`--gh-issues` → one issue per criterion** (regardless of `--split`), stable title
   `"[a11y] WCAG <sc> — <title>"` (or `"[a11y] <PACK> <id> — …"` under `--standard`), labels
-  `accessibility`, `wcag` (or the pack key), severity. The body carries fix + `file:line`
-  occurrences + definition site.
+  `accessibility`, `wcag` (or the pack key), severity. The body is the **auditor conformance
+  block** (theme, criterion + wording, test(s), WCAG + level, finding, expected, verification,
+  `file:line` occurrences + definition site) — same as the default backlog, in the active
+  standard's vocabulary. `--format remediation` files the legacy dev body instead.
 - **`--gh-single` → ONE consolidated issue** for the whole audit, stable title
   `"[a11y] WCAG — Accessibility audit"` (or `"[a11y] <PACK> — Accessibility audit"`). The body
   is the full backlog **sectioned by severity** (🔴 blocking → 🟠 major → 🟡 minor), each
-  criterion carrying the same fix + `file:line` occurrences + definition site. Labelled by the
-  **most severe** criterion. Use this when you want a single tracking ticket instead of N.
+  criterion carrying the auditor block. Labelled by the **most severe** criterion.
 - `--gh-single` **wins** if both flags are passed.
 - **De-dupe by title**: an existing issue (open or closed) is skipped, so re-running never
   creates duplicates. The consolidated title carries **no count or date**, so it stays stable

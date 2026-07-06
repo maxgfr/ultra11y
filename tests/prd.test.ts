@@ -104,10 +104,18 @@ describe("renderPerCriterion + writePrd", () => {
     expect(files[0]!.content).toContain("# PRD — 1.1.1");
   });
 
-  it("writes a single backlog file by default", () => {
+  it("writes a single AUDITOR backlog file by default", () => {
     const out = tmp();
     const paths = writePrd(AUDIT, { out, lang: "fr", standard: "wcag" });
     expect(paths).toEqual([join(out, "prd-2026-06-29.md")]);
+    const md = readFileSync(paths[0]!, "utf8");
+    expect(md).toContain("Critère d'accessibilité"); // auditor doc title (core fr vocabulary)
+    expect(md).toContain("Constat"); // auditor finding line, not the dev "Correction"
+  });
+
+  it("writes the legacy dev backlog with --format remediation", () => {
+    const out = tmp();
+    const paths = writePrd(AUDIT, { out, lang: "fr", format: "remediation", standard: "wcag" });
     expect(readFileSync(paths[0]!, "utf8")).toContain("Plan de correction");
   });
 

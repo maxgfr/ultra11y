@@ -21226,6 +21226,29 @@ var rgaa_default = {
   source: "https://github.com/DISIC/accessibilite.numerique.gouv.fr",
   attribution: "RGAA 4.1.2 \xA9 DINUM (Direction interminist\xE9rielle du num\xE9rique) \u2014 Licence Ouverte / Etalab 2.0",
   idPattern: "^\\d+\\.\\d+$",
+  vocabulary: {
+    theme: {
+      fr: "Th\xE9matique"
+    },
+    criterion: {
+      fr: "Crit\xE8re"
+    },
+    test: {
+      fr: "Test"
+    },
+    conformant: {
+      fr: "Conforme (C)"
+    },
+    nonConformant: {
+      fr: "Non conforme (NC)"
+    },
+    notApplicable: {
+      fr: "Non applicable (NA)"
+    },
+    auditorHeading: {
+      fr: "Crit\xE8re d\u2019accessibilit\xE9"
+    }
+  },
   themes: [
     {
       number: 1,
@@ -24786,6 +24809,26 @@ function validatePack(raw, opts = {}) {
       "some criterion ids are not the 2-segment <n>.<n> grammar that `check`/`verify` parse \u2014 reports against this pack may not pass those gates (see references/packs.md)"
     );
   }
+  if (p.vocabulary !== void 0) {
+    if (typeof p.vocabulary !== "object" || p.vocabulary === null || Array.isArray(p.vocabulary)) {
+      warn("vocabulary", "vocabulary must be an object of localized terms \u2014 ignored");
+    } else {
+      const VOC_KEYS = ["theme", "criterion", "test", "conformant", "nonConformant", "notApplicable", "auditorHeading", "normativeNote"];
+      const voc = p.vocabulary;
+      for (const k of Object.keys(voc)) {
+        if (!VOC_KEYS.includes(k)) {
+          warn(`vocabulary.${k}`, `unknown vocabulary term "${k}" (ignored)`);
+          continue;
+        }
+        const term = voc[k];
+        if (typeof term !== "object" || term === null || Array.isArray(term)) {
+          warn(`vocabulary.${k}`, `term "${k}" must be a localized object (e.g. { "${loc}": "\u2026" }) \u2014 default used`);
+        } else if (typeof term[loc] !== "string") {
+          warn(`vocabulary.${k}`, `term "${k}" has no string for the default locale "${loc}" \u2014 default used`);
+        }
+      }
+    }
+  }
   return done();
 }
 function normalize(p) {
@@ -24876,6 +24919,47 @@ function derivePackResults(audit, packKey) {
     const status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
     return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
   });
+}
+
+// src/standards/vocabulary.ts
+var DEFAULT = {
+  theme: { en: "Theme", fr: "Th\xE9matique" },
+  criterion: { en: "Criterion", fr: "Crit\xE8re" },
+  test: { en: "Test", fr: "Test" },
+  conformant: { en: "Conformant", fr: "Conforme" },
+  nonConformant: { en: "Non-conformant", fr: "Non conforme" },
+  notApplicable: { en: "Not applicable", fr: "Non applicable" },
+  auditorHeading: { en: "Accessibility criterion", fr: "Crit\xE8re d'accessibilit\xE9" }
+};
+var CORE = {
+  theme: { en: "Principle \xB7 Guideline", fr: "Principe \xB7 R\xE8gle" },
+  criterion: { en: "Success criterion", fr: "Crit\xE8re de succ\xE8s" },
+  test: { en: "Technique", fr: "Technique" },
+  conformant: { en: "Pass", fr: "Conforme" },
+  nonConformant: { en: "Fail", fr: "Non conforme" },
+  notApplicable: { en: "Not applicable", fr: "Non applicable" },
+  auditorHeading: { en: "Accessibility criterion", fr: "Crit\xE8re d'accessibilit\xE9" }
+};
+function pick(s, lang, fallbackLang) {
+  if (!s) return void 0;
+  return s[lang] ?? s[fallbackLang] ?? s.en ?? Object.values(s)[0];
+}
+function vocabularyFor(standard, lang) {
+  const base = isCore(standard) ? CORE : DEFAULT;
+  const pack = isCore(standard) ? void 0 : getPack(standard);
+  const voc = pack?.vocabulary;
+  const packDefault = pack?.defaultLocale ?? "en";
+  const term = (k) => pick(voc?.[k], lang, packDefault) ?? base[k][lang];
+  return {
+    theme: term("theme"),
+    criterion: term("criterion"),
+    test: term("test"),
+    conformant: term("conformant"),
+    nonConformant: term("nonConformant"),
+    notApplicable: term("notApplicable"),
+    auditorHeading: term("auditorHeading"),
+    normativeNote: pick(voc?.normativeNote, lang, packDefault)
+  };
 }
 
 // src/standards/index.ts
@@ -27467,11 +27551,134 @@ function hasGuidance(packKey) {
   return datasets.has(packKey);
 }
 
-// src/prd.ts
+// src/auditor.ts
 var SEV_ORDER2 = ["bloquant", "majeur", "mineur"];
-var SEV_RANK = { bloquant: 0, majeur: 1, mineur: 2 };
 var ICON2 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var SEV_LABEL = {
+  fr: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
+  en: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" }
+};
 var L2 = {
+  fr: {
+    lead: "Lecture auditeur",
+    tail: "Correspondance normative.",
+    finding: "Constat",
+    expected: "Attendu",
+    verification: "V\xE9rification",
+    occ: "occurrence(s)",
+    verify: "contr\xF4ler chaque occurrence ci-dessous (inspecteur / lecteur d'\xE9cran), puis rejouer l'audit (`ultra11y` / axe).",
+    intro: "Lecture auditeur : une entr\xE9e par crit\xE8re non conforme (constat, attendu, m\xE9thode de v\xE9rification). Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) restent \xE0 compl\xE9ter par une revue humaine.",
+    date: "Date",
+    scope: "P\xE9rim\xE8tre",
+    files: "fichier(s)",
+    none: "Aucune non-conformit\xE9 relev\xE9e automatiquement par le moteur statique."
+  },
+  en: {
+    lead: "Auditor view",
+    tail: "Normative mapping.",
+    finding: "Finding",
+    expected: "Expected",
+    verification: "Verification",
+    occ: "occurrence(s)",
+    verify: "check each occurrence below (inspector / screen reader), then re-run the audit (`ultra11y` / axe).",
+    intro: "Auditor view: one entry per non-conforming criterion (finding, expected state, verification method). The \u201Cto assess\u201D criteria (rendering / judgment) remain for a human review.",
+    date: "Date",
+    scope: "Scope",
+    files: "file(s)",
+    none: "No non-conformity found automatically by the static engine."
+  }
+};
+function stdLabel(standard) {
+  if (isCore(standard)) return "WCAG 2.2 AA";
+  const p = loadPack(standard);
+  return `${p.name} ${p.baseVersion}`;
+}
+var uniq = (xs) => [...new Set(xs.filter(Boolean))];
+function renderAuditorUnit(unit, standard, lang, opts = {}) {
+  const s = L2[lang];
+  const v = vocabularyFor(standard, lang);
+  const out = [];
+  if (opts.heading) out.push(`${opts.heading} ${ICON2[unit.severity]} ${unit.label}`, "");
+  out.push(`> ${v.normativeNote ?? `${s.lead} \u2014 ${stdLabel(standard)}. ${s.tail}`}`, "");
+  if (isCore(standard)) {
+    const sc = getSC(unit.criteriaId);
+    if (sc) {
+      const pr = `${sc.principle} ${principleTitle(sc.principle) ?? ""}`.trim();
+      const gl = `${sc.guideline} ${guidelineTitle(sc.guideline) ?? ""}`.trim();
+      out.push(`**${v.theme}** : ${[pr, gl].filter(Boolean).join(" \xB7 ")}`);
+    }
+    out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` \u2014 ${sc.title}` : ""}`);
+    const techs = techniques(unit.criteriaId);
+    if (techs.length) out.push(`**${v.test}** : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", \u2026" : ""}`);
+    out.push(`**WCAG** : ${unit.criteriaId}${sc ? ` (${sc.level})` : ""}`);
+  } else {
+    const pack = loadPack(standard);
+    const pc = pack.criteria.find((c) => c.id === unit.criteriaId);
+    if (pc) out.push(`**${v.theme}** : ${pc.theme}. ${themeName(pack, pc.theme, lang) ?? ""}`.trimEnd());
+    out.push(`**${v.criterion}** : ${unit.criteriaId} \u2014 ${unit.title}`);
+    const testNums = pc?.tests ? Object.keys(pc.tests).map((k) => `${unit.criteriaId}.${k}`) : [];
+    if (testNums.length) out.push(`**${v.test}(s)** : ${testNums.join(" \xB7 ")}`);
+    if (unit.refs.length) out.push(`**WCAG** : ${unit.refs.map((sc) => `${sc}${scLevel(sc)}`).join(" \xB7 ")}`);
+  }
+  const messages = uniq(unit.findings.map((f) => f.message));
+  const fixes = uniq(unit.findings.map((f) => f.remediation));
+  out.push("");
+  out.push(`**${s.finding} (${v.nonConformant})** : ${unit.findings.length} ${s.occ} \u2014 ${messages.join(" ; ")}`);
+  if (fixes.length) out.push(`**${s.expected} (${v.conformant})** : ${fixes.join(" ; ")}`);
+  out.push(`**${s.verification}** : ${s.verify}`, "");
+  for (const f of unit.findings) {
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
+    if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+  }
+  out.push("");
+  return out;
+}
+function scLevel(sc) {
+  const c = getSC(sc);
+  return c ? ` (${c.level})` : "";
+}
+function auditorHeader(r, lang, standard) {
+  const s = L2[lang];
+  const v = vocabularyFor(standard, lang);
+  return [
+    `# ${v.auditorHeading} \u2014 ${stdLabel(standard)}`,
+    "",
+    `- **${s.date}** : ${r.date}`,
+    `- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`,
+    "",
+    `> ${s.intro}`,
+    ""
+  ];
+}
+function renderAuditorBacklog(r, lang = "en", standard = "wcag") {
+  const s = L2[lang];
+  const units = prdUnits(r, standard, lang);
+  const out = auditorHeader(r, lang, standard);
+  if (!units.length) {
+    out.push(s.none, "");
+    return out.join("\n");
+  }
+  for (const sev of SEV_ORDER2) {
+    const group = units.filter((u) => u.severity === sev);
+    if (!group.length) continue;
+    out.push(`## ${ICON2[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
+    for (const u of group) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
+  }
+  return out.join("\n");
+}
+function renderAuditorPerCriterion(r, lang = "en", standard = "wcag") {
+  return prdUnits(r, standard, lang).map((u) => {
+    const out = auditorHeader(r, lang, standard);
+    out.push(...renderAuditorUnit(u, standard, lang, { heading: "##" }));
+    return { name: `prd-${u.criteriaId}-${r.date}.md`, content: out.join("\n") };
+  });
+}
+
+// src/prd.ts
+var SEV_ORDER3 = ["bloquant", "majeur", "mineur"];
+var SEV_RANK = { bloquant: 0, majeur: 1, mineur: 2 };
+var ICON3 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var L3 = {
   fr: {
     title: (std) => `Plan de correction d'accessibilit\xE9 \u2014 ${std}`,
     date: "Date",
@@ -27533,7 +27740,7 @@ var L2 = {
     docNote: "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Complete the \u201Cto assess\u201D criteria with a human review."
   }
 };
-function stdLabel(standard) {
+function stdLabel2(standard) {
   return isCore(standard) ? "WCAG 2.2 AA" : (() => {
     const p = loadPack(standard);
     return `${p.name} ${p.baseVersion}`;
@@ -27599,7 +27806,7 @@ function guidanceFor(unit, standard) {
   return out;
 }
 function guidanceExampleBlock(entries, lang) {
-  const s = L2[lang];
+  const s = L3[lang];
   for (const e of entries) {
     const ex = (e.examples ?? []).find((x) => x.bad || x.good);
     if (!ex) continue;
@@ -27612,10 +27819,10 @@ function guidanceExampleBlock(entries, lang) {
   return [];
 }
 function unitBlock(unit, lang, heading, standard) {
-  const s = L2[lang];
+  const s = L3[lang];
   const out = [];
   const refs = unit.refs.length ? `  \xB7  WCAG ${unit.refs.join(", ")}` : "";
-  out.push(`${heading} ${ICON2[unit.severity]} ${unit.label}${refs}`, "");
+  out.push(`${heading} ${ICON3[unit.severity]} ${unit.label}${refs}`, "");
   const fixes = [...new Set(unit.findings.map((f) => f.remediation))];
   for (const fx of fixes) out.push(`- _${s.fix} :_ ${fx}`);
   const { bucket, points } = effortOf(unit);
@@ -27629,8 +27836,8 @@ function unitBlock(unit, lang, heading, standard) {
   out.push("");
   return out;
 }
-function header(r, lang, title2, note = L2[lang].note) {
-  const s = L2[lang];
+function header(r, lang, title2, note = L3[lang].note) {
+  const s = L3[lang];
   return [
     `# ${title2}`,
     "",
@@ -27643,23 +27850,23 @@ function header(r, lang, title2, note = L2[lang].note) {
   ];
 }
 function renderBacklog(r, lang = "en", standard = "wcag") {
-  const s = L2[lang];
+  const s = L3[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(stdLabel(standard)));
+  const out = header(r, lang, s.title(stdLabel2(standard)));
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
   }
-  for (const sev of SEV_ORDER2) {
+  for (const sev of SEV_ORDER3) {
     const group = units.filter((u) => u.severity === sev);
     if (!group.length) continue;
-    out.push(`## ${ICON2[sev]} ${s.sev[sev]} (${group.length})`, "");
+    out.push(`## ${ICON3[sev]} ${s.sev[sev]} (${group.length})`, "");
     for (const u of group) out.push(...unitBlock(u, lang, "###", standard));
   }
   return out.join("\n");
 }
 function renderPerCriterion(r, lang = "en", standard = "wcag") {
-  const s = L2[lang];
+  const s = L3[lang];
   return prdUnits(r, standard, lang).map((u) => {
     const out = header(r, lang, s.prdTitle(u.label));
     out.push(...unitBlock(u, lang, "##", standard));
@@ -27691,9 +27898,9 @@ function epicsOf(units, standard, lang) {
   return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key, void 0, { numeric: true }));
 }
 function renderPrdDoc(r, lang = "en", standard = "wcag") {
-  const s = L2[lang];
+  const s = L3[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(stdLabel(standard)), s.docNote);
+  const out = header(r, lang, s.title(stdLabel2(standard)), s.docNote);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -27702,7 +27909,7 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
     out.push(`## ${s.epic} \u2014 ${epic.title}`, "");
     for (const u of epic.units) {
       const refs = u.refs.length ? `  \xB7  WCAG ${u.refs.join(", ")}` : "";
-      out.push(`### ${ICON2[u.severity]} ${s.story} \u2014 ${u.label}${refs}`, "");
+      out.push(`### ${ICON3[u.severity]} ${s.story} \u2014 ${u.label}${refs}`, "");
       out.push(`> ${s.asUser}, ${s.iNeed(u.title)}.`, "");
       const hints = [...new Set(u.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "\u2014";
       out.push(`**${s.ac}**`, "");
@@ -27730,9 +27937,12 @@ function writePrd(r, opts) {
     writeFileSync2(p2, renderPrdDoc(r, opts.lang, opts.standard));
     return [p2];
   }
+  const remediation = opts.format === "remediation";
+  const perCriterion = remediation ? renderPerCriterion : renderAuditorPerCriterion;
+  const backlog = remediation ? renderBacklog : renderAuditorBacklog;
   if (opts.split === "criterion") {
     const paths = [];
-    for (const f of renderPerCriterion(r, opts.lang, opts.standard)) {
+    for (const f of perCriterion(r, opts.lang, opts.standard)) {
       const p2 = join6(opts.out, f.name);
       writeFileSync2(p2, f.content);
       paths.push(p2);
@@ -27740,16 +27950,16 @@ function writePrd(r, opts) {
     return paths;
   }
   const p = join6(opts.out, `prd-${r.date}.md`);
-  writeFileSync2(p, renderBacklog(r, opts.lang, opts.standard));
+  writeFileSync2(p, backlog(r, opts.lang, opts.standard));
   return [p];
 }
 
 // src/gh.ts
 import { execFileSync as execFileSync2 } from "child_process";
-var SEV_ORDER3 = ["bloquant", "majeur", "mineur"];
+var SEV_ORDER4 = ["bloquant", "majeur", "mineur"];
 var SEV_RANK2 = { bloquant: 0, majeur: 1, mineur: 2 };
-var ICON3 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
-var SEV_LABEL = {
+var ICON4 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var SEV_LABEL2 = {
   fr: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
   en: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" }
 };
@@ -27782,7 +27992,8 @@ function existingIssueTitles() {
     return /* @__PURE__ */ new Set();
   }
 }
-function issueBody(unit, lang) {
+function issueBody(unit, lang, standard = "wcag", format = "audit") {
+  if (format === "audit") return renderAuditorUnit(unit, standard, lang).join("\n").trimEnd();
   const t2 = lang === "fr" ? { fix: "Correction", occ: "Occurrence(s)", def: "\u21B3 d\xE9finition" } : { fix: "Fix", occ: "Occurrence(s)", def: "\u21B3 definition" };
   const lines = [];
   if (unit.refs.length) lines.push(`**WCAG** : ${unit.refs.join(", ")}`, "");
@@ -27808,7 +28019,7 @@ function createIssue(title2, body, labels) {
     }
   }
 }
-function pushIssues(units, lang, standard = "wcag") {
+function pushIssues(units, lang, standard = "wcag", format = "audit") {
   const { label, tag } = standardTag(standard);
   const existing = existingIssueTitles();
   const result = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
@@ -27818,7 +28029,7 @@ function pushIssues(units, lang, standard = "wcag") {
       result.skipped++;
       continue;
     }
-    if (createIssue(title2, issueBody(u, lang), ["accessibility", tag, u.severity])) {
+    if (createIssue(title2, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity])) {
       result.created++;
       result.createdTitles.push(title2);
       existing.add(title2);
@@ -27831,19 +28042,22 @@ function pushIssues(units, lang, standard = "wcag") {
 function singleIssueTitle(label = "WCAG") {
   return `[a11y] ${label} \u2014 Accessibility audit`;
 }
-function singleIssueBody(units, lang, standard = "wcag") {
+function singleIssueBody(units, lang, standard = "wcag", format = "audit") {
   const { label } = standardTag(standard);
   const intro = lang === "fr" ? `Audit d'accessibilit\xE9 ${label} \u2014 ${units.length} crit\xE8re(s) non conforme(s).` : `${label} accessibility audit \u2014 ${units.length} non-conforming criteria.`;
   const lines = [intro, ""];
-  for (const sev of SEV_ORDER3) {
+  for (const sev of SEV_ORDER4) {
     const group = units.filter((u) => u.severity === sev);
     if (!group.length) continue;
-    lines.push(`## ${ICON3[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
-    for (const u of group) lines.push(`### ${u.label}`, "", issueBody(u, lang), "");
+    lines.push(`## ${ICON4[sev]} ${SEV_LABEL2[lang][sev]} (${group.length})`, "");
+    for (const u of group) {
+      if (format === "audit") lines.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
+      else lines.push(`### ${u.label}`, "", issueBody(u, lang, standard, format), "");
+    }
   }
   return lines.join("\n");
 }
-function pushSingleIssue(units, lang, standard = "wcag") {
+function pushSingleIssue(units, lang, standard = "wcag", format = "audit") {
   const { label, tag } = standardTag(standard);
   const result = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
   if (!units.length) return result;
@@ -27853,7 +28067,7 @@ function pushSingleIssue(units, lang, standard = "wcag") {
     return result;
   }
   const severity = [...units].sort((a, b) => SEV_RANK2[a.severity] - SEV_RANK2[b.severity])[0].severity;
-  if (createIssue(title2, singleIssueBody(units, lang, standard), ["accessibility", tag, severity])) {
+  if (createIssue(title2, singleIssueBody(units, lang, standard, format), ["accessibility", tag, severity])) {
     result.created = 1;
     result.createdTitles.push(title2);
   } else {
@@ -27891,7 +28105,7 @@ function detectFrameworks(deps, has2) {
   for (const [pkg, label] of Object.entries(KNOWN_LIBS)) if (dep(pkg)) componentLibraries.push(label);
   return { frameworks, componentLibraries };
 }
-var L3 = {
+var L4 = {
   fr: {
     title: "Obtenir du HTML rendu \xE0 auditer (render)",
     why: "Auditer les sources JSX d'une biblioth\xE8que de composants donne des faux n\xE9gatifs : il faut auditer le HTML r\xE9ellement produit.",
@@ -27922,7 +28136,7 @@ var L3 = {
   }
 };
 function renderPlan(d, lang = "fr") {
-  const s = L3[lang];
+  const s = L4[lang];
   const out = [`# ${s.title}`, "", `> ${s.why}`, ""];
   if (d.componentLibraries.length) out.push(`> \u{1F9E9} ${s.libNote(d.componentLibraries.join(", "))}`, "");
   out.push(`## ${s.detected}`, "");
@@ -29620,7 +29834,7 @@ var STR = {
 function t(lang, key) {
   return STR[lang][key];
 }
-var ICON4 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var ICON5 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
 function auditSummary(r, lang) {
   const lines = [];
   lines.push(`${t(lang, "summaryTitle")} \u2014 ${r.date}`);
@@ -29637,7 +29851,7 @@ function auditSummary(r, lang) {
   } else {
     lines.push(`${t(lang, "findingsTitle")} (${r.findings.length}) :`);
     for (const f of r.findings.slice(0, 20)) {
-      lines.push(`  ${ICON4[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${f.message}`);
+      lines.push(`  ${ICON5[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${f.message}`);
     }
     if (r.findings.length > 20) lines.push(`  \u2026 (+${r.findings.length - 20})`);
   }
@@ -29784,6 +29998,15 @@ function packScaffold() {
       source: "https://\u2026",
       attribution: "\u2026 \xA9 \u2026",
       idPattern: "^\\d+\\.\\d+$",
+      vocabulary: {
+        theme: { en: "Theme" },
+        criterion: { en: "Criterion" },
+        test: { en: "Test" },
+        conformant: { en: "Conformant" },
+        nonConformant: { en: "Non-conformant" },
+        notApplicable: { en: "Not applicable" },
+        auditorHeading: { en: "Accessibility criterion" }
+      },
       themes: [{ number: 1, name: { en: "Theme one" }, count: 1 }],
       criteria: [{ id: "1.1", theme: 1, title: { en: "Criterion one" }, titlePlain: { en: "Criterion one" }, wcag: ["1.1.1"] }]
     },
@@ -29918,7 +30141,7 @@ Usage:
   ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format doc] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
@@ -29941,9 +30164,12 @@ Commands:
              non-conformities by priority, conforming + not-applicable lists.
              --standard <pack> writes a derived report for a country standard
              (e.g. --standard rgaa \u2192 audits/rgaa-YYYY-MM-DD.md).
-  prd        Turn an AuditResult into an actionable "fixes to do" backlog
-             (audits/prd-YYYY-MM-DD.md), grouped by criterion and sectioned by
-             priority; --split criterion writes one PRD file per criterion;
+  prd        Turn an AuditResult into an AUDITOR conformance backlog
+             (audits/prd-YYYY-MM-DD.md), one entry per criterion rendered with the
+             active standard's vocabulary (RGAA "Th\xE9matique/Crit\xE8re/Test", WCAG core
+             "Principle\xB7Guideline/Success criterion/Technique") \u2014 theme, criterion +
+             official wording, test(s), WCAG mapping + level, finding, expected state,
+             verification. --split criterion writes one file per criterion;
              --gh-issues files one de-duplicated GitHub issue per criterion, or
              --gh-single files the whole audit as a single issue (gh CLI).
   render     Get RENDERED HTML to audit (so component libraries like DSFR are
@@ -30020,8 +30246,10 @@ Options:
                      comma-separated, validated before use (see references/packs.md)
   --override         --pack: allow a runtime pack key to replace a built-in/loaded standard
   --guidance <file>  pack check: the guidance dataset JSON to gate alongside the pack
-  --format <mode>    prd: 'doc' emits a product-requirements document (epics, user
-                     stories, Given/When/Then); default is the fix backlog
+  --format <mode>    prd: 'audit' (default) emits the auditor conformance block (per
+                     the active standard's vocabulary) for the backlog AND GitHub issues;
+                     'doc' emits a product-requirements document (epics, user stories,
+                     Given/When/Then); 'remediation' emits the legacy dev fix backlog
   --split <mode>     prd: split the backlog \u2014 currently only 'criterion' (one file per criterion)
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
@@ -30384,7 +30612,7 @@ async function cmdPrd(p) {
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
   const lang = langOf(p.flags);
   const split = p.flags.split === "criterion" ? "criterion" : void 0;
-  const format = p.flags.format === "doc" ? "doc" : void 0;
+  const format = p.flags.format === "doc" ? "doc" : p.flags.format === "remediation" ? "remediation" : "audit";
   const paths = writePrd(result, { out, lang, split, format, standard });
   const json = p.flags.json === true;
   if (!json) for (const path of paths) console.log(path);
@@ -30399,7 +30627,8 @@ async function cmdPrd(p) {
     } else if (units.length === 0) {
       if (!json) console.error(`ultra11y prd: ${flag} skipped \u2014 no findings to file.`);
     } else {
-      gh2 = ghMode === "single" ? pushSingleIssue(units, lang, standard) : pushIssues(units, lang, standard);
+      const issueFormat = format === "remediation" ? "remediation" : "audit";
+      gh2 = ghMode === "single" ? pushSingleIssue(units, lang, standard, issueFormat) : pushIssues(units, lang, standard, issueFormat);
       if (!json)
         console.log(
           lang === "fr" ? `ultra11y prd : issues GitHub \u2014 ${gh2.created} cr\xE9\xE9e(s), ${gh2.skipped} d\xE9j\xE0 existante(s)${gh2.failed ? `, ${gh2.failed} en \xE9chec` : ""}.` : `ultra11y prd: GitHub issues \u2014 ${gh2.created} created, ${gh2.skipped} already existed${gh2.failed ? `, ${gh2.failed} failed` : ""}.`

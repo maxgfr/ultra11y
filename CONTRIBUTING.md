@@ -42,6 +42,15 @@ Shape (see `src/standards/types.ts` for the authoritative types):
   "source": "https://www.access-board.gov/ict/",
   "attribution": "Revised Section 508 — U.S. Access Board",
   "idPattern": "^E?\\d+\\.\\d+(\\.\\d+)?$",   // regex your criterion ids match
+  "vocabulary": {                             // OPTIONAL — the auditor-display nouns (see standards.md)
+    "theme": { "en": "Chapter" },             //   what your standard calls a theme / grouping
+    "criterion": { "en": "Provision" },       //   … a criterion / item
+    "test": { "en": "Requirement" },          //   … a test / sub-item
+    "conformant": { "en": "Supports" },       //   … the "conformant" verdict
+    "nonConformant": { "en": "Does not support" },
+    "notApplicable": { "en": "Not applicable" },
+    "auditorHeading": { "en": "Accessibility criterion" }
+  },
   "themes": [{ "number": 1, "name": { "en": "…" }, "count": 1 }],
   "criteria": [
     {
@@ -66,6 +75,12 @@ Rules of the road:
   core must resolve (`pnpm test` checks this).
 - The pack does **not** carry engine rules or automatability. Those live in the WCAG core
   (`scripts/build-standards.mjs`); your pack only declares the criterion↔WCAG-SC mapping.
+- **`vocabulary` is optional** (`LocaleString`s). It sets the nouns the `prd` auditor block +
+  GitHub issues render — what your standard calls a *theme*, a *criterion*, a *test*, and its
+  three conformance verdicts, plus an optional section heading and normative note. Anything you
+  omit falls back to a generic default and the WCAG core keeps its own set, so a pack that ships
+  no `vocabulary` still renders. This is what lets the auditor output speak your standard's
+  language instead of RGAA's or WCAG's (see `references/standards.md` → *Auditor vocabulary*).
 - Pick a redistributable source/licence and record it in `license` + `attribution`, the way the
   RGAA pack cites DINUM / Licence Ouverte Etalab 2.0. If the official text isn't redistributable,
   derive only the public criterion list + WCAG mapping and cite the source.

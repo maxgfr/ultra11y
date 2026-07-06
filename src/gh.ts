@@ -7,6 +7,11 @@ import { execFileSync } from "node:child_process";
 import type { Lang, Severity } from "./types.js";
 import type { PrdUnit } from "./prd.js";
 import { type StandardId, isCore, loadPack } from "./standards/index.js";
+import { renderAuditorUnit } from "./auditor.js";
+
+// Issue-body shape: `audit` (DEFAULT) = the auditor conformance block; `remediation` = the
+// legacy dev body (WCAG refs / Fix / Occurrences). Mirrors `prd --format`.
+export type IssueFormat = "audit" | "remediation";
 
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
 const SEV_RANK: Record<Severity, number> = { bloquant: 0, majeur: 1, mineur: 2 };
@@ -57,7 +62,8 @@ export function existingIssueTitles(): Set<string> {
   }
 }
 
-export function issueBody(unit: PrdUnit, lang: Lang): string {
+export function issueBody(unit: PrdUnit, lang: Lang, standard: StandardId = "wcag", format: IssueFormat = "audit"): string {
+  if (format === "audit") return renderAuditorUnit(unit, standard, lang).join("\n").trimEnd();
   const t = lang === "fr" ? { fix: "Correction", occ: "Occurrence(s)", def: "↳ définition" } : { fix: "Fix", occ: "Occurrence(s)", def: "↳ definition" };
   const lines: string[] = [];
   if (unit.refs.length) lines.push(`**WCAG** : ${unit.refs.join(", ")}`, "");
@@ -95,7 +101,7 @@ export interface PushResult {
 }
 
 /** Create a GitHub issue per unit, skipping titles that already exist. */
-export function pushIssues(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag"): PushResult {
+export function pushIssues(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag", format: IssueFormat = "audit"): PushResult {
   const { label, tag } = standardTag(standard);
   const existing = existingIssueTitles();
   const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
@@ -105,7 +111,7 @@ export function pushIssues(units: PrdUnit[], lang: Lang, standard: StandardId = 
       result.skipped++;
       continue;
     }
-    if (createIssue(title, issueBody(u, lang), ["accessibility", tag, u.severity])) {
+    if (createIssue(title, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity])) {
       result.created++;
       result.createdTitles.push(title);
       existing.add(title); // guard against duplicate units in one run
@@ -123,7 +129,7 @@ export function singleIssueTitle(label = "WCAG"): string {
 
 /** One consolidated issue body: every criterion, sectioned by severity (blocking → minor),
  *  each criterion reusing the same fix + occurrences block as the per-criterion issues. */
-export function singleIssueBody(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag"): string {
+export function singleIssueBody(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag", format: IssueFormat = "audit"): string {
   const { label } = standardTag(standard);
   const intro =
     lang === "fr"
@@ -134,14 +140,17 @@ export function singleIssueBody(units: PrdUnit[], lang: Lang, standard: Standard
     const group = units.filter((u) => u.severity === sev);
     if (!group.length) continue;
     lines.push(`## ${ICON[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
-    for (const u of group) lines.push(`### ${u.label}`, "", issueBody(u, lang), "");
+    for (const u of group) {
+      if (format === "audit") lines.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
+      else lines.push(`### ${u.label}`, "", issueBody(u, lang, standard, format), "");
+    }
   }
   return lines.join("\n");
 }
 
 /** Create ONE consolidated issue for the whole audit, de-duped by its stable title and
  *  labelled by the most severe criterion. Mirrors pushIssues' best-effort/skip semantics. */
-export function pushSingleIssue(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag"): PushResult {
+export function pushSingleIssue(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag", format: IssueFormat = "audit"): PushResult {
   const { label, tag } = standardTag(standard);
   const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
   if (!units.length) return result;
@@ -151,7 +160,7 @@ export function pushSingleIssue(units: PrdUnit[], lang: Lang, standard: Standard
     return result;
   }
   const severity = [...units].sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])[0]!.severity;
-  if (createIssue(title, singleIssueBody(units, lang, standard), ["accessibility", tag, severity])) {
+  if (createIssue(title, singleIssueBody(units, lang, standard, format), ["accessibility", tag, severity])) {
     result.created = 1;
     result.createdTitles.push(title);
   } else {

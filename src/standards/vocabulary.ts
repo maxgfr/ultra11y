@@ -44,19 +44,24 @@ const CORE: Record<TermKey, Record<Lang, string>> = {
   auditorHeading: { en: "Accessibility criterion", fr: "Critère d'accessibilité" },
 };
 
-/** Resolve a localized string: requested lang → pack default → English → first available. */
-function pick(s: LocaleString | undefined, lang: Lang, fallbackLang: Lang): string | undefined {
+/** Resolve a localized string: requested lang → pack default → English → first available.
+ *  `lang`/`fallbackLang` are `string`, not the UI frame's `Lang` — a pack's own locale
+ *  (its `defaultLocale`) is not constrained to "fr"|"en" (see src/standards/types.ts). */
+function pick(s: LocaleString | undefined, lang: string, fallbackLang: string): string | undefined {
   if (!s) return undefined;
   return s[lang] ?? s[fallbackLang] ?? s.en ?? Object.values(s)[0];
 }
 
 /** The resolved auditor vocabulary for a standard (WCAG core or a pack) in `lang`. */
-export function vocabularyFor(standard: string, lang: Lang): ResolvedVocabulary {
+export function vocabularyFor(standard: string, lang: string): ResolvedVocabulary {
   const base = isCore(standard) ? CORE : DEFAULT;
   const pack = isCore(standard) ? undefined : getPack(standard);
   const voc = pack?.vocabulary;
-  const packDefault = (pack?.defaultLocale ?? "en") as Lang;
-  const term = (k: TermKey): string => pick(voc?.[k], lang, packDefault) ?? base[k][lang];
+  const packDefault = pack?.defaultLocale ?? "en";
+  // The core/default fallback tables only ever carry "fr"/"en" — a pack-only locale
+  // (e.g. "de") that isn't one of those two falls through to "en" here, same as any
+  // other unmapped requested lang.
+  const term = (k: TermKey): string => pick(voc?.[k], lang, packDefault) ?? (base[k] as Record<string, string>)[lang] ?? base[k].en;
   return {
     theme: term("theme"),
     criterion: term("criterion"),

@@ -1,5 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { loadPack, getPack, isCore, hasStandard, listStandards, packsForSc, resolveStandard, derivePackResults } from "../src/standards/index.js";
+import {
+  loadPack,
+  getPack,
+  isCore,
+  hasStandard,
+  listStandards,
+  packsForSc,
+  resolveStandard,
+  derivePackResults,
+  registerRuntimePack,
+  title as packTitle,
+  vocabularyFor,
+} from "../src/standards/index.js";
 import { hasSC, knownScStatus } from "../src/wcag.js";
 import type { AuditResult, Finding } from "../src/types.js";
 
@@ -107,6 +119,34 @@ describe("RGAA pack schema", () => {
   it("all but one criterion (8.1 doctype → removed 4.1.1) map into the WCAG 2.2 AA core", () => {
     const orphaned = pack.criteria.filter((c) => !c.wcag.some((sc) => hasSC(sc))).map((c) => c.id);
     expect(orphaned).toEqual(["8.1"]);
+  });
+});
+
+describe("pack locales are decoupled from the UI frame's Lang (fr|en)", () => {
+  it("registers a de-only pack and renders its title/vocabulary through the 'en' UI frame", () => {
+    const r = registerRuntimePack({
+      key: "deonly",
+      name: "DeOnly",
+      org: "O",
+      country: "DE",
+      baseVersion: "1",
+      wcagVersion: "2.2",
+      locales: ["de"],
+      defaultLocale: "de",
+      license: "x",
+      source: "x",
+      attribution: "x",
+      idPattern: "^\\d+\\.\\d+$",
+      vocabulary: { criterion: { de: "Kriterium" } },
+      themes: [{ number: 1, name: { de: "Bilder" }, count: 1 }],
+      criteria: [{ id: "1.1", theme: 1, title: { de: "Alternativtext" }, titlePlain: { de: "Alternativtext" }, wcag: ["1.1.1"] }],
+    });
+    expect(r.ok).toBe(true);
+    const pack = loadPack("deonly");
+    // Rendered with the UI frame's "en" — falls back through the pack's own defaultLocale
+    // ("de") since the pack carries no "en" string at all, per the localize() fallback chain.
+    expect(packTitle(pack, pack.criteria[0]!, "en")).toBe("Alternativtext");
+    expect(vocabularyFor("deonly", "en").criterion).toBe("Kriterium");
   });
 });
 

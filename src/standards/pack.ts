@@ -4,8 +4,10 @@ import type { StandardPack, PackCriterion, LocaleString } from "./types.js";
 import type { Lang, GlossaryEntry } from "../types.js";
 import { packGlossary } from "./registry.js";
 
-/** Resolve a localized string: requested lang → pack default → English → first available. */
-export function localize(pack: StandardPack, s: LocaleString | undefined, lang: Lang): string {
+/** Resolve a localized string: requested lang → pack default → English → first available.
+ *  `lang` is deliberately `string`, not the UI frame's `Lang` — a pack's own locales
+ *  (`LocaleString` keys) are not constrained to "fr"|"en" (see src/standards/types.ts). */
+export function localize(pack: StandardPack, s: LocaleString | undefined, lang: string): string {
   if (!s) return "";
   return s[lang] ?? s[pack.defaultLocale] ?? s.en ?? Object.values(s)[0] ?? "";
 }

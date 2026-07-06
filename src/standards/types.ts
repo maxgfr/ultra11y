@@ -2,12 +2,13 @@
 // (RGAA, Section 508, EN 301 549, AODA…) that maps its localized criteria onto WCAG
 // success criteria. The WCAG 2.2 core (src/types.ts `Sc` / src/wcag.ts) stays canonical;
 // a pack is a derived view. See CONTRIBUTING.md for the authoring contract.
-import type { Lang } from "../types.js";
-
-// A localized string. `defaultLocale` (declared on the pack) MUST be present; other
-// locales are optional. English is recommended for worldwide readability but a
-// French-only standard like RGAA legitimately ships fr-only.
-export type LocaleString = Partial<Record<Lang, string>>;
+// A localized string, keyed by a BCP-47-ish locale tag ("fr", "en", "pt-BR", "de"…) — NOT
+// the UI frame's `Lang` ("fr"|"en", see src/types.ts): a pack may legitimately be
+// authored in any language (e.g. a hypothetical German-only standard), decoupled from
+// the languages the CLI's own tables (`L`) render in. `defaultLocale` (declared on the
+// pack) MUST be present; other locales are optional. English is recommended for
+// worldwide readability but a French-only standard like RGAA legitimately ships fr-only.
+export type LocaleString = Partial<Record<string, string>>;
 
 export interface PackTheme {
   number: number;
@@ -55,8 +56,9 @@ export interface StandardPack {
   country: string; // ISO-ish code, e.g. "FR"
   baseVersion: string; // standard version, e.g. "4.1.2"
   wcagVersion: string; // the WCAG version the pack maps to, e.g. "2.1"
-  locales: Lang[];
-  defaultLocale: Lang;
+  locales: string[]; // BCP-47-ish tags, e.g. ["fr"] or ["de"] — the pack's OWN locales,
+  // independent of the UI frame's `Lang` (see `LocaleString` above)
+  defaultLocale: string;
   license: string;
   source: string;
   attribution: string;

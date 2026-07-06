@@ -679,6 +679,23 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
   },
 };
 
+// ---- Cross-file RelatedSite notes (src/rules/cross-registry.ts) -------------------
+// Mirrors MSG_CATALOG's fr/en split, but for `Finding.related.note` — the short label
+// describing the OTHER site (e.g. a component definition) a cross-file finding points
+// at. Unlike message/remediation these carry no params, so entries are plain strings.
+// The fr strings are the ORIGINAL author strings, moved here verbatim; the en strings
+// are faithful technical translations written for this catalog.
+export const NOTE_CATALOG: Record<string, Record<Lang, string>> = {
+  "related.icon-component-def": {
+    fr: "définition du composant à icône seule",
+    en: "icon-only component definition",
+  },
+  "related.name-drop-def": {
+    fr: "contrôle qui ne reçoit pas le nom passé",
+    en: "control that does not receive the passed name",
+  },
+};
+
 function entryFor(id: string | undefined): MsgEntry | undefined {
   return id === undefined ? undefined : MSG_CATALOG[id];
 }
@@ -694,4 +711,11 @@ export function resolveMessage(f: { message: string; msg?: { id: string; params?
 export function resolveRemediation(f: { remediation: string; msg?: { id: string; params?: MsgParams } }, lang: Lang): string {
   const entry = entryFor(f.msg?.id);
   return entry ? entry.remediation[lang](f.msg?.params ?? {}) : f.remediation;
+}
+
+/** Resolve a cross-file RelatedSite's note by lang: NOTE_CATALOG entry when `noteId` is
+ *  present and known, else the baked `note` (back-compat with old JSON / unknown ids). */
+export function resolveNote(related: { note: string; noteId?: string }, lang: Lang): string {
+  const entry = related.noteId ? NOTE_CATALOG[related.noteId] : undefined;
+  return entry ? entry[lang] : related.note;
 }

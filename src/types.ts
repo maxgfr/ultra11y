@@ -120,7 +120,11 @@ export interface Finding {
   // Cross-file context: the OTHER site that explains this finding — e.g. the
   // component definition for a finding raised at a usage site. Optional/additive
   // (cross-file rules only), so existing AuditResult JSON still parses.
-  related?: { file: string; line: number; col: number; selectorHint: string; note: string };
+  // `note` is the canonical baked ENGLISH prose (mirrors message/remediation above);
+  // `noteId` is an optional key into src/messages.ts's note catalog, resolved at
+  // render time by `resolveNote` for `--lang fr` (or any other supported lang),
+  // falling back to the baked `note` when absent or the id is unknown.
+  related?: { file: string; line: number; col: number; selectorHint: string; note: string; noteId?: string };
   // AI signal: this finding was raised on a .vue/.svelte/.astro SOURCE template, whose
   // slot/dynamic-injected content is invisible to static analysis — so it is a
   // PRELIMINARY verdict to confirm against the rendered output, not a certainty.

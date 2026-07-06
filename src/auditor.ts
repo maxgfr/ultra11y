@@ -10,7 +10,7 @@
 import type { AuditResult, Lang, Severity } from "./types.js";
 import { prdUnits, type PrdUnit, type PrdFile } from "./prd.js";
 import { getSC, guidelineTitle, principleTitle, techniques as scTechniques } from "./wcag.js";
-import { resolveMessage, resolveRemediation } from "./messages.js";
+import { resolveMessage, resolveRemediation, resolveNote } from "./messages.js";
 import { type StandardId, isCore, loadPack, standardLabel, themeName, vocabularyFor } from "./standards/index.js";
 
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
@@ -101,7 +101,7 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
 
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - ↳ ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
   return out;

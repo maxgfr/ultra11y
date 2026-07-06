@@ -16,7 +16,11 @@ export interface RelatedSite {
   line: number;
   col: number;
   selectorHint: string;
+  // Canonical baked ENGLISH prose (mirrors Finding.message/remediation); `noteId` is an
+  // optional key into src/messages.ts's NOTE_CATALOG, resolved at render time by
+  // `resolveNote` — see types.ts `Finding.related` for the full contract.
   note: string;
+  noteId?: string;
 }
 
 export interface CrossFinding {

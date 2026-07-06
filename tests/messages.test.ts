@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { MSG_CATALOG, resolveMessage, resolveRemediation, type MsgParams } from "../src/messages.js";
+import { MSG_CATALOG, NOTE_CATALOG, resolveMessage, resolveRemediation, resolveNote, type MsgParams } from "../src/messages.js";
 import { parseSource } from "../src/parse/source.js";
 import { toFinding } from "../src/rules/rule.js";
 import { crossToFinding } from "../src/rules/cross-rule.js";
@@ -117,6 +117,47 @@ describe("resolveMessage / resolveRemediation", () => {
     const f = { message: "baked", remediation: "baked fix", msg: { id: "no-such-rule-anymore" } };
     expect(resolveMessage(f, "fr")).toBe("baked");
     expect(resolveRemediation(f, "en")).toBe("baked fix");
+  });
+});
+
+describe("NOTE_CATALOG (cross-file RelatedSite.note)", () => {
+  const ids = Object.keys(NOTE_CATALOG);
+
+  it("is not empty and has fr + en strings for every entry", () => {
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) {
+      expect(typeof NOTE_CATALOG[id]!.fr).toBe("string");
+      expect(typeof NOTE_CATALOG[id]!.en).toBe("string");
+      expect(NOTE_CATALOG[id]!.fr.length).toBeGreaterThan(0);
+      expect(NOTE_CATALOG[id]!.en.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps fr and en apart (anti-mixing heuristic)", () => {
+    for (const id of ids) {
+      for (const tell of FR_TELLS) expect(NOTE_CATALOG[id]!.en).not.toMatch(tell);
+      for (const tell of EN_TELLS) expect(NOTE_CATALOG[id]!.fr).not.toMatch(tell);
+    }
+  });
+});
+
+describe("resolveNote", () => {
+  it("resolves through NOTE_CATALOG when noteId is present and known", () => {
+    const related = { note: "STALE", noteId: "related.icon-component-def" };
+    expect(resolveNote(related, "en")).toBe("icon-only component definition");
+    expect(resolveNote(related, "fr")).toBe("définition du composant à icône seule");
+  });
+
+  it("falls back to the baked note when noteId is absent (old JSON)", () => {
+    const related = { note: "an old baked note" };
+    expect(resolveNote(related, "en")).toBe("an old baked note");
+    expect(resolveNote(related, "fr")).toBe("an old baked note");
+  });
+
+  it("falls back when noteId is unknown (e.g. a renamed/removed cross rule in old JSON)", () => {
+    const related = { note: "baked note", noteId: "no-such-note-anymore" };
+    expect(resolveNote(related, "fr")).toBe("baked note");
+    expect(resolveNote(related, "en")).toBe("baked note");
   });
 });
 

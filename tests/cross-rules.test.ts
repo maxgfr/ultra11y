@@ -1,9 +1,29 @@
 import { describe, it, expect } from "vitest";
 import { runAudit } from "../src/audit.js";
-import type { Finding } from "../src/types.js";
+import type { AuditResult, Finding } from "../src/types.js";
+import { renderBacklog } from "../src/prd.js";
+import { NOTE_CATALOG } from "../src/messages.js";
 
 const SCOPE = ["tests/fixtures/cross-file"];
 const find = (fs: Finding[], ruleId: string, fileEndsWith: string): Finding | undefined => fs.find((f) => f.ruleId === ruleId && f.file.endsWith(fileEndsWith));
+
+/** Wrap a single real finding in a minimal AuditResult so it can be run through the
+ *  actual renderers (renderBacklog), exercising the full engine → render pipeline. */
+function auditOf(finding: Finding): AuditResult {
+  return {
+    tool: "ultra11y",
+    standard: "wcag",
+    version: "9.9.9",
+    schemaVersion: 2,
+    date: "2026-06-29",
+    scope: { inputs: SCOPE, files: 1 },
+    guidelines: [],
+    criteria: [],
+    findings: [finding],
+    residualRisks: [],
+    conformancePct: 50,
+  };
+}
 
 describe("cross-file rules (audit --graph)", () => {
   const plain = runAudit({ inputs: SCOPE, dedup: "off" }).findings;
@@ -18,6 +38,21 @@ describe("cross-file rules (audit --graph)", () => {
 
   it("does not flag a usage that passes an accessible name", () => {
     expect(find(graph, "cross-icon-only-unnamed", "page-good.tsx")).toBeUndefined();
+  });
+
+  it("bakes the related-site note in English with a resolvable noteId, and localizes it at render time (fr: exact original French; en: no mixed language)", () => {
+    const f = find(graph, "cross-icon-only-unnamed", "page-bad.tsx")!;
+    // The engine bakes English + attaches a noteId (mirrors message/remediation).
+    expect(f.related?.noteId).toBe("related.icon-component-def");
+    expect(f.related?.note).toBe(NOTE_CATALOG["related.icon-component-def"]!.en);
+
+    const en = renderBacklog(auditOf(f), "en");
+    expect(en).toContain(`↳ ${NOTE_CATALOG["related.icon-component-def"]!.en}`);
+    expect(en).not.toMatch(/définition du composant/); // no French leak in EN output
+
+    const fr = renderBacklog(auditOf(f), "fr");
+    // Exact original French string (non-regression vs. the pre-fix baked note).
+    expect(fr).toContain("↳ définition du composant à icône seule");
   });
 
   it("does not flag an icon button that is self-named by a dynamic aria-label in its definition", () => {
@@ -44,6 +79,19 @@ describe("cross-file rules (audit --graph)", () => {
     expect(f?.criteriaId).toBe("4.1.2");
     // graph-only: the plain (single-file) pass cannot see across the boundary.
     expect(find(plain, "cross-prop-drilled-name-lost", "page-prop-drill.tsx")).toBeUndefined();
+  });
+
+  it("bakes the prop-drilled related-site note in English with a resolvable noteId, and localizes it at render time (fr: exact original French; en: no mixed language)", () => {
+    const f = find(graph, "cross-prop-drilled-name-lost", "page-prop-drill.tsx")!;
+    expect(f.related?.noteId).toBe("related.name-drop-def");
+    expect(f.related?.note).toBe(NOTE_CATALOG["related.name-drop-def"]!.en);
+
+    const en = renderBacklog(auditOf(f), "en");
+    expect(en).toContain(`↳ ${NOTE_CATALOG["related.name-drop-def"]!.en}`);
+    expect(en).not.toMatch(/contrôle qui ne reçoit pas/); // no French leak in EN output
+
+    const fr = renderBacklog(auditOf(f), "fr");
+    expect(fr).toContain("↳ contrôle qui ne reçoit pas le nom passé");
   });
 
   it("only adds/removes cross-file effects — the rest of the findings are unchanged", () => {

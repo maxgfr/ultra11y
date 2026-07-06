@@ -19654,6 +19654,16 @@ var MSG_CATALOG = {
     }
   }
 };
+var NOTE_CATALOG = {
+  "related.icon-component-def": {
+    fr: "d\xE9finition du composant \xE0 ic\xF4ne seule",
+    en: "icon-only component definition"
+  },
+  "related.name-drop-def": {
+    fr: "contr\xF4le qui ne re\xE7oit pas le nom pass\xE9",
+    en: "control that does not receive the passed name"
+  }
+};
 function entryFor(id) {
   return id === void 0 ? void 0 : MSG_CATALOG[id];
 }
@@ -19664,6 +19674,10 @@ function resolveMessage(f, lang) {
 function resolveRemediation(f, lang) {
   const entry = entryFor(f.msg?.id);
   return entry ? entry.remediation[lang](f.msg?.params ?? {}) : f.remediation;
+}
+function resolveNote(related, lang) {
+  const entry = related.noteId ? NOTE_CATALOG[related.noteId] : void 0;
+  return entry ? entry[lang] : related.note;
 }
 
 // src/rules/rule.ts
@@ -21717,7 +21731,14 @@ var crossIconOnlyUnnamed = {
         el,
         msgId: "cross-icon-only-unnamed",
         params: { tag: el.tag, defName: def.name },
-        related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "d\xE9finition du composant \xE0 ic\xF4ne seule" }
+        related: {
+          file: def.file,
+          line: def.line,
+          col: def.col,
+          selectorHint: def.name,
+          note: NOTE_CATALOG["related.icon-component-def"].en,
+          noteId: "related.icon-component-def"
+        }
       });
     }
     return { findings, suppress: [] };
@@ -21792,7 +21813,14 @@ var crossPropDrilledNameLost = {
         el,
         msgId: "cross-prop-drilled-name-lost",
         params: { tag: el.tag, passed, defName: def.name },
-        related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "contr\xF4le qui ne re\xE7oit pas le nom pass\xE9" }
+        related: {
+          file: def.file,
+          line: def.line,
+          col: def.col,
+          selectorHint: def.name,
+          note: NOTE_CATALOG["related.name-drop-def"].en,
+          noteId: "related.name-drop-def"
+        }
       });
     }
     return { findings, suppress: [] };
@@ -28915,7 +28943,7 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
   out.push(`**${s.verification}** : ${s.verify}`, "");
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
   return out;
@@ -29112,7 +29140,7 @@ function unitBlock(unit, lang, heading, standard) {
   out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
   return out;
@@ -29204,7 +29232,7 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
         out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-        if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\``);
+        if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\``);
       }
       out.push("");
     }

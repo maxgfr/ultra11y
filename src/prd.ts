@@ -7,7 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity } from "./types.js";
 import { getSC, guidelineTitle, scTitle, techniques as scTechniques } from "./wcag.js";
-import { resolveMessage, resolveRemediation } from "./messages.js";
+import { resolveMessage, resolveRemediation, resolveNote } from "./messages.js";
 import { type StandardId, isCore, loadPack, derivePackResults, standardLabel, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
 import { guidanceForWcag, guidanceForCriterion } from "./guidance/index.js";
 import type { GuidanceEntry } from "./guidance/types.js";
@@ -191,7 +191,7 @@ function unitBlock(unit: PrdUnit, lang: Lang, heading: string, standard: Standar
   out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - ↳ ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
   return out;
@@ -304,7 +304,7 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
         out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-        if (f.related) out.push(`  - ↳ ${f.related.note} : \`${f.related.file}:${f.related.line}\``);
+        if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\``);
       }
       out.push("");
     }

@@ -9,6 +9,7 @@ import { isIntrinsic } from "../parse/jsx-bridge.js";
 import { isFullDocument } from "./rule.js";
 import { type CrossRule, type Suppression, crossToFinding } from "./cross-rule.js";
 import { type DepGraph, resolveUsage, idDefinedAnywhere, htmlLangProvidedFor } from "../graph/graph.js";
+import { NOTE_CATALOG } from "../messages.js";
 
 const SEVERITY_ORDER: Record<string, number> = { bloquant: 0, majeur: 1, mineur: 2 };
 const NAME_PROPS = ["aria-label", "aria-labelledby", "title", "label", "alt"];
@@ -50,7 +51,14 @@ const crossIconOnlyUnnamed: CrossRule = {
         el,
         msgId: "cross-icon-only-unnamed",
         params: { tag: el.tag, defName: def.name },
-        related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "définition du composant à icône seule" },
+        related: {
+          file: def.file,
+          line: def.line,
+          col: def.col,
+          selectorHint: def.name,
+          note: NOTE_CATALOG["related.icon-component-def"]!.en,
+          noteId: "related.icon-component-def",
+        },
       });
     }
     return { findings, suppress: [] };
@@ -144,7 +152,14 @@ const crossPropDrilledNameLost: CrossRule = {
         el,
         msgId: "cross-prop-drilled-name-lost",
         params: { tag: el.tag, passed, defName: def.name },
-        related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "contrôle qui ne reçoit pas le nom passé" },
+        related: {
+          file: def.file,
+          line: def.line,
+          col: def.col,
+          selectorHint: def.name,
+          note: NOTE_CATALOG["related.name-drop-def"]!.en,
+          noteId: "related.name-drop-def",
+        },
       });
     }
     return { findings, suppress: [] };

@@ -3,7 +3,7 @@
 // auto-applies + re-stages only fully-staged files. Reuses the temp-git harness from
 // discover.test.ts; every staged case chdir's into the repo (the git helpers use cwd).
 import { describe, it, expect, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -96,6 +96,57 @@ describe("audit --staged reads the index, not the working tree", () => {
       expect(r.scope.files).toBeGreaterThanOrEqual(1); // still audited (fallback)
     });
     expect(warnings.some((w) => w.includes("git is unavailable"))).toBe(true);
+  });
+});
+
+describe("audit --staged + captureDiff — captures relevant to the diffed source files", () => {
+  function repoWithButtonCapture(): string {
+    const repo = initRepo();
+    mkdirSync(join(repo, "src"), { recursive: true });
+    writeFileSync(repo + "/src/Button.tsx", `export default function Button() { return <button>Save</button>; }`);
+    mkdirSync(join(repo, ".ultra11y/captures"), { recursive: true });
+    // A real rendered capture for Button, committed and UNCHANGED — only its source
+    // (Button.tsx) is about to be staged, mirroring the common real-world case.
+    writeFileSync(
+      join(repo, ".ultra11y/captures/Button.html"),
+      '<!-- ultra11y:capture v="1" source="src/Button.tsx" component="Button" -->\n<button>Save</button>\n',
+    );
+    git(repo, "add", ".");
+    git(repo, "commit", "-m", "base + capture");
+    return repo;
+  }
+
+  it("includes the Button capture when Button.tsx itself is staged", () => {
+    const repo = repoWithButtonCapture();
+    writeFileSync(repo + "/src/Button.tsx", `export default function Button() { return <button aria-label="Save"><svg/></button>; }`);
+    git(repo, "add", "src/Button.tsx");
+
+    inRepo(repo, () => {
+      const staged = runAudit({ inputs: ["."], staged: true, captureDir: ".ultra11y/captures", captureDiff: true });
+      expect(staged.scope.captures?.components).toContain("Button");
+    });
+  });
+
+  it("does NOT include the Button capture when an unrelated file is staged", () => {
+    const repo = repoWithButtonCapture();
+    writeFileSync(join(repo, "other.html"), "<p>unrelated</p>");
+    git(repo, "add", "other.html");
+
+    inRepo(repo, () => {
+      const staged = runAudit({ inputs: ["."], staged: true, captureDir: ".ultra11y/captures", captureDiff: true });
+      expect(staged.scope.captures).toBeUndefined();
+    });
+  });
+
+  it("is a no-op without captureDiff (previous behavior: diff mode never pulls in captures)", () => {
+    const repo = repoWithButtonCapture();
+    writeFileSync(repo + "/src/Button.tsx", `export default function Button() { return <button aria-label="Save"><svg/></button>; }`);
+    git(repo, "add", "src/Button.tsx");
+
+    inRepo(repo, () => {
+      const staged = runAudit({ inputs: ["."], staged: true, captureDir: ".ultra11y/captures" });
+      expect(staged.scope.captures).toBeUndefined();
+    });
   });
 });
 

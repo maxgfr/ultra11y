@@ -18991,6 +18991,13 @@ function readCaptureDir(dir) {
   }
   return out;
 }
+function capturesForSources(captureDir, sourceFiles) {
+  const wanted = sourceFiles.map(toPosix);
+  return readCaptureDir(captureDir).filter((e) => {
+    const src = e.provenance?.sourceFile;
+    return src ? wanted.some((w) => pathMatch(toPosix(src), w)) : false;
+  }).map((e) => e.file);
+}
 function enrichCaptureOrigins(findings, graph) {
   for (const f of findings) {
     const o = f.origin;
@@ -22502,7 +22509,11 @@ function runAudit(opts) {
   const seen = /* @__PURE__ */ new Set();
   let duplicateFiles = 0;
   let truncated;
-  const { files, gitUnavailable, stagedContent: stagedContent2 } = discover(opts.inputs, {
+  const {
+    files: discovered,
+    gitUnavailable,
+    stagedContent: stagedContent2
+  } = discover(opts.inputs, {
     include: opts.include,
     exclude: opts.exclude,
     ext: opts.ext,
@@ -22513,6 +22524,9 @@ function runAudit(opts) {
     onWarn: opts.onWarn
   });
   const useStaged = opts.staged === true && !gitUnavailable;
+  const diffMode = opts.changed || opts.since || opts.staged;
+  const relevantCaptures = opts.captureDiff && diffMode && opts.captureDir ? capturesForSources(opts.captureDir, discovered).filter((c) => !discovered.includes(c)) : [];
+  const files = relevantCaptures.length ? [...discovered, ...relevantCaptures] : discovered;
   let graph;
   if (opts.graph || opts.captureCoverage) {
     const graphExt = [...GRAPH_ONLY_EXT, ...opts.ext ?? []];
@@ -31868,7 +31882,8 @@ async function cmdAudit(p) {
   const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
   const capturesDir = capturesFlag ?? ".ultra11y/captures";
   const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== void 0;
-  const useCaptures = p.flags["no-captures"] !== true && !inputs.includes("-") && !scopedToDiff && (capturesFlag !== void 0 || existsSync8(capturesDir)) && !inputs.includes(capturesDir);
+  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync8(capturesDir));
+  const useCaptures = capturesWanted && !scopedToDiff && !inputs.includes(capturesDir);
   const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
   if (useCaptures)
     console.error(
@@ -31889,6 +31904,7 @@ async function cmdAudit(p) {
     graph: p.flags.graph === true || p.flags["cross-file"] === true || requireCaptures,
     captureCoverage: requireCaptures,
     captureDir: capturesDir,
+    captureDiff: capturesWanted && scopedToDiff,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m)
   });

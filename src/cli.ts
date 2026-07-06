@@ -392,19 +392,18 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   let lang = resolveLang(p.flags, {});
 
   // Rendered captures: ingest the .ultra11y/captures dir (or --captures <dir>) alongside
-  // the source so the audit covers the REAL DOM component libraries/SFCs emit. In
-  // --staged/--changed mode the captures are picked up naturally as staged/changed .html,
-  // so only auto-append in a full scan. --no-captures opts out.
+  // the source so the audit covers the REAL DOM component libraries/SFCs emit. In a full
+  // scan the whole dir is appended as a top-level input; in --staged/--changed mode a
+  // capture is rarely itself part of the diff (the SOURCE changed, not its
+  // already-committed capture), so runAudit's `captureDiff` instead pulls in just the
+  // captures relevant to the diffed files (capturesForSources). --no-captures opts out
+  // of both.
   const requireCaptures = p.flags["require-captures"] === true;
   const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : undefined;
   const capturesDir = capturesFlag ?? ".ultra11y/captures";
   const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== undefined;
-  const useCaptures =
-    p.flags["no-captures"] !== true &&
-    !inputs.includes("-") &&
-    !scopedToDiff &&
-    (capturesFlag !== undefined || existsSync(capturesDir)) &&
-    !inputs.includes(capturesDir);
+  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== undefined || existsSync(capturesDir));
+  const useCaptures = capturesWanted && !scopedToDiff && !inputs.includes(capturesDir);
   const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
   if (useCaptures)
     console.error(
@@ -426,6 +425,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     graph: p.flags.graph === true || p.flags["cross-file"] === true || requireCaptures,
     captureCoverage: requireCaptures,
     captureDir: capturesDir,
+    captureDiff: capturesWanted && scopedToDiff,
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m),
   });

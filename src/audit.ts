@@ -9,7 +9,7 @@ import { VERSION, SCHEMA_VERSION } from "./types.js";
 import { allSC, allGuidelines } from "./wcag.js";
 import { parseSource } from "./parse/source.js";
 import { attr, elementsByTag, type Doc, type CaptureProvenance } from "./parse/html.js";
-import { computeCaptureCoverage, enrichCaptureOrigins, readCaptureDir } from "./capture.js";
+import { computeCaptureCoverage, enrichCaptureOrigins, readCaptureDir, capturesForSources } from "./capture.js";
 import { isFullDocument } from "./rules/rule.js";
 import { runRules } from "./rules/registry.js";
 import { runCrossRules } from "./rules/cross-registry.js";
@@ -37,6 +37,13 @@ export interface AuditInput {
   graph?: boolean; // also run cross-file rules over a dependency graph (--graph)
   captureCoverage?: boolean; // compute scope.captureCoverage (implies a graph pass)
   captureDir?: string; // dir scanned for the repo-wide capture set (coverage); default .ultra11y/captures
+  // In --changed/--since/--staged mode, also ingest the captures under `captureDir`
+  // whose provenance sourceFile matches one of the diffed files (capturesForSources) —
+  // a capture is rarely itself part of the diff, so the audit would otherwise stay
+  // blind to the real rendered DOM for a touched component. No-op outside diff mode
+  // (a full scan's capture ingestion is the CLI appending captureDir as a top-level
+  // input instead — see cmdAudit's `useCaptures`).
+  captureDiff?: boolean;
   noDefaultExcludes?: boolean; // also audit test/spec/story/__tests__ markup
   onWarn?: (msg: string) => void;
 }
@@ -252,7 +259,11 @@ export function runAudit(opts: AuditInput): AuditResult {
   let duplicateFiles = 0;
   let truncated: FinalizeExtra["truncated"];
 
-  const { files, gitUnavailable, stagedContent } = discover(opts.inputs, {
+  const {
+    files: discovered,
+    gitUnavailable,
+    stagedContent,
+  } = discover(opts.inputs, {
     include: opts.include,
     exclude: opts.exclude,
     ext: opts.ext,
@@ -264,6 +275,18 @@ export function runAudit(opts: AuditInput): AuditResult {
   });
   // In staged mode, read the index blob (from discovery) instead of the working tree.
   const useStaged = opts.staged === true && !gitUnavailable;
+
+  // Diff-scoped mode (--changed/--since/--staged): a capture is rarely itself part of
+  // the diff (the SOURCE changed; its already-committed capture usually didn't), so
+  // pull in just the captures relevant to the diffed files (capturesForSources) — read
+  // from the working tree/disk even in --staged mode (an unchanged capture's staged
+  // blob and working-tree copy are identical). Extra files, never removed from the
+  // diff's own scope; a full scan's capture ingestion is the CLI appending captureDir
+  // as a top-level input instead (see cmdAudit's `useCaptures`).
+  const diffMode = opts.changed || opts.since || opts.staged;
+  const relevantCaptures =
+    opts.captureDiff && diffMode && opts.captureDir ? capturesForSources(opts.captureDir, discovered).filter((c) => !discovered.includes(c)) : [];
+  const files = relevantCaptures.length ? [...discovered, ...relevantCaptures] : discovered;
 
   // Cross-file pass: build the dependency graph over the FULL scope (so a changed
   // file's references resolve into unchanged definitions), then run cross rules in

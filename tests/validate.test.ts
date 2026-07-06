@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validatePack, classifySc } from "../src/standards/validate.js";
+import { neutralizeCaptureGroups } from "../src/standards/pack.js";
 
 // A minimal, valid StandardPack to mutate per-case.
 function base(): Record<string, unknown> {
@@ -107,6 +108,38 @@ describe("validatePack", () => {
     expect(errs(bad).some((e) => e.path === "locales")).toBe(true);
     const good = validatePack({ ...base(), locales: ["pt-BR", "en"], defaultLocale: "en" });
     expect(errs(good).some((e) => e.path === "locales")).toBe(false);
+  });
+});
+
+describe("neutralizeCaptureGroups (idCaptureSource's capturing-group neutralizer)", () => {
+  // check.ts/verify.ts embed idCaptureSource(pack) as ONE outer capture group inside a
+  // larger positional-capture regex (title/file/line/selector read by index). A pack
+  // idPattern that itself contains capturing groups (legal, and validatePack accepts it —
+  // see the "arbitrary idPattern grammar" test above) would otherwise shift every
+  // downstream index. The neutralizer must strip the pack pattern's OWN capturing groups
+  // to non-capturing, while leaving its matching semantics byte-identical.
+  const netGroupCount = (source: string, sample: string): number => {
+    const m = new RegExp(source).exec(sample);
+    return m ? m.length - 1 : -1; // -1 = did not match at all
+  };
+
+  it("neutralizes unescaped capturing groups to non-capturing, without changing what the pattern matches", () => {
+    const cases: { pattern: string; matches: string[]; rejects: string[] }[] = [
+      { pattern: "^E(\\d+)\\.(\\d+)$", matches: ["E205.4", "E12.34"], rejects: ["E205", "F205.4"] },
+      { pattern: "^E?\\d+(\\.\\d+)*$", matches: ["205", "E205.4", "205.4.6"], rejects: ["E", "205.", "x1"] },
+      { pattern: "\\(literal\\)", matches: ["(literal)", "prefix (literal) suffix"], rejects: ["literal"] },
+      { pattern: "^(?:a|b)\\d$", matches: ["a5", "b9"], rejects: ["c5", "a"] },
+    ];
+    for (const { pattern, matches, rejects } of cases) {
+      const neutralized = neutralizeCaptureGroups(pattern);
+      for (const s of matches) expect(netGroupCount(neutralized, s)).toBe(0); // zero net capturing groups
+      for (const s of [...matches, ...rejects]) expect(new RegExp(neutralized).test(s)).toBe(new RegExp(pattern).test(s)); // same match/reject
+    }
+  });
+
+  it("leaves a pattern with no capturing groups byte-identical", () => {
+    expect(neutralizeCaptureGroups("^\\d+\\.\\d+$")).toBe("^\\d+\\.\\d+$");
+    expect(neutralizeCaptureGroups("^E?\\d+$")).toBe("^E?\\d+$");
   });
 });
 

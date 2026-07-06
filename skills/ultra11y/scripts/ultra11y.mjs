@@ -25448,8 +25448,21 @@ function title(pack, c, lang) {
 function titlePlain(pack, c, lang) {
   return localize(pack, c.titlePlain, lang);
 }
+function neutralizeCaptureGroups(pattern) {
+  let out = "";
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === "\\") {
+      out += ch + (pattern[i + 1] ?? "");
+      i++;
+      continue;
+    }
+    out += ch === "(" && pattern[i + 1] !== "?" ? "(?:" : ch;
+  }
+  return out;
+}
 function idCaptureSource(pack) {
-  return pack.idPattern.replace(/^\^/, "").replace(/\$$/, "");
+  return neutralizeCaptureGroups(pack.idPattern.replace(/^\^/, "").replace(/\$$/, ""));
 }
 
 // src/standards/derive.ts

@@ -45,13 +45,37 @@ export function resolveGlossary(packKey: string, anchor: string): GlossaryEntry 
   return packGlossary(packKey)?.[anchor];
 }
 
-/** The pack's `idPattern` with its full-match anchors (`^`/`$`) stripped, for embedding
- *  as a capture group inside a larger line pattern — the generic seam `check.ts`/
+/** Replace every unescaped `(` that does NOT open a special construct with a
+ *  non-capturing `(?:` — i.e. neutralize the pattern's OWN capturing groups.
+ *  Leaves alone: an escaped literal (`\(`) and any `(?...` construct (`(?:`, `(?=`,
+ *  `(?!`, `(?<=`, `(?<!`, a named group `(?<name>`…). Used by `idCaptureSource` so a
+ *  pack `idPattern` that itself contains capturing groups (e.g. `^E(\d+)\.(\d+)$`,
+ *  legal and accepted by `validatePack`) can never shift the positional captures of a
+ *  caller (check.ts/verify.ts's NC-header regex reads title/file/line/selector by
+ *  index) — after neutralization, embedding the result as ONE outer group always
+ *  contributes exactly that one capturing group, regardless of pack authoring. */
+export function neutralizeCaptureGroups(pattern: string): string {
+  let out = "";
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i]!;
+    if (ch === "\\") {
+      out += ch + (pattern[i + 1] ?? "");
+      i++;
+      continue;
+    }
+    out += ch === "(" && pattern[i + 1] !== "?" ? "(?:" : ch;
+  }
+  return out;
+}
+
+/** The pack's `idPattern` with its full-match anchors (`^`/`$`) stripped and its own
+ *  capturing groups neutralized (see `neutralizeCaptureGroups`), for embedding as a
+ *  SINGLE capture group inside a larger line pattern — the generic seam `check.ts`/
  *  `verify.ts` use to recognize THIS standard's own criterion-id grammar in a rendered
  *  report (WCAG's fixed 3-segment "1.4.3", or a pack's own shape: RGAA "8.3", a
  *  hypothetical Section 508 "E205.4"…). `idPattern` is validated compilable by
  *  `validatePack` before a pack is ever registered, so this is always a legal regex
  *  source. */
 export function idCaptureSource(pack: StandardPack): string {
-  return pack.idPattern.replace(/^\^/, "").replace(/\$$/, "");
+  return neutralizeCaptureGroups(pack.idPattern.replace(/^\^/, "").replace(/\$$/, ""));
 }

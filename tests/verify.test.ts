@@ -57,6 +57,44 @@ describe("buildWorklist", () => {
     expect(items).toHaveLength(1);
     expect(items[0]!.criteriaId).toBe("E205.4");
   });
+
+  it("does not mis-align positional captures when the pack's idPattern itself contains capturing groups (e.g. Section 508 E205.4 as `^E(\\d+)\\.(\\d+)$`)", () => {
+    registerRuntimePack({
+      key: "synth508capturegroups",
+      name: "Synth508Groups",
+      org: "O",
+      country: "US",
+      baseVersion: "1",
+      wcagVersion: "2.2",
+      locales: ["en"],
+      defaultLocale: "en",
+      license: "x",
+      source: "x",
+      attribution: "x",
+      idPattern: "^E(\\d+)\\.(\\d+)$",
+      themes: [{ number: 1, name: { en: "Interface" }, count: 1 }],
+      criteria: [{ id: "E205.4", theme: 1, title: { en: "Focus Visible" }, titlePlain: { en: "Focus Visible" }, wcag: ["2.4.7"] }],
+    });
+    const md = `# Report — Synth508Groups 1
+- **Rate** : 50%
+## 1. x
+## 2. y
+- **E205.4 — Focus Visible** — \`a.html:42\` (\`button.cta\`)
+  - focus indicator missing
+## 3. z
+## 4. NA
+## 5. manual
+`;
+    const items = buildWorklist(md, "synth508capturegroups");
+    expect(items).toHaveLength(1);
+    const item = items[0]!;
+    expect(item.criteriaId).toBe("E205.4");
+    expect(item.claim).toBe("focus indicator missing");
+    expect(item.file).toBe("a.html");
+    expect(item.line).toBe(42);
+    expect(Number.isNaN(item.line)).toBe(false);
+    expect(item.selector).toBe("button.cta");
+  });
 });
 
 describe("applyVerdicts", () => {

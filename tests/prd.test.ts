@@ -75,6 +75,14 @@ describe("prdUnits", () => {
     expect(units[2]!.severity).toBe("majeur");
     expect(units[0]!.label).toMatch(/^1\.1\.1 — /); // SC label resolved from the WCAG dataset
   });
+
+  it("localizes unit title/label by lang (fr) — the W3C authorized translation, not the baked-in English", () => {
+    const en = prdUnits(AUDIT, "wcag", "en").find((u) => u.criteriaId === "1.1.1")!;
+    expect(en.title).toBe("Non-text Content");
+    const fr = prdUnits(AUDIT, "wcag", "fr").find((u) => u.criteriaId === "1.1.1")!;
+    expect(fr.title).toBe("Contenu non textuel");
+    expect(fr.label).toBe("1.1.1 — Contenu non textuel");
+  });
 });
 
 describe("renderBacklog", () => {
@@ -135,6 +143,12 @@ describe("renderPrdDoc (--format doc)", () => {
     expect(doc).toContain("As a user relying on assistive technology");
     expect(doc).toMatch(/\*\*Given\*\*.*\*\*When\*\*.*\*\*Then\*\*/);
     expect(doc).toContain("`src/a.html:3`"); // task list keeps the occurrences
+  });
+
+  it("epics + acceptance-criteria lines resolve WCAG guideline/SC titles by lang (fr)", () => {
+    const doc = renderPrdDoc(AUDIT, "fr", "wcag");
+    expect(doc).toContain("## Épopée — 1.1 Équivalents textuels"); // guideline title resolved by key + lang
+    expect(doc).toContain("« Contenu non textuel » (WCAG 1.1.1)"); // Then clause uses the fr SC title
   });
 
   it("groups by RGAA theme under --standard rgaa", () => {

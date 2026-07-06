@@ -32,6 +32,11 @@ export interface Sc {
   principle: number; // 1..4
   guideline: string; // "1.4"
   title: string; // authoritative W3C English title
+  // Authoritative French title from the W3C AUTHORIZED translation
+  // (https://www.w3.org/Translations/WCAG22-fr/), vendored at scripts/vendor/wcag-2.2-fr.json.
+  // Present on every core-AA SC (the build fails otherwise) — optional only so older
+  // wcag.json snapshots still parse. See src/wcag.ts `scTitle`.
+  titleFr?: string;
   level: WcagLevel;
   addedIn: string; // "2.0" | "2.1" | "2.2"
   automatability: Automatability;
@@ -45,10 +50,12 @@ export interface Sc {
 export interface WcagPrinciple {
   number: number;
   title: string;
+  titleFr?: string; // W3C authorized French translation — see Sc.titleFr
 }
 export interface WcagGuideline {
   number: string; // "1.4"
   title: string;
+  titleFr?: string; // W3C authorized French translation — see Sc.titleFr
 }
 
 export interface WcagData {

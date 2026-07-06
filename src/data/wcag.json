@@ -7,73 +7,90 @@
   "principles": [
     {
       "number": 1,
-      "title": "Perceivable"
+      "title": "Perceivable",
+      "titleFr": "Perceptible"
     },
     {
       "number": 2,
-      "title": "Operable"
+      "title": "Operable",
+      "titleFr": "Utilisable"
     },
     {
       "number": 3,
-      "title": "Understandable"
+      "title": "Understandable",
+      "titleFr": "Compréhensible"
     },
     {
       "number": 4,
-      "title": "Robust"
+      "title": "Robust",
+      "titleFr": "Robuste"
     }
   ],
   "guidelines": [
     {
       "number": "1.1",
-      "title": "Text Alternatives"
+      "title": "Text Alternatives",
+      "titleFr": "Équivalents textuels"
     },
     {
       "number": "1.2",
-      "title": "Time-based Media"
+      "title": "Time-based Media",
+      "titleFr": "Média temporel"
     },
     {
       "number": "1.3",
-      "title": "Adaptable"
+      "title": "Adaptable",
+      "titleFr": "Adaptable"
     },
     {
       "number": "1.4",
-      "title": "Distinguishable"
+      "title": "Distinguishable",
+      "titleFr": "Distinguable"
     },
     {
       "number": "2.1",
-      "title": "Keyboard Accessible"
+      "title": "Keyboard Accessible",
+      "titleFr": "Accessibilité au clavier"
     },
     {
       "number": "2.2",
-      "title": "Enough Time"
+      "title": "Enough Time",
+      "titleFr": "Délai suffisant"
     },
     {
       "number": "2.3",
-      "title": "Seizures and Physical Reactions"
+      "title": "Seizures and Physical Reactions",
+      "titleFr": "Crises et réactions physiques"
     },
     {
       "number": "2.4",
-      "title": "Navigable"
+      "title": "Navigable",
+      "titleFr": "Navigable"
     },
     {
       "number": "2.5",
-      "title": "Input Modalities"
+      "title": "Input Modalities",
+      "titleFr": "Modalités d’entrée"
     },
     {
       "number": "3.1",
-      "title": "Readable"
+      "title": "Readable",
+      "titleFr": "Lisible"
     },
     {
       "number": "3.2",
-      "title": "Predictable"
+      "title": "Predictable",
+      "titleFr": "Prévisible"
     },
     {
       "number": "3.3",
-      "title": "Input Assistance"
+      "title": "Input Assistance",
+      "titleFr": "Assistance à la saisie"
     },
     {
       "number": "4.1",
-      "title": "Compatible"
+      "title": "Compatible",
+      "titleFr": "Compatible"
     }
   ],
   "criteria": [
@@ -82,6 +99,7 @@
       "principle": 1,
       "guideline": "1.1",
       "title": "Non-text Content",
+      "titleFr": "Contenu non textuel",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -154,6 +172,7 @@
       "principle": 1,
       "guideline": "1.2",
       "title": "Audio-only and Video-only (Prerecorded)",
+      "titleFr": "Contenus seulement audio et seulement vidéo (pré-enregistrés)",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -166,6 +185,7 @@
       "principle": 1,
       "guideline": "1.2",
       "title": "Captions (Prerecorded)",
+      "titleFr": "Sous-titres (pré-enregistrés)",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -178,6 +198,7 @@
       "principle": 1,
       "guideline": "1.2",
       "title": "Audio Description or Media Alternative (Prerecorded)",
+      "titleFr": "Audio-description ou version de remplacement pour un média temporel (pré-enregistré)",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -190,6 +211,7 @@
       "principle": 1,
       "guideline": "1.2",
       "title": "Captions (Live)",
+      "titleFr": "Sous-titres (en direct)",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -201,6 +223,7 @@
       "principle": 1,
       "guideline": "1.2",
       "title": "Audio Description (Prerecorded)",
+      "titleFr": "Audio-description (pré-enregistrée)",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -213,6 +236,7 @@
       "principle": 1,
       "guideline": "1.3",
       "title": "Info and Relationships",
+      "titleFr": "Information et relations",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -307,6 +331,7 @@
       "principle": 1,
       "guideline": "1.3",
       "title": "Meaningful Sequence",
+      "titleFr": "Ordre séquentiel logique",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -319,6 +344,7 @@
       "principle": 1,
       "guideline": "1.3",
       "title": "Sensory Characteristics",
+      "titleFr": "Caractéristiques sensorielles",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -331,6 +357,7 @@
       "principle": 1,
       "guideline": "1.3",
       "title": "Orientation",
+      "titleFr": "Orientation",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "needs-rendering",
@@ -342,6 +369,7 @@
       "principle": 1,
       "guideline": "1.3",
       "title": "Identify Input Purpose",
+      "titleFr": "Identifier la finalité de la saisie",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "judgment",
@@ -354,6 +382,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Use of Color",
+      "titleFr": "Utilisation de la couleur",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -366,6 +395,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Audio Control",
+      "titleFr": "Contrôle du son",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "static",
@@ -378,6 +408,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Contrast (Minimum)",
+      "titleFr": "Contraste (minimum)",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -390,6 +421,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Resize Text",
+      "titleFr": "Redimensionnement du texte",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -402,6 +434,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Images of Text",
+      "titleFr": "Texte sous forme d’image",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -414,6 +447,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Reflow",
+      "titleFr": "Redistribution",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "needs-rendering",
@@ -426,6 +460,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Non-text Contrast",
+      "titleFr": "Contraste du contenu non textuel",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "needs-rendering",
@@ -438,6 +473,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Text Spacing",
+      "titleFr": "Espacement du texte",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "needs-rendering",
@@ -450,6 +486,7 @@
       "principle": 1,
       "guideline": "1.4",
       "title": "Content on Hover or Focus",
+      "titleFr": "Contenu au survol ou au focus",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "needs-rendering",
@@ -462,6 +499,7 @@
       "principle": 2,
       "guideline": "2.1",
       "title": "Keyboard",
+      "titleFr": "Clavier",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -474,6 +512,7 @@
       "principle": 2,
       "guideline": "2.1",
       "title": "No Keyboard Trap",
+      "titleFr": "Pas de piège au clavier",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -486,6 +525,7 @@
       "principle": 2,
       "guideline": "2.1",
       "title": "Character Key Shortcuts",
+      "titleFr": "Raccourcis clavier utilisant des caractères",
       "level": "A",
       "addedIn": "2.1",
       "automatability": "judgment",
@@ -498,6 +538,7 @@
       "principle": 2,
       "guideline": "2.2",
       "title": "Timing Adjustable",
+      "titleFr": "Réglage du délai",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -541,6 +582,7 @@
       "principle": 2,
       "guideline": "2.2",
       "title": "Pause, Stop, Hide",
+      "titleFr": "Mettre en pause, arrêter, masquer",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -584,6 +626,7 @@
       "principle": 2,
       "guideline": "2.3",
       "title": "Three Flashes or Below Threshold",
+      "titleFr": "Pas plus de trois flashs ou sous le seuil critique",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -596,6 +639,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Bypass Blocks",
+      "titleFr": "Contourner des blocs",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -608,6 +652,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Page Titled",
+      "titleFr": "Titre de page",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "static",
@@ -620,6 +665,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Focus Order",
+      "titleFr": "Parcours du focus",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -632,6 +678,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Link Purpose (In Context)",
+      "titleFr": "Fonction du lien (selon le contexte)",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -644,6 +691,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Multiple Ways",
+      "titleFr": "Accès multiples",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -656,6 +704,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Headings and Labels",
+      "titleFr": "En-têtes et étiquettes",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -668,6 +717,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Focus Visible",
+      "titleFr": "Visibilité du focus",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "needs-rendering",
@@ -680,6 +730,7 @@
       "principle": 2,
       "guideline": "2.4",
       "title": "Focus Not Obscured (Minimum)",
+      "titleFr": "Focus non masqué (minimum)",
       "level": "AA",
       "addedIn": "2.2",
       "automatability": "needs-rendering",
@@ -691,6 +742,7 @@
       "principle": 2,
       "guideline": "2.5",
       "title": "Pointer Gestures",
+      "titleFr": "Gestes pour le contrôle du pointeur",
       "level": "A",
       "addedIn": "2.1",
       "automatability": "judgment",
@@ -703,6 +755,7 @@
       "principle": 2,
       "guideline": "2.5",
       "title": "Pointer Cancellation",
+      "titleFr": "Annulation de l’action du pointeur",
       "level": "A",
       "addedIn": "2.1",
       "automatability": "judgment",
@@ -714,6 +767,7 @@
       "principle": 2,
       "guideline": "2.5",
       "title": "Label in Name",
+      "titleFr": "Étiquette dans le nom",
       "level": "A",
       "addedIn": "2.1",
       "automatability": "judgment",
@@ -762,6 +816,7 @@
       "principle": 2,
       "guideline": "2.5",
       "title": "Motion Actuation",
+      "titleFr": "Activation par le mouvement",
       "level": "A",
       "addedIn": "2.1",
       "automatability": "judgment",
@@ -773,6 +828,7 @@
       "principle": 2,
       "guideline": "2.5",
       "title": "Dragging Movements",
+      "titleFr": "Mouvements de glissement",
       "level": "AA",
       "addedIn": "2.2",
       "automatability": "judgment",
@@ -784,6 +840,7 @@
       "principle": 2,
       "guideline": "2.5",
       "title": "Target Size (Minimum)",
+      "titleFr": "Taille de la cible (minimum)",
       "level": "AA",
       "addedIn": "2.2",
       "automatability": "needs-rendering",
@@ -795,6 +852,7 @@
       "principle": 3,
       "guideline": "3.1",
       "title": "Language of Page",
+      "titleFr": "Langue de la page",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "static",
@@ -807,6 +865,7 @@
       "principle": 3,
       "guideline": "3.1",
       "title": "Language of Parts",
+      "titleFr": "Langue d’un passage",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -819,6 +878,7 @@
       "principle": 3,
       "guideline": "3.2",
       "title": "On Focus",
+      "titleFr": "Au focus",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -831,6 +891,7 @@
       "principle": 3,
       "guideline": "3.2",
       "title": "On Input",
+      "titleFr": "À la saisie",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -843,6 +904,7 @@
       "principle": 3,
       "guideline": "3.2",
       "title": "Consistent Navigation",
+      "titleFr": "Navigation cohérente",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -855,6 +917,7 @@
       "principle": 3,
       "guideline": "3.2",
       "title": "Consistent Identification",
+      "titleFr": "Identification cohérente",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -867,6 +930,7 @@
       "principle": 3,
       "guideline": "3.2",
       "title": "Consistent Help",
+      "titleFr": "Aide cohérente",
       "level": "A",
       "addedIn": "2.2",
       "automatability": "judgment",
@@ -878,6 +942,7 @@
       "principle": 3,
       "guideline": "3.3",
       "title": "Error Identification",
+      "titleFr": "Identification des erreurs",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -909,6 +974,7 @@
       "principle": 3,
       "guideline": "3.3",
       "title": "Labels or Instructions",
+      "titleFr": "Étiquettes ou instructions",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -950,6 +1016,7 @@
       "principle": 3,
       "guideline": "3.3",
       "title": "Error Suggestion",
+      "titleFr": "Suggestion après une erreur",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -962,6 +1029,7 @@
       "principle": 3,
       "guideline": "3.3",
       "title": "Error Prevention (Legal, Financial, Data)",
+      "titleFr": "Prévention des erreurs (juridiques, financières, de données)",
       "level": "AA",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -974,6 +1042,7 @@
       "principle": 3,
       "guideline": "3.3",
       "title": "Redundant Entry",
+      "titleFr": "Saisie redondante",
       "level": "A",
       "addedIn": "2.2",
       "automatability": "judgment",
@@ -985,6 +1054,7 @@
       "principle": 3,
       "guideline": "3.3",
       "title": "Accessible Authentication (Minimum)",
+      "titleFr": "Authentification accessible (minimum)",
       "level": "AA",
       "addedIn": "2.2",
       "automatability": "judgment",
@@ -996,6 +1066,7 @@
       "principle": 4,
       "guideline": "4.1",
       "title": "Name, Role, Value",
+      "titleFr": "Nom, rôle et valeur",
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
@@ -1081,6 +1152,7 @@
       "principle": 4,
       "guideline": "4.1",
       "title": "Status Messages",
+      "titleFr": "Messages d’état",
       "level": "AA",
       "addedIn": "2.1",
       "automatability": "judgment",

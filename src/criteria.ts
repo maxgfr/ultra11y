@@ -4,7 +4,7 @@
 // (`criteria --standard rgaa 8.3`), a pack theme (`--theme N`), or the theme list.
 // Also generates references/criteria.md (never hand-edited).
 import type { Lang, Sc } from "./types.js";
-import { allSC, allGuidelines, allPrinciples, getSC, scsByGuideline, principleTitle, guidelineTitle, meta } from "./wcag.js";
+import { allSC, allGuidelines, allPrinciples, getSC, scsByGuideline, principleTitle, guidelineTitle, scTitle, meta } from "./wcag.js";
 import {
   type StandardId,
   isCore,
@@ -29,10 +29,10 @@ const AUTO_LABEL: Record<string, { fr: string; en: string }> = {
 
 export function formatSC(c: Sc, lang: Lang = "en"): string {
   const out: string[] = [];
-  out.push(`${c.sc} — ${c.title} (${c.level}, ${lang === "fr" ? "ajouté en" : "added in"} WCAG ${c.addedIn})`);
+  out.push(`${c.sc} — ${scTitle(c.sc, lang) ?? c.title} (${c.level}, ${lang === "fr" ? "ajouté en" : "added in"} WCAG ${c.addedIn})`);
   const auto = AUTO_LABEL[c.automatability]![lang];
-  const gl = guidelineTitle(c.guideline) ?? "";
-  const pr = principleTitle(c.principle) ?? "";
+  const gl = guidelineTitle(c.guideline, lang) ?? "";
+  const pr = principleTitle(c.principle, lang) ?? "";
   out.push(
     `${lang === "fr" ? "Règle" : "Guideline"} ${c.guideline} (${gl}) · ${lang === "fr" ? "principe" : "principle"} ${c.principle} (${pr}) · ${lang === "fr" ? "automatisabilité" : "automatability"} : ${auto}${c.ruleIds.length ? ` · ${lang === "fr" ? "règles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`,
   );
@@ -54,8 +54,8 @@ function wcagList(lang: Lang): string {
   );
   const byG = scsByGuideline();
   for (const g of allGuidelines()) {
-    out.push(`${g.number} ${g.title}`);
-    for (const c of byG.get(g.number) ?? []) out.push(`  ${c.sc.padEnd(8)} [${c.level.padEnd(2)}] ${c.title}  [${c.automatability}]`);
+    out.push(`${g.number} ${guidelineTitle(g.number, lang) ?? g.title}`);
+    for (const c of byG.get(g.number) ?? []) out.push(`  ${c.sc.padEnd(8)} [${c.level.padEnd(2)}] ${scTitle(c.sc, lang) ?? c.title}  [${c.automatability}]`);
   }
   return out.join("\n");
 }

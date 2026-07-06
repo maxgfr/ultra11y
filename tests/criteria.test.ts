@@ -16,6 +16,13 @@ describe("formatSC (WCAG core)", () => {
     expect(text).toContain("1.4.3 — Contrast (Minimum)");
     expect(text).toMatch(/RGAA 3\.2/);
   });
+
+  it("renders the French title (W3C authorized translation) + localized guideline/principle when --lang fr", () => {
+    const text = formatSC(getSC("1.4.3")!, "fr");
+    expect(text).toContain("1.4.3 — Contraste (minimum)");
+    expect(text).toContain("Règle 1.4 (Distinguable)");
+    expect(text).toContain("principe 1 (Perceptible)");
+  });
 });
 
 describe("formatPackCriterion (RGAA pack)", () => {

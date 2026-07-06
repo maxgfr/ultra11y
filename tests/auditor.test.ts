@@ -85,6 +85,13 @@ describe("renderAuditorUnit", () => {
     expect(md).toContain("**Attendu (Conforme (C))** : Ajoutez alt");
   });
 
+  it("renders the WCAG core block in French with localized principle/guideline titles (W3C authorized translation)", () => {
+    const md = renderAuditorUnit(unit("1.4.3", "Contraste (minimum)"), "wcag", "fr").join("\n");
+    expect(md).toContain("**Principe · Règle** : 1 Perceptible · 1.4 Distinguable"); // resolved by lang, not hardcoded English
+    expect(md).toContain("**Critère de succès** : 1.4.3 — Contraste (minimum)");
+    expect(md).toContain("**WCAG** : 1.4.3 (AA)");
+  });
+
   it("emits a criterion heading only when asked (issue body omits it)", () => {
     expect(renderAuditorUnit(unit("1.1.1", "X"), "wcag", "en", { heading: "###" })[0]).toMatch(/^### /);
     expect(renderAuditorUnit(unit("1.1.1", "X"), "wcag", "en")[0]).toMatch(/^> /); // starts with the normative note

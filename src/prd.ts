@@ -6,8 +6,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity } from "./types.js";
-import { getSC, guidelineTitle, techniques as scTechniques } from "./wcag.js";
-import { type StandardId, isCore, loadPack, derivePackResults, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
+import { getSC, guidelineTitle, scTitle, techniques as scTechniques } from "./wcag.js";
+import { type StandardId, isCore, loadPack, derivePackResults, standardLabel, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
 import { guidanceForWcag, guidanceForCriterion } from "./guidance/index.js";
 import type { GuidanceEntry } from "./guidance/types.js";
 import { renderAuditorBacklog, renderAuditorPerCriterion } from "./auditor.js";
@@ -90,15 +90,6 @@ export interface PrdUnit {
   findings: Finding[];
 }
 
-function stdLabel(standard: StandardId): string {
-  return isCore(standard)
-    ? "WCAG 2.2 AA"
-    : (() => {
-        const p = loadPack(standard);
-        return `${p.name} ${p.baseVersion}`;
-      })();
-}
-
 /** Group findings into actionable units (one backlog item / one GitHub issue),
  *  ordered by severity then id. Core groups by WCAG SC; a pack groups by its own
  *  criteria projected from the WCAG-keyed audit. */
@@ -111,11 +102,11 @@ export function prdUnits(r: AuditResult, standard: StandardId = "wcag", lang: La
     const byCrit = new Map<string, Finding[]>();
     for (const f of r.findings) (byCrit.get(f.criteriaId) ?? byCrit.set(f.criteriaId, []).get(f.criteriaId)!).push(f);
     for (const [criteriaId, fs] of byCrit) {
-      const sc = getSC(criteriaId);
+      const title = scTitle(criteriaId, lang);
       units.push({
         criteriaId,
-        title: sc?.title ?? criteriaId,
-        label: sc ? `${criteriaId} — ${sc.title}` : criteriaId,
+        title: title ?? criteriaId,
+        label: title ? `${criteriaId} — ${title}` : criteriaId,
         refs: [],
         severity: mostSevere(fs),
         findings: sortFindings(fs),
@@ -223,7 +214,7 @@ function header(r: AuditResult, lang: Lang, title: string, note: string = L[lang
 export function renderBacklog(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): string {
   const s = L[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(stdLabel(standard)));
+  const out = header(r, lang, s.title(standardLabel(standard)));
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -272,7 +263,7 @@ function epicsOf(units: PrdUnit[], standard: StandardId, lang: Lang): DocEpic[] 
     } else {
       const g = getSC(u.criteriaId)?.guideline ?? u.criteriaId;
       key = g;
-      title = `${g} ${guidelineTitle(g) ?? ""}`.trim();
+      title = `${g} ${guidelineTitle(g, lang) ?? ""}`.trim();
     }
     let epic = groups.get(key);
     if (!epic) {
@@ -289,7 +280,7 @@ function epicsOf(units: PrdUnit[], standard: StandardId, lang: Lang): DocEpic[] 
 export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): string {
   const s = L[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(stdLabel(standard)), s.docNote);
+  const out = header(r, lang, s.title(standardLabel(standard)), s.docNote);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -304,7 +295,7 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
       out.push(`**${s.ac}**`, "");
       const scs = isCore(standard) ? [u.criteriaId] : u.refs;
       for (const sc of scs) {
-        const req = getSC(sc)?.title ?? sc;
+        const req = scTitle(sc, lang) ?? sc;
         out.push(`- **${s.given}** ${s.givenElements(hints)} · **${s.when}** ${s.acWhen} · **${s.then}** « ${req} » (WCAG ${sc}).`);
       }
       const techs = isCore(standard) ? scTechniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => scTechniques(sc)))];

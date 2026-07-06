@@ -22,73 +22,90 @@ var wcag_default = {
   principles: [
     {
       number: 1,
-      title: "Perceivable"
+      title: "Perceivable",
+      titleFr: "Perceptible"
     },
     {
       number: 2,
-      title: "Operable"
+      title: "Operable",
+      titleFr: "Utilisable"
     },
     {
       number: 3,
-      title: "Understandable"
+      title: "Understandable",
+      titleFr: "Compr\xE9hensible"
     },
     {
       number: 4,
-      title: "Robust"
+      title: "Robust",
+      titleFr: "Robuste"
     }
   ],
   guidelines: [
     {
       number: "1.1",
-      title: "Text Alternatives"
+      title: "Text Alternatives",
+      titleFr: "\xC9quivalents textuels"
     },
     {
       number: "1.2",
-      title: "Time-based Media"
+      title: "Time-based Media",
+      titleFr: "M\xE9dia temporel"
     },
     {
       number: "1.3",
-      title: "Adaptable"
+      title: "Adaptable",
+      titleFr: "Adaptable"
     },
     {
       number: "1.4",
-      title: "Distinguishable"
+      title: "Distinguishable",
+      titleFr: "Distinguable"
     },
     {
       number: "2.1",
-      title: "Keyboard Accessible"
+      title: "Keyboard Accessible",
+      titleFr: "Accessibilit\xE9 au clavier"
     },
     {
       number: "2.2",
-      title: "Enough Time"
+      title: "Enough Time",
+      titleFr: "D\xE9lai suffisant"
     },
     {
       number: "2.3",
-      title: "Seizures and Physical Reactions"
+      title: "Seizures and Physical Reactions",
+      titleFr: "Crises et r\xE9actions physiques"
     },
     {
       number: "2.4",
-      title: "Navigable"
+      title: "Navigable",
+      titleFr: "Navigable"
     },
     {
       number: "2.5",
-      title: "Input Modalities"
+      title: "Input Modalities",
+      titleFr: "Modalit\xE9s d\u2019entr\xE9e"
     },
     {
       number: "3.1",
-      title: "Readable"
+      title: "Readable",
+      titleFr: "Lisible"
     },
     {
       number: "3.2",
-      title: "Predictable"
+      title: "Predictable",
+      titleFr: "Pr\xE9visible"
     },
     {
       number: "3.3",
-      title: "Input Assistance"
+      title: "Input Assistance",
+      titleFr: "Assistance \xE0 la saisie"
     },
     {
       number: "4.1",
-      title: "Compatible"
+      title: "Compatible",
+      titleFr: "Compatible"
     }
   ],
   criteria: [
@@ -97,6 +114,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.1",
       title: "Non-text Content",
+      titleFr: "Contenu non textuel",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -169,6 +187,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.2",
       title: "Audio-only and Video-only (Prerecorded)",
+      titleFr: "Contenus seulement audio et seulement vid\xE9o (pr\xE9-enregistr\xE9s)",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -181,6 +200,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.2",
       title: "Captions (Prerecorded)",
+      titleFr: "Sous-titres (pr\xE9-enregistr\xE9s)",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -193,6 +213,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.2",
       title: "Audio Description or Media Alternative (Prerecorded)",
+      titleFr: "Audio-description ou version de remplacement pour un m\xE9dia temporel (pr\xE9-enregistr\xE9)",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -205,6 +226,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.2",
       title: "Captions (Live)",
+      titleFr: "Sous-titres (en direct)",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -216,6 +238,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.2",
       title: "Audio Description (Prerecorded)",
+      titleFr: "Audio-description (pr\xE9-enregistr\xE9e)",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -228,6 +251,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.3",
       title: "Info and Relationships",
+      titleFr: "Information et relations",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -322,6 +346,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.3",
       title: "Meaningful Sequence",
+      titleFr: "Ordre s\xE9quentiel logique",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -334,6 +359,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.3",
       title: "Sensory Characteristics",
+      titleFr: "Caract\xE9ristiques sensorielles",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -346,6 +372,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.3",
       title: "Orientation",
+      titleFr: "Orientation",
       level: "AA",
       addedIn: "2.1",
       automatability: "needs-rendering",
@@ -357,6 +384,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.3",
       title: "Identify Input Purpose",
+      titleFr: "Identifier la finalit\xE9 de la saisie",
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
@@ -369,6 +397,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Use of Color",
+      titleFr: "Utilisation de la couleur",
       level: "A",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -381,6 +410,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Audio Control",
+      titleFr: "Contr\xF4le du son",
       level: "A",
       addedIn: "2.0",
       automatability: "static",
@@ -393,6 +423,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Contrast (Minimum)",
+      titleFr: "Contraste (minimum)",
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -405,6 +436,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Resize Text",
+      titleFr: "Redimensionnement du texte",
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -417,6 +449,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Images of Text",
+      titleFr: "Texte sous forme d\u2019image",
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -429,6 +462,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Reflow",
+      titleFr: "Redistribution",
       level: "AA",
       addedIn: "2.1",
       automatability: "needs-rendering",
@@ -441,6 +475,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Non-text Contrast",
+      titleFr: "Contraste du contenu non textuel",
       level: "AA",
       addedIn: "2.1",
       automatability: "needs-rendering",
@@ -453,6 +488,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Text Spacing",
+      titleFr: "Espacement du texte",
       level: "AA",
       addedIn: "2.1",
       automatability: "needs-rendering",
@@ -465,6 +501,7 @@ var wcag_default = {
       principle: 1,
       guideline: "1.4",
       title: "Content on Hover or Focus",
+      titleFr: "Contenu au survol ou au focus",
       level: "AA",
       addedIn: "2.1",
       automatability: "needs-rendering",
@@ -477,6 +514,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.1",
       title: "Keyboard",
+      titleFr: "Clavier",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -489,6 +527,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.1",
       title: "No Keyboard Trap",
+      titleFr: "Pas de pi\xE8ge au clavier",
       level: "A",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -501,6 +540,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.1",
       title: "Character Key Shortcuts",
+      titleFr: "Raccourcis clavier utilisant des caract\xE8res",
       level: "A",
       addedIn: "2.1",
       automatability: "judgment",
@@ -513,6 +553,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.2",
       title: "Timing Adjustable",
+      titleFr: "R\xE9glage du d\xE9lai",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -556,6 +597,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.2",
       title: "Pause, Stop, Hide",
+      titleFr: "Mettre en pause, arr\xEAter, masquer",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -599,6 +641,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.3",
       title: "Three Flashes or Below Threshold",
+      titleFr: "Pas plus de trois flashs ou sous le seuil critique",
       level: "A",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -611,6 +654,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Bypass Blocks",
+      titleFr: "Contourner des blocs",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -623,6 +667,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Page Titled",
+      titleFr: "Titre de page",
       level: "A",
       addedIn: "2.0",
       automatability: "static",
@@ -635,6 +680,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Focus Order",
+      titleFr: "Parcours du focus",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -647,6 +693,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Link Purpose (In Context)",
+      titleFr: "Fonction du lien (selon le contexte)",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -659,6 +706,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Multiple Ways",
+      titleFr: "Acc\xE8s multiples",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -671,6 +719,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Headings and Labels",
+      titleFr: "En-t\xEAtes et \xE9tiquettes",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -683,6 +732,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Focus Visible",
+      titleFr: "Visibilit\xE9 du focus",
       level: "AA",
       addedIn: "2.0",
       automatability: "needs-rendering",
@@ -695,6 +745,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.4",
       title: "Focus Not Obscured (Minimum)",
+      titleFr: "Focus non masqu\xE9 (minimum)",
       level: "AA",
       addedIn: "2.2",
       automatability: "needs-rendering",
@@ -706,6 +757,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.5",
       title: "Pointer Gestures",
+      titleFr: "Gestes pour le contr\xF4le du pointeur",
       level: "A",
       addedIn: "2.1",
       automatability: "judgment",
@@ -718,6 +770,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.5",
       title: "Pointer Cancellation",
+      titleFr: "Annulation de l\u2019action du pointeur",
       level: "A",
       addedIn: "2.1",
       automatability: "judgment",
@@ -729,6 +782,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.5",
       title: "Label in Name",
+      titleFr: "\xC9tiquette dans le nom",
       level: "A",
       addedIn: "2.1",
       automatability: "judgment",
@@ -777,6 +831,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.5",
       title: "Motion Actuation",
+      titleFr: "Activation par le mouvement",
       level: "A",
       addedIn: "2.1",
       automatability: "judgment",
@@ -788,6 +843,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.5",
       title: "Dragging Movements",
+      titleFr: "Mouvements de glissement",
       level: "AA",
       addedIn: "2.2",
       automatability: "judgment",
@@ -799,6 +855,7 @@ var wcag_default = {
       principle: 2,
       guideline: "2.5",
       title: "Target Size (Minimum)",
+      titleFr: "Taille de la cible (minimum)",
       level: "AA",
       addedIn: "2.2",
       automatability: "needs-rendering",
@@ -810,6 +867,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.1",
       title: "Language of Page",
+      titleFr: "Langue de la page",
       level: "A",
       addedIn: "2.0",
       automatability: "static",
@@ -822,6 +880,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.1",
       title: "Language of Parts",
+      titleFr: "Langue d\u2019un passage",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -834,6 +893,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.2",
       title: "On Focus",
+      titleFr: "Au focus",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -846,6 +906,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.2",
       title: "On Input",
+      titleFr: "\xC0 la saisie",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -858,6 +919,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.2",
       title: "Consistent Navigation",
+      titleFr: "Navigation coh\xE9rente",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -870,6 +932,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.2",
       title: "Consistent Identification",
+      titleFr: "Identification coh\xE9rente",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -882,6 +945,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.2",
       title: "Consistent Help",
+      titleFr: "Aide coh\xE9rente",
       level: "A",
       addedIn: "2.2",
       automatability: "judgment",
@@ -893,6 +957,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.3",
       title: "Error Identification",
+      titleFr: "Identification des erreurs",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -924,6 +989,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.3",
       title: "Labels or Instructions",
+      titleFr: "\xC9tiquettes ou instructions",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -965,6 +1031,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.3",
       title: "Error Suggestion",
+      titleFr: "Suggestion apr\xE8s une erreur",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -977,6 +1044,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.3",
       title: "Error Prevention (Legal, Financial, Data)",
+      titleFr: "Pr\xE9vention des erreurs (juridiques, financi\xE8res, de donn\xE9es)",
       level: "AA",
       addedIn: "2.0",
       automatability: "judgment",
@@ -989,6 +1057,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.3",
       title: "Redundant Entry",
+      titleFr: "Saisie redondante",
       level: "A",
       addedIn: "2.2",
       automatability: "judgment",
@@ -1000,6 +1069,7 @@ var wcag_default = {
       principle: 3,
       guideline: "3.3",
       title: "Accessible Authentication (Minimum)",
+      titleFr: "Authentification accessible (minimum)",
       level: "AA",
       addedIn: "2.2",
       automatability: "judgment",
@@ -1011,6 +1081,7 @@ var wcag_default = {
       principle: 4,
       guideline: "4.1",
       title: "Name, Role, Value",
+      titleFr: "Nom, r\xF4le et valeur",
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
@@ -1096,6 +1167,7 @@ var wcag_default = {
       principle: 4,
       guideline: "4.1",
       title: "Status Messages",
+      titleFr: "Messages d\u2019\xE9tat",
       level: "AA",
       addedIn: "2.1",
       automatability: "judgment",
@@ -1661,11 +1733,20 @@ function allPrinciples() {
 function allGuidelines() {
   return data.guidelines;
 }
-function principleTitle(n) {
-  return data.principles.find((p) => p.number === n)?.title;
+function principleTitle(n, lang = "en") {
+  const p = data.principles.find((p2) => p2.number === n);
+  if (!p) return void 0;
+  return lang === "fr" ? p.titleFr ?? p.title : p.title;
 }
-function guidelineTitle(n) {
-  return data.guidelines.find((g) => g.number === n)?.title;
+function guidelineTitle(n, lang = "en") {
+  const g = data.guidelines.find((g2) => g2.number === n);
+  if (!g) return void 0;
+  return lang === "fr" ? g.titleFr ?? g.title : g.title;
+}
+function scTitle(id, lang = "en") {
+  const sc = byId.get(id);
+  if (!sc) return void 0;
+  return lang === "fr" ? sc.titleFr ?? sc.title : sc.title;
 }
 function scsByGuideline() {
   const m = /* @__PURE__ */ new Map();
@@ -25540,6 +25621,11 @@ function resolveStandard(flag) {
   }
   return key;
 }
+function standardLabel(standard) {
+  if (isCore(standard)) return "WCAG 2.2 AA";
+  const p = loadPack(standard);
+  return `${p.name} ${p.baseVersion}`;
+}
 
 // src/report.ts
 var ICON = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
@@ -25697,11 +25783,11 @@ function renderReport(r, lang = "en") {
   const s = L[lang];
   const byGuideline = /* @__PURE__ */ new Map();
   for (const c of r.criteria) {
-    const sc = getSC(c.id);
-    const row = { id: c.id, label: sc ? `${c.id} \u2014 ${sc.title}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
+    const title2 = scTitle(c.id, lang);
+    const row = { id: c.id, label: title2 ? `${c.id} \u2014 ${title2}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
     (byGuideline.get(c.guideline) ?? byGuideline.set(c.guideline, []).get(c.guideline)).push(row);
   }
-  const groups = r.guidelines.map((g) => ({ key: g.key, title: g.title, rows: byGuideline.get(g.key) ?? [] }));
+  const groups = r.guidelines.map((g) => ({ key: g.key, title: guidelineTitle(g.key, lang) ?? g.title, rows: byGuideline.get(g.key) ?? [] }));
   return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups });
 }
 function renderPackReport(r, pack, lang = "en") {
@@ -28162,26 +28248,21 @@ var L2 = {
     none: "No non-conformity found automatically by the static engine."
   }
 };
-function stdLabel(standard) {
-  if (isCore(standard)) return "WCAG 2.2 AA";
-  const p = loadPack(standard);
-  return `${p.name} ${p.baseVersion}`;
-}
 var uniq = (xs) => [...new Set(xs.filter(Boolean))];
 function renderAuditorUnit(unit, standard, lang, opts = {}) {
   const s = L2[lang];
   const v = vocabularyFor(standard, lang);
   const out = [];
   if (opts.heading) out.push(`${opts.heading} ${ICON2[unit.severity]} ${unit.label}`, "");
-  out.push(`> ${v.normativeNote ?? `${s.lead} \u2014 ${stdLabel(standard)}. ${s.tail}`}`, "");
+  out.push(`> ${v.normativeNote ?? `${s.lead} \u2014 ${standardLabel(standard)}. ${s.tail}`}`, "");
   if (isCore(standard)) {
     const sc = getSC(unit.criteriaId);
     if (sc) {
-      const pr = `${sc.principle} ${principleTitle(sc.principle) ?? ""}`.trim();
-      const gl = `${sc.guideline} ${guidelineTitle(sc.guideline) ?? ""}`.trim();
+      const pr = `${sc.principle} ${principleTitle(sc.principle, lang) ?? ""}`.trim();
+      const gl = `${sc.guideline} ${guidelineTitle(sc.guideline, lang) ?? ""}`.trim();
       out.push(`**${v.theme}** : ${[pr, gl].filter(Boolean).join(" \xB7 ")}`);
     }
-    out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` \u2014 ${sc.title}` : ""}`);
+    out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` \u2014 ${unit.title}` : ""}`);
     const techs = techniques(unit.criteriaId);
     if (techs.length) out.push(`**${v.test}** : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", \u2026" : ""}`);
     out.push(`**WCAG** : ${unit.criteriaId}${sc ? ` (${sc.level})` : ""}`);
@@ -28215,7 +28296,7 @@ function auditorHeader(r, lang, standard) {
   const s = L2[lang];
   const v = vocabularyFor(standard, lang);
   return [
-    `# ${v.auditorHeading} \u2014 ${stdLabel(standard)}`,
+    `# ${v.auditorHeading} \u2014 ${standardLabel(standard)}`,
     "",
     `- **${s.date}** : ${r.date}`,
     `- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`,
@@ -28314,12 +28395,6 @@ var L3 = {
     docNote: "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Complete the \u201Cto assess\u201D criteria with a human review."
   }
 };
-function stdLabel2(standard) {
-  return isCore(standard) ? "WCAG 2.2 AA" : (() => {
-    const p = loadPack(standard);
-    return `${p.name} ${p.baseVersion}`;
-  })();
-}
 function prdUnits(r, standard = "wcag", lang = "en") {
   const units = [];
   const mostSevere = (fs) => [...fs].sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])[0]?.severity ?? "mineur";
@@ -28328,11 +28403,11 @@ function prdUnits(r, standard = "wcag", lang = "en") {
     const byCrit = /* @__PURE__ */ new Map();
     for (const f of r.findings) (byCrit.get(f.criteriaId) ?? byCrit.set(f.criteriaId, []).get(f.criteriaId)).push(f);
     for (const [criteriaId, fs] of byCrit) {
-      const sc = getSC(criteriaId);
+      const title2 = scTitle(criteriaId, lang);
       units.push({
         criteriaId,
-        title: sc?.title ?? criteriaId,
-        label: sc ? `${criteriaId} \u2014 ${sc.title}` : criteriaId,
+        title: title2 ?? criteriaId,
+        label: title2 ? `${criteriaId} \u2014 ${title2}` : criteriaId,
         refs: [],
         severity: mostSevere(fs),
         findings: sortFindings(fs)
@@ -28426,7 +28501,7 @@ function header(r, lang, title2, note = L3[lang].note) {
 function renderBacklog(r, lang = "en", standard = "wcag") {
   const s = L3[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(stdLabel2(standard)));
+  const out = header(r, lang, s.title(standardLabel(standard)));
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -28460,7 +28535,7 @@ function epicsOf(units, standard, lang) {
     } else {
       const g = getSC(u.criteriaId)?.guideline ?? u.criteriaId;
       key = g;
-      title2 = `${g} ${guidelineTitle(g) ?? ""}`.trim();
+      title2 = `${g} ${guidelineTitle(g, lang) ?? ""}`.trim();
     }
     let epic = groups.get(key);
     if (!epic) {
@@ -28474,7 +28549,7 @@ function epicsOf(units, standard, lang) {
 function renderPrdDoc(r, lang = "en", standard = "wcag") {
   const s = L3[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(stdLabel2(standard)), s.docNote);
+  const out = header(r, lang, s.title(standardLabel(standard)), s.docNote);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -28489,7 +28564,7 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
       out.push(`**${s.ac}**`, "");
       const scs = isCore(standard) ? [u.criteriaId] : u.refs;
       for (const sc of scs) {
-        const req = getSC(sc)?.title ?? sc;
+        const req = scTitle(sc, lang) ?? sc;
         out.push(`- **${s.given}** ${s.givenElements(hints)} \xB7 **${s.when}** ${s.acWhen} \xB7 **${s.then}** \xAB ${req} \xBB (WCAG ${sc}).`);
       }
       const techs = isCore(standard) ? techniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => techniques(sc)))];
@@ -28899,10 +28974,10 @@ var AUTO_LABEL = {
 };
 function formatSC(c, lang = "en") {
   const out = [];
-  out.push(`${c.sc} \u2014 ${c.title} (${c.level}, ${lang === "fr" ? "ajout\xE9 en" : "added in"} WCAG ${c.addedIn})`);
+  out.push(`${c.sc} \u2014 ${scTitle(c.sc, lang) ?? c.title} (${c.level}, ${lang === "fr" ? "ajout\xE9 en" : "added in"} WCAG ${c.addedIn})`);
   const auto = AUTO_LABEL[c.automatability][lang];
-  const gl = guidelineTitle(c.guideline) ?? "";
-  const pr = principleTitle(c.principle) ?? "";
+  const gl = guidelineTitle(c.guideline, lang) ?? "";
+  const pr = principleTitle(c.principle, lang) ?? "";
   out.push(
     `${lang === "fr" ? "R\xE8gle" : "Guideline"} ${c.guideline} (${gl}) \xB7 ${lang === "fr" ? "principe" : "principle"} ${c.principle} (${pr}) \xB7 ${lang === "fr" ? "automatisabilit\xE9" : "automatability"} : ${auto}${c.ruleIds.length ? ` \xB7 ${lang === "fr" ? "r\xE8gles" : "rules"} : ${c.ruleIds.join(", ")}` : ""}`
   );
@@ -28921,8 +28996,8 @@ function wcagList(lang) {
   );
   const byG = scsByGuideline();
   for (const g of allGuidelines()) {
-    out.push(`${g.number} ${g.title}`);
-    for (const c of byG.get(g.number) ?? []) out.push(`  ${c.sc.padEnd(8)} [${c.level.padEnd(2)}] ${c.title}  [${c.automatability}]`);
+    out.push(`${g.number} ${guidelineTitle(g.number, lang) ?? g.title}`);
+    for (const c of byG.get(g.number) ?? []) out.push(`  ${c.sc.padEnd(8)} [${c.level.padEnd(2)}] ${scTitle(c.sc, lang) ?? c.title}  [${c.automatability}]`);
   }
   return out.join("\n");
 }
@@ -30421,7 +30496,7 @@ function auditSummary(r, lang) {
   lines.push("");
   lines.push(`${t(lang, "guideline")}        C  NC  NA  \u23F3`);
   for (const g of r.guidelines) {
-    const name = `${g.key} ${g.title}`.padEnd(28).slice(0, 28);
+    const name = `${g.key} ${guidelineTitle(g.key, lang) ?? g.title}`.padEnd(28).slice(0, 28);
     lines.push(`${name} ${String(g.c).padStart(2)}  ${String(g.nc).padStart(2)}  ${String(g.na).padStart(2)}  ${String(g.manual).padStart(2)}`);
   }
   lines.push("");

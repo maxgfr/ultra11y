@@ -10,7 +10,7 @@
 import type { AuditResult, Lang, Severity } from "./types.js";
 import { prdUnits, type PrdUnit, type PrdFile } from "./prd.js";
 import { getSC, guidelineTitle, principleTitle, techniques as scTechniques } from "./wcag.js";
-import { type StandardId, isCore, loadPack, themeName, vocabularyFor } from "./standards/index.js";
+import { type StandardId, isCore, loadPack, standardLabel, themeName, vocabularyFor } from "./standards/index.js";
 
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
@@ -55,12 +55,6 @@ const L = {
   },
 } as const;
 
-function stdLabel(standard: StandardId): string {
-  if (isCore(standard)) return "WCAG 2.2 AA";
-  const p = loadPack(standard);
-  return `${p.name} ${p.baseVersion}`;
-}
-
 const uniq = (xs: string[]): string[] => [...new Set(xs.filter(Boolean))];
 
 export interface AuditorUnitOpts {
@@ -74,16 +68,16 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
   const v = vocabularyFor(standard, lang);
   const out: string[] = [];
   if (opts.heading) out.push(`${opts.heading} ${ICON[unit.severity]} ${unit.label}`, "");
-  out.push(`> ${v.normativeNote ?? `${s.lead} — ${stdLabel(standard)}. ${s.tail}`}`, "");
+  out.push(`> ${v.normativeNote ?? `${s.lead} — ${standardLabel(standard)}. ${s.tail}`}`, "");
 
   if (isCore(standard)) {
     const sc = getSC(unit.criteriaId);
     if (sc) {
-      const pr = `${sc.principle} ${principleTitle(sc.principle) ?? ""}`.trim();
-      const gl = `${sc.guideline} ${guidelineTitle(sc.guideline) ?? ""}`.trim();
+      const pr = `${sc.principle} ${principleTitle(sc.principle, lang) ?? ""}`.trim();
+      const gl = `${sc.guideline} ${guidelineTitle(sc.guideline, lang) ?? ""}`.trim();
       out.push(`**${v.theme}** : ${[pr, gl].filter(Boolean).join(" · ")}`);
     }
-    out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` — ${sc.title}` : ""}`);
+    out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` — ${unit.title}` : ""}`);
     const techs = scTechniques(unit.criteriaId);
     if (techs.length) out.push(`**${v.test}** : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", …" : ""}`);
     out.push(`**WCAG** : ${unit.criteriaId}${sc ? ` (${sc.level})` : ""}`);
@@ -121,7 +115,7 @@ function auditorHeader(r: AuditResult, lang: Lang, standard: StandardId): string
   const s = L[lang];
   const v = vocabularyFor(standard, lang);
   return [
-    `# ${v.auditorHeading} — ${stdLabel(standard)}`,
+    `# ${v.auditorHeading} — ${standardLabel(standard)}`,
     "",
     `- **${s.date}** : ${r.date}`,
     `- **${s.scope}** : ${r.scope.files} ${s.files} — ${r.scope.inputs.join(", ")}`,

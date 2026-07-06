@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { wcag, getSC, hasSC, allSC, allPrinciples, allGuidelines, compareSC } from "../src/wcag.js";
+import { wcag, getSC, hasSC, allSC, allPrinciples, allGuidelines, compareSC, scTitle, guidelineTitle, principleTitle } from "../src/wcag.js";
 
 // The WCAG 2.2 dataset is the spine of the whole tool: it is the engine's canonical
 // key, derived from the official W3C source (https://github.com/w3c/wcag). Assert
@@ -68,5 +68,42 @@ describe("WCAG 2.2 dataset integrity", () => {
     expect(allPrinciples().map((p) => p.title)).toEqual(["Perceivable", "Operable", "Understandable", "Robust"]);
     expect(allGuidelines().some((g) => g.number === "1.4")).toBe(true);
     expect(compareSC("1.4.10", "1.4.3")).toBeGreaterThan(0); // 10 sorts after 3
+  });
+});
+
+// French titles: the W3C AUTHORIZED translation (https://www.w3.org/Translations/WCAG22-fr/),
+// vendored at scripts/vendor/wcag-2.2-fr.json and merged into wcag.json as `titleFr` by
+// scripts/build-standards.mjs. Assert COMPLETENESS (every core SC/guideline/principle
+// carries a non-empty titleFr — the build fails otherwise) rather than re-asserting the
+// whole vendored text, which would just duplicate the dataset in the test.
+describe("WCAG 2.2 French titles (W3C authorized translation)", () => {
+  it("every success criterion carries a non-empty titleFr", () => {
+    for (const c of allSC()) {
+      expect(c.titleFr, `titleFr of ${c.sc}`).toBeTruthy();
+      expect(c.titleFr?.trim().length, `titleFr of ${c.sc} is non-empty`).toBeGreaterThan(0);
+    }
+  });
+
+  it("every guideline carries a non-empty titleFr", () => {
+    for (const g of allGuidelines()) {
+      expect(g.titleFr, `titleFr of guideline ${g.number}`).toBeTruthy();
+    }
+  });
+
+  it("every principle carries a non-empty titleFr", () => {
+    for (const p of allPrinciples()) {
+      expect(p.titleFr, `titleFr of principle ${p.number}`).toBeTruthy();
+    }
+  });
+
+  it("scTitle/guidelineTitle/principleTitle default to English (back-compat) and resolve fr on request", () => {
+    expect(scTitle("1.4.3")).toBe("Contrast (Minimum)"); // no lang arg → unchanged English default
+    expect(scTitle("1.4.3", "en")).toBe("Contrast (Minimum)");
+    expect(scTitle("1.4.3", "fr")).toBe("Contraste (minimum)"); // W3C authorized fr translation, verbatim
+    expect(guidelineTitle("1.1")).toBe("Text Alternatives");
+    expect(guidelineTitle("1.1", "fr")).toBe("Équivalents textuels");
+    expect(principleTitle(1)).toBe("Perceivable");
+    expect(principleTitle(1, "fr")).toBe("Perceptible");
+    expect(scTitle("9.9.9", "fr")).toBeUndefined(); // unknown id, both langs
   });
 });

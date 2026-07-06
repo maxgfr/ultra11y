@@ -23,8 +23,8 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     expect(md).toMatch(/Taux de réussite automatique[^*]*\*\* : \d+%/);
   });
 
-  it("synthesis table has WCAG guideline rows plus a Total row", () => {
-    expect(md).toContain("| 1.1 Text Alternatives |");
+  it("synthesis table has WCAG guideline rows (localized fr titles) plus a Total row", () => {
+    expect(md).toContain("| 1.1 Équivalents textuels |"); // fr guideline title, resolved by key — not the baked-in English g.title
     expect(md).toContain("| 4.1 Compatible |");
     expect(md).toContain("| **Total** |");
   });

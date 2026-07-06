@@ -7,7 +7,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity, Status } from "./types.js";
-import { getSC } from "./wcag.js";
+import { guidelineTitle, scTitle } from "./wcag.js";
 import { type StandardId, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
@@ -208,11 +208,14 @@ export function renderReport(r: AuditResult, lang: Lang = "en"): string {
   const s = L[lang];
   const byGuideline = new Map<string, Row[]>();
   for (const c of r.criteria) {
-    const sc = getSC(c.id);
-    const row: Row = { id: c.id, label: sc ? `${c.id} — ${sc.title}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
+    const title = scTitle(c.id, lang);
+    const row: Row = { id: c.id, label: title ? `${c.id} — ${title}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
     (byGuideline.get(c.guideline) ?? byGuideline.set(c.guideline, []).get(c.guideline)!).push(row);
   }
-  const groups: Group[] = r.guidelines.map((g) => ({ key: g.key, title: g.title, rows: byGuideline.get(g.key) ?? [] }));
+  // `g.title` on the AuditResult's GuidelineTally is the baked-in English title (kept for
+  // JSON back-compat); resolve the localized label from the guideline KEY instead so
+  // `--lang fr` renders the French guideline name here too.
+  const groups: Group[] = r.guidelines.map((g) => ({ key: g.key, title: guidelineTitle(g.key, lang) ?? g.title, rows: byGuideline.get(g.key) ?? [] }));
   return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups });
 }
 

@@ -2,6 +2,7 @@
 // summary (the --json path prints the AuditResult verbatim instead).
 import type { AuditResult, Lang, Severity } from "./types.js";
 import type { CaptureCoverage } from "./capture.js";
+import { guidelineTitle } from "./wcag.js";
 
 type Key =
   | "summaryTitle"
@@ -60,7 +61,8 @@ export function auditSummary(r: AuditResult, lang: Lang): string {
   lines.push("");
   lines.push(`${t(lang, "guideline")}        C  NC  NA  ⏳`);
   for (const g of r.guidelines) {
-    const name = `${g.key} ${g.title}`.padEnd(28).slice(0, 28);
+    // `g.title` is the baked-in English title (JSON back-compat); resolve by key + lang.
+    const name = `${g.key} ${guidelineTitle(g.key, lang) ?? g.title}`.padEnd(28).slice(0, 28);
     lines.push(`${name} ${String(g.c).padStart(2)}  ${String(g.nc).padStart(2)}  ${String(g.na).padStart(2)}  ${String(g.manual).padStart(2)}`);
   }
   lines.push("");

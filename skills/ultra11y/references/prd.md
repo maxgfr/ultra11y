@@ -56,6 +56,12 @@ node scripts/ultra11y.mjs prd --in audit.json --format remediation # legacy dev 
 - **De-dupe by title**: an existing issue (open or closed) is skipped, so re-running never
   creates duplicates. The consolidated title carries **no count or date**, so it stays stable
   across re-runs.
+- **Caveat — `--lang` changes the title**: the issue title embeds the localized criterion/pack
+  title (e.g. `[a11y] WCAG 1.4.3 — Contrast (Minimum)` vs `[a11y] WCAG 1.4.3 — Contraste (minimum)`).
+  Since de-dupe matches on the **exact title string**, re-running `prd --gh-issues` with a
+  **different `--lang`** than a previous run does **not** match the earlier issue and creates a
+  new one instead of updating it. Keep `--lang` consistent across re-runs against the same
+  repo, or accept the duplicate and close the stale one manually.
 - **Graceful degradation**: if `gh` is absent / unauthenticated, the command says so and exits
   `0` — the markdown was still produced.
 

@@ -18,6 +18,23 @@ adding its own engine-specific fields (rule coverage, automatability class). It
 does not reproduce the normative prose. Attribution: « WCAG 2.2 — W3C ».
 
 ================================================================================
+Bundled French WCAG 2.2 titles (W3C authorized translation)
+================================================================================
+
+The `titleFr` field on every principle, guideline and success criterion in
+src/data/wcag.json (vendored at scripts/vendor/wcag-2.2-fr.json) is the AUTHORIZED
+French translation of WCAG 2.2 published by the W3C.
+
+Source: https://www.w3.org/Translations/WCAG22-fr/
+
+Like the English source, WCAG 2.2 (and its authorized translations) is © W3C and is
+reused here under the W3C Document License
+(https://www.w3.org/copyright/document-license/). ultra11y reproduces only the
+principle/guideline/success-criterion TITLES, verbatim, resolved at render time by
+`--lang fr`; it does not reproduce the normative prose. Attribution: « WCAG 2.2 — W3C
+(traduction française autorisée) ».
+
+================================================================================
 Bundled RGAA standards pack (France)
 ================================================================================
 

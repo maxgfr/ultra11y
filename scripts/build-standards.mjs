@@ -13,6 +13,7 @@
 //   node scripts/build-standards.mjs --offline       # same (alias; the snapshots are always local)
 //   node scripts/build-standards.mjs --refresh <dir> # re-derive the vendored AA snapshot from a w3c/wcag checkout
 //   node scripts/build-standards.mjs --refresh-universe # re-fetch (network) the vendored FULL SC universe (all levels + removed 4.1.1)
+//   node scripts/build-standards.mjs --refresh-fr    # re-fetch (network) the vendored French SC/guideline/principle titles
 import { writeFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -22,6 +23,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = join(root, "src", "data");
 const VENDOR = join(root, "scripts", "vendor", "wcag-2.2-sc.json");
 const VENDOR_UNIVERSE = join(root, "scripts", "vendor", "wcag-2.2-sc-universe.json");
+const VENDOR_FR = join(root, "scripts", "vendor", "wcag-2.2-fr.json");
 const PACKS_DIR = join(DATA, "standards");
 const BIOME = join(root, "node_modules", ".bin", "biome");
 
@@ -206,6 +208,104 @@ async function deriveUniverse() {
 }
 
 // ---------------------------------------------------------------------------
+// French-titles mode: fetch the W3C AUTHORIZED French translation of WCAG 2.2
+// (https://www.w3.org/Translations/WCAG22-fr/ — a single-page document, unlike the
+// split w3c/wcag English source) and vendor ONLY the principle/guideline/SC TITLES for
+// the shipped AA core (nothing invented, no paraphrase — every title is lifted verbatim
+// from this page). The fr page numbers every heading exactly like the English source
+// (<bdi class="secno">1.4.3 </bdi>) — h2 = principle ("1. "), h3 = guideline ("Règle
+// 1.1 "), h4 = success criterion ("Critère de succès 1.1.1 ") — so titles are read
+// directly off the dotted id, no positional counting needed. Re-run only when the W3C
+// translation changes: node scripts/build-standards.mjs --refresh-fr
+// ---------------------------------------------------------------------------
+const FR_SOURCE = "https://www.w3.org/Translations/WCAG22-fr/";
+
+// Minimal HTML → plaintext (mirrors scripts/build-pack-rgaa.mjs's `deHtml`): the fr
+// titles are plain text, so this only needs to strip stray tags/entities, not full markup.
+function deHtmlFr(s) {
+  return s
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;|&rsquo;|&#8217;/g, "’")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function deriveFr() {
+  if (!existsSync(VENDOR)) {
+    console.error(`build-standards --refresh-fr: missing vendored English snapshot ${VENDOR}. Run: node scripts/build-standards.mjs --refresh <w3c/wcag checkout> first.`);
+    process.exit(1);
+  }
+  const snap = JSON.parse(readFileSync(VENDOR, "utf8"));
+  const r = await fetch(FR_SOURCE);
+  if (!r.ok) throw new Error(`build-standards --refresh-fr: GET ${FR_SOURCE} → HTTP ${r.status}`);
+  const html = await r.text();
+
+  // <h2|h3|h4><bdi class="secno">[prefix ]<id>[.] </bdi>Title</hN> — id is the bare
+  // dotted number ("1" for a principle, "1.1" for a guideline, "1.1.1" for an SC); the
+  // "Règle "/"Critère de succès " word prefixes and level are NOT captured, only the id.
+  const tok = /<h([234])[^>]*>\s*<bdi class="secno">([^<]*)<\/bdi>\s*([\s\S]*?)<\/h\1>/g;
+  const rawPrinciples = {};
+  const rawGuidelines = {};
+  const rawCriteria = {};
+  let m;
+  while ((m = tok.exec(html))) {
+    const idMatch = m[2].match(/(\d+(?:\.\d+)*)/);
+    if (!idMatch) continue;
+    const id = idMatch[1];
+    const title = deHtmlFr(m[3]);
+    if (m[1] === "2") {
+      if (/^[1-4]$/.test(id)) rawPrinciples[id] = title; // "5./6./7." are Conformance/Glossary/Input-purposes, not WCAG principles
+    } else if (m[1] === "3") rawGuidelines[id] = title;
+    else if (m[1] === "4") rawCriteria[id] = title;
+  }
+
+  // Only vendor what the shipped AA core actually needs — cross-referenced against the
+  // English snapshot's own principle/guideline/SC id lists, never a blind full-page dump.
+  const principles = {};
+  const guidelines = {};
+  const criteria = {};
+  const missing = [];
+  for (const p of snap.principles) {
+    const t = rawPrinciples[String(p.number)];
+    if (t) principles[String(p.number)] = t;
+    else missing.push(`principle ${p.number}`);
+  }
+  for (const g of snap.guidelines) {
+    const t = rawGuidelines[g.number];
+    if (t) guidelines[g.number] = t;
+    else missing.push(`guideline ${g.number}`);
+  }
+  for (const c of snap.criteria) {
+    const t = rawCriteria[c.sc];
+    if (t) criteria[c.sc] = t;
+    else missing.push(`SC ${c.sc}`);
+  }
+  if (missing.length) {
+    console.error(`build-standards --refresh-fr: no French title found on ${FR_SOURCE} for: ${missing.join(", ")}. Nothing invented — refusing to vendor a partial/paraphrased dataset.`);
+    process.exit(1);
+  }
+
+  const out = {
+    source: FR_SOURCE,
+    fetchedAt: new Date().toISOString().slice(0, 10),
+    principles,
+    guidelines,
+    criteria,
+  };
+  mkdirSync(dirname(VENDOR_FR), { recursive: true });
+  writeFileSync(VENDOR_FR, JSON.stringify(out, null, 2) + "\n");
+  console.log(
+    `build-standards --refresh-fr: ${Object.keys(criteria).length} SC + ${Object.keys(guidelines).length} guideline + ${Object.keys(principles).length} principle French titles → ${VENDOR_FR}`,
+  );
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Engine-specific decoration (the only hand-maintained part: which SCs the static
 // engine can fully decide, which need a rendered DOM, and the per-SC rule coverage).
 // ---------------------------------------------------------------------------
@@ -339,8 +439,30 @@ function build() {
     console.error(`build-standards: missing vendored snapshot ${VENDOR}. Run: node scripts/build-standards.mjs --refresh <w3c/wcag checkout>`);
     process.exit(1);
   }
+  if (!existsSync(VENDOR_FR)) {
+    console.error(`build-standards: missing vendored French titles ${VENDOR_FR}. Run: node scripts/build-standards.mjs --refresh-fr`);
+    process.exit(1);
+  }
   const snap = JSON.parse(readFileSync(VENDOR, "utf8"));
+  const fr = JSON.parse(readFileSync(VENDOR_FR, "utf8"));
   const { techniques, sources } = seedFromPacks();
+
+  // Completeness guard: every shipped core-AA SC/guideline/principle MUST carry a French
+  // title from the vendored W3C authorized translation — never a silent English-only
+  // fallback in the shipped dataset (src/wcag.ts still falls back at read time for older
+  // snapshots, but a freshly-built one is never allowed to be incomplete).
+  const missingFr = [
+    ...snap.principles.filter((p) => !fr.principles[String(p.number)]).map((p) => `principle ${p.number}`),
+    ...snap.guidelines.filter((g) => !fr.guidelines[g.number]).map((g) => `guideline ${g.number}`),
+    ...snap.criteria.filter((c) => !fr.criteria[c.sc]).map((c) => `SC ${c.sc}`),
+  ];
+  if (missingFr.length) {
+    console.error(`build-standards: ${VENDOR_FR} is missing a French title for: ${missingFr.join(", ")}. Re-run: node scripts/build-standards.mjs --refresh-fr`);
+    process.exit(1);
+  }
+
+  const principles = snap.principles.map((p) => ({ number: p.number, title: p.title, titleFr: fr.principles[String(p.number)] }));
+  const guidelines = snap.guidelines.map((g) => ({ number: g.number, title: g.title, titleFr: fr.guidelines[g.number] }));
 
   const criteria = snap.criteria.map((c) => {
     const sc = {
@@ -348,6 +470,7 @@ function build() {
       principle: c.principle,
       guideline: c.guideline,
       title: c.title,
+      titleFr: fr.criteria[c.sc],
       level: c.level,
       addedIn: c.addedIn,
       automatability: automatabilityOf(c.sc),
@@ -364,8 +487,8 @@ function build() {
     source: snap.source,
     license: "W3C Document License",
     criteriaSource: snap.criteriaSource,
-    principles: snap.principles,
-    guidelines: snap.guidelines,
+    principles,
+    guidelines,
     criteria,
   };
   mkdirSync(DATA, { recursive: true });
@@ -403,6 +526,7 @@ async function main() {
   const refreshIdx = process.argv.indexOf("--refresh");
   if (refreshIdx !== -1) deriveSnapshot(process.argv[refreshIdx + 1]);
   if (process.argv.includes("--refresh-universe")) await deriveUniverse();
+  if (process.argv.includes("--refresh-fr")) await deriveFr();
   build();
 }
 

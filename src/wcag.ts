@@ -5,7 +5,7 @@
 // their criteria onto these SCs — see src/standards/.
 import wcagJson from "./data/wcag.json";
 import wcagUniverseJson from "./data/wcag-universe.json";
-import type { WcagData, Sc, WcagPrinciple, WcagGuideline, Automatability, WcagUniverseData, ScStatus } from "./types.js";
+import type { WcagData, Sc, WcagPrinciple, WcagGuideline, Automatability, WcagUniverseData, ScStatus, Lang } from "./types.js";
 
 const data = wcagJson as unknown as WcagData;
 const universe = wcagUniverseJson as unknown as WcagUniverseData;
@@ -42,12 +42,30 @@ export function allGuidelines(): WcagGuideline[] {
   return data.guidelines;
 }
 
-export function principleTitle(n: number): string | undefined {
-  return data.principles.find((p) => p.number === n)?.title;
+// Default `lang` stays "en" so every pre-existing call site (no lang argument) keeps
+// rendering the authoritative W3C English title — back-compat, no behaviour change.
+// `lang: "fr"` resolves the W3C AUTHORIZED French translation (titleFr); falls back to
+// the English title if a French title is ever absent (should not happen for core-AA —
+// the build guarantees completeness, see scripts/build-standards.mjs).
+export function principleTitle(n: number, lang: Lang = "en"): string | undefined {
+  const p = data.principles.find((p) => p.number === n);
+  if (!p) return undefined;
+  return lang === "fr" ? (p.titleFr ?? p.title) : p.title;
 }
 
-export function guidelineTitle(n: string): string | undefined {
-  return data.guidelines.find((g) => g.number === n)?.title;
+export function guidelineTitle(n: string, lang: Lang = "en"): string | undefined {
+  const g = data.guidelines.find((g) => g.number === n);
+  if (!g) return undefined;
+  return lang === "fr" ? (g.titleFr ?? g.title) : g.title;
+}
+
+/** Localized success-criterion title. `getSC(id)?.title` stays the raw English record;
+ *  use this wherever a title is RENDERED so `--lang fr` resolves the authorized French
+ *  translation. */
+export function scTitle(id: string, lang: Lang = "en"): string | undefined {
+  const sc = byId.get(id);
+  if (!sc) return undefined;
+  return lang === "fr" ? (sc.titleFr ?? sc.title) : sc.title;
 }
 
 /** SCs grouped by guideline ("1.4" → [...]), in dataset (numbering) order. */

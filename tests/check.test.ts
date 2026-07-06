@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { runAudit } from "../src/audit.js";
 import { renderReport } from "../src/report.js";
 import { checkReport } from "../src/check.js";
+import { registerRuntimePack } from "../src/standards/index.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const validReport = renderReport(runAudit({ inputs: [`${FIX}non-conforming/bad.html`] }), "fr");
@@ -61,5 +62,39 @@ describe("checkReport", () => {
     const r = checkReport(rgaaReport, "rgaa");
     expect(r.ok).toBe(false);
     expect(r.issues.some((i) => i.includes("9.9"))).toBe(true); // 9.9 is not a real RGAA id
+  });
+
+  it("gates a pack report by the PACK'S OWN idPattern grammar, not a fixed 2-segment shape (e.g. Section 508 E205.4)", () => {
+    registerRuntimePack({
+      key: "synth508check",
+      name: "Synth508",
+      org: "O",
+      country: "US",
+      baseVersion: "1",
+      wcagVersion: "2.2",
+      locales: ["en"],
+      defaultLocale: "en",
+      license: "x",
+      source: "x",
+      attribution: "x",
+      idPattern: "^E\\d+\\.\\d+$",
+      themes: [{ number: 1, name: { en: "Interface" }, count: 1 }],
+      criteria: [{ id: "E205.4", theme: 1, title: { en: "Focus Visible" }, titlePlain: { en: "Focus Visible" }, wcag: ["2.4.7"] }],
+    });
+    const md = `# Report — Synth508 1
+- **Rate** : 50%
+## 1. x
+## 2. y
+- **E205.4 — Focus Visible** — \`a.html:1\` (\`a\`)
+  - missing
+## 3. z
+## 4. NA
+- E999.9 — invented — _x_
+## 5. manual
+`;
+    const r = checkReport(md, "synth508check");
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.includes("E999.9"))).toBe(true); // fabricated id
+    expect(r.issues.some((i) => i.includes("E205.4"))).toBe(false); // real criterion recognized
   });
 });

@@ -7,7 +7,7 @@
 // so the version token "WCAG 2.2 —" can never be mistaken for a criterion.
 import type { Lang } from "./types.js";
 import { hasSC } from "./wcag.js";
-import { type StandardId, isCore, loadPack, hasId } from "./standards/index.js";
+import { type StandardId, isCore, loadPack, hasId, idCaptureSource } from "./standards/index.js";
 
 export interface CheckResult {
   ok: boolean;
@@ -37,10 +37,12 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
   const core = isCore(standard);
   const pack = core ? null : loadPack(standard);
   const exists = (id: string) => (core ? hasSC(id) : hasId(pack!, id));
-  // Core = EXACTLY 3 segments (1.4.3); pack = EXACTLY 2 (8.3). Anchoring the segment
-  // count stops the "WCAG 2.2 —" version token resolving to a bogus criterion.
-  const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : /(\d{1,2}\.\d{1,2})\s*—/g;
-  const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}\.\d{1,2})\s*—/;
+  // Core = the fixed 3-segment WCAG grammar (1.4.3). A pack's grammar is whatever its own
+  // `idPattern` declares (RGAA's 2-segment "8.3", a hypothetical Section 508 "E205.4"…) —
+  // built from the pack itself so the version token "WCAG 2.2 —" can never be mistaken
+  // for a criterion, without the engine hardcoding a single fixed pack shape.
+  const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : new RegExp(`(${idCaptureSource(pack!)})\\s*—`, "g");
+  const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack!)})\\s*—`);
 
   // 1. required sections (language-agnostic: "## 1." … "## 5.")
   for (let n = 1; n <= 5; n++) {

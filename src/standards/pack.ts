@@ -42,3 +42,14 @@ export function titlePlain(pack: StandardPack, c: PackCriterion, lang: Lang): st
 export function resolveGlossary(packKey: string, anchor: string): GlossaryEntry | undefined {
   return packGlossary(packKey)?.[anchor];
 }
+
+/** The pack's `idPattern` with its full-match anchors (`^`/`$`) stripped, for embedding
+ *  as a capture group inside a larger line pattern — the generic seam `check.ts`/
+ *  `verify.ts` use to recognize THIS standard's own criterion-id grammar in a rendered
+ *  report (WCAG's fixed 3-segment "1.4.3", or a pack's own shape: RGAA "8.3", a
+ *  hypothetical Section 508 "E205.4"…). `idPattern` is validated compilable by
+ *  `validatePack` before a pack is ever registered, so this is always a legal regex
+ *  source. */
+export function idCaptureSource(pack: StandardPack): string {
+  return pack.idPattern.replace(/^\^/, "").replace(/\$$/, "");
+}

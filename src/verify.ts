@@ -7,7 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Lang } from "./types.js";
 import { getSC } from "./wcag.js";
-import { type StandardId, isCore, loadPack, getCriterion as getPackCriterion } from "./standards/index.js";
+import { type StandardId, isCore, loadPack, getCriterion as getPackCriterion, idCaptureSource } from "./standards/index.js";
 
 export const VERIFY_MAX = 40;
 
@@ -27,10 +27,11 @@ export interface VerifyItem {
 const plain = (s: string) => s.replace(/\[([^\]]+)\]\(#[^)]*\)/g, "$1");
 
 // matches the section-2 non-conformity header emitted by report.ts. The id is the
-// active standard's grammar (WCAG 3-segment "1.4.3" or a pack's 2-segment "8.3",
-// optionally prefixed by the pack name, e.g. "RGAA 8.3").
+// active standard's grammar (WCAG's fixed 3-segment "1.4.3", or a pack's own idPattern —
+// RGAA's 2-segment "8.3", a hypothetical Section 508 "E205.4"…), optionally prefixed by
+// the pack name, e.g. "RGAA 8.3".
 function ncHeader(standard: StandardId): RegExp {
-  const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : "\\d{1,2}\\.\\d{1,2}";
+  const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(loadPack(standard));
   return new RegExp(`^- \\*\\*(?:[A-Za-z]+ )?(${id}) — (.*?)\\*\\* — \`([^\`]+):(\\d+)\` \\(\`([^\`]*)\`\\)`);
 }
 

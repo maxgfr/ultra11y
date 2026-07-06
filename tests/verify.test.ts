@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { renderReport } from "../src/report.js";
 import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, type VerifyItem } from "../src/verify.js";
+import { registerRuntimePack } from "../src/standards/index.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const report = renderReport(runAudit({ inputs: [`${FIX}non-conforming/bad.html`] }), "fr");
@@ -23,6 +24,38 @@ describe("buildWorklist", () => {
 
   it("respects --max-verify", () => {
     expect(buildWorklist(report, "wcag", 2)).toHaveLength(2);
+  });
+
+  it("parses a pack's NC header by the PACK'S OWN idPattern grammar, not a fixed 2-segment shape (e.g. Section 508 E205.4)", () => {
+    registerRuntimePack({
+      key: "synth508verify",
+      name: "Synth508",
+      org: "O",
+      country: "US",
+      baseVersion: "1",
+      wcagVersion: "2.2",
+      locales: ["en"],
+      defaultLocale: "en",
+      license: "x",
+      source: "x",
+      attribution: "x",
+      idPattern: "^E\\d+\\.\\d+$",
+      themes: [{ number: 1, name: { en: "Interface" }, count: 1 }],
+      criteria: [{ id: "E205.4", theme: 1, title: { en: "Focus Visible" }, titlePlain: { en: "Focus Visible" }, wcag: ["2.4.7"] }],
+    });
+    const md = `# Report — Synth508 1
+- **Rate** : 50%
+## 1. x
+## 2. y
+- **E205.4 — Focus Visible** — \`a.html:1\` (\`a\`)
+  - focus indicator missing
+## 3. z
+## 4. NA
+## 5. manual
+`;
+    const items = buildWorklist(md, "synth508verify");
+    expect(items).toHaveLength(1);
+    expect(items[0]!.criteriaId).toBe("E205.4");
   });
 });
 

@@ -27,16 +27,15 @@ const autoplayMedia: Rule = {
         out.push({
           criteriaId: "2.2.2",
           el,
-          message: `<video autoplay> démarre automatiquement — contenu en mouvement non contrôlé.`,
-          remediation: `Évitez l'autoplay ou fournissez un contrôle pause/stop accessible (et controls).`,
+          msgId: "autoplay-media.muted-video",
         });
         continue;
       }
       out.push({
         criteriaId: el.tag === "audio" ? "1.4.2" : "2.2.2",
         el,
-        message: `<${el.tag} autoplay> démarre automatiquement ${el.tag === "audio" ? "du son" : "une vidéo sonore"} — non contrôlable par l'utilisateur.`,
-        remediation: `Retirez autoplay, ou ajoutez un contrôle de lecture (controls + pause/stop) facilement accessible.`,
+        msgId: "autoplay-media.audible",
+        params: { tag: el.tag },
       });
     }
     return out;
@@ -59,8 +58,7 @@ const mediaNoTrack: Rule = {
       out.push({
         criteriaId: "1.2.2",
         el,
-        message: `<video> sans élément <track> — aucune piste de sous-titres/légendes synchronisées.`,
-        remediation: `Ajoutez <track kind="captions" src="…" srclang="fr" label="Français"> (ou subtitles) pour le média synchronisé.`,
+        msgId: "media-no-track",
       });
     }
     return out;

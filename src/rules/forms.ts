@@ -33,8 +33,8 @@ const controlLabelMissing: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `Champ de formulaire <${el.tag}> sans étiquette — aucun label associé.`,
-        remediation: `Associez un <label for="…"> (ou enveloppez le champ d'un <label>, ou aria-label/aria-labelledby).`,
+        msgId: "control-label-missing",
+        params: { tag: el.tag },
       });
     }
     return out;
@@ -55,8 +55,8 @@ const placeholderAsLabel: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `placeholder="${attr(el, "placeholder")}" utilisé comme seule étiquette — le placeholder n'est pas un label.`,
-        remediation: `Ajoutez un <label> réel ; le placeholder ne doit que compléter, pas remplacer l'étiquette.`,
+        msgId: "placeholder-as-label",
+        params: { value: attr(el, "placeholder") ?? "" },
       });
     }
     return out;
@@ -78,8 +78,7 @@ const fieldsetLegendMissing: Rule = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `<fieldset> sans <legend> (ou légende vide) — regroupement de champs sans légende.`,
-        remediation: `Ajoutez un <legend> non vide en premier enfant du <fieldset>.`,
+        msgId: "fieldset-legend-missing",
       });
     }
     return out;
@@ -105,8 +104,8 @@ const formFieldMultipleLabels: Rule = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `Champ <${el.tag}> référencé par ${counts.get(id)} <label for="${id}"> — étiquettes multiples ambiguës.`,
-          remediation: `Un seul <label> doit cibler le champ ; fusionnez ou retirez les étiquettes superflues.`,
+          msgId: "form-field-multiple-labels",
+          params: { tag: el.tag, count: counts.get(id) ?? 0, id },
         });
       }
     }
@@ -127,8 +126,7 @@ const selectHasOption: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `<select> sans aucune <option> — liste de choix vide.`,
-        remediation: `Ajoutez des <option> (et un <optgroup>/option par défaut si pertinent).`,
+        msgId: "select-has-option",
       });
     }
     return out;
@@ -157,8 +155,8 @@ const labelForDangling: Rule = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `<label for="${f}"> ne cible aucun élément — aucun champ n'a id="${f}".`,
-        remediation: `Donnez au champ id="${f}", corrigez l'attribut for, ou enveloppez le champ dans le <label>.`,
+        msgId: "label-for-dangling",
+        params: { id: f },
       });
     }
     return out;
@@ -186,8 +184,8 @@ const ariaInvalidNoDescription: Rule = {
       out.push({
         criteriaId: "3.3.1",
         el,
-        message: `<${el.tag}> a aria-invalid="true" mais aucun aria-describedby/aria-errormessage — l'erreur est signalée sans être reliée à son message.`,
-        remediation: `Reliez le message d'erreur au champ via aria-describedby (ou aria-errormessage) pointant vers le texte d'erreur.`,
+        msgId: "aria-invalid-no-description",
+        params: { tag: el.tag },
       });
     }
     return out;
@@ -232,8 +230,8 @@ const errorNotAssociated: Rule = {
       out.push({
         criteriaId: "3.3.1",
         el,
-        message: `Message d'erreur (id="${id}") relié à aucun champ — aucun aria-describedby/aria-errormessage ne le référence.`,
-        remediation: `Sur le champ concerné, ajoutez aria-describedby="${id}" (ou aria-errormessage) et aria-invalid="true".`,
+        msgId: "error-not-associated",
+        params: { id },
       });
     }
     return out;
@@ -268,8 +266,8 @@ const fieldPurposeIncomplete: Rule = {
             out.push({
               criteriaId: "1.3.5",
               el,
-              message: `Champ d'identification (${type === "email" || type === "tel" ? `type="${type}"` : "name/id"}) sans autocomplete — objet du champ non exposé.`,
-              remediation: `Ajoutez un autocomplete approprié (ex. email, tel, name, postal-code, street-address) — WCAG 1.3.5.`,
+              msgId: "field-purpose-incomplete.autocomplete",
+              params: { type },
             });
           }
         }
@@ -281,8 +279,8 @@ const fieldPurposeIncomplete: Rule = {
           out.push({
             criteriaId: "4.1.2",
             el,
-            message: `Widget personnalisé (role="${role}") requis sans aria-required — l'état requis n'est pas restitué.`,
-            remediation: `Ajoutez aria-required="true" sur le widget personnalisé requis.`,
+            msgId: "field-purpose-incomplete.aria-required",
+            params: { role },
           });
         }
       }

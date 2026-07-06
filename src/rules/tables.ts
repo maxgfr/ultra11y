@@ -45,15 +45,13 @@ const dataTableNoHeaders: Rule = {
         out.push({
           criteriaId: "1.3.1",
           el: t,
-          message: `Tableau de données sans <th> — en-têtes de colonne/ligne non déclarés.`,
-          remediation: `Déclarez les en-têtes avec <th>, et associez-les via scope="col"/"row" (ou headers/id).`,
+          msgId: "data-table-no-headers.no-th",
         });
       } else if (!hasAssoc) {
         out.push({
           criteriaId: "1.3.1",
           el: t,
-          message: `Tableau de données avec <th> mais sans scope/headers — association cellule↔en-tête absente.`,
-          remediation: `Ajoutez scope="col"/"row" sur les <th> (ou headers="…"/id sur cellules complexes).`,
+          msgId: "data-table-no-headers.no-assoc",
         });
       }
     }
@@ -74,8 +72,7 @@ const tableCaptionMissing: Rule = {
       out.push({
         criteriaId: "1.3.1",
         el: t,
-        message: `Tableau de données sans <caption> ni nom accessible — titre du tableau absent.`,
-        remediation: `Ajoutez un <caption> en première position du <table> (ou aria-label/aria-labelledby).`,
+        msgId: "table-caption-missing",
       });
     }
     return out;
@@ -99,8 +96,8 @@ const layoutTableDataMarkup: Rule = {
       out.push({
         criteriaId: "1.3.1",
         el: t,
-        message: `Tableau de mise en forme (role="${attr(t, "role")}") utilisant du balisage de données (th/caption/scope).`,
-        remediation: `Retirez th/caption/scope/headers d'un tableau de présentation, ou faites-en un vrai tableau de données.`,
+        msgId: "layout-table-data-markup",
+        params: { role: attr(t, "role") ?? "" },
       });
     }
     return out;
@@ -133,8 +130,7 @@ const sortableHeaderNoAriaSort: Rule = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `En-tête de colonne triable sans aria-sort — l'état de tri (croissant/décroissant) n'est pas restitué.`,
-        remediation: `Ajoutez aria-sort="none|ascending|descending" sur le <th> trié, et masquez le glyphe de tri (aria-hidden="true").`,
+        msgId: "sortable-header-no-aria-sort",
       });
     }
     return out;

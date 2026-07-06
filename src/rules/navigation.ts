@@ -42,8 +42,8 @@ const skipLinkTargetMissing: Rule = {
       out.push({
         criteriaId: "2.4.1",
         el,
-        message: `Lien interne href="${href}" — la cible #${id} n'existe pas dans la page (lien d'évitement/ancre cassé).`,
-        remediation: `Ajoutez un élément avec id="${id}" (ex. <main id="${id}">) ou corrigez l'ancre.`,
+        msgId: "skip-link-target-missing",
+        params: { href, id },
         // In a JSX/SFC component the target id often lives in a sibling/parent component
         // resolved at composition time (or via --graph). Single-file source can't prove it
         // missing, so flag it provisional rather than a hard NC. Full HTML pages stay firm.
@@ -67,8 +67,8 @@ const positiveTabindex: Rule = {
         out.push({
           criteriaId: "2.4.3",
           el,
-          message: `tabindex="${ti}" positif — force un ordre de tabulation incohérent avec l'ordre du DOM.`,
-          remediation: `Utilisez tabindex="0" (ou pas de tabindex) et ordonnez via le DOM ; réservez les valeurs >0.`,
+          msgId: "positive-tabindex",
+          params: { value: ti },
         });
       }
     }
@@ -92,8 +92,7 @@ const missingMainLandmark: Rule = {
       {
         criteriaId: "1.3.1",
         el: anchor,
-        message: `Aucun repère <main> dans la page — le contenu principal n'est pas identifié (et la cible d'un lien d'évitement manque).`,
-        remediation: `Enveloppez le contenu principal dans un <main id="content"> (unique par page).`,
+        msgId: "missing-main-landmark",
       },
     ];
   },
@@ -110,8 +109,8 @@ const multipleMainLandmark: Rule = {
     return mains.slice(1).map((el) => ({
       criteriaId: "1.3.1",
       el,
-      message: `Plusieurs repères <main> dans la page (${mains.length}) — un seul contenu principal est autorisé.`,
-      remediation: `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`,
+      msgId: "multiple-main-landmark",
+      params: { count: mains.length },
     }));
   },
 };

@@ -27,8 +27,8 @@ const imgAltMissing: Rule = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<${el.tag}> sans attribut alt ni nom accessible — alternative textuelle manquante.`,
-        remediation: `Ajoutez alt="…" (description si l'image porte de l'information, alt="" si elle est décorative).`,
+        msgId: "img-alt-missing",
+        params: { tag: el.tag },
       });
     }
     return out;
@@ -51,15 +51,14 @@ const decorativeAltMisuse: Rule = {
         out.push({
           criteriaId: "1.1.1",
           el,
-          message: `Image décorative (alt="") mais nommée par aria-label/title — incohérence décoratif/informatif.`,
-          remediation: `Si l'image est décorative, retirez aria-label/title ; sinon donnez un alt descriptif.`,
+          msgId: "decorative-alt-misuse.empty-but-named",
         });
       } else if (["presentation", "none"].includes(role) && alt?.trim()) {
         out.push({
           criteriaId: "1.1.1",
           el,
-          message: `Image en role="${role}" mais porteuse d'un alt non vide — déclarée décorative pourtant nommée.`,
-          remediation: `Retirez role="${role}" si l'image est informative, ou videz l'alt si elle est décorative.`,
+          msgId: "decorative-alt-misuse.role-but-alt",
+          params: { role },
         });
       }
     }
@@ -81,8 +80,7 @@ const canvasFallbackMissing: Rule = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<canvas> sans contenu alternatif ni nom accessible.`,
-        remediation: `Placez un contenu de repli entre <canvas>…</canvas> ou ajoutez role="img" + aria-label.`,
+        msgId: "canvas-fallback-missing",
       });
     }
     return out;
@@ -102,8 +100,7 @@ const inputImageAltMissing: Rule = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<input type="image"> sans alt ni nom accessible — le bouton image n'a pas d'alternative textuelle.`,
-        remediation: `Ajoutez alt="…" décrivant l'action du bouton (ex. alt="Rechercher").`,
+        msgId: "input-image-alt-missing",
       });
     }
     return out;
@@ -126,8 +123,8 @@ const objectEmbedNoName: Rule = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<${el.tag}> sans nom accessible ni contenu de repli — média embarqué sans alternative textuelle.`,
-        remediation: `Ajoutez aria-label/title décrivant le contenu (et un contenu de repli textuel dans <object>…</object>), ou aria-hidden="true" si décoratif.`,
+        msgId: "object-embed-no-name",
+        params: { tag: el.tag },
       });
     }
     return out;
@@ -163,8 +160,8 @@ const chartNoAccessibleName: Rule = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `Graphique (<${el.tag}> ${cls.trim().split(/\s+/)[0]}) sans nom accessible — alternative textuelle manquante.`,
-        remediation: `Enveloppez le graphique dans <div role="img" aria-label="…"> décrivant la tendance (ou ajoutez un <title>/aria-label).`,
+        msgId: "chart-no-accessible-name",
+        params: { tag: el.tag, cls: cls.trim().split(/\s+/)[0] ?? "" },
       });
     }
     return out;

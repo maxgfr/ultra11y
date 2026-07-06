@@ -104,8 +104,8 @@ const contrastLiteral: Rule = {
       out.push({
         criteriaId: "1.4.3",
         el,
-        message: `Contraste insuffisant : ratio ${ratio.toFixed(2)}:1 entre le texte et son fond (minimum ${min}:1 pour du texte ${large ? "large" : "normal"}).`,
-        remediation: `Assombrissez le texte ou éclaircissez le fond pour atteindre au moins ${min}:1 (contraste calculé sur des couleurs inline littérales).`,
+        msgId: "contrast-literal",
+        params: { ratio: ratio.toFixed(2), min, textSize: large ? "large" : "normal" },
       });
     }
     return out;

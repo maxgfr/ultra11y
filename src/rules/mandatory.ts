@@ -27,8 +27,7 @@ const htmlLangMissing: Rule = {
       {
         criteriaId: "3.1.1",
         el: html,
-        message: `<html> sans attribut lang — la langue par défaut de la page n'est pas déclarée.`,
-        remediation: `Ajoutez lang sur <html>, ex. <html lang="fr">.`,
+        msgId: "html-lang-missing",
       },
     ];
   },
@@ -52,8 +51,8 @@ const titleMissingEmpty: Rule = {
       {
         criteriaId: "2.4.2",
         el: anchor,
-        message: titles.length ? `<title> vide — le titre de la page est absent de contenu.` : `<title> absent — la page n'a pas de titre.`,
-        remediation: `Ajoutez un <title> non vide et pertinent dans <head>.`,
+        msgId: "title-missing-empty",
+        params: { titleState: titles.length ? "empty" : "absent" },
       },
     ];
   },
@@ -74,8 +73,8 @@ const duplicateId: Rule = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `id="${id}" dupliqué — un id doit être unique dans la page (HTML invalide).`,
-          remediation: `Donnez un id unique à chaque élément ; ajustez les références (label[for], aria-*).`,
+          msgId: "duplicate-id",
+          params: { id },
         });
       }
     }
@@ -96,8 +95,8 @@ const inlineLangChangeMissing: Rule = {
         out.push({
           criteriaId: "3.1.2",
           el,
-          message: `Attribut lang vide sur <${el.tag}> — changement de langue mal indiqué.`,
-          remediation: `Renseignez un code de langue valide (ex. lang="en") ou retirez l'attribut.`,
+          msgId: "inline-lang-change-missing",
+          params: { tag: el.tag },
         });
       }
     }
@@ -124,8 +123,8 @@ const langInvalid: Rule = {
       out.push({
         criteriaId: el.tag === "html" ? "3.1.1" : "3.1.2",
         el,
-        message: `Code de langue invalide lang="${lang}" sur <${el.tag}> — n'est pas un code BCP 47 valide.`,
-        remediation: `Utilisez un code de langue valide (ex. "fr", "en", "fr-CA").`,
+        msgId: "lang-invalid",
+        params: { lang, tag: el.tag },
       });
     }
     return out;

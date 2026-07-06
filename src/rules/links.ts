@@ -41,8 +41,7 @@ const linkEmptyName: Rule = {
       out.push({
         criteriaId: "2.4.4",
         el,
-        message: `Lien sans intitulé — aucun nom accessible.`,
-        remediation: `Donnez un intitulé textuel au lien (texte visible, ou aria-label si vraiment nécessaire).`,
+        msgId: "link-empty-name",
       });
     }
     return out;
@@ -64,8 +63,7 @@ const buttonEmptyName: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `Bouton sans intitulé — aucun nom accessible.`,
-        remediation: `Donnez un intitulé au bouton (texte, value, ou aria-label).`,
+        msgId: "button-empty-name",
       });
     }
     return out;
@@ -89,8 +87,8 @@ const iconOnlyControlUnnamed: Rule = {
       out.push({
         criteriaId: link ? "2.4.4" : "4.1.2",
         el,
-        message: `${link ? "Lien" : "Bouton"} avec une icône seule (img/svg/i) sans nom accessible.`,
-        remediation: `Ajoutez un alt/aria-label sur l'icône ou un texte masqué visuellement (classe visually-hidden).`,
+        msgId: "icon-only-control-unnamed",
+        params: { kind: link ? "link" : "button" },
       });
     }
     return out;
@@ -127,8 +125,8 @@ const controlNameTitleOnly: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `${link ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title — title n'est pas restitué de façon fiable (survol uniquement).`,
-        remediation: `Donnez un intitulé via texte visible ou aria-label ; réservez title à une information complémentaire.`,
+        msgId: "control-name-title-only",
+        params: { kind: link ? "link" : "button" },
       });
     }
     return out;

@@ -71,8 +71,8 @@ const headingOrderSkip: Rule = {
         out.push({
           criteriaId: "1.3.1",
           el,
-          message: `Saut de niveau de titre : <h${level}> après <h${prev}> (niveau h${prev + 1} attendu).`,
-          remediation: `Ne sautez pas de niveau : enchaînez les titres sans omettre de palier.`,
+          msgId: "heading-order-skip",
+          params: { level, prev, expected: prev + 1 },
         });
       }
       prev = level;
@@ -101,8 +101,7 @@ const h1Missing: Rule = {
       {
         criteriaId: "1.3.1",
         el: anchor,
-        message: `Aucun <h1> dans la page — le titre principal de niveau 1 est manquant.`,
-        remediation: `Ajoutez un <h1> décrivant le contenu principal de la page.`,
+        msgId: "h1-missing",
       },
     ];
   },
@@ -119,8 +118,8 @@ const h1Multiple: Rule = {
     return h1s.slice(1).map((el) => ({
       criteriaId: "1.3.1",
       el,
-      message: `Plusieurs <h1> dans la page (${h1s.length}) — un seul titre de niveau 1 est recommandé.`,
-      remediation: `Conservez un unique <h1> et hiérarchisez le reste avec h2…h6.`,
+      msgId: "h1-multiple",
+      params: { count: h1s.length },
     }));
   },
 };
@@ -144,8 +143,8 @@ const listStructure: Rule = {
           out.push({
             criteriaId: "1.3.1",
             el: bad,
-            message: `<${bad.tag}> enfant direct de <${el.tag}> — une liste ne doit contenir que des <li>.`,
-            remediation: `Enveloppez le contenu dans des <li>, ou utilisez un autre élément que <${el.tag}>.`,
+            msgId: "list-structure.invalid-child",
+            params: { childTag: bad.tag, parentTag: el.tag },
           });
         }
       } else if (el.tag === "li") {
@@ -158,8 +157,8 @@ const listStructure: Rule = {
         out.push({
           criteriaId: "1.3.1",
           el,
-          message: `<li> hors d'une liste (<${parent.tag}> parent) — structure de liste invalide.`,
-          remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`,
+          msgId: "list-structure.li-outside-list",
+          params: { parentTag: parent.tag },
         });
       }
     }
@@ -180,8 +179,8 @@ const emptyHeading: Rule = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `Titre <${el.tag}> de niveau ${level} vide — un titre sans intitulé désoriente la navigation au clavier/lecteur d'écran.`,
-        remediation: `Donnez un intitulé textuel au titre, ou retirez-le s'il est purement décoratif.`,
+        msgId: "empty-heading",
+        params: { tag: el.tag, level },
       });
     }
     return out;

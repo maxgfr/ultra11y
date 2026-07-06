@@ -48,8 +48,8 @@ const crossIconOnlyUnnamed: CrossRule = {
       findings.push({
         criteriaId: "4.1.2",
         el,
-        message: `<${el.tag}> rend un contrôle à icône seule mais est utilisé sans nom accessible (aucun aria-label/title/texte passé).`,
-        remediation: `Passez un nom au composant à cet endroit, p. ex. <${el.tag} aria-label="…" /> (le composant ${def.name} rend une icône sans texte).`,
+        msgId: "cross-icon-only-unnamed",
+        params: { tag: el.tag, defName: def.name },
         related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "définition du composant à icône seule" },
       });
     }
@@ -142,8 +142,8 @@ const crossPropDrilledNameLost: CrossRule = {
       findings.push({
         criteriaId: "4.1.2",
         el,
-        message: `<${el.tag} ${passed}="…"> mais ${def.name} ne transmet pas ce nom au contrôle rendu — le nom accessible est perdu.`,
-        remediation: `Dans ${def.name}, transmettez ${passed} (ou {...props}) au <button>/<a> rendu, ou nommez le contrôle directement.`,
+        msgId: "cross-prop-drilled-name-lost",
+        params: { tag: el.tag, passed, defName: def.name },
         related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "contrôle qui ne reçoit pas le nom passé" },
       });
     }

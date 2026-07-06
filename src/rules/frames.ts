@@ -18,8 +18,7 @@ const iframeTitleMissing: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el: el as El,
-        message: `<iframe> sans attribut title — le cadre n'a pas de titre.`,
-        remediation: `Ajoutez un title décrivant le contenu du cadre, ex. title="Carte de localisation".`,
+        msgId: "iframe-title-missing",
       });
     }
     return out;

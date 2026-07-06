@@ -29,8 +29,8 @@ const metaViewportZoomBlock: Rule = {
       out.push({
         criteriaId: "1.4.4",
         el,
-        message: `<meta viewport> bloque le zoom (${userScalable === "no" || userScalable === "0" ? "user-scalable=no" : `maximum-scale=${maxScale}`}) — agrandissement à 200% empêché.`,
-        remediation: `Retirez user-scalable=no et maximum-scale (ou maximum-scale ≥ 2) du content du viewport.`,
+        msgId: "meta-viewport-zoom-block",
+        params: { blockedBy: userScalable === "no" || userScalable === "0" ? "user-scalable" : "maximum-scale", maxScale: maxScale ?? "" },
       });
     }
     return out;

@@ -19,8 +19,8 @@ const metaRefreshRedirect: Rule = {
       out.push({
         criteriaId: "2.2.1",
         el,
-        message: `<meta http-equiv="refresh" content="${content}"> impose un délai de ${seconds}s — rafraîchissement/redirection temporisé non contrôlable.`,
-        remediation: `Supprimez le meta refresh temporisé, ou laissez l'utilisateur contrôler/désactiver/prolonger le délai.`,
+        msgId: "meta-refresh-redirect",
+        params: { content, seconds },
       });
     }
     return out;
@@ -38,8 +38,8 @@ const blinkMarquee: Rule = {
       out.push({
         criteriaId: "2.2.2",
         el,
-        message: `<${el.tag}> — contenu en mouvement/clignotant automatique sans mécanisme de pause.`,
-        remediation: `Remplacez <${el.tag}> par du contenu statique, ou fournissez un contrôle pause/stop/masquer.`,
+        msgId: "blink-marquee",
+        params: { tag: el.tag },
       });
     }
     return out;

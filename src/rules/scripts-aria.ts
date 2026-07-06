@@ -142,8 +142,8 @@ const invalidAriaRole: Rule = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `Rôle ARIA invalide : "${bad.join(" ")}" n'est pas un rôle WAI-ARIA valide.`,
-          remediation: `Utilisez un rôle ARIA valide ou un élément HTML natif équivalent.`,
+          msgId: "invalid-aria-role",
+          params: { roles: bad.join(" ") },
         });
       }
     }
@@ -175,8 +175,8 @@ const ariaRefMissingId: Rule = {
           out.push({
             criteriaId: "4.1.2",
             el,
-            message: `${a} référence un id inexistant : ${missing.map((m) => `#${m}`).join(", ")}.`,
-            remediation: `Corrigez la référence ou ajoutez l'élément cible avec l'id attendu.`,
+            msgId: "aria-ref-missing-id",
+            params: { attr: a, ids: missing.map((m) => `#${m}`).join(", ") },
           });
         }
       }
@@ -222,8 +222,8 @@ const redundantAria: Rule = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `role="${role}" est redondant : <${el.tag}> a déjà ce rôle implicite.`,
-          remediation: `Retirez l'attribut role redondant et laissez la sémantique native.`,
+          msgId: "redundant-aria",
+          params: { role, tag: el.tag },
         });
       }
     }
@@ -250,8 +250,8 @@ const clickableNoninteractive: Rule = {
       out.push({
         criteriaId: noKeyboard ? "2.1.1" : "4.1.2",
         el,
-        message: `<${el.tag}> avec onClick mais ${noKeyboard ? "non focalisable (tabindex absent)" : "sans rôle interactif"} — contrôle non accessible au clavier/AT.`,
-        remediation: `Utilisez <button>/<a> natif, ou ajoutez role + tabindex="0" + gestion clavier (Enter/Espace).`,
+        msgId: "clickable-noninteractive",
+        params: { tag: el.tag, focusIssue: noKeyboard ? "no-tabindex" : "no-role" },
       });
     }
     return out;
@@ -291,8 +291,8 @@ const ariaRequiredChildren: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `role="${role}" sans enfant requis (${req.join("/")}) — structure ARIA incomplète.`,
-        remediation: `Ajoutez les éléments enfants au rôle approprié, ou utilisez les éléments HTML natifs.`,
+        msgId: "aria-required-children",
+        params: { role, req: req.join("/") },
       });
     }
     return out;
@@ -312,8 +312,7 @@ const ariaHiddenFocusable: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `aria-hidden="true" sur (ou contenant) un élément focalisable — piège pour les technologies d'assistance.`,
-        remediation: `Retirez aria-hidden, ou rendez l'élément non focalisable (tabindex="-1", disabled).`,
+        msgId: "aria-hidden-focusable",
       });
     }
     return out;
@@ -332,8 +331,8 @@ const nestedInteractive: Rule = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `Élément interactif <${el.tag}> imbriqué dans un autre élément interactif — non restitué correctement.`,
-        remediation: `Ne pas imbriquer des contrôles interactifs (lien/bouton) ; mettez-les côte à côte.`,
+        msgId: "nested-interactive",
+        params: { tag: el.tag },
       });
     }
     return out;
@@ -369,8 +368,8 @@ const liveRegionConflict: Rule = {
         out.push({
           criteriaId: "4.1.3",
           el,
-          message: `aria-live="${liveRaw}" invalide — seules les valeurs off, polite, assertive sont restituées.`,
-          remediation: `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignorée.`,
+          msgId: "live-region-conflict.invalid-value",
+          params: { value: liveRaw },
         });
         continue;
       }
@@ -382,11 +381,8 @@ const liveRegionConflict: Rule = {
           criteriaId: "4.1.3",
           el,
           severity: want === "assertive" ? "majeur" : "mineur",
-          message: `role="${role}" implique aria-live="${want}" mais aria-live="${live}" — message de statut restitué de façon incohérente.`,
-          remediation:
-            want === "assertive"
-              ? `Laissez role="${role}" gérer la restitution (retirez aria-live) ou utilisez aria-live="assertive".`
-              : `Alignez aria-live sur "${want}", cohérent avec role="${role}", ou retirez-le.`,
+          msgId: "live-region-conflict.mismatch",
+          params: { role, want, live },
         });
       }
     }
@@ -422,8 +418,7 @@ const statusMessageNotAssertive: Rule = {
       out.push({
         criteriaId: "4.1.3",
         el,
-        message: `Conteneur d'erreur/alerte en aria-live="polite" — un message d'erreur doit être restitué de façon assertive.`,
-        remediation: `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annoncé immédiatement.`,
+        msgId: "status-message-not-assertive",
       });
     }
     return out;

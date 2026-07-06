@@ -3,6 +3,7 @@
 import type { AuditResult, Lang, Severity } from "./types.js";
 import type { CaptureCoverage } from "./capture.js";
 import { guidelineTitle } from "./wcag.js";
+import { resolveMessage } from "./messages.js";
 
 type Key =
   | "summaryTitle"
@@ -71,7 +72,7 @@ export function auditSummary(r: AuditResult, lang: Lang): string {
   } else {
     lines.push(`${t(lang, "findingsTitle")} (${r.findings.length}) :`);
     for (const f of r.findings.slice(0, 20)) {
-      lines.push(`  ${ICON[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${f.message}`);
+      lines.push(`  ${ICON[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${resolveMessage(f, lang)}`);
     }
     if (r.findings.length > 20) lines.push(`  … (+${r.findings.length - 20})`);
   }

@@ -10,6 +10,7 @@
 import type { AuditResult, Lang, Severity } from "./types.js";
 import { prdUnits, type PrdUnit, type PrdFile } from "./prd.js";
 import { getSC, guidelineTitle, principleTitle, techniques as scTechniques } from "./wcag.js";
+import { resolveMessage, resolveRemediation } from "./messages.js";
 import { type StandardId, isCore, loadPack, standardLabel, themeName, vocabularyFor } from "./standards/index.js";
 
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
@@ -91,15 +92,15 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
     if (unit.refs.length) out.push(`**WCAG** : ${unit.refs.map((sc) => `${sc}${scLevel(sc)}`).join(" · ")}`);
   }
 
-  const messages = uniq(unit.findings.map((f) => f.message));
-  const fixes = uniq(unit.findings.map((f) => f.remediation));
+  const messages = uniq(unit.findings.map((f) => resolveMessage(f, lang)));
+  const fixes = uniq(unit.findings.map((f) => resolveRemediation(f, lang)));
   out.push("");
   out.push(`**${s.finding} (${v.nonConformant})** : ${unit.findings.length} ${s.occ} — ${messages.join(" ; ")}`);
   if (fixes.length) out.push(`**${s.expected} (${v.conformant})** : ${fixes.join(" ; ")}`);
   out.push(`**${s.verification}** : ${s.verify}`, "");
 
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${f.message}`);
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - ↳ ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");

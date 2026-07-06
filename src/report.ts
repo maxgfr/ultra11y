@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity, Status } from "./types.js";
 import { guidelineTitle, scTitle } from "./wcag.js";
+import { resolveMessage, resolveRemediation } from "./messages.js";
 import { type StandardId, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
@@ -114,8 +115,8 @@ interface Group {
   rows: Row[];
 }
 
-function ncEntry(label: string, f: Finding, s: (typeof L)[Lang]): string {
-  const base = `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${f.message}\n  - _${s.fix} :_ ${f.remediation}`;
+function ncEntry(label: string, f: Finding, s: (typeof L)[Lang], lang: Lang): string {
+  const base = `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${resolveMessage(f, lang)}\n  - _${s.fix} :_ ${resolveRemediation(f, lang)}`;
   if (!f.origin) return base;
   const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
   const srcFile = f.origin.sourceFile ?? f.origin.capture;
@@ -180,7 +181,7 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
       const group = sorted.filter((x) => x.f.severity === sev);
       if (!group.length) continue;
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const { f, label } of group) out.push(ncEntry(label, f, s));
+      for (const { f, label } of group) out.push(ncEntry(label, f, s, lang));
       out.push("");
     }
   }

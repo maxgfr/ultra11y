@@ -7,6 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity } from "./types.js";
 import { getSC, guidelineTitle, scTitle, techniques as scTechniques } from "./wcag.js";
+import { resolveMessage, resolveRemediation } from "./messages.js";
 import { type StandardId, isCore, loadPack, derivePackResults, standardLabel, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
 import { guidanceForWcag, guidanceForCriterion } from "./guidance/index.js";
 import type { GuidanceEntry } from "./guidance/types.js";
@@ -182,14 +183,14 @@ function unitBlock(unit: PrdUnit, lang: Lang, heading: string, standard: Standar
   const out: string[] = [];
   const refs = unit.refs.length ? `  ·  WCAG ${unit.refs.join(", ")}` : "";
   out.push(`${heading} ${ICON[unit.severity]} ${unit.label}${refs}`, "");
-  const fixes = [...new Set(unit.findings.map((f) => f.remediation))];
+  const fixes = [...new Set(unit.findings.map((f) => resolveRemediation(f, lang)))];
   for (const fx of fixes) out.push(`- _${s.fix} :_ ${fx}`);
   const { bucket, points } = effortOf(unit);
   out.push(`- _${s.effort} :_ ${bucket} (${points} pts)`, "");
   out.push(...guidanceExampleBlock(guidanceFor(unit, standard), lang));
   out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${f.message}`);
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - ↳ ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
@@ -302,7 +303,7 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
       if (techs.length) out.push("", `_${s.techniques} : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", …" : ""}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
-        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${f.message}`);
+        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
         if (f.related) out.push(`  - ↳ ${f.related.note} : \`${f.related.file}:${f.related.line}\``);
       }
       out.push("");

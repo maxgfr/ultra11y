@@ -8,6 +8,7 @@ import type { Lang, Severity } from "./types.js";
 import type { PrdUnit } from "./prd.js";
 import { type StandardId, isCore, loadPack } from "./standards/index.js";
 import { renderAuditorUnit } from "./auditor.js";
+import { resolveMessage, resolveRemediation } from "./messages.js";
 
 // Issue-body shape: `audit` (DEFAULT) = the auditor conformance block; `remediation` = the
 // legacy dev body (WCAG refs / Fix / Occurrences). Mirrors `prd --format`.
@@ -67,10 +68,10 @@ export function issueBody(unit: PrdUnit, lang: Lang, standard: StandardId = "wca
   const t = lang === "fr" ? { fix: "Correction", occ: "Occurrence(s)", def: "↳ définition" } : { fix: "Fix", occ: "Occurrence(s)", def: "↳ definition" };
   const lines: string[] = [];
   if (unit.refs.length) lines.push(`**WCAG** : ${unit.refs.join(", ")}`, "");
-  for (const fx of [...new Set(unit.findings.map((f) => f.remediation))]) lines.push(`**${t.fix}** : ${fx}`);
+  for (const fx of [...new Set(unit.findings.map((f) => resolveRemediation(f, lang)))]) lines.push(`**${t.fix}** : ${fx}`);
   lines.push("", `**${t.occ} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
-    lines.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${f.message}`);
+    lines.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
     if (f.related) lines.push(`  - ${t.def} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   return lines.join("\n");

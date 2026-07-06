@@ -70,3 +70,20 @@ describe("runAudit — stdin", () => {
     expect(r.findings.some((f) => f.ruleId === "img-alt-missing")).toBe(true);
   });
 });
+
+describe("runAudit — scope.langs (repo language detection)", () => {
+  it("is present and holds the primary subtag when <html lang> is seen (fr-FR → fr)", () => {
+    const r = runAudit({ inputs: ["-"], stdin: `<!doctype html><html lang="fr-FR"><head><title>t</title></head><body>x</body></html>` });
+    expect(r.scope.langs).toEqual(["fr"]);
+  });
+
+  it("is absent when no <html lang> is seen", () => {
+    const r = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
+    expect(r.scope.langs).toBeUndefined();
+  });
+
+  it("is sorted by descending frequency across multiple documents", () => {
+    const r = runAudit({ inputs: [`${FIX}conforming/good.html`, `${FIX}i18n/en-page.html`, `${FIX}i18n/en-page2.html`] });
+    expect(r.scope.langs).toEqual(["en", "fr"]);
+  });
+});

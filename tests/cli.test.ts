@@ -166,6 +166,58 @@ describe("main — command wiring", () => {
   });
 });
 
+describe("resolveLang — --lang auto default (conversation-first, repo/standard fallback)", () => {
+  it('report --in without --lang renders French for an audit of a repo declaring <html lang="fr">', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-lang-fr-"));
+    try {
+      await run(["audit", `${FIX}conforming/good.html`, "--out", tmp, "--json"]);
+      const r = await run(["report", "--in", join(tmp, "audit-latest.json"), "--out", tmp]);
+      expect(r.code).toBe(0);
+      expect(readFileSync(r.out.trim(), "utf8")).toContain("Rapport d'audit d'accessibilité");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("--lang en explicit wins over a French-repo audit", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-lang-en-"));
+    try {
+      await run(["audit", `${FIX}conforming/good.html`, "--out", tmp, "--json"]);
+      const r = await run(["report", "--in", join(tmp, "audit-latest.json"), "--out", tmp, "--lang", "en"]);
+      expect(r.code).toBe(0);
+      expect(readFileSync(r.out.trim(), "utf8")).toContain("Accessibility audit report");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("--standard rgaa without a repo-language signal falls back to the pack's defaultLocale (fr)", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-lang-rgaa-"));
+    try {
+      // bad.html has no <html lang>, so scope.langs is absent — only the rgaa pack's own
+      // defaultLocale ("fr") can resolve the output language.
+      await run(["audit", `${FIX}non-conforming/bad.html`, "--out", tmp, "--json"]);
+      const r = await run(["report", "--in", join(tmp, "audit-latest.json"), "--out", tmp, "--standard", "rgaa"]);
+      expect(r.code).toBe(0);
+      expect(readFileSync(r.out.trim(), "utf8")).toContain("Rapport d'audit d'accessibilité");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("nothing (no --lang, no repo signal, core standard) resolves to English", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-lang-default-"));
+    try {
+      await run(["audit", `${FIX}non-conforming/bad.html`, "--out", tmp, "--json"]); // bad.html has no <html lang>
+      const r = await run(["report", "--in", join(tmp, "audit-latest.json"), "--out", tmp]);
+      expect(r.code).toBe(0);
+      expect(readFileSync(r.out.trim(), "utf8")).toContain("Accessibility audit report");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("init — --baseline is a boolean selector, not a value flag", () => {
   it("init --baseline does not swallow the following token", () => {
     const p = parseArgs(["init", "--baseline", "--hook"]);

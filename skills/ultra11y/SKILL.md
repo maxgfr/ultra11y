@@ -37,6 +37,10 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 >    zero-touch **capture** harvester (`render --setup`) so every component your tests render
 >    is serialized to `.ultra11y/captures` and audited, with `audit --require-captures` gating
 >    the blind spots. See `references/automation.md` / `rendered.md`.
+> 5. **Language**: ALWAYS pass `--lang` matching the language of your conversation with
+>    the user; ask the user when ambiguous. Without the flag the CLI auto-detects (repo
+>    `<html lang>` → the active standard's default locale → English) — a scripted/CI
+>    fallback, not a substitute for passing `--lang` yourself.
 
 ## Choose by situation
 
@@ -138,7 +142,8 @@ node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx --out audits   # persist au
 node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # dynamic tier (auto runtime)
 node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd packages/app --storage-state .auth/user.json  # no-Docker axe + probes, authed
 ```
-Machine output everywhere with `--json`. Reports default to English; `--lang fr` available.
+Machine output everywhere with `--json`. `--lang` follows the conversation (pass it
+explicitly); unset it auto-resolves repo `<html lang>` → standard's default locale → English.
 
 ## The loop: audit → render → judge → fix → re-audit
 

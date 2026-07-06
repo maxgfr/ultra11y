@@ -189,6 +189,11 @@ export interface AuditResult {
     // spots. Keys are "posix/path#Component". `unattributed` = capture files with no
     // resolvable source (no provenance) — audited, but not credited to a component.
     captureCoverage?: { total: number; covered: string[]; blindSpots: string[]; unattributed: number };
+    // Set when at least one `<html lang>`/`xml:lang` was seen: the repo's declared
+    // language(s) (primary BCP-47 subtag, e.g. "fr-FR" → "fr"), sorted by descending
+    // frequency. Used as the CLI's `--lang auto` repo-detection signal (see
+    // `resolveLang` in src/cli.ts) — never invented when no document declares one.
+    langs?: string[];
   };
   guidelines: GuidelineTally[];
   criteria: CriterionResult[];

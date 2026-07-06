@@ -30,7 +30,7 @@ import { runFix, fixSummary } from "./fix.js";
 import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } from "./baseline.js";
 import { repoRoot, writeHook, writeCi } from "./init.js";
 import { auditSummary, captureCoverageSummary } from "./output.js";
-import { resolveStandard, type StandardId } from "./standards/index.js";
+import { resolveStandard, getPack, type StandardId } from "./standards/index.js";
 import { loadRuntimeStandards } from "./config.js";
 import { runPackCheck, packScaffold } from "./pack.js";
 import { readStdin, readText } from "./util.js";
@@ -43,16 +43,16 @@ non-conformities. RGAA (France) and other country standards are pluggable packs
 (--standard <pack>); WCAG is the worldwide core.
 
 Usage:
-  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang en|fr] [--no-default-excludes]
+  ultra11y audit    <globs… | -> [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang auto|en|fr] [--no-default-excludes]
   ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
-  ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang en|fr]
-  ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang en|fr]
-  ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang en|fr]
+  ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang auto|en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
+  ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
+  ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
-  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang en|fr]
+  ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
   ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
@@ -62,9 +62,10 @@ Usage:
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
              and emit an AuditResult JSON keyed by WCAG 2.2 success criteria
-             (consumed by 'report'). Without --json, prints an English summary. The
-             engine decides the machine-detectable criteria; you supply the judgment
-             + needs-rendering ones.
+             (consumed by 'report'). Without --json, prints a summary in --lang
+             (default auto: repo <html lang> → the active standard's default locale
+             → English). The engine decides the machine-detectable criteria; you
+             supply the judgment + needs-rendering ones.
   report     Render an AuditResult into a dated WCAG 2.2 AA compliance report
              (audits/wcag-YYYY-MM-DD.md): metadata, per-guideline synthesis table,
              non-conformities by priority, conforming + not-applicable lists.
@@ -196,7 +197,9 @@ Options:
                      authenticated pages (e.g. test-results/.auth/user.json)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
-  --lang en|fr       output language                                     (default: en)
+  --lang auto|en|fr  output language                (default: auto — conversation/repo
+                     language: an AI caller should pass --lang explicitly to match the
+                     chat; unset resolves repo <html lang> → standard's default locale → en)
   --json             machine-readable output
   --quiet            check: exit code only, no output
   -h, --help         show this help
@@ -337,8 +340,20 @@ export function parseArgs(argv: string[]): ParsedArgs {
   return { command: command ?? "", positionals, flags, unknown };
 }
 
-function langOf(flags: Record<string, string | boolean>): Lang {
-  return flags.lang === "fr" ? "fr" : "en";
+/** Resolve the output language. `--lang fr|en` explicit always wins. Otherwise
+ *  (`auto` or the flag absent): the repo's detected language wins if it is fr/en
+ *  (the majority entry of an audit's `scope.langs`, set by `runAudit`), else the
+ *  active standard pack's `defaultLocale` if fr/en (the WCAG core has none, so
+ *  it is skipped), else `en`. The CLI's conversational caller (an AI agent) is
+ *  expected to pass `--lang` explicitly matching the conversation language —
+ *  this fallback chain only covers a bare/scripted invocation. */
+function resolveLang(flags: Record<string, string | boolean>, ctx: { audit?: AuditResult; standard?: StandardId } = {}): Lang {
+  if (flags.lang === "fr" || flags.lang === "en") return flags.lang;
+  const top = ctx.audit?.scope.langs?.[0];
+  if (top === "fr" || top === "en") return top;
+  const locale = ctx.standard ? getPack(ctx.standard)?.defaultLocale : undefined;
+  if (locale === "fr" || locale === "en") return locale;
+  return "en";
 }
 
 function asList(v: string | boolean | undefined): string[] | undefined {
@@ -371,7 +386,10 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   const stdin = inputs.includes("-") ? await readStdin() : undefined;
   const since = typeof p.flags.since === "string" ? (p.flags.since as string) : undefined;
   const dedupFlag = p.flags.dedup;
-  const lang = langOf(p.flags);
+  // Pre-audit: no scope.langs yet (audit itself doesn't take --standard), so this is
+  // just the explicit-flag-or-English fallback — used only by messages emitted before
+  // runAudit returns (below). Recomputed with the audit's own detection right after.
+  let lang = resolveLang(p.flags, {});
 
   // Rendered captures: ingest the .ultra11y/captures dir (or --captures <dir>) alongside
   // the source so the audit covers the REAL DOM component libraries/SFCs emit. In
@@ -411,6 +429,9 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     noDefaultExcludes: p.flags["no-default-excludes"] === true,
     onWarn: (m) => console.error(m),
   });
+  // Re-resolve with the audit's own repo-language detection (scope.langs) now that
+  // it's available — every message from here on uses this, not the pre-audit fallback.
+  lang = resolveLang(p.flags, { audit: result });
 
   // Only persist audit-latest.json when an output dir is explicitly requested. A plain
   // `audit` streams to stdout (--json / text summary) and must NOT litter the CWD with an
@@ -525,7 +546,7 @@ function cmdCriteria(p: ParsedArgs): number {
     theme: typeof themeFlag === "string" && themeFlag ? Number(themeFlag) : undefined,
     list: p.flags.list === true,
     json: p.flags.json === true,
-    lang: langOf(p.flags),
+    lang: resolveLang(p.flags, { standard }),
     standard,
   });
 }
@@ -551,7 +572,7 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
     return 2;
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
-  const path = writeReport(result, { out, lang: langOf(p.flags), standard });
+  const path = writeReport(result, { out, lang: resolveLang(p.flags, { audit: result, standard }), standard });
   if (p.flags.json)
     console.log(
       JSON.stringify(
@@ -585,7 +606,7 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
     return 2;
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
-  const lang = langOf(p.flags);
+  const lang = resolveLang(p.flags, { audit: result, standard });
   const split = p.flags.split === "criterion" ? "criterion" : undefined;
   const format: PrdFormat = p.flags.format === "doc" ? "doc" : p.flags.format === "remediation" ? "remediation" : "audit";
   const paths = writePrd(result, { out, lang, split, format, standard });
@@ -621,7 +642,7 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
 
 function cmdRender(p: ParsedArgs): number {
   const root = p.positionals[0] ?? ".";
-  const lang = langOf(p.flags);
+  const lang = resolveLang(p.flags, {}); // render has no --standard and no audit in hand
   if (p.flags.scaffold === true) {
     const out = typeof p.flags.out === "string" && p.flags.out ? p.flags.out : "ultra11y-render.tsx";
     try {
@@ -787,7 +808,7 @@ function cmdCheck(p: ParsedArgs): number {
   }
   const standard = stdOf(p, "check");
   if (standard === null) return 2;
-  const lang = langOf(p.flags);
+  const lang = resolveLang(p.flags, { standard });
   const res = checkReport(readText(rep), standard, lang);
   if (p.flags.json) {
     console.log(JSON.stringify(res, null, 2));
@@ -804,7 +825,8 @@ function cmdCheck(p: ParsedArgs): number {
 }
 
 function cmdVerify(p: ParsedArgs): number {
-  const lang = langOf(p.flags);
+  // --apply has no --standard/audit in hand — resolved below (post-standard) for the --report path.
+  let lang = resolveLang(p.flags, {});
   const apply = p.flags.apply;
   if (typeof apply === "string" && apply) {
     // Read and parse separately so a missing file is not mislabeled as bad JSON.
@@ -846,6 +868,7 @@ function cmdVerify(p: ParsedArgs): number {
   }
   const standard = stdOf(p, "verify");
   if (standard === null) return 2;
+  lang = resolveLang(p.flags, { standard });
   let max = VERIFY_MAX;
   const mvFlag = p.flags["max-verify"];
   if (typeof mvFlag === "string" && mvFlag !== "") {
@@ -917,12 +940,15 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
     }
   }
 
+  // `fix` runs its own rule pass (no AuditResult/scope.langs is built internally — see
+  // src/fix.ts), so there is no repo-language signal to feed resolveLang beyond the flag.
+  const fixLang = resolveLang(p.flags, {});
   if (p.flags.json) console.log(JSON.stringify(p.flags.iterate === true ? { ...result, rounds, totalWritten } : result, null, 2));
   else {
-    console.log(fixSummary(result, langOf(p.flags), write));
+    console.log(fixSummary(result, fixLang, write));
     if (write && p.flags.iterate === true)
       console.log(
-        langOf(p.flags) === "fr"
+        fixLang === "fr"
           ? `\nItéré sur ${rounds} passe(s) jusqu'à stabilité — ${totalWritten} fichier(s) écrit(s) au total.`
           : `\nIterated over ${rounds} round(s) to a fixpoint — ${totalWritten} file(s) written in total.`,
       );
@@ -931,7 +957,7 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
 }
 
 async function cmdScan(p: ParsedArgs): Promise<number> {
-  const lang = langOf(p.flags);
+  const lang = resolveLang(p.flags, {}); // scan has no --standard; the merged --in audit isn't loaded yet at this point
   if (p.flags.clean) {
     const r = cleanDynamic();
     console.log(
@@ -1047,7 +1073,7 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
 
 function cmdPack(p: ParsedArgs): number {
   const action = p.positionals[0];
-  const lang = langOf(p.flags);
+  const lang = resolveLang(p.flags, {}); // pack has no --standard (it validates a pack, not runs against one)
   if (action === "scaffold") {
     console.log(packScaffold());
     return 0;

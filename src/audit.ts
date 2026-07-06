@@ -8,7 +8,7 @@ import type { AuditResult, CriterionResult, Finding, ResidualRisk, Status, Guide
 import { VERSION, SCHEMA_VERSION } from "./types.js";
 import { allSC, allGuidelines } from "./wcag.js";
 import { parseSource } from "./parse/source.js";
-import type { Doc, CaptureProvenance } from "./parse/html.js";
+import { attr, elementsByTag, type Doc, type CaptureProvenance } from "./parse/html.js";
 import { computeCaptureCoverage, enrichCaptureOrigins, readCaptureDir } from "./capture.js";
 import { isFullDocument } from "./rules/rule.js";
 import { runRules } from "./rules/registry.js";
@@ -74,6 +74,7 @@ interface Accum {
   sfcFiles: number; // .vue/.svelte/.astro source templates audited (verdicts preliminary)
   sfcExts: Set<string>; // which SFC extensions were seen
   captures: { file: string; provenance: CaptureProvenance }[]; // rendered capture files audited
+  langCounts: Map<string, number>; // <html lang> primary subtags seen, for repo-language detection
 }
 
 // Precompute the static success criteria + their applicability predicates once.
@@ -92,7 +93,15 @@ function newAccum(): Accum {
     sfcFiles: 0,
     sfcExts: new Set(),
     captures: [],
+    langCounts: new Map(),
   };
+}
+
+// Primary subtag of an `<html lang>`/`xml:lang` value: "fr-FR" → "fr", "en" → "en".
+// Mirrors the BCP47 primary-subtag reading the html-lang-missing/lang-invalid rules use.
+function primarySubtag(lang: string): string | undefined {
+  const m = lang.trim().match(/^[a-z]{1,8}/i);
+  return m ? m[0].toLowerCase() : undefined;
 }
 
 /** Fold one parsed document into the accumulator, then let it be GC'd. When a
@@ -129,6 +138,10 @@ export function foldDoc(acc: Accum, doc: Doc, graph?: DepGraph): void {
     if (e) acc.sfcExts.add(e);
   }
   if (doc.capture) acc.captures.push({ file: doc.file, provenance: doc.capture });
+  const html = elementsByTag(doc, "html")[0];
+  const htmlLang = html ? (attr(html, "lang") ?? attr(html, "xml:lang") ?? "").trim() : "";
+  const subtag = htmlLang ? primarySubtag(htmlLang) : undefined;
+  if (subtag) acc.langCounts.set(subtag, (acc.langCounts.get(subtag) ?? 0) + 1);
   acc.fileCount++;
 }
 
@@ -204,6 +217,7 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
             },
           }
         : {}),
+      ...(acc.langCounts.size ? { langs: [...acc.langCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([lang]) => lang) } : {}),
     },
     guidelines,
     criteria,

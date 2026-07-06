@@ -47,15 +47,35 @@ describe("RGAA pack dataset integrity", () => {
     }
   });
 
-  it("every glossary anchor referenced in a (fr) title resolves in the pack glossary", () => {
+  it("every glossary anchor referenced anywhere in a criterion (title, tests, particularCases, technicalNote) resolves in the pack glossary", () => {
     const re = /\(#([a-z0-9-]+)\)/g;
+    // RGAA 5.1's technicalNote links to an in-page "descriptions techniques" section of
+    // the official DINUM criterion page (not a glossary definition) — confirmed present
+    // as-is in the upstream source (see scripts/verify-rgaa-source.mjs), so it is not a
+    // data error and is the sole tolerated exception.
+    const KNOWN_NON_GLOSSARY_ANCHORS = new Set(["5.1#table-descriptions-techniques"]);
     for (const c of rgaa.criteria) {
-      const t = c.title.fr ?? "";
-      let m: RegExpExecArray | null;
-      re.lastIndex = 0;
-      while ((m = re.exec(t))) {
-        expect(resolveGlossary("rgaa", m[1]!), `anchor #${m[1]} in ${c.id}`).toBeDefined();
+      const strings = [c.title.fr ?? "", ...Object.values(c.tests ?? {}).flat(), ...(c.particularCases ?? []), ...(c.technicalNote ?? [])];
+      for (const s of strings) {
+        let m: RegExpExecArray | null;
+        re.lastIndex = 0;
+        while ((m = re.exec(s))) {
+          const anchor = m[1]!;
+          if (KNOWN_NON_GLOSSARY_ANCHORS.has(`${c.id}#${anchor}`)) continue;
+          expect(resolveGlossary("rgaa", anchor), `anchor #${anchor} in ${c.id}`).toBeDefined();
+        }
       }
+    }
+  });
+
+  it("criteria with zero WCAG techniques are exactly {12.11, 13.9, 13.11, 13.12} (RGAA's own gap, not ours)", () => {
+    const noTechniques = new Set(rgaa.criteria.filter((c) => (c.techniques ?? []).length === 0).map((c) => c.id));
+    expect(noTechniques).toEqual(new Set(["12.11", "13.9", "13.11", "13.12"]));
+  });
+
+  it("every criterion has at least one test", () => {
+    for (const c of rgaa.criteria) {
+      expect(Object.keys(c.tests ?? {}).length, `tests of ${c.id}`).toBeGreaterThan(0);
     }
   });
 

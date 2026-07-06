@@ -29,6 +29,7 @@
     "check:build": "tsup && node scripts/copy-bundle.mjs && git diff --exit-code -- scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs && node scripts/verify-skill-bundle.mjs",
     "build:wcag": "node scripts/build-standards.mjs",
     "build:pack:rgaa": "node scripts/build-pack-rgaa.mjs",
+    "check:pack:rgaa": "node scripts/build-pack-rgaa.mjs --check",
     "build:criteria": "node scripts/ultra11y.mjs criteria --generate > skills/ultra11y/references/criteria.md",
     "demo": "node scripts/ultra11y.mjs audit tests/fixtures/non-conforming/bad.html --out /tmp/ultra11y-demo --json > /dev/null && node scripts/ultra11y.mjs report --in /tmp/ultra11y-demo/audit-latest.json --out /tmp/ultra11y-demo && node scripts/ultra11y.mjs check --report /tmp/ultra11y-demo/wcag-*.md && node scripts/ultra11y.mjs criteria --list",
     "release": "semantic-release"

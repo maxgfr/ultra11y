@@ -10,15 +10,29 @@
 //   node scripts/build-pack-rgaa.mjs            # build from the vendored source
 //   node scripts/build-pack-rgaa.mjs --offline  # alias (the source is always local)
 //   node scripts/build-pack-rgaa.mjs --fetch     # refresh the vendored source from DINUM, then build
-import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
+//   node scripts/build-pack-rgaa.mjs --check     # rebuild in memory and byte-compare vs the committed
+//                                                 # pack; no writes; exit 1 on drift (CI gate)
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(root, "src", "data", "standards");
 const VENDOR = join(root, "scripts", "vendor", "rgaa");
+const BIOME = join(root, "node_modules", ".bin", "biome");
 const BASE = "https://raw.githubusercontent.com/DISIC/accessibilite.numerique.gouv.fr/main/RGAA";
 const doFetch = process.argv.includes("--fetch");
+const doCheck = process.argv.includes("--check");
+
+// The committed pack JSON is biome-formatted (short arrays collapse onto one line —
+// see biome.json's default `--expand=auto`), not raw `JSON.stringify` output. Route
+// both the write path and the --check comparison through biome so the two can never
+// disagree over whitespace alone; `relPath` (project-relative, e.g.
+// "src/data/standards/rgaa.json") only picks the JSON formatter, no file is touched.
+function biomeFormat(text, relPath) {
+  return execFileSync(BIOME, ["format", `--stdin-file-path=${relPath}`], { input: text, encoding: "utf8" });
+}
 
 async function source(name) {
   if (doFetch) {
@@ -128,9 +142,27 @@ async function main() {
     criteria,
   };
 
+  const packText = biomeFormat(JSON.stringify(pack, null, 2) + "\n", "src/data/standards/rgaa.json");
+  const glossaryText = biomeFormat(JSON.stringify(glossary, null, 2) + "\n", "src/data/standards/rgaa.glossary.json");
+
+  if (doCheck) {
+    const packPath = join(OUT, "rgaa.json");
+    const glossaryPath = join(OUT, "rgaa.glossary.json");
+    const drift = [];
+    if (!existsSync(packPath) || readFileSync(packPath, "utf8") !== packText) drift.push("src/data/standards/rgaa.json");
+    if (!existsSync(glossaryPath) || readFileSync(glossaryPath, "utf8") !== glossaryText)
+      drift.push("src/data/standards/rgaa.glossary.json");
+    if (drift.length > 0) {
+      console.error(`build-pack-rgaa --check: OUT OF DATE vs vendored source — re-run \`pnpm run build:pack:rgaa\`: ${drift.join(", ")}`);
+      process.exit(1);
+    }
+    console.log("build-pack-rgaa --check: src/data/standards/rgaa.json and rgaa.glossary.json match the vendored source.");
+    return;
+  }
+
   mkdirSync(OUT, { recursive: true });
-  writeFileSync(join(OUT, "rgaa.json"), JSON.stringify(pack, null, 2) + "\n");
-  writeFileSync(join(OUT, "rgaa.glossary.json"), JSON.stringify(glossary, null, 2) + "\n");
+  writeFileSync(join(OUT, "rgaa.json"), packText);
+  writeFileSync(join(OUT, "rgaa.glossary.json"), glossaryText);
 
   const noWcag = criteria.filter((c) => c.wcag.length === 0).map((c) => c.id);
   console.log(`build-pack-rgaa: ${themes.length} themes, ${criteria.length} criteria → src/data/standards/rgaa.json`);

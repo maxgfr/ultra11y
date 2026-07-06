@@ -70,9 +70,12 @@ Rules of the road:
   standard that is genuinely single-language (like RGAA, fr-only) is fine.
 - **`wcag` holds bare 3-segment SC ids** (`"1.4.3"`, not `"1.4.3 Contrast (Minimum) (AA)"`).
 - A criterion may map to a WCAG SC outside the 2.2 **AA** core (e.g. an AAA SC, or 4.1.1 Parsing
-  which 2.2 removed). That's allowed — it simply won't receive an engine verdict and shows as
-  *not applicable* in the derived report. Don't invent SC ids; every id you cite that IS in the
-  core must resolve (`pnpm test` checks this).
+  which 2.2 removed) — real WCAG SCs the full WCAG universe recognizes (`src/wcag.ts`
+  `knownScStatus`), not a single hardcoded exception. That's allowed: it won't receive an engine
+  verdict, and if EVERY SC a criterion maps to is out-of-core, the derived report surfaces it
+  under the *manual* section with a dedicated "out of engine scope" justification — never a
+  silent *not applicable* (see `derivePackResults`'s `outOfScope` flag). Don't invent SC ids;
+  every id you cite that IS in the core must resolve (`pnpm test` checks this).
 - The pack does **not** carry engine rules or automatability. Those live in the WCAG core
   (`scripts/build-standards.mjs`); your pack only declares the criterion↔WCAG-SC mapping.
 - **`vocabulary` is optional** (`LocaleString`s). It sets the nouns the `prd` auditor block +

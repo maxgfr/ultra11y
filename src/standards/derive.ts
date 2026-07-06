@@ -4,6 +4,7 @@
 // Presentation-only: the canonical, gated verdict lives on the WCAG core.
 import type { AuditResult, CriterionResult, Status, Finding } from "../types.js";
 import { loadPack } from "./registry.js";
+import { knownScStatus } from "../wcag.js";
 
 export interface PackCriterionResult {
   id: string;
@@ -11,6 +12,11 @@ export interface PackCriterionResult {
   status: Status;
   findings: Finding[];
   scs: string[]; // contributing WCAG SCs
+  // Set when EVERY WCAG SC this criterion maps to is outside the engine's WCAG 2.2 AA
+  // core (out-of-core AAA, or removed) — the engine has no core SC to project a verdict
+  // from, so it's neither a genuine C/NC/NA, just permanently out of scope (status
+  // "manual" — see src/report.ts renderPackReport for the dedicated justification).
+  outOfScope?: boolean;
 }
 
 // NC dominates (a real failure anywhere fails the criterion); then a decided C; then
@@ -26,6 +32,16 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
   return pack.criteria.map((pc) => {
+    // A criterion whose WCAG mapping is ENTIRELY outside the engine's core (e.g. RGAA 8.1
+    // → only the removed 4.1.1, or a hypothetical pack criterion citing only an AAA SC)
+    // has no core SC the engine could ever audit — it's out of scope, not a silent NA.
+    const outOfScope = pc.wcag.every((sc) => {
+      const s = knownScStatus(sc);
+      return s === "out-of-core" || s === "removed";
+    });
+    if (outOfScope) {
+      return { id: pc.id, theme: pc.theme, status: "manual" as Status, findings: [], scs: pc.wcag, outOfScope: true };
+    }
     const scResults = pc.wcag.map((sc) => byScId.get(sc)).filter((x): x is CriterionResult => !!x);
     const findings = scResults.flatMap((r) => r.findings);
     const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";

@@ -123,4 +123,18 @@ describe("derivePackResults (WCAG → pack projection)", () => {
     const na = results.find((r) => r.scs.every((sc) => sc !== "3.1.1" && sc !== "1.1.1"));
     expect(na?.status).toBe("NA");
   });
+
+  it("flags a criterion whose ENTIRE WCAG mapping is out-of-core/removed as manual + outOfScope, never a silent NA", () => {
+    // RGAA 8.1 (doctype) maps ONLY to the removed 4.1.1 Parsing — the engine has no core
+    // SC to project a verdict from, so it must surface as an explicit out-of-scope manual
+    // check, not disappear as an ordinary "not applicable".
+    const results = derivePackResults(synthetic(), "rgaa");
+    const byId = new Map(results.map((r) => [r.id, r]));
+    const doctype = byId.get("8.1");
+    expect(doctype?.status).toBe("manual");
+    expect(doctype?.outOfScope).toBe(true);
+    // an ordinary in-core-but-absent-from-audit criterion stays a plain NA, no outOfScope flag
+    const na = results.find((r) => r.scs.every((sc) => sc !== "3.1.1" && sc !== "1.1.1"));
+    expect(na?.outOfScope).toBeUndefined();
+  });
 });

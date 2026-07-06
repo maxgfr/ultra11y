@@ -58,6 +58,20 @@ describe("renderPackReport (derived RGAA view)", () => {
     expect(md).toContain("## 1. Synthèse par thématique");
     expect(md).toMatch(/RGAA \d+\.\d+ —/); // pack-keyed criterion labels
   });
+
+  it("surfaces RGAA 8.1 (doctype → removed 4.1.1) in the manual section with a dedicated out-of-scope justification, never mixed with NA", () => {
+    const naSection = md.slice(md.indexOf("## 4."), md.indexOf("## 5."));
+    expect(naSection).not.toContain("RGAA 8.1");
+    const manualSection = md.slice(md.indexOf("## 5."));
+    expect(manualSection).toContain("RGAA 8.1");
+    expect(manualSection).toMatch(/RGAA 8\.1 —.*— _Hors périmètre moteur/);
+  });
+
+  it("renders the out-of-scope justification in English too", () => {
+    const en = renderPackReport(bad, loadPack("rgaa"), "en");
+    const manualSection = en.slice(en.indexOf("## 5."));
+    expect(manualSection).toMatch(/RGAA 8\.1 —.*— _Out of engine scope/);
+  });
 });
 
 describe("writeReport", () => {

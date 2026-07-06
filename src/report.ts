@@ -40,6 +40,7 @@ const L = {
     naTitle: "4. Critères non applicables (NA)",
     manualTitle: "5. Critères à évaluer manuellement (rendu / jugement)",
     manualWarn: "Ne marquez aucun de ces critères « conforme » sans vérification humaine.",
+    outOfScope: "Hors périmètre moteur — mappé sur des SC hors WCAG 2.2 AA ; vérification manuelle.",
     nothing: "Aucun.",
     dedup: "Dédup",
     canonical: "fichier(s) canonique(s) audité(s)",
@@ -81,6 +82,7 @@ const L = {
     naTitle: "4. Not-applicable criteria (NA)",
     manualTitle: "5. Criteria to assess manually (rendering / judgment)",
     manualWarn: "Do not mark any of these criteria “conforming” without a human check.",
+    outOfScope: "Out of engine scope — mapped to SCs outside WCAG 2.2 AA; manual verification.",
     nothing: "None.",
     dedup: "Dedup",
     canonical: "canonical file(s) audited",
@@ -196,7 +198,7 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   // 5. manual worklist
   out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
   const manual = rows.filter((x) => x.status === "manual");
-  out.push(manual.length ? manual.map((x) => `- ${x.label}`).join("\n") : s.nothing, "");
+  out.push(manual.length ? manual.map((x) => `- ${x.label}${x.justification ? ` — _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
 
   return out.join("\n");
 }
@@ -218,6 +220,7 @@ export function renderReport(r: AuditResult, lang: Lang = "en"): string {
 export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang = "en"): string {
   const derived = derivePackResults(r, pack.key);
   const std = `${pack.name} ${pack.baseVersion}`;
+  const s = L[lang];
   const naReason =
     lang === "fr" ? "Aucun critère de succès WCAG mappé n'est applicable dans le périmètre." : "No mapped WCAG success criterion is applicable in scope.";
   const byTheme = new Map<number, Row[]>();
@@ -228,7 +231,9 @@ export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang 
       label: `${pack.name} ${pr.id} — ${packTitle(pack, pc, lang)}`,
       status: pr.status,
       findings: pr.findings,
-      ...(pr.status === "NA" ? { justification: naReason } : {}),
+      // outOfScope criteria are "manual" (not NA) with their own dedicated justification —
+      // never mixed with the ordinary NA reason (see the manual-section justification above).
+      ...(pr.outOfScope ? { justification: s.outOfScope } : pr.status === "NA" ? { justification: naReason } : {}),
     };
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)!).push(row);
   }

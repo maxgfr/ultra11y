@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { formatSC, formatPackCriterion, runCriteria, renderCriteriaReference } from "../src/criteria.js";
 import { getSC } from "../src/wcag.js";
-import { loadPack, getCriterion as getPackCriterion } from "../src/standards/index.js";
+import { loadPack, listPacks, getCriterion as getPackCriterion } from "../src/standards/index.js";
 
 describe("formatSC (WCAG core)", () => {
   it("renders id, title, level, guideline, automatability and rules", () => {
@@ -57,5 +57,15 @@ describe("renderCriteriaReference", () => {
   });
   it("includes a row for SC 1.1.1 with its rule and RGAA cross-ref", () => {
     expect(md).toMatch(/\| 1\.1\.1 \|.*\| A \|.*\| img-alt-missing/);
+  });
+
+  it("has one table column per registered pack — never hardcoded to RGAA specifically", () => {
+    const header = /\| SC \| Title \| Level \| Automatability \| Rules \|([^\n]*)\|/.exec(md);
+    expect(header).toBeTruthy();
+    const packCols = header![1]!
+      .split("|")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    expect(packCols).toEqual(listPacks().map((p) => p.name));
   });
 });

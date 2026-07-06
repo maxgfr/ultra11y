@@ -4,8 +4,9 @@
 
 The 55 Level A + AA success criteria across the 4 principles / 13 guidelines, with each
 SC's level, the ultra11y automatability class (automatable / needs rendering / judgment),
-the engine rules that cover it, and the RGAA criteria that map to it. SC ids, titles and
-levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 © W3C.
+the engine rules that cover it, and — one column per registered standards pack — the pack
+criteria that map to it. SC ids, titles and levels are derived from the W3C source
+(https://github.com/w3c/wcag); WCAG 2.2 © W3C.
 
 ## 1.1 Text Alternatives
 

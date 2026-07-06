@@ -9,6 +9,7 @@ import {
   type StandardId,
   isCore,
   loadPack,
+  listPacks,
   packsForSc,
   getCriterion as getPackCriterion,
   listTheme as listPackTheme,
@@ -158,21 +159,23 @@ export function renderCriteriaReference(): string {
   out.push("");
   out.push("The 55 Level A + AA success criteria across the 4 principles / 13 guidelines, with each");
   out.push("SC's level, the ultra11y automatability class (automatable / needs rendering / judgment),");
-  out.push("the engine rules that cover it, and the RGAA criteria that map to it. SC ids, titles and");
-  out.push("levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 © W3C.");
+  out.push("the engine rules that cover it, and — one column per registered standards pack — the pack");
+  out.push("criteria that map to it. SC ids, titles and levels are derived from the W3C source");
+  out.push("(https://github.com/w3c/wcag); WCAG 2.2 © W3C.");
   out.push("");
+  const packs = listPacks();
   const byG = scsByGuideline();
   for (const g of allGuidelines()) {
     out.push(`## ${g.number} ${g.title}`);
     out.push("");
-    out.push("| SC | Title | Level | Automatability | Rules | RGAA |");
-    out.push("|---|---|---|---|---|---|");
+    const head = ["SC", "Title", "Level", "Automatability", "Rules", ...packs.map((p) => p.name)];
+    out.push(`| ${head.join(" | ")} |`);
+    out.push(`|${"---|".repeat(head.length)}`);
     for (const c of byG.get(g.number) ?? []) {
-      const rgaa =
-        packsForSc(c.sc)
-          .find((p) => p.key === "rgaa")
-          ?.ids.join(", ") ?? "—";
-      out.push(`| ${c.sc} | ${c.title.replace(/\|/g, "\\|")} | ${c.level} | ${c.automatability} | ${c.ruleIds.join(", ") || "—"} | ${rgaa} |`);
+      const hits = packsForSc(c.sc);
+      const packCols = packs.map((p) => hits.find((h) => h.key === p.key)?.ids.join(", ") ?? "—");
+      const row = [c.sc, c.title.replace(/\|/g, "\\|"), c.level, c.automatability, c.ruleIds.join(", ") || "—", ...packCols];
+      out.push(`| ${row.join(" | ")} |`);
     }
     out.push("");
   }

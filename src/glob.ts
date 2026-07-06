@@ -9,6 +9,16 @@ import { escapeRegExp, ext } from "./util.js";
 // .liquid/.njk…) are opt-in via `--ext` since their extensions are ambiguous.
 const DEFAULT_EXT = new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
 
+// GRAPH-ONLY extensions: plain TS/JS modules are never markup, so they never enter
+// the AUDIT allowlist above (`DEFAULT_EXT`) — but a barrel (`components/index.ts`
+// re-exporting `.tsx` components) or a plain-JS component definition is real
+// cross-file structure the dependency graph (`audit --graph`) needs to resolve
+// imports/re-exports/definitions through. Fed to `discover`'s `ext` for the graph's
+// OWN file discovery pass only (see `runAudit`'s graph branch in src/audit.ts) —
+// these files are parsed for their imports/exports and never run through the rule
+// engine themselves.
+export const GRAPH_ONLY_EXT = [".ts", ".js", ".mjs", ".cjs"];
+
 /** Normalise extensions (`twig` → `.twig`, lowercased) into a lookup set merged
  *  with the built-in defaults. */
 function extSet(extra: string[] | undefined): Set<string> {

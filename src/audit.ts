@@ -16,6 +16,7 @@ import { runCrossRules } from "./rules/cross-registry.js";
 import { buildGraphStreaming } from "./graph/build.js";
 import type { DepGraph } from "./graph/graph.js";
 import { discover } from "./discover.js";
+import { GRAPH_ONLY_EXT } from "./glob.js";
 import { readText, today } from "./util.js";
 
 export type DedupMode = "exact" | "normalized" | "off";
@@ -266,13 +267,19 @@ export function runAudit(opts: AuditInput): AuditResult {
 
   // Cross-file pass: build the dependency graph over the FULL scope (so a changed
   // file's references resolve into unchanged definitions), then run cross rules in
-  // the audit loop below. Off by default — a plain audit is byte-identical.
+  // the audit loop below. Off by default — a plain audit is byte-identical. The
+  // graph's OWN discovery always widens to GRAPH_ONLY_EXT (.ts/.js/.mjs/.cjs) on top
+  // of whatever --ext adds — a barrel/plain-JS module is never an audit target (see
+  // `files` above), but it is real cross-file structure the graph resolves through.
   let graph: DepGraph | undefined;
   if (opts.graph || opts.captureCoverage) {
-    const graphFiles =
-      opts.changed || opts.since || opts.staged
-        ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files
-        : files;
+    const graphExt = [...GRAPH_ONLY_EXT, ...(opts.ext ?? [])];
+    const graphFiles = discover(opts.inputs, {
+      include: opts.include,
+      exclude: opts.exclude,
+      ext: graphExt,
+      noDefaultExcludes: opts.noDefaultExcludes,
+    }).files;
     graph = buildGraphStreaming(graphFiles);
   }
 

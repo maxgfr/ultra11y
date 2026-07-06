@@ -159,6 +159,20 @@ function analyzeComponent(name: string, file: string, fnNode: AstNode): Componen
   return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
 }
 
+// A .vue/.svelte/.astro SFC has no top-level JS function to declare "the component"
+// the way JSX does — the file itself IS the component. Basename → PascalCase, so
+// `Comp.vue`/`my-button.svelte` register as `Comp`/`MyButton`, matching how it would
+// be imported (`import Comp from "./Comp.vue"`).
+function pascalCaseBasename(posix: string): string {
+  const base = (posix.split("/").pop() ?? posix).replace(/\.[^.]+$/, "");
+  const name = base
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((seg) => seg[0]!.toUpperCase() + seg.slice(1))
+    .join("");
+  return name || "Component";
+}
+
 function isCapitalized(name: string): boolean {
   const head = name.split(".")[0] ?? name;
   const first = head[0] ?? "";
@@ -188,7 +202,16 @@ function declComponents(decl: AstNode, file: string): ComponentDef[] {
   return out;
 }
 
-export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): FileGraphNode {
+export interface ExtractOpts {
+  // .vue/.svelte/.astro: `ast` (when supplied) is the file's <script>/frontmatter
+  // block only, parsed just for its imports/re-exports — never a component
+  // definition (SFCs don't declare themselves as a JS function). Synthesizes ONE
+  // self component def (PascalCase basename) so cross-file resolution AND capture
+  // coverage see the SFC, same as a JSX component would be seen.
+  sfc?: boolean;
+}
+
+export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string, opts: ExtractOpts = {}): FileGraphNode {
   const posix = toPosix(file);
   const imports: ImportRec[] = [];
   const components = new Map<string, ComponentDef>();
@@ -227,7 +250,35 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): F
   }
 
   const opaqueComponents = doc.opaqueComponents ?? [];
-  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+  const finish = (): FileGraphNode => {
+    if (opts.sfc) {
+      // The SFC IS the component (no self-declaring JS function to find). `hasControl:
+      // true` puts it in the capture-coverage universe unconditionally: its template is
+      // never source-analysed for a real control (that would need a Vue/Svelte/Astro
+      // template parser, out of scope here), so — like every other preliminary
+      // SFC-source verdict — it stays a claimed blind spot until a rendered capture
+      // proves otherwise, rather than silently invisible to coverage.
+      const name = pascalCaseBasename(posix);
+      if (!components.has(name)) {
+        const def: ComponentDef = {
+          name,
+          file: posix,
+          line: 1,
+          col: 1,
+          hasControl: true,
+          rendersIconOnlyControl: false,
+          acceptsName: false,
+          controlHasName: false,
+          spreadsProps: false,
+          forwardsAria: false,
+        };
+        components.set(name, def);
+        if (!components.has("default")) components.set("default", def);
+      }
+    }
+    return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+  };
+  if (!ast) return finish();
 
   const body = asNodes((asNode(ast.program) ?? ast).body);
   const register = (def: ComponentDef): void => {
@@ -255,12 +306,23 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): F
     } else if (stmt.type === "ExportNamedDeclaration") {
       const decl = asNode(stmt.declaration);
       if (decl) for (const def of declComponents(decl, posix)) register(def);
-      // export { Foo as default } / export { Foo } — alias names to existing defs.
+      const src = asNode(stmt.source);
+      const reExportSpec = src && typeof src.value === "string" ? src.value : undefined;
       for (const s of asNodes(stmt.specifiers)) {
         const localN = asNode(s.local);
         const exportedN = asNode(s.exported);
         const localName = localN && typeof localN.name === "string" ? localN.name : "";
         const exportedName = exportedN && typeof exportedN.name === "string" ? exportedN.name : "";
+        if (reExportSpec) {
+          // Barrel re-export: `export { Button } from "./Button"` (optionally aliased).
+          // Modeled as an import-like binding under the EXPORTED name — the same shape
+          // `resolveUsage` already follows for a real import — so a barrel consumer's
+          // `import { Button } from "./components"` resolves one more hop to the real
+          // definition, however deep the barrel chain (see resolveUsage's recursion).
+          if (exportedName) imports.push({ source: reExportSpec, local: exportedName, imported: localName || exportedName });
+          continue;
+        }
+        // export { Foo as default } / export { Foo } — alias names to existing defs.
         const def = components.get(localName);
         if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
       }
@@ -283,5 +345,5 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string): F
     }
   }
 
-  return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+  return finish();
 }

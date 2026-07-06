@@ -20,7 +20,7 @@ import {
 import { computeCaptureCoverage, parseCaptureProvenance, formatCaptureComment, type CaptureEntry } from "./capture.js";
 import { buildGraphStreaming } from "./graph/build.js";
 import { discover } from "./discover.js";
-import { toPosix } from "./glob.js";
+import { toPosix, GRAPH_ONLY_EXT } from "./glob.js";
 import { runCriteria, renderCriteriaReference } from "./criteria.js";
 import { checkReport } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
@@ -775,7 +775,10 @@ function cmdRender(p: ParsedArgs): number {
   if (p.flags.coverage === true) {
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : undefined;
     const capturesDir = capturesFlag ?? join(root, ".ultra11y/captures");
-    const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: asList(p.flags.ext) }).files;
+    // Widen to GRAPH_ONLY_EXT (.ts/.js/.mjs/.cjs) so a barrel/plain-JS module resolves
+    // cross-file too — same rule as audit --graph (see src/audit.ts).
+    const graphExt = [...GRAPH_ONLY_EXT, ...(asList(p.flags.ext) ?? [])];
+    const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: graphExt }).files;
     const graph = buildGraphStreaming(sourceFiles);
     const capFiles = existsSync(capturesDir) ? discover([capturesDir]).files : [];
     const entries: CaptureEntry[] = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));

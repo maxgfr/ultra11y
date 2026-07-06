@@ -28,9 +28,14 @@ export function buildGraph(nodes: FileGraphNode[], aliases: AliasMap = []): DepG
 
 /** Resolve a component used as `<localName/>` in `file` to its definition, following the
  *  import binding across files (relative or aliased), a namespace member (`<UI.Button/>`),
- *  or a local definition. */
-export function resolveUsage(graph: DepGraph, file: string, localName: string): ComponentDef | undefined {
+ *  a local definition, or a chain of barrel re-exports (`export { X } from "./x"`, modeled
+ *  as an import-like binding by extractGraphNode) — however many barrels deep. `seen`
+ *  guards against a re-export cycle (each file+name hop visited at most once). */
+export function resolveUsage(graph: DepGraph, file: string, localName: string, seen: Set<string> = new Set()): ComponentDef | undefined {
   const posix = toPosix(file);
+  const visitKey = `${posix}#${localName}`;
+  if (seen.has(visitKey)) return undefined;
+  seen.add(visitKey);
   const node = graph.nodes.get(posix);
   if (!node) return undefined;
   // Namespaced usage `<UI.Button/>` → namespace import `import * as UI` + member Button.
@@ -48,7 +53,11 @@ export function resolveUsage(graph: DepGraph, file: string, localName: string): 
     if (imp.imported === "*") return undefined; // bare namespace binding used without a member
     const target = resolveSpecifier(posix, imp.source, graph.known, graph.aliases);
     if (!target) return undefined;
-    return graph.nodes.get(target)?.components.get(imp.imported);
+    const direct = graph.nodes.get(target)?.components.get(imp.imported);
+    if (direct) return direct;
+    // The target doesn't define it directly — it may itself re-export it from
+    // elsewhere (a barrel of barrels). Follow one more hop.
+    return resolveUsage(graph, target, imp.imported, seen);
   }
   return node.components.get(localName); // locally-defined component
 }

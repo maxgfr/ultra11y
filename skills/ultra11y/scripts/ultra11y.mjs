@@ -18779,6 +18779,7 @@ async function readStdin() {
 
 // src/glob.ts
 var DEFAULT_EXT = /* @__PURE__ */ new Set([".html", ".htm", ".xhtml", ".jsx", ".tsx", ".vue", ".svelte", ".astro"]);
+var GRAPH_ONLY_EXT = [".ts", ".js", ".mjs", ".cjs"];
 function extSet(extra) {
   const set = new Set(DEFAULT_EXT);
   for (const raw of extra ?? []) {
@@ -19012,6 +19013,15 @@ function detectKind(file, forceJsx = false) {
   if (/\.(vue|svelte|astro)$/i.test(file)) return "sfc";
   return "html";
 }
+var ASTRO_FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
+function splitAstroFrontmatter(source) {
+  const m = ASTRO_FRONTMATTER_RE.exec(source);
+  if (!m) return { frontmatter: "", blanked: source };
+  const fence = m[0];
+  const frontmatter = fence.replace(/^---\r?\n/, "").replace(/\r?\n---\r?\n?$/, "");
+  const blanked = fence.replace(/[^\n\r]/g, " ") + source.slice(fence.length);
+  return { frontmatter, blanked };
+}
 function parseSource(source, file, opts = {}) {
   const kind = detectKind(file, opts.forceJsx);
   if (kind === "jsx") {
@@ -19019,7 +19029,9 @@ function parseSource(source, file, opts = {}) {
     if (ast) return jsxAstToDoc(ast, source, file);
     return parseHtml(jsxToHtml(source), file, true);
   }
-  const doc = parseHtml(source, file, false, kind === "sfc");
+  const isAstro = kind === "sfc" && /\.astro$/i.test(file);
+  const htmlSource = isAstro ? splitAstroFrontmatter(source).blanked : source;
+  const doc = parseHtml(htmlSource, file, false, kind === "sfc");
   if (kind === "html") {
     const capture = parseCaptureProvenance(source);
     if (capture) doc.capture = capture;
@@ -21653,8 +21665,11 @@ function buildGraph(nodes, aliases = []) {
   }
   return { nodes: map, known, allIds: allIds2, aliases };
 }
-function resolveUsage(graph, file, localName) {
+function resolveUsage(graph, file, localName, seen = /* @__PURE__ */ new Set()) {
   const posix = toPosix(file);
+  const visitKey = `${posix}#${localName}`;
+  if (seen.has(visitKey)) return void 0;
+  seen.add(visitKey);
   const node = graph.nodes.get(posix);
   if (!node) return void 0;
   if (localName.includes(".")) {
@@ -21671,7 +21686,9 @@ function resolveUsage(graph, file, localName) {
     if (imp.imported === "*") return void 0;
     const target = resolveSpecifier(posix, imp.source, graph.known, graph.aliases);
     if (!target) return void 0;
-    return graph.nodes.get(target)?.components.get(imp.imported);
+    const direct = graph.nodes.get(target)?.components.get(imp.imported);
+    if (direct) return direct;
+    return resolveUsage(graph, target, imp.imported, seen);
   }
   return node.components.get(localName);
 }
@@ -22000,6 +22017,11 @@ function analyzeComponent(name, file, fnNode) {
   const rendersIconOnlyControl = hasIconChild2(control) && !hasLiteralText(control) && !literalAriaName && !forwardsAria;
   return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
 }
+function pascalCaseBasename(posix) {
+  const base = (posix.split("/").pop() ?? posix).replace(/\.[^.]+$/, "");
+  const name = base.split(/[^A-Za-z0-9]+/).filter(Boolean).map((seg) => seg[0].toUpperCase() + seg.slice(1)).join("");
+  return name || "Component";
+}
 function isCapitalized(name) {
   const head = name.split(".")[0] ?? name;
   const first = head[0] ?? "";
@@ -22024,7 +22046,7 @@ function declComponents(decl, file) {
   }
   return out;
 }
-function extractGraphNode(ast, doc, file) {
+function extractGraphNode(ast, doc, file, opts = {}) {
   const posix = toPosix(file);
   const imports = [];
   const components = /* @__PURE__ */ new Map();
@@ -22055,7 +22077,29 @@ function extractGraphNode(ast, doc, file) {
     if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
   }
   const opaqueComponents = doc.opaqueComponents ?? [];
-  if (!ast) return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+  const finish = () => {
+    if (opts.sfc) {
+      const name = pascalCaseBasename(posix);
+      if (!components.has(name)) {
+        const def = {
+          name,
+          file: posix,
+          line: 1,
+          col: 1,
+          hasControl: true,
+          rendersIconOnlyControl: false,
+          acceptsName: false,
+          controlHasName: false,
+          spreadsProps: false,
+          forwardsAria: false
+        };
+        components.set(name, def);
+        if (!components.has("default")) components.set("default", def);
+      }
+    }
+    return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+  };
+  if (!ast) return finish();
   const body = asNodes((asNode(ast.program) ?? ast).body);
   const register2 = (def) => {
     if (!components.has(def.name)) components.set(def.name, def);
@@ -22081,11 +22125,17 @@ function extractGraphNode(ast, doc, file) {
     } else if (stmt.type === "ExportNamedDeclaration") {
       const decl = asNode(stmt.declaration);
       if (decl) for (const def of declComponents(decl, posix)) register2(def);
+      const src = asNode(stmt.source);
+      const reExportSpec = src && typeof src.value === "string" ? src.value : void 0;
       for (const s of asNodes(stmt.specifiers)) {
         const localN = asNode(s.local);
         const exportedN = asNode(s.exported);
         const localName = localN && typeof localN.name === "string" ? localN.name : "";
         const exportedName = exportedN && typeof exportedN.name === "string" ? exportedN.name : "";
+        if (reExportSpec) {
+          if (exportedName) imports.push({ source: reExportSpec, local: exportedName, imported: localName || exportedName });
+          continue;
+        }
         const def = components.get(localName);
         if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
       }
@@ -22107,7 +22157,7 @@ function extractGraphNode(ast, doc, file) {
       }
     }
   }
-  return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+  return finish();
 }
 
 // src/graph/tsconfig.ts
@@ -22167,6 +22217,15 @@ function readTsAliases(startDir, cwd = process.cwd()) {
 }
 
 // src/graph/build.ts
+var GRAPH_ONLY = new Set(GRAPH_ONLY_EXT);
+function emptyDoc(file, source) {
+  return { file, source, lossy: false, kind: "html", roots: [], elements: [], byId: /* @__PURE__ */ new Map(), lineStarts: [0] };
+}
+var SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/i;
+function sfcScriptSource(content, file) {
+  if (/\.astro$/i.test(file)) return splitAstroFrontmatter(content).frontmatter;
+  return SCRIPT_BLOCK_RE.exec(content)?.[1] ?? "";
+}
 function buildGraphStreaming(files) {
   const nodes = [];
   for (const file of files) {
@@ -22178,13 +22237,23 @@ function buildGraphStreaming(files) {
     }
     let ast = null;
     let doc;
-    if (detectKind(file) === "jsx") {
+    let sfc = false;
+    if (GRAPH_ONLY.has(ext(file))) {
+      ast = parseJsxAst(content);
+      doc = emptyDoc(file, content);
+    } else if (detectKind(file) === "jsx") {
       ast = parseJsxAst(content);
       doc = ast ? jsxAstToDoc(ast, content, file) : parseHtml(jsxToHtml(content), file, true);
+    } else if (detectKind(file) === "sfc") {
+      sfc = true;
+      const htmlSource = /\.astro$/i.test(file) ? splitAstroFrontmatter(content).blanked : content;
+      doc = parseHtml(htmlSource, file, false, true);
+      const scriptSrc = sfcScriptSource(content, file);
+      if (scriptSrc) ast = parseJsxAst(scriptSrc);
     } else {
       doc = parseHtml(content, file, false);
     }
-    nodes.push(extractGraphNode(ast, doc, file));
+    nodes.push(extractGraphNode(ast, doc, file, { sfc }));
   }
   const aliases = readTsAliases(files[0] ? dirname3(files[0]) : process.cwd());
   return buildGraph(nodes, aliases);
@@ -22446,7 +22515,13 @@ function runAudit(opts) {
   const useStaged = opts.staged === true && !gitUnavailable;
   let graph;
   if (opts.graph || opts.captureCoverage) {
-    const graphFiles = opts.changed || opts.since || opts.staged ? discover(opts.inputs, { include: opts.include, exclude: opts.exclude, ext: opts.ext, noDefaultExcludes: opts.noDefaultExcludes }).files : files;
+    const graphExt = [...GRAPH_ONLY_EXT, ...opts.ext ?? []];
+    const graphFiles = discover(opts.inputs, {
+      include: opts.include,
+      exclude: opts.exclude,
+      ext: graphExt,
+      noDefaultExcludes: opts.noDefaultExcludes
+    }).files;
     graph = buildGraphStreaming(graphFiles);
   }
   for (let i = 0; i < files.length; i++) {
@@ -32113,7 +32188,8 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
   if (p.flags.coverage === true) {
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
     const capturesDir = capturesFlag ?? join11(root, ".ultra11y/captures");
-    const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: asList(p.flags.ext) }).files;
+    const graphExt = [...GRAPH_ONLY_EXT, ...asList(p.flags.ext) ?? []];
+    const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: graphExt }).files;
     const graph = buildGraphStreaming(sourceFiles);
     const capFiles = existsSync8(capturesDir) ? discover([capturesDir]).files : [];
     const entries = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));

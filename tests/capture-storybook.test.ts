@@ -159,4 +159,76 @@ describe("render --storybook (attribution post-processor)", () => {
       expect(existsSync(tmp)).toBe(false);
     }
   });
+
+  it("exits 1 (honest failure) when HTML candidates exist but NONE could be attributed — a bare `storybook build` never emits per-story HTML", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const cwd = process.cwd();
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-sb3-"));
+    try {
+      const sb = join(tmp, "storybook-static");
+      mkdirSync(sb, { recursive: true });
+      // A story entry with no importPath (storyProvenance() → undefined — realistic for
+      // a hand-rolled/older index) and a candidate HTML file that can't match anything.
+      writeFileSync(
+        join(sb, "index.json"),
+        JSON.stringify({
+          v: 5,
+          entries: { "components-button--primary": { id: "components-button--primary", title: "Components/Button", name: "Primary", type: "story" } },
+        }),
+      );
+      writeFileSync(join(sb, "iframe.html"), "<html><body>shell</body></html>"); // the typical bare-build shell, not per-story HTML
+
+      process.chdir(tmp);
+      const code = await main(["render", "storybook-static", "--storybook"]);
+      expect(code).toBe(1);
+      expect(err.mock.calls.some((c) => String(c[0]).includes("@storybook/test-runner"))).toBe(true);
+      expect(existsSync(join(tmp, ".ultra11y/captures"))).toBe(false); // nothing was written
+    } finally {
+      process.chdir(cwd);
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("--json carries the same remedy when 0 attributed but candidates existed (still exit 1)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const cwd = process.cwd();
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-sb4-"));
+    try {
+      const sb = join(tmp, "storybook-static");
+      mkdirSync(sb, { recursive: true });
+      writeFileSync(join(sb, "index.json"), JSON.stringify({ v: 5, entries: { "a--b": { id: "a--b", title: "A/B", name: "B", type: "story" } } }));
+      writeFileSync(join(sb, "iframe.html"), "<html><body>shell</body></html>");
+
+      process.chdir(tmp);
+      const code = await main(["render", "storybook-static", "--storybook", "--json"]);
+      expect(code).toBe(1);
+      const out = JSON.parse(log.mock.calls[0]?.[0] as string);
+      expect(out.attributed).toBe(0);
+      expect(typeof out.remedy).toBe("string");
+      expect(out.remedy).toContain("@storybook/test-runner");
+    } finally {
+      process.chdir(cwd);
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("exits 0 with the current message when there is simply no per-story HTML at all (nothing to attribute)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const cwd = process.cwd();
+    const tmp = mkdtempSync(join(tmpdir(), "u11y-sb5-"));
+    try {
+      const sb = join(tmp, "storybook-static");
+      mkdirSync(sb, { recursive: true });
+      writeFileSync(join(sb, "index.json"), JSON.stringify({ v: 5, entries: {} }));
+      // No .html files under sb at all.
+      process.chdir(tmp);
+      expect(await main(["render", "storybook-static", "--storybook"])).toBe(0);
+    } finally {
+      process.chdir(cwd);
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

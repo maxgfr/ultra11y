@@ -61,14 +61,25 @@ simplest to most faithful:
 1. **Build output** (recommended): build the site/pages, then audit the emitted HTML with the
    static engine — it is real HTML, audited at full fidelity:
    ```
-   npx astro build   # or next build (output:'export'), vite build, storybook build…
+   npx astro build   # or next build (output:'export'), vite build…
    node scripts/ultra11y.mjs audit "dist/**/*.html"
    ```
-   For a design system, a **static Storybook build** is often simplest: each story becomes a
-   rendered page to audit.
+   **Storybook is the one exception**: a bare `storybook build` does **NOT** emit one HTML
+   file per story — `storybook-static/` is a single-page-app shell (`iframe.html`/`index.html`)
+   that renders stories client-side; auditing `storybook-static/**/*.html` sees only that shell,
+   not your components. Get REAL per-story HTML first, either via `@storybook/test-runner`
+   (renders every story in a real browser — dump/audit its output) or **portable stories**
+   (`composeStories`) rendered in your OWN test suite, where the zero-touch capture harvester
+   (`render --setup`) captures them for free. Only then does `render --storybook
+   [<storybook-static>] [--captures <html-dir>]` do anything useful: it ATTRIBUTES that
+   already-produced per-story HTML to its source component via the Storybook index — it does
+   not render anything itself. Point it at nothing but the shell and it now fails honestly
+   (exit 1, not a silent no-op) when candidate HTML existed but none could be attributed.
 2. **SSR snapshot**: `render --scaffold` writes `ultra11y-render.tsx`, a `react-dom/server`
    harness (`renderToStaticMarkup`) that imports **your** components and writes HTML into
-   `audits/rendered/`. Fill in the list, run it with your toolchain (`npx tsx
+   `audits/rendered/`. **The written file is INERT until you fill in `COMPONENTS`** — running
+   it as-is writes nothing (it self-reports `COMPONENTS is empty` and exits), and the CLI's own
+   write-time message says so. Fill in the list, run it with your toolchain (`npx tsx
    ultra11y-render.tsx`), then audit `audits/rendered`. ultra11y does not embed React — your
    project renders.
 3. **Headless browser**: `scan <url>` (Docker tier, axe-core) against the running app — the
@@ -78,7 +89,9 @@ simplest to most faithful:
 ## Choosing
 
 - Components WITH a test suite → zero-touch captures (`render --setup`), then `audit --require-captures`.
-- Components / design system (no tests) → static Storybook **or** SSR snapshot, then `audit`.
+- Components / design system (no tests) → portable stories + `@storybook/test-runner` (real
+  per-story HTML, then `render --storybook` to attribute it) **or** an SSR snapshot
+  (`render --scaffold`), then `audit`. A bare `storybook build` alone is NOT enough (see above).
 - Full pages / SSG → build output (`dist`/`out`), then `audit`.
 - Rendering criteria (contrast, focus, zoom) → `scan` (browser).
 - In all cases, do not conclude "conforming" on a library component from the source: that is

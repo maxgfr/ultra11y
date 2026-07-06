@@ -653,8 +653,8 @@ function cmdRender(p: ParsedArgs): number {
     }
     console.log(
       lang === "fr"
-        ? `Harnais SSR écrit : ${out}\nComplétez COMPONENTS, exécutez-le (ex. npx tsx ${out}), puis : node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`
-        : `SSR harness written: ${out}\nFill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`,
+        ? `Harnais SSR écrit : ${out} (INERTE tant que COMPONENTS est vide — l'exécuter tel quel ne produit aucun HTML).\nComplétez COMPONENTS, exécutez-le (ex. npx tsx ${out}), puis : node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`
+        : `SSR harness written: ${out} (INERT while COMPONENTS is empty — running it as-is produces no HTML).\nFill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`,
     );
     return 0;
   }
@@ -757,19 +757,27 @@ function cmdRender(p: ParsedArgs): number {
         skipped++;
       }
     }
-    if (p.flags.json) console.log(JSON.stringify({ attributed, skipped, stories: stories.length, outDir }, null, 2));
+    // Honest failure: HTML candidates existed (a bare `storybook build` output, e.g. the
+    // iframe/index shell) but NONE could be attributed to a story — a plain static build
+    // never emits per-story HTML on its own, so silently exiting 0 here would look like
+    // success. 0 candidates at all (nothing under htmlDir) stays exit 0 — there was
+    // simply nothing to attribute, a different situation from "tried and failed".
+    const remedy =
+      lang === "fr"
+        ? `Aucun HTML de story attribuable dans ${htmlDir}. Produisez le HTML par story (@storybook/test-runner, ou portable stories + le harvester \`render --setup\`), ou pointez --captures <dir>.`
+        : `No attributable per-story HTML in ${htmlDir}. Produce per-story HTML (@storybook/test-runner, or portable stories + the \`render --setup\` harvester), or point --captures <dir>.`;
+    const failed = attributed === 0 && htmlFiles.length > 0;
+    if (p.flags.json) console.log(JSON.stringify({ attributed, skipped, stories: stories.length, outDir, ...(failed ? { remedy } : {}) }, null, 2));
     else
       console.log(
         lang === "fr"
           ? `Storybook : ${attributed} capture(s) attribuée(s), ${skipped} ignorée(s) → ${outDir} (${stories.length} stories)`
           : `Storybook: ${attributed} capture(s) attributed, ${skipped} skipped → ${outDir} (${stories.length} stories)`,
       );
-    if (attributed === 0 && !p.flags.json)
-      console.error(
-        lang === "fr"
-          ? `Aucun HTML de story attribuable dans ${htmlDir}. Produisez le HTML par story (@storybook/test-runner, ou portable stories + le harvester \`render --setup\`), ou pointez --captures <dir>.`
-          : `No attributable per-story HTML in ${htmlDir}. Produce per-story HTML (@storybook/test-runner, or portable stories + the \`render --setup\` harvester), or point --captures <dir>.`,
-      );
+    if (failed) {
+      console.error(remedy);
+      return 1;
+    }
     return 0;
   }
   if (p.flags.coverage === true) {
@@ -1000,6 +1008,20 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     return 1;
   }
   if (storageState && !useLocal) {
+    // An EXPLICIT --runtime docker (or its --docker alias) + --storage-state is an
+    // unsupported combination, not a degrade-and-continue: the Docker tier has no
+    // mechanism to use a Playwright storageState, so silently warning and scanning
+    // unauthenticated would look like success while quietly skipping the point of
+    // the flag. --runtime auto falling back to Docker (no local Playwright resolved)
+    // keeps the old warn-and-degrade — the caller didn't ask for Docker specifically.
+    if (runtimeFlag === "docker") {
+      console.error(
+        lang === "fr"
+          ? "ultra11y scan : --storage-state n'est pas pris en charge avec --runtime docker (ou --docker) — combinaison non supportée. Utilisez --runtime local (ou --runtime auto)."
+          : "ultra11y scan: --storage-state is not supported with --runtime docker (or --docker) — unsupported combination. Use --runtime local (or --runtime auto).",
+      );
+      return 2;
+    }
     console.error(
       lang === "fr"
         ? "ultra11y scan : --storage-state n'est pris en charge qu'avec --runtime local — ignoré pour le runtime Docker."

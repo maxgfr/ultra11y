@@ -360,3 +360,22 @@ describe("verify — input validation hardening", () => {
     expect(r.code).toBe(2);
   });
 });
+
+describe("scan --storage-state + an EXPLICIT docker runtime is an unsupported combination", () => {
+  it("--runtime docker --storage-state exits 2 with a clear message (not a silent ignore)", async () => {
+    const r = await run(["scan", "http://example.com", "--runtime", "docker", "--storage-state", join(tmpdir(), "auth.json")]);
+    expect(r.code).toBe(2);
+    expect(r.err.toLowerCase()).toContain("storage-state");
+    expect(r.err.toLowerCase()).toContain("docker");
+  });
+
+  it("--docker (alias) --storage-state also exits 2", async () => {
+    const r = await run(["scan", "http://example.com", "--docker", "--storage-state", join(tmpdir(), "auth.json")]);
+    expect(r.code).toBe(2);
+  });
+
+  it("--runtime local --storage-state is unaffected by the new gate (fails later for an unrelated reason, never exit 2)", async () => {
+    const r = await run(["scan", "http://example.com", "--runtime", "local", "--storage-state", join(tmpdir(), "auth.json")]);
+    expect(r.code).not.toBe(2); // no local Playwright resolvable in this sandbox → exit 1, not the docker gate
+  });
+});

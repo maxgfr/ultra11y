@@ -32100,8 +32100,8 @@ function cmdRender(p) {
       return 1;
     }
     console.log(
-      lang === "fr" ? `Harnais SSR \xE9crit : ${out}
-Compl\xE9tez COMPONENTS, ex\xE9cutez-le (ex. npx tsx ${out}), puis : node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"` : `SSR harness written: ${out}
+      lang === "fr" ? `Harnais SSR \xE9crit : ${out} (INERTE tant que COMPONENTS est vide \u2014 l'ex\xE9cuter tel quel ne produit aucun HTML).
+Compl\xE9tez COMPONENTS, ex\xE9cutez-le (ex. npx tsx ${out}), puis : node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"` : `SSR harness written: ${out} (INERT while COMPONENTS is empty \u2014 running it as-is produces no HTML).
 Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mjs audit "audits/rendered/**/*.html"`
     );
     return 0;
@@ -32190,15 +32190,17 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
         skipped++;
       }
     }
-    if (p.flags.json) console.log(JSON.stringify({ attributed, skipped, stories: stories.length, outDir }, null, 2));
+    const remedy = lang === "fr" ? `Aucun HTML de story attribuable dans ${htmlDir}. Produisez le HTML par story (@storybook/test-runner, ou portable stories + le harvester \`render --setup\`), ou pointez --captures <dir>.` : `No attributable per-story HTML in ${htmlDir}. Produce per-story HTML (@storybook/test-runner, or portable stories + the \`render --setup\` harvester), or point --captures <dir>.`;
+    const failed = attributed === 0 && htmlFiles.length > 0;
+    if (p.flags.json) console.log(JSON.stringify({ attributed, skipped, stories: stories.length, outDir, ...failed ? { remedy } : {} }, null, 2));
     else
       console.log(
         lang === "fr" ? `Storybook : ${attributed} capture(s) attribu\xE9e(s), ${skipped} ignor\xE9e(s) \u2192 ${outDir} (${stories.length} stories)` : `Storybook: ${attributed} capture(s) attributed, ${skipped} skipped \u2192 ${outDir} (${stories.length} stories)`
       );
-    if (attributed === 0 && !p.flags.json)
-      console.error(
-        lang === "fr" ? `Aucun HTML de story attribuable dans ${htmlDir}. Produisez le HTML par story (@storybook/test-runner, ou portable stories + le harvester \`render --setup\`), ou pointez --captures <dir>.` : `No attributable per-story HTML in ${htmlDir}. Produce per-story HTML (@storybook/test-runner, or portable stories + the \`render --setup\` harvester), or point --captures <dir>.`
-      );
+    if (failed) {
+      console.error(remedy);
+      return 1;
+    }
     return 0;
   }
   if (p.flags.coverage === true) {
@@ -32388,6 +32390,12 @@ async function cmdScan(p) {
     return 1;
   }
   if (storageState && !useLocal) {
+    if (runtimeFlag === "docker") {
+      console.error(
+        lang === "fr" ? "ultra11y scan : --storage-state n'est pas pris en charge avec --runtime docker (ou --docker) \u2014 combinaison non support\xE9e. Utilisez --runtime local (ou --runtime auto)." : "ultra11y scan: --storage-state is not supported with --runtime docker (or --docker) \u2014 unsupported combination. Use --runtime local (or --runtime auto)."
+      );
+      return 2;
+    }
     console.error(
       lang === "fr" ? "ultra11y scan : --storage-state n'est pris en charge qu'avec --runtime local \u2014 ignor\xE9 pour le runtime Docker." : "ultra11y scan: --storage-state is only supported with --runtime local \u2014 ignored for the Docker runtime."
     );

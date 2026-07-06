@@ -14,6 +14,7 @@
 //   node scripts/build-standards.mjs --refresh <dir> # re-derive the vendored AA snapshot from a w3c/wcag checkout
 //   node scripts/build-standards.mjs --refresh-universe # re-fetch (network) the vendored FULL SC universe (all levels + removed 4.1.1)
 import { writeFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,8 +23,19 @@ const DATA = join(root, "src", "data");
 const VENDOR = join(root, "scripts", "vendor", "wcag-2.2-sc.json");
 const VENDOR_UNIVERSE = join(root, "scripts", "vendor", "wcag-2.2-sc-universe.json");
 const PACKS_DIR = join(DATA, "standards");
+const BIOME = join(root, "node_modules", ".bin", "biome");
 
 const VER_DIR = { 20: "2.0", 21: "2.1", 22: "2.2" };
+
+// The committed src/data/*.json datasets are biome-formatted (short arrays collapse onto
+// one line — see biome.json's default `--expand=auto`), not raw `JSON.stringify` output
+// (see scripts/build-pack-rgaa.mjs, which solves the same problem for the RGAA pack).
+// Route every write through biome so a bare rebuild is byte-stable vs the committed
+// files; `relPath` (project-relative, e.g. "src/data/wcag.json") only picks the JSON
+// formatter, no file is touched.
+function biomeFormat(text, relPath) {
+  return execFileSync(BIOME, ["format", `--stdin-file-path=${relPath}`], { input: text, encoding: "utf8" });
+}
 
 // ---------------------------------------------------------------------------
 // Refresh mode: parse a w3c/wcag checkout into the vendored SC snapshot.
@@ -302,7 +314,7 @@ function buildUniverse(shipped) {
     criteria,
   };
   mkdirSync(DATA, { recursive: true });
-  writeFileSync(join(DATA, "wcag-universe.json"), JSON.stringify(out, null, 2) + "\n");
+  writeFileSync(join(DATA, "wcag-universe.json"), biomeFormat(JSON.stringify(out, null, 2) + "\n", "src/data/wcag-universe.json"));
 
   const coreIds = new Set(criteria.filter((c) => c.status === "core-AA").map((c) => c.id));
   const shippedIds = new Set(shipped.map((c) => c.sc));
@@ -357,7 +369,7 @@ function build() {
     criteria,
   };
   mkdirSync(DATA, { recursive: true });
-  writeFileSync(join(DATA, "wcag.json"), JSON.stringify(out, null, 2) + "\n");
+  writeFileSync(join(DATA, "wcag.json"), biomeFormat(JSON.stringify(out, null, 2) + "\n", "src/data/wcag.json"));
 
   // --- guards
   const all = new Set(criteria.map((c) => c.sc));

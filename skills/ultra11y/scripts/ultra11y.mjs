@@ -22486,6 +22486,10 @@ function runAudit(opts) {
 }
 
 // src/report.ts
+import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
+import { join as join6 } from "path";
+
+// src/prd.ts
 import { mkdirSync, writeFileSync } from "fs";
 import { join as join5 } from "path";
 
@@ -26273,6 +26277,7 @@ function vocabularyFor(standard, lang) {
 }
 
 // src/standards/index.ts
+var CORE2 = CORE_KEY;
 function resolveStandard(flag) {
   if (flag === void 0 || flag === true || flag === "") return CORE_KEY;
   const key = String(flag).toLowerCase();
@@ -26286,204 +26291,6 @@ function standardLabel(standard) {
   const p = loadPack(standard);
   return `${p.name} ${p.baseVersion}`;
 }
-
-// src/report.ts
-var ICON = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
-var SEV_ORDER = ["bloquant", "majeur", "mineur"];
-var L = {
-  fr: {
-    title: (std) => `Rapport d'audit d'accessibilit\xE9 \u2014 ${std}`,
-    wcagStd: "WCAG 2.2 niveau AA",
-    date: "Date",
-    tool: "Outil",
-    toolNote: "moteur statique \u2014 audit pr\xE9liminaire \xE0 compl\xE9ter par une revue humaine",
-    scope: "P\xE9rim\xE8tre",
-    files: "fichier(s)",
-    rate: "Taux de r\xE9ussite automatique (v\xE9rifications statiques)",
-    rateNote: "sous-ensemble d\xE9cidable par la machine : C \xF7 (C + NC)",
-    warn: "Ce rapport couvre le sous-ensemble de crit\xE8res v\xE9rifiables automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) doivent \xEAtre compl\xE9t\xE9s par une revue humaine (voir la derni\xE8re section).",
-    derived: (std) => `Vue d\xE9riv\xE9e du ${std} : projection des crit\xE8res de succ\xE8s WCAG audit\xE9s sur le r\xE9f\xE9rentiel. La v\xE9rification d'int\xE9grit\xE9 (\`check\`/\`verify\`) op\xE8re sur le rapport WCAG canonique.`,
-    synthTitle: (by) => `1. Synth\xE8se par ${by}`,
-    byGuideline: "r\xE8gle WCAG",
-    byTheme: "th\xE9matique",
-    th: (head) => [head, "C", "NC", "NA", "\xC0 \xE9valuer"],
-    total: "Total",
-    ncTitle: "2. Non-conformit\xE9s (par priorit\xE9)",
-    sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
-    fix: "Correction",
-    none: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
-    cTitle: "3. Crit\xE8res conformes (C)",
-    naTitle: "4. Crit\xE8res non applicables (NA)",
-    manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
-    manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
-    outOfScope: "Hors p\xE9rim\xE8tre moteur \u2014 mapp\xE9 sur des SC hors WCAG 2.2 AA ; v\xE9rification manuelle.",
-    nothing: "Aucun.",
-    dedup: "D\xE9dup",
-    canonical: "fichier(s) canonique(s) audit\xE9(s)",
-    duplicate: "doublon(s) identique(s) ignor\xE9(s)",
-    truncated: (l, t2, s) => `P\xE9rim\xE8tre tronqu\xE9 : ${l}/${t2} fichiers audit\xE9s (priorit\xE9 d'abord), ${s} ignor\xE9(s). \xC9largir avec --max-files.`,
-    rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
-    sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
-    captures: (n) => `${n} fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit, pas l'appel de composant.`,
-    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``,
-    blindSpots: (n) => `${n} composant(s) sans capture rendue (angles morts) \u2014 audit\xE9s sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`
-  },
-  en: {
-    title: (std) => `Accessibility audit report \u2014 ${std}`,
-    wcagStd: "WCAG 2.2 Level AA",
-    date: "Date",
-    tool: "Tool",
-    toolNote: "static engine \u2014 preliminary audit to be completed by a human review",
-    scope: "Scope",
-    files: "file(s)",
-    rate: "Automatic static-check pass rate",
-    rateNote: "machine-decidable subset: C \xF7 (C + NC)",
-    warn: "This report covers the subset of criteria checkable automatically. The \u201Cto assess\u201D criteria (rendering / judgment) must be completed by a human review (see the last section).",
-    derived: (std) => `Derived view of ${std}: the audited WCAG success criteria projected onto this standard. The integrity gates (\`check\`/\`verify\`) operate on the canonical WCAG report.`,
-    synthTitle: (by) => `1. Synthesis by ${by}`,
-    byGuideline: "WCAG guideline",
-    byTheme: "theme",
-    th: (head) => [head, "C", "NC", "NA", "To assess"],
-    total: "Total",
-    ncTitle: "2. Non-conformities (by priority)",
-    sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
-    fix: "Fix",
-    none: "No non-conformity detected by the static engine.",
-    cTitle: "3. Conforming criteria (C)",
-    naTitle: "4. Not-applicable criteria (NA)",
-    manualTitle: "5. Criteria to assess manually (rendering / judgment)",
-    manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
-    outOfScope: "Out of engine scope \u2014 mapped to SCs outside WCAG 2.2 AA; manual verification.",
-    nothing: "None.",
-    dedup: "Dedup",
-    canonical: "canonical file(s) audited",
-    duplicate: "identical duplicate(s) skipped",
-    truncated: (l, t2, s) => `Scope truncated: ${l}/${t2} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`,
-    rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
-    sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`,
-    captures: (n) => `${n} rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML, not the component call.`,
-    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``,
-    blindSpots: (n) => `${n} component(s) without a rendered capture (blind spots) \u2014 audited from opaque source only; audit their rendered DOM (\`render --setup\`).`
-  }
-};
-function ncEntry(label, f, s, lang) {
-  const base = `- **${label}** \u2014 \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)
-  - ${resolveMessage(f, lang)}
-  - _${s.fix} :_ ${resolveRemediation(f, lang)}`;
-  if (!f.origin) return base;
-  const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
-  const srcFile = f.origin.sourceFile ?? f.origin.capture;
-  const src = f.origin.sourceFile && f.origin.sourceLine !== void 0 ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
-  return `${base}
-  - _${s.captureOf(comp, src)}_`;
-}
-function render(r, lang, opts) {
-  const s = L[lang];
-  const out = [];
-  out.push(`# ${s.title(opts.std)}`, "");
-  out.push(`- **${s.date}** : ${r.date}`);
-  out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
-  out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`);
-  out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
-  if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
-  out.push("", `> \u26A0\uFE0F ${s.warn}`, "");
-  if (opts.derivedOf) out.push(`> \u21AA\uFE0F ${s.derived(opts.derivedOf)}`, "");
-  if (r.scope.truncated) out.push(`> \u2702\uFE0F ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
-  if (r.scope.rendered) out.push(`> \u{1F9E9} ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
-  if (r.scope.sourceTemplate) out.push(`> \u{1F9E9} ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
-  if (r.scope.captures) out.push(`> \u2705 ${s.captures(r.scope.captures.files)}`, "");
-  if (r.scope.captureCoverage?.blindSpots.length) out.push(`> \u26A0\uFE0F ${s.blindSpots(r.scope.captureCoverage.blindSpots.length)}`, "");
-  const rows = opts.groups.flatMap((g) => g.rows);
-  const labelOf = new Map(rows.map((row) => [row.id, row.label]));
-  const th = s.th(opts.groupHead);
-  out.push(`## ${s.synthTitle(opts.groupHead)}`, "");
-  out.push(`| ${th.join(" | ")} |`);
-  out.push(`|${"---|".repeat(th.length)}`);
-  const tot = { c: 0, nc: 0, na: 0, manual: 0 };
-  for (const g of opts.groups) {
-    const c = g.rows.filter((x) => x.status === "C").length;
-    const nc = g.rows.filter((x) => x.status === "NC").length;
-    const na2 = g.rows.filter((x) => x.status === "NA").length;
-    const manual2 = g.rows.filter((x) => x.status === "manual").length;
-    out.push(`| ${g.key} ${g.title} | ${c} | ${nc} | ${na2} | ${manual2} |`);
-    tot.c += c;
-    tot.nc += nc;
-    tot.na += na2;
-    tot.manual += manual2;
-  }
-  out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
-  out.push(`## ${s.ncTitle}`, "");
-  const ncFindings = rows.filter((x) => x.status === "NC").flatMap((x) => x.findings.map((f) => ({ f, label: labelOf.get(x.id) ?? x.id })));
-  if (ncFindings.length === 0) {
-    out.push(s.none, "");
-  } else {
-    const sorted = ncFindings.sort(
-      (a, b) => SEV_ORDER.indexOf(a.f.severity) - SEV_ORDER.indexOf(b.f.severity) || a.f.criteriaId.localeCompare(b.f.criteriaId, void 0, { numeric: true }) || a.f.line - b.f.line
-    );
-    for (const sev of SEV_ORDER) {
-      const group = sorted.filter((x) => x.f.severity === sev);
-      if (!group.length) continue;
-      out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const { f, label } of group) out.push(ncEntry(label, f, s, lang));
-      out.push("");
-    }
-  }
-  out.push(`## ${s.cTitle}`, "");
-  const conform = rows.filter((x) => x.status === "C");
-  out.push(conform.length ? conform.map((x) => `- ${x.label}`).join("\n") : s.nothing, "");
-  out.push(`## ${s.naTitle}`, "");
-  const na = rows.filter((x) => x.status === "NA");
-  out.push(na.length ? na.map((x) => `- ${x.label}${x.justification ? ` \u2014 _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
-  out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
-  const manual = rows.filter((x) => x.status === "manual");
-  out.push(manual.length ? manual.map((x) => `- ${x.label}${x.justification ? ` \u2014 _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
-  return out.join("\n");
-}
-function renderReport(r, lang = "en") {
-  const s = L[lang];
-  const byGuideline = /* @__PURE__ */ new Map();
-  for (const c of r.criteria) {
-    const title2 = scTitle(c.id, lang);
-    const row = { id: c.id, label: title2 ? `${c.id} \u2014 ${title2}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
-    (byGuideline.get(c.guideline) ?? byGuideline.set(c.guideline, []).get(c.guideline)).push(row);
-  }
-  const groups = r.guidelines.map((g) => ({ key: g.key, title: guidelineTitle(g.key, lang) ?? g.title, rows: byGuideline.get(g.key) ?? [] }));
-  return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups });
-}
-function renderPackReport(r, pack, lang = "en") {
-  const derived = derivePackResults(r, pack.key);
-  const std = `${pack.name} ${pack.baseVersion}`;
-  const s = L[lang];
-  const naReason = lang === "fr" ? "Aucun crit\xE8re de succ\xE8s WCAG mapp\xE9 n'est applicable dans le p\xE9rim\xE8tre." : "No mapped WCAG success criterion is applicable in scope.";
-  const byTheme = /* @__PURE__ */ new Map();
-  for (const pr of derived) {
-    const pc = pack.criteria.find((c) => c.id === pr.id);
-    const row = {
-      id: pr.id,
-      label: `${pack.name} ${pr.id} \u2014 ${title(pack, pc, lang)}`,
-      status: pr.status,
-      findings: pr.findings,
-      // outOfScope criteria are "manual" (not NA) with their own dedicated justification —
-      // never mixed with the ordinary NA reason (see the manual-section justification above).
-      ...pr.outOfScope ? { justification: s.outOfScope } : pr.status === "NA" ? { justification: naReason } : {}
-    };
-    (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)).push(row);
-  }
-  const groups = pack.themes.map((t2) => ({ key: `${t2.number}.`, title: themeName(pack, t2.number, lang) ?? "", rows: byTheme.get(t2.number) ?? [] }));
-  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std });
-}
-function writeReport(r, opts) {
-  const core = isCore(opts.standard);
-  const md = core ? renderReport(r, opts.lang) : renderPackReport(r, loadPack(opts.standard), opts.lang);
-  mkdirSync(opts.out, { recursive: true });
-  const path = join5(opts.out, `${core ? "wcag" : opts.standard}-${r.date}.md`);
-  writeFileSync(path, md);
-  return path;
-}
-
-// src/prd.ts
-import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
-import { join as join6 } from "path";
 
 // src/data/guidance/rgaa.json
 var rgaa_default2 = {
@@ -28872,13 +28679,13 @@ function hasGuidance(packKey) {
 }
 
 // src/auditor.ts
-var SEV_ORDER2 = ["bloquant", "majeur", "mineur"];
-var ICON2 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var SEV_ORDER = ["bloquant", "majeur", "mineur"];
+var ICON = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
 var SEV_LABEL = {
   fr: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
   en: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" }
 };
-var L2 = {
+var L = {
   fr: {
     lead: "Lecture auditeur",
     tail: "Correspondance normative.",
@@ -28891,7 +28698,8 @@ var L2 = {
     date: "Date",
     scope: "P\xE9rim\xE8tre",
     files: "fichier(s)",
-    none: "Aucune non-conformit\xE9 relev\xE9e automatiquement par le moteur statique."
+    none: "Aucune non-conformit\xE9 relev\xE9e automatiquement par le moteur statique.",
+    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``
   },
   en: {
     lead: "Auditor view",
@@ -28905,15 +28713,16 @@ var L2 = {
     date: "Date",
     scope: "Scope",
     files: "file(s)",
-    none: "No non-conformity found automatically by the static engine."
+    none: "No non-conformity found automatically by the static engine.",
+    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``
   }
 };
 var uniq = (xs) => [...new Set(xs.filter(Boolean))];
 function renderAuditorUnit(unit, standard, lang, opts = {}) {
-  const s = L2[lang];
+  const s = L[lang];
   const v = vocabularyFor(standard, lang);
   const out = [];
-  if (opts.heading) out.push(`${opts.heading} ${ICON2[unit.severity]} ${unit.label}`, "");
+  if (opts.heading) out.push(`${opts.heading} ${ICON[unit.severity]} ${unit.label}`, "");
   out.push(`> ${v.normativeNote ?? `${s.lead} \u2014 ${standardLabel(standard)}. ${s.tail}`}`, "");
   if (isCore(standard)) {
     const sc = getSC(unit.criteriaId);
@@ -28944,6 +28753,12 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    if (f.origin) {
+      const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
+      const srcFile = f.origin.sourceFile ?? f.origin.capture;
+      const src = f.origin.sourceFile && f.origin.sourceLine !== void 0 ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
+      out.push(`  - _${s.captureOf(comp, src)}_`);
+    }
   }
   out.push("");
   return out;
@@ -28953,7 +28768,7 @@ function scLevel(sc) {
   return c ? ` (${c.level})` : "";
 }
 function auditorHeader(r, lang, standard) {
-  const s = L2[lang];
+  const s = L[lang];
   const v = vocabularyFor(standard, lang);
   return [
     `# ${v.auditorHeading} \u2014 ${standardLabel(standard)}`,
@@ -28966,17 +28781,17 @@ function auditorHeader(r, lang, standard) {
   ];
 }
 function renderAuditorBacklog(r, lang = "en", standard = "wcag") {
-  const s = L2[lang];
+  const s = L[lang];
   const units = prdUnits(r, standard, lang);
   const out = auditorHeader(r, lang, standard);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
   }
-  for (const sev of SEV_ORDER2) {
+  for (const sev of SEV_ORDER) {
     const group = units.filter((u) => u.severity === sev);
     if (!group.length) continue;
-    out.push(`## ${ICON2[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
+    out.push(`## ${ICON[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
     for (const u of group) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
   }
   return out.join("\n");
@@ -28990,10 +28805,10 @@ function renderAuditorPerCriterion(r, lang = "en", standard = "wcag") {
 }
 
 // src/prd.ts
-var SEV_ORDER3 = ["bloquant", "majeur", "mineur"];
+var SEV_ORDER2 = ["bloquant", "majeur", "mineur"];
 var SEV_RANK = { bloquant: 0, majeur: 1, mineur: 2 };
-var ICON3 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
-var L3 = {
+var ICON2 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var L2 = {
   fr: {
     title: (std) => `Plan de correction d'accessibilit\xE9 \u2014 ${std}`,
     date: "Date",
@@ -29115,7 +28930,7 @@ function guidanceFor(unit, standard) {
   return out;
 }
 function guidanceExampleBlock(entries, lang) {
-  const s = L3[lang];
+  const s = L2[lang];
   for (const e of entries) {
     const ex = (e.examples ?? []).find((x) => x.bad || x.good);
     if (!ex) continue;
@@ -29128,10 +28943,10 @@ function guidanceExampleBlock(entries, lang) {
   return [];
 }
 function unitBlock(unit, lang, heading, standard) {
-  const s = L3[lang];
+  const s = L2[lang];
   const out = [];
   const refs = unit.refs.length ? `  \xB7  WCAG ${unit.refs.join(", ")}` : "";
-  out.push(`${heading} ${ICON3[unit.severity]} ${unit.label}${refs}`, "");
+  out.push(`${heading} ${ICON2[unit.severity]} ${unit.label}${refs}`, "");
   const fixes = [...new Set(unit.findings.map((f) => resolveRemediation(f, lang)))];
   for (const fx of fixes) out.push(`- _${s.fix} :_ ${fx}`);
   const { bucket, points } = effortOf(unit);
@@ -29145,8 +28960,8 @@ function unitBlock(unit, lang, heading, standard) {
   out.push("");
   return out;
 }
-function header(r, lang, title2, note = L3[lang].note) {
-  const s = L3[lang];
+function header(r, lang, title2, note = L2[lang].note) {
+  const s = L2[lang];
   return [
     `# ${title2}`,
     "",
@@ -29159,23 +28974,23 @@ function header(r, lang, title2, note = L3[lang].note) {
   ];
 }
 function renderBacklog(r, lang = "en", standard = "wcag") {
-  const s = L3[lang];
+  const s = L2[lang];
   const units = prdUnits(r, standard, lang);
   const out = header(r, lang, s.title(standardLabel(standard)));
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
   }
-  for (const sev of SEV_ORDER3) {
+  for (const sev of SEV_ORDER2) {
     const group = units.filter((u) => u.severity === sev);
     if (!group.length) continue;
-    out.push(`## ${ICON3[sev]} ${s.sev[sev]} (${group.length})`, "");
+    out.push(`## ${ICON2[sev]} ${s.sev[sev]} (${group.length})`, "");
     for (const u of group) out.push(...unitBlock(u, lang, "###", standard));
   }
   return out.join("\n");
 }
 function renderPerCriterion(r, lang = "en", standard = "wcag") {
-  const s = L3[lang];
+  const s = L2[lang];
   return prdUnits(r, standard, lang).map((u) => {
     const out = header(r, lang, s.prdTitle(u.label));
     out.push(...unitBlock(u, lang, "##", standard));
@@ -29207,7 +29022,7 @@ function epicsOf(units, standard, lang) {
   return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key, void 0, { numeric: true }));
 }
 function renderPrdDoc(r, lang = "en", standard = "wcag") {
-  const s = L3[lang];
+  const s = L2[lang];
   const units = prdUnits(r, standard, lang);
   const out = header(r, lang, s.title(standardLabel(standard)), s.docNote);
   if (!units.length) {
@@ -29218,7 +29033,7 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
     out.push(`## ${s.epic} \u2014 ${epic.title}`, "");
     for (const u of epic.units) {
       const refs = u.refs.length ? `  \xB7  WCAG ${u.refs.join(", ")}` : "";
-      out.push(`### ${ICON3[u.severity]} ${s.story} \u2014 ${u.label}${refs}`, "");
+      out.push(`### ${ICON2[u.severity]} ${s.story} \u2014 ${u.label}${refs}`, "");
       out.push(`> ${s.asUser}, ${s.iNeed(u.title)}.`, "");
       const hints = [...new Set(u.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "\u2014";
       out.push(`**${s.ac}**`, "");
@@ -29240,10 +29055,10 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
   return out.join("\n");
 }
 function writePrd(r, opts) {
-  mkdirSync2(opts.out, { recursive: true });
+  mkdirSync(opts.out, { recursive: true });
   if (opts.format === "doc") {
-    const p2 = join6(opts.out, `prd-doc-${r.date}.md`);
-    writeFileSync2(p2, renderPrdDoc(r, opts.lang, opts.standard));
+    const p2 = join5(opts.out, `prd-doc-${r.date}.md`);
+    writeFileSync(p2, renderPrdDoc(r, opts.lang, opts.standard));
     return [p2];
   }
   const remediation = opts.format === "remediation";
@@ -29252,15 +29067,189 @@ function writePrd(r, opts) {
   if (opts.split === "criterion") {
     const paths = [];
     for (const f of perCriterion(r, opts.lang, opts.standard)) {
-      const p2 = join6(opts.out, f.name);
-      writeFileSync2(p2, f.content);
+      const p2 = join5(opts.out, f.name);
+      writeFileSync(p2, f.content);
       paths.push(p2);
     }
     return paths;
   }
-  const p = join6(opts.out, `prd-${r.date}.md`);
-  writeFileSync2(p, backlog(r, opts.lang, opts.standard));
+  const p = join5(opts.out, `prd-${r.date}.md`);
+  writeFileSync(p, backlog(r, opts.lang, opts.standard));
   return [p];
+}
+
+// src/report.ts
+var ICON3 = { bloquant: "\u{1F534}", majeur: "\u{1F7E0}", mineur: "\u{1F7E1}" };
+var SEV_ORDER3 = ["bloquant", "majeur", "mineur"];
+var L3 = {
+  fr: {
+    title: (std) => `Rapport d'audit d'accessibilit\xE9 \u2014 ${std}`,
+    wcagStd: "WCAG 2.2 niveau AA",
+    date: "Date",
+    tool: "Outil",
+    toolNote: "moteur statique \u2014 audit pr\xE9liminaire \xE0 compl\xE9ter par une revue humaine",
+    scope: "P\xE9rim\xE8tre",
+    files: "fichier(s)",
+    rate: "Taux de r\xE9ussite automatique (v\xE9rifications statiques)",
+    rateNote: "sous-ensemble d\xE9cidable par la machine : C \xF7 (C + NC)",
+    warn: "Ce rapport couvre le sous-ensemble de crit\xE8res v\xE9rifiables automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) doivent \xEAtre compl\xE9t\xE9s par une revue humaine (voir la derni\xE8re section).",
+    derived: (std) => `Vue d\xE9riv\xE9e du ${std} : projection des crit\xE8res de succ\xE8s WCAG audit\xE9s sur le r\xE9f\xE9rentiel. La v\xE9rification d'int\xE9grit\xE9 (\`check\`/\`verify\`) op\xE8re sur le rapport WCAG canonique.`,
+    synthTitle: (by) => `1. Synth\xE8se par ${by}`,
+    byGuideline: "r\xE8gle WCAG",
+    byTheme: "th\xE9matique",
+    th: (head) => [head, "C", "NC", "NA", "\xC0 \xE9valuer"],
+    total: "Total",
+    ncTitle: "2. Non-conformit\xE9s (par priorit\xE9)",
+    sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
+    none: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
+    cTitle: "3. Crit\xE8res conformes (C)",
+    naTitle: "4. Crit\xE8res non applicables (NA)",
+    manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
+    manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
+    outOfScope: "Hors p\xE9rim\xE8tre moteur \u2014 mapp\xE9 sur des SC hors WCAG 2.2 AA ; v\xE9rification manuelle.",
+    nothing: "Aucun.",
+    dedup: "D\xE9dup",
+    canonical: "fichier(s) canonique(s) audit\xE9(s)",
+    duplicate: "doublon(s) identique(s) ignor\xE9(s)",
+    truncated: (l, t2, s) => `P\xE9rim\xE8tre tronqu\xE9 : ${l}/${t2} fichiers audit\xE9s (priorit\xE9 d'abord), ${s} ignor\xE9(s). \xC9largir avec --max-files.`,
+    rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
+    sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
+    captures: (n) => `${n} fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit, pas l'appel de composant.`,
+    blindSpots: (n) => `${n} composant(s) sans capture rendue (angles morts) \u2014 audit\xE9s sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`
+  },
+  en: {
+    title: (std) => `Accessibility audit report \u2014 ${std}`,
+    wcagStd: "WCAG 2.2 Level AA",
+    date: "Date",
+    tool: "Tool",
+    toolNote: "static engine \u2014 preliminary audit to be completed by a human review",
+    scope: "Scope",
+    files: "file(s)",
+    rate: "Automatic static-check pass rate",
+    rateNote: "machine-decidable subset: C \xF7 (C + NC)",
+    warn: "This report covers the subset of criteria checkable automatically. The \u201Cto assess\u201D criteria (rendering / judgment) must be completed by a human review (see the last section).",
+    derived: (std) => `Derived view of ${std}: the audited WCAG success criteria projected onto this standard. The integrity gates (\`check\`/\`verify\`) operate on the canonical WCAG report.`,
+    synthTitle: (by) => `1. Synthesis by ${by}`,
+    byGuideline: "WCAG guideline",
+    byTheme: "theme",
+    th: (head) => [head, "C", "NC", "NA", "To assess"],
+    total: "Total",
+    ncTitle: "2. Non-conformities (by priority)",
+    sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
+    none: "No non-conformity detected by the static engine.",
+    cTitle: "3. Conforming criteria (C)",
+    naTitle: "4. Not-applicable criteria (NA)",
+    manualTitle: "5. Criteria to assess manually (rendering / judgment)",
+    manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
+    outOfScope: "Out of engine scope \u2014 mapped to SCs outside WCAG 2.2 AA; manual verification.",
+    nothing: "None.",
+    dedup: "Dedup",
+    canonical: "canonical file(s) audited",
+    duplicate: "identical duplicate(s) skipped",
+    truncated: (l, t2, s) => `Scope truncated: ${l}/${t2} files audited (highest-priority first), ${s} skipped. Widen with --max-files.`,
+    rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
+    sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`,
+    captures: (n) => `${n} rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML, not the component call.`,
+    blindSpots: (n) => `${n} component(s) without a rendered capture (blind spots) \u2014 audited from opaque source only; audit their rendered DOM (\`render --setup\`).`
+  }
+};
+function render(r, lang, opts) {
+  const s = L3[lang];
+  const out = [];
+  out.push(`# ${s.title(opts.std)}`, "");
+  out.push(`- **${s.date}** : ${r.date}`);
+  out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
+  out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`);
+  out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
+  if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
+  out.push("", `> \u26A0\uFE0F ${s.warn}`, "");
+  if (opts.derivedOf) out.push(`> \u21AA\uFE0F ${s.derived(opts.derivedOf)}`, "");
+  if (r.scope.truncated) out.push(`> \u2702\uFE0F ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
+  if (r.scope.rendered) out.push(`> \u{1F9E9} ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
+  if (r.scope.sourceTemplate) out.push(`> \u{1F9E9} ${s.sourceTemplate(r.scope.sourceTemplate.files, r.scope.sourceTemplate.extensions.join(", "))}`, "");
+  if (r.scope.captures) out.push(`> \u2705 ${s.captures(r.scope.captures.files)}`, "");
+  if (r.scope.captureCoverage?.blindSpots.length) out.push(`> \u26A0\uFE0F ${s.blindSpots(r.scope.captureCoverage.blindSpots.length)}`, "");
+  const rows = opts.groups.flatMap((g) => g.rows);
+  const th = s.th(opts.groupHead);
+  out.push(`## ${s.synthTitle(opts.groupHead)}`, "");
+  out.push(`| ${th.join(" | ")} |`);
+  out.push(`|${"---|".repeat(th.length)}`);
+  const tot = { c: 0, nc: 0, na: 0, manual: 0 };
+  for (const g of opts.groups) {
+    const c = g.rows.filter((x) => x.status === "C").length;
+    const nc = g.rows.filter((x) => x.status === "NC").length;
+    const na2 = g.rows.filter((x) => x.status === "NA").length;
+    const manual2 = g.rows.filter((x) => x.status === "manual").length;
+    out.push(`| ${g.key} ${g.title} | ${c} | ${nc} | ${na2} | ${manual2} |`);
+    tot.c += c;
+    tot.nc += nc;
+    tot.na += na2;
+    tot.manual += manual2;
+  }
+  out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
+  out.push(`## ${s.ncTitle}`, "");
+  const ncUnits = prdUnits(r, opts.standard, lang);
+  if (ncUnits.length === 0) {
+    out.push(s.none, "");
+  } else {
+    for (const sev of SEV_ORDER3) {
+      const group = ncUnits.filter((u) => u.severity === sev);
+      if (!group.length) continue;
+      out.push(`### ${ICON3[sev]} ${s.sev[sev]} (${group.length})`, "");
+      for (const u of group) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "####" }));
+    }
+  }
+  out.push(`## ${s.cTitle}`, "");
+  const conform = rows.filter((x) => x.status === "C");
+  out.push(conform.length ? conform.map((x) => `- ${x.label}`).join("\n") : s.nothing, "");
+  out.push(`## ${s.naTitle}`, "");
+  const na = rows.filter((x) => x.status === "NA");
+  out.push(na.length ? na.map((x) => `- ${x.label}${x.justification ? ` \u2014 _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
+  out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
+  const manual = rows.filter((x) => x.status === "manual");
+  out.push(manual.length ? manual.map((x) => `- ${x.label}${x.justification ? ` \u2014 _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
+  return out.join("\n");
+}
+function renderReport(r, lang = "en") {
+  const s = L3[lang];
+  const byGuideline = /* @__PURE__ */ new Map();
+  for (const c of r.criteria) {
+    const title2 = scTitle(c.id, lang);
+    const row = { id: c.id, label: title2 ? `${c.id} \u2014 ${title2}` : c.id, status: c.status, findings: c.findings, justification: c.justification };
+    (byGuideline.get(c.guideline) ?? byGuideline.set(c.guideline, []).get(c.guideline)).push(row);
+  }
+  const groups = r.guidelines.map((g) => ({ key: g.key, title: guidelineTitle(g.key, lang) ?? g.title, rows: byGuideline.get(g.key) ?? [] }));
+  return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups, standard: CORE2 });
+}
+function renderPackReport(r, pack, lang = "en") {
+  const derived = derivePackResults(r, pack.key);
+  const std = `${pack.name} ${pack.baseVersion}`;
+  const s = L3[lang];
+  const naReason = lang === "fr" ? "Aucun crit\xE8re de succ\xE8s WCAG mapp\xE9 n'est applicable dans le p\xE9rim\xE8tre." : "No mapped WCAG success criterion is applicable in scope.";
+  const byTheme = /* @__PURE__ */ new Map();
+  for (const pr of derived) {
+    const pc = pack.criteria.find((c) => c.id === pr.id);
+    const row = {
+      id: pr.id,
+      label: `${pack.name} ${pr.id} \u2014 ${title(pack, pc, lang)}`,
+      status: pr.status,
+      findings: pr.findings,
+      // outOfScope criteria are "manual" (not NA) with their own dedicated justification —
+      // never mixed with the ordinary NA reason (see the manual-section justification above).
+      ...pr.outOfScope ? { justification: s.outOfScope } : pr.status === "NA" ? { justification: naReason } : {}
+    };
+    (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)).push(row);
+  }
+  const groups = pack.themes.map((t2) => ({ key: `${t2.number}.`, title: themeName(pack, t2.number, lang) ?? "", rows: byTheme.get(t2.number) ?? [] }));
+  return render(r, lang, { std, groupHead: L3[lang].byTheme, groups, derivedOf: std, standard: pack.key });
+}
+function writeReport(r, opts) {
+  const core = isCore(opts.standard);
+  const md = core ? renderReport(r, opts.lang) : renderPackReport(r, loadPack(opts.standard), opts.lang);
+  mkdirSync2(opts.out, { recursive: true });
+  const path = join6(opts.out, `${core ? "wcag" : opts.standard}-${r.date}.md`);
+  writeFileSync2(path, md);
+  return path;
 }
 
 // src/gh.ts
@@ -29828,13 +29817,42 @@ import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "fs";
 import { join as join7 } from "path";
 var VERIFY_MAX = 40;
 var plain = (s) => s.replace(/\[([^\]]+)\]\(#[^)]*\)/g, "$1");
-function ncHeader(standard) {
+function auditorCriterionLine(standard) {
+  const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(loadPack(standard));
+  return new RegExp(`^\\*\\*[^*:]+\\*\\*\\s*:\\s*(${id})(?:\\s*\u2014.*)?\\s*$`);
+}
+var AUDITOR_OCCURRENCE = /^-\s\[ \]\s+`([^`]+):(\d+)`\s+\(`([^`]*)`\)\s+—\s+(.*)$/;
+var HEADING_LINE = /^#{2,4}\s/;
+function buildWorklistFromAuditorBlocks(reportMd, standard, max) {
+  const items = [];
+  const critLine = auditorCriterionLine(standard);
+  const lines = reportMd.split("\n");
+  let currentId = null;
+  for (let i = 0; i < lines.length && items.length < max; i++) {
+    const line = lines[i];
+    const c = critLine.exec(line);
+    if (c) {
+      currentId = c[1];
+      continue;
+    }
+    if (HEADING_LINE.test(line)) {
+      currentId = null;
+      continue;
+    }
+    if (!currentId) continue;
+    const occ = AUDITOR_OCCURRENCE.exec(line);
+    if (!occ) continue;
+    items.push({ n: items.length + 1, criteriaId: currentId, file: occ[1], line: Number(occ[2]), selector: occ[3], claim: occ[4], verdict: null, note: "" });
+  }
+  return items;
+}
+function legacyNcHeader(standard) {
   const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(loadPack(standard));
   return new RegExp(`^- \\*\\*(?:[A-Za-z]+ )?(${id}) \u2014 (.*?)\\*\\* \u2014 \`([^\`]+):(\\d+)\` \\(\`([^\`]*)\`\\)`);
 }
-function buildWorklist(reportMd, standard = "wcag", max = VERIFY_MAX) {
+function buildWorklistLegacy(reportMd, standard, max) {
   const items = [];
-  const header2 = ncHeader(standard);
+  const header2 = legacyNcHeader(standard);
   const lines = reportMd.split("\n");
   for (let i = 0; i < lines.length && items.length < max; i++) {
     const h = header2.exec(lines[i]);
@@ -29850,6 +29868,11 @@ function buildWorklist(reportMd, standard = "wcag", max = VERIFY_MAX) {
     items.push({ n: items.length + 1, criteriaId: h[1], file: h[3], line: Number(h[4]), selector: h[5], claim, verdict: null, note: "" });
   }
   return items;
+}
+function buildWorklist(reportMd, standard = "wcag", max = VERIFY_MAX) {
+  const items = buildWorklistFromAuditorBlocks(reportMd, standard, max);
+  if (items.length) return items;
+  return buildWorklistLegacy(reportMd, standard, max);
 }
 var T = {
   fr: {
@@ -29906,7 +29929,7 @@ function formatWorklist(items, semantic, standard = "wcag", lang = "en") {
     if (core) {
       const sc = getSC(it.criteriaId);
       if (sc) {
-        out.push(`      WCAG ${sc.sc} \u2014 ${sc.title} [${sc.level}] \xB7 ${s.understand}: ${sc.understanding}`);
+        out.push(`      WCAG ${sc.sc} \u2014 ${scTitle(sc.sc, lang)} [${sc.level}] \xB7 ${s.understand}: ${sc.understanding}`);
         if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.slice(0, 8).join(", ")}`);
       }
     } else if (pack) {

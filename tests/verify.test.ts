@@ -3,12 +3,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
-import { renderReport } from "../src/report.js";
+import { renderReport, renderPackReport } from "../src/report.js";
 import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, type VerifyItem } from "../src/verify.js";
-import { registerRuntimePack } from "../src/standards/index.js";
+import { registerRuntimePack, loadPack, derivePackResults } from "../src/standards/index.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
-const report = renderReport(runAudit({ inputs: [`${FIX}non-conforming/bad.html`] }), "fr");
+const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
+const good = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+const report = renderReport(bad, "fr");
 
 describe("buildWorklist", () => {
   it("turns each non-conformity into a claim↔criterion↔element item", () => {
@@ -97,6 +99,73 @@ describe("buildWorklist", () => {
   });
 });
 
+// THE critical anti-hallucination guard for Phase 4: report.ts §2 now renders one
+// auditor block PER CRITERION (not one flat bullet per finding), so `buildWorklist`
+// must walk the criterion↔occurrence structure correctly. If this guard didn't exist
+// and the parsing regex silently under/over-matched, `verify` would gate the WRONG
+// number of claims (or none at all) without any test ever noticing.
+describe("round-trip guard: buildWorklist(renderReport(...)) recovers EXACTLY the fixture's NC findings", () => {
+  const NO_CAP = Number.MAX_SAFE_INTEGER;
+
+  it("core WCAG, fr: item count == total NC findings", () => {
+    const items = buildWorklist(renderReport(bad, "fr"), "wcag", NO_CAP);
+    expect(items.length).toBe(bad.findings.length);
+    expect(items.length).toBeGreaterThan(0);
+  });
+
+  it("core WCAG, en: item count == total NC findings", () => {
+    const items = buildWorklist(renderReport(bad, "en"), "wcag", NO_CAP);
+    expect(items.length).toBe(bad.findings.length);
+  });
+
+  it("RGAA pack, fr: item count == the pack-projected NC finding count (a WCAG finding may fan out to several RGAA criteria)", () => {
+    const expectedCount = derivePackResults(bad, "rgaa").reduce((n, p) => n + p.findings.length, 0);
+    const items = buildWorklist(renderPackReport(bad, loadPack("rgaa"), "fr"), "rgaa", NO_CAP);
+    expect(items.length).toBe(expectedCount);
+    expect(items.length).toBeGreaterThan(bad.findings.length); // confirms the fan-out actually happened
+  });
+
+  it("RGAA pack, en: item count == the pack-projected NC finding count", () => {
+    const expectedCount = derivePackResults(bad, "rgaa").reduce((n, p) => n + p.findings.length, 0);
+    const items = buildWorklist(renderPackReport(bad, loadPack("rgaa"), "en"), "rgaa", NO_CAP);
+    expect(items.length).toBe(expectedCount);
+  });
+
+  it("a conforming report round-trips to zero items (no false positives)", () => {
+    expect(buildWorklist(renderReport(good, "fr"), "wcag", NO_CAP)).toHaveLength(0);
+  });
+
+  it("every item's criteriaId/file/line/claim is a real, non-empty value (no partial/garbled captures)", () => {
+    const items = buildWorklist(renderReport(bad, "en"), "wcag", NO_CAP);
+    for (const it of items) {
+      expect(it.criteriaId).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(it.file.length).toBeGreaterThan(0);
+      expect(it.line).toBeGreaterThan(0);
+      expect(it.claim.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("still verifies a LEGACY (pre-Phase-4) flat-bullet report via the fallback parser", () => {
+    const legacy = [
+      "# Report",
+      "- **Rate** : 50%",
+      "## 1. x",
+      "## 2. y",
+      "- **1.4.3 — Contrast (Minimum)** — `a.html:1` (`div`)",
+      "  - contrast too low",
+      "  - _Fix :_ increase contrast",
+      "## 3. z",
+      "## 4. NA",
+      "## 5. manual",
+      "",
+    ].join("\n");
+    const items = buildWorklist(legacy, "wcag");
+    expect(items).toHaveLength(1);
+    expect(items[0]!.criteriaId).toBe("1.4.3");
+    expect(items[0]!.claim).toBe("contrast too low");
+  });
+});
+
 describe("applyVerdicts", () => {
   const base = (): VerifyItem[] => buildWorklist(report, "wcag", 3);
 
@@ -143,6 +212,21 @@ describe("formatWorklist (judgment grounding)", () => {
     const md = formatWorklist(buildWorklist(report, "wcag", 3), false);
     expect(md).toContain("Understanding");
     expect(md).toContain("Pre-completion checklist");
+  });
+
+  // Scoped fix (Task 5): the worklist's grounding line used to print the raw baked
+  // English `sc.title` even in `--lang fr`. It now resolves through `scTitle(id, lang)`
+  // like every other renderer, so a `--lang fr` verify worklist is fully French.
+  it("localizes the grounding SC title through scTitle(id, lang) instead of the raw English bake", () => {
+    const items = buildWorklist(renderReport(bad, "en"), "wcag", 1);
+    expect(items[0]!.criteriaId).toBe("1.1.1"); // Non-text Content / Contenu non textuel
+
+    const fr = formatWorklist(items, false, "wcag", "fr");
+    expect(fr).toContain("Contenu non textuel"); // W3C authorized French title
+    expect(fr).not.toContain("Non-text Content");
+
+    const en = formatWorklist(items, false, "wcag", "en");
+    expect(en).toContain("Non-text Content");
   });
 });
 

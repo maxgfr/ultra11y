@@ -8,8 +8,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity, Status } from "./types.js";
 import { guidelineTitle, scTitle } from "./wcag.js";
-import { resolveMessage, resolveRemediation } from "./messages.js";
-import { type StandardId, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
+import { prdUnits } from "./prd.js";
+import { renderAuditorUnit } from "./auditor.js";
+import { type StandardId, CORE, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
@@ -35,7 +36,6 @@ const L = {
     total: "Total",
     ncTitle: "2. Non-conformités (par priorité)",
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" } as Record<Severity, string>,
-    fix: "Correction",
     none: "Aucune non-conformité détectée par le moteur statique.",
     cTitle: "3. Critères conformes (C)",
     naTitle: "4. Critères non applicables (NA)",
@@ -53,7 +53,6 @@ const L = {
     sourceTemplate: (n: number, exts: string) =>
       `Verdict source préliminaire : ${n} composant(s) ${exts} audité(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique — auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
     captures: (n: number) => `${n} fichier(s) de capture rendus audités à pleine fidélité (DOM réel) — le vrai HTML produit, pas l'appel de composant.`,
-    captureOf: (comp: string, src: string) => `capture rendue de \`${comp}\` — source \`${src}\``,
     blindSpots: (n: number) =>
       `${n} composant(s) sans capture rendue (angles morts) — audités sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`,
   },
@@ -77,7 +76,6 @@ const L = {
     total: "Total",
     ncTitle: "2. Non-conformities (by priority)",
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" } as Record<Severity, string>,
-    fix: "Fix",
     none: "No non-conformity detected by the static engine.",
     cTitle: "3. Conforming criteria (C)",
     naTitle: "4. Not-applicable criteria (NA)",
@@ -94,7 +92,6 @@ const L = {
     sourceTemplate: (n: number, exts: string) =>
       `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis — audit the rendered output (\`render\` / \`scan\`) before concluding.`,
     captures: (n: number) => `${n} rendered capture file(s) audited at full fidelity (real DOM) — the true produced HTML, not the component call.`,
-    captureOf: (comp: string, src: string) => `rendered capture of \`${comp}\` — source \`${src}\``,
     blindSpots: (n: number) =>
       `${n} component(s) without a rendered capture (blind spots) — audited from opaque source only; audit their rendered DOM (\`render --setup\`).`,
   },
@@ -115,18 +112,10 @@ interface Group {
   rows: Row[];
 }
 
-function ncEntry(label: string, f: Finding, s: (typeof L)[Lang], lang: Lang): string {
-  const base = `- **${label}** — \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)\n  - ${resolveMessage(f, lang)}\n  - _${s.fix} :_ ${resolveRemediation(f, lang)}`;
-  if (!f.origin) return base;
-  const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
-  const srcFile = f.origin.sourceFile ?? f.origin.capture;
-  const src = f.origin.sourceFile && f.origin.sourceLine !== undefined ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
-  return `${base}\n  - _${s.captureOf(comp, src)}_`;
-}
-
 // Shared renderer over normalized groups/rows — keeps the WCAG and pack reports identical
-// in shape. `groupHead` labels the synthesis column ("WCAG guideline" / "theme").
-function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: string; groups: Group[]; derivedOf?: string }): string {
+// in shape. `groupHead` labels the synthesis column ("WCAG guideline" / "theme"). `standard`
+// drives the NC section below (`prdUnits`/`renderAuditorUnit` are standard-aware).
+function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: string; groups: Group[]; standard: StandardId; derivedOf?: string }): string {
   const s = L[lang];
   const out: string[] = [];
   out.push(`# ${s.title(opts.std)}`, "");
@@ -144,7 +133,6 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   if (r.scope.captureCoverage?.blindSpots.length) out.push(`> ⚠️ ${s.blindSpots(r.scope.captureCoverage.blindSpots.length)}`, "");
 
   const rows = opts.groups.flatMap((g) => g.rows);
-  const labelOf = new Map(rows.map((row) => [row.id, row.label]));
 
   // 1. synthesis
   const th = s.th(opts.groupHead);
@@ -165,24 +153,21 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   }
   out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
 
-  // 2. non-conformities by priority
+  // 2. non-conformities by priority — one auditor block per NC criterion (core or
+  // pack), the SAME human language `prd`/GitHub issues use (src/auditor.ts
+  // `renderAuditorUnit`), grouped by severity like `renderAuditorBacklog`. Reuses
+  // `prdUnits` so a criterion here is EXACTLY a `prd`/`gh` backlog item — no
+  // report-local re-grouping logic, and the two stay impossible to drift apart.
   out.push(`## ${s.ncTitle}`, "");
-  const ncFindings = rows.filter((x) => x.status === "NC").flatMap((x) => x.findings.map((f) => ({ f, label: labelOf.get(x.id) ?? x.id })));
-  if (ncFindings.length === 0) {
+  const ncUnits = prdUnits(r, opts.standard, lang);
+  if (ncUnits.length === 0) {
     out.push(s.none, "");
   } else {
-    const sorted = ncFindings.sort(
-      (a, b) =>
-        SEV_ORDER.indexOf(a.f.severity) - SEV_ORDER.indexOf(b.f.severity) ||
-        a.f.criteriaId.localeCompare(b.f.criteriaId, undefined, { numeric: true }) ||
-        a.f.line - b.f.line,
-    );
     for (const sev of SEV_ORDER) {
-      const group = sorted.filter((x) => x.f.severity === sev);
+      const group = ncUnits.filter((u) => u.severity === sev);
       if (!group.length) continue;
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const { f, label } of group) out.push(ncEntry(label, f, s, lang));
-      out.push("");
+      for (const u of group) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "####" }));
     }
   }
 
@@ -217,7 +202,7 @@ export function renderReport(r: AuditResult, lang: Lang = "en"): string {
   // JSON back-compat); resolve the localized label from the guideline KEY instead so
   // `--lang fr` renders the French guideline name here too.
   const groups: Group[] = r.guidelines.map((g) => ({ key: g.key, title: guidelineTitle(g.key, lang) ?? g.title, rows: byGuideline.get(g.key) ?? [] }));
-  return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups });
+  return render(r, lang, { std: s.wcagStd, groupHead: s.byGuideline, groups, standard: CORE });
 }
 
 /** A derived report for a country standards pack (RGAA, …), projected from the WCAG audit. */
@@ -242,7 +227,7 @@ export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang 
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)!).push(row);
   }
   const groups: Group[] = pack.themes.map((t) => ({ key: `${t.number}.`, title: themeName(pack, t.number, lang) ?? "", rows: byTheme.get(t.number) ?? [] }));
-  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std });
+  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std, standard: pack.key });
 }
 
 export interface ReportOpts {

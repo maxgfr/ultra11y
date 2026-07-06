@@ -41,6 +41,12 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
   // `idPattern` declares (RGAA's 2-segment "8.3", a hypothetical Section 508 "E205.4"…) —
   // built from the pack itself so the version token "WCAG 2.2 —" can never be mistaken
   // for a criterion, without the engine hardcoding a single fixed pack shape.
+  // Deliberately UNANCHORED (no `^`/`$`, scans the whole document): this is what makes it
+  // survive report.ts §2's auditor-block NC shape (Phase 4) unchanged — the criterion id
+  // still appears as "<id> — <title>" on the block's heading AND its "**<criterion term>**"
+  // line, wherever that line sits, without this regex caring about the surrounding
+  // vocabulary/heading level. Verified against a freshly-rendered core + RGAA report
+  // (tests/check.test.ts) rather than adjusted, since nothing here needed to change.
   const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : new RegExp(`(${idCaptureSource(pack!)})\\s*—`, "g");
   const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack!)})\\s*—`);
 

@@ -38,6 +38,7 @@ const L = {
     scope: "Périmètre",
     files: "fichier(s)",
     none: "Aucune non-conformité relevée automatiquement par le moteur statique.",
+    captureOf: (comp: string, src: string) => `capture rendue de \`${comp}\` — source \`${src}\``,
   },
   en: {
     lead: "Auditor view",
@@ -53,6 +54,7 @@ const L = {
     scope: "Scope",
     files: "file(s)",
     none: "No non-conformity found automatically by the static engine.",
+    captureOf: (comp: string, src: string) => `rendered capture of \`${comp}\` — source \`${src}\``,
   },
 } as const;
 
@@ -102,6 +104,12 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
   for (const f of unit.findings) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    if (f.origin) {
+      const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
+      const srcFile = f.origin.sourceFile ?? f.origin.capture;
+      const src = f.origin.sourceFile && f.origin.sourceLine !== undefined ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
+      out.push(`  - _${s.captureOf(comp, src)}_`);
+    }
   }
   out.push("");
   return out;

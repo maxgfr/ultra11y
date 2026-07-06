@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { runAudit } from "../src/audit.js";
-import { renderReport } from "../src/report.js";
+import { renderReport, renderPackReport } from "../src/report.js";
 import { checkReport } from "../src/check.js";
-import { registerRuntimePack } from "../src/standards/index.js";
+import { registerRuntimePack, loadPack } from "../src/standards/index.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
-const validReport = renderReport(runAudit({ inputs: [`${FIX}non-conforming/bad.html`] }), "fr");
+const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
+const validReport = renderReport(bad, "fr");
 
 const BROKEN = `# Rapport d'audit
 - **Taux de réussite automatique** : 50%
@@ -28,6 +29,22 @@ const BROKEN = `# Rapport d'audit
 describe("checkReport", () => {
   it("passes a well-formed WCAG report", () => {
     const r = checkReport(validReport);
+    expect(r.ok).toBe(true);
+    expect(r.issues).toHaveLength(0);
+  });
+
+  // Task 5 (Phase 4): §2 now renders one auditor block per NC criterion instead of a
+  // flat per-finding bullet — confirm the citation regex still recognizes every real
+  // criterion in that new shape, for BOTH the core report and a derived pack report.
+  it("passes a freshly-generated WCAG report in English too (new auditor-block NC shape)", () => {
+    const r = checkReport(renderReport(bad, "en"), "wcag", "en");
+    expect(r.ok).toBe(true);
+    expect(r.issues).toHaveLength(0);
+  });
+
+  it("passes a freshly-generated RGAA pack report (new auditor-block NC shape, pack vocabulary)", () => {
+    const rgaaReport = renderPackReport(bad, loadPack("rgaa"), "fr");
+    const r = checkReport(rgaaReport, "rgaa", "fr");
     expect(r.ok).toBe(true);
     expect(r.issues).toHaveLength(0);
   });

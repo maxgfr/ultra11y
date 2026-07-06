@@ -6,7 +6,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Lang } from "./types.js";
-import { getSC } from "./wcag.js";
+import { getSC, scTitle } from "./wcag.js";
 import { type StandardId, isCore, loadPack, getCriterion as getPackCriterion, idCaptureSource } from "./standards/index.js";
 
 export const VERIFY_MAX = 40;
@@ -26,18 +26,67 @@ export interface VerifyItem {
 
 const plain = (s: string) => s.replace(/\[([^\]]+)\]\(#[^)]*\)/g, "$1");
 
-// matches the section-2 non-conformity header emitted by report.ts. The id is the
-// active standard's grammar (WCAG's fixed 3-segment "1.4.3", or a pack's own idPattern —
-// RGAA's 2-segment "8.3", a hypothetical Section 508 "E205.4"…), optionally prefixed by
-// the pack name, e.g. "RGAA 8.3".
-function ncHeader(standard: StandardId): RegExp {
+// ---- CURRENT shape (Phase 4): report.ts §2 renders one auditor block per NC
+// criterion (src/auditor.ts `renderAuditorUnit`) — a "#### <icon> <label>" heading,
+// a "**<criterion term>** : <id>[ — <title>]" line, then a checklist of
+// "- [ ] `file:line` (`sel`) — message" occurrences (one per finding). The id is
+// stated ONCE per criterion (not per occurrence, unlike the legacy shape below), so
+// parsing tracks the "current criterion" as it walks the lines. ----
+
+/** The auditor block's criterion line. Deliberately does NOT anchor on the label
+ *  TEXT ("Critère"/"Success criterion"/"Critère de succès"/…) — that's the active
+ *  standard's vocabulary (src/standards/vocabulary.ts) and varies per pack/lang.
+ *  Matches ANY bold label, keying only on the id + the em-dash grammar, end-of-line
+ *  anchored so a pack's (possibly shorter) id pattern can never partial-match inside
+ *  a longer line, e.g. "**WCAG** : 2.4.7 (A)" (no trailing em-dash there). */
+function auditorCriterionLine(standard: StandardId): RegExp {
+  const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(loadPack(standard));
+  return new RegExp(`^\\*\\*[^*:]+\\*\\*\\s*:\\s*(${id})(?:\\s*—.*)?\\s*$`);
+}
+
+// One checklist occurrence line under a criterion block.
+const AUDITOR_OCCURRENCE = /^-\s\[ \]\s+`([^`]+):(\d+)`\s+\(`([^`]*)`\)\s+—\s+(.*)$/;
+// Any markdown heading (##/###/####) — leaving one resets the "current criterion" so
+// an occurrence-shaped line elsewhere in the document can never be mis-attributed.
+const HEADING_LINE = /^#{2,4}\s/;
+
+function buildWorklistFromAuditorBlocks(reportMd: string, standard: StandardId, max: number): VerifyItem[] {
+  const items: VerifyItem[] = [];
+  const critLine = auditorCriterionLine(standard);
+  const lines = reportMd.split("\n");
+  let currentId: string | null = null;
+  for (let i = 0; i < lines.length && items.length < max; i++) {
+    const line = lines[i]!;
+    const c = critLine.exec(line);
+    if (c) {
+      currentId = c[1]!;
+      continue;
+    }
+    if (HEADING_LINE.test(line)) {
+      currentId = null;
+      continue;
+    }
+    if (!currentId) continue;
+    const occ = AUDITOR_OCCURRENCE.exec(line);
+    if (!occ) continue;
+    items.push({ n: items.length + 1, criteriaId: currentId, file: occ[1]!, line: Number(occ[2]), selector: occ[3]!, claim: occ[4]!, verdict: null, note: "" });
+  }
+  return items;
+}
+
+// ---- LEGACY shape (pre-Phase-4 reports): report.ts §2 used to render one FLAT
+// bullet per finding, "- **<id> — <title>** — `file:line` (`sel`)" followed by a
+// plain-message sub-bullet. Kept as a fallback ONLY — a report produced by an older
+// ultra11y version (or re-rendered from an old on-disk report.md) must still verify,
+// never silently produce a 0-item (un-gated) worklist. ----
+function legacyNcHeader(standard: StandardId): RegExp {
   const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(loadPack(standard));
   return new RegExp(`^- \\*\\*(?:[A-Za-z]+ )?(${id}) — (.*?)\\*\\* — \`([^\`]+):(\\d+)\` \\(\`([^\`]*)\`\\)`);
 }
 
-export function buildWorklist(reportMd: string, standard: StandardId = "wcag", max = VERIFY_MAX): VerifyItem[] {
+function buildWorklistLegacy(reportMd: string, standard: StandardId, max: number): VerifyItem[] {
   const items: VerifyItem[] = [];
-  const header = ncHeader(standard);
+  const header = legacyNcHeader(standard);
   const lines = reportMd.split("\n");
   for (let i = 0; i < lines.length && items.length < max; i++) {
     const h = header.exec(lines[i]!);
@@ -53,6 +102,18 @@ export function buildWorklist(reportMd: string, standard: StandardId = "wcag", m
     items.push({ n: items.length + 1, criteriaId: h[1]!, file: h[3]!, line: Number(h[4]), selector: h[5]!, claim, verdict: null, note: "" });
   }
   return items;
+}
+
+/** Turn a report's non-conformities into a claim↔criterion↔element worklist for
+ *  adversarial support-checking. Parses the CURRENT auditor-block NC shape first
+ *  (see `buildWorklistFromAuditorBlocks`); if that finds nothing, falls back to the
+ *  LEGACY flat-bullet shape (`buildWorklistLegacy`) so an older report still verifies.
+ *  The two shapes are structurally disjoint (legacy bullets start with "- **", the
+ *  new checklist items with "- [ ] "), so there is no ambiguity about which parsed. */
+export function buildWorklist(reportMd: string, standard: StandardId = "wcag", max = VERIFY_MAX): VerifyItem[] {
+  const items = buildWorklistFromAuditorBlocks(reportMd, standard, max);
+  if (items.length) return items;
+  return buildWorklistLegacy(reportMd, standard, max);
 }
 
 const T = {
@@ -113,7 +174,7 @@ export function formatWorklist(items: VerifyItem[], semantic: boolean, standard:
     if (core) {
       const sc = getSC(it.criteriaId);
       if (sc) {
-        out.push(`      WCAG ${sc.sc} — ${sc.title} [${sc.level}] · ${s.understand}: ${sc.understanding}`);
+        out.push(`      WCAG ${sc.sc} — ${scTitle(sc.sc, lang)} [${sc.level}] · ${s.understand}: ${sc.understanding}`);
         if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.slice(0, 8).join(", ")}`);
       }
     } else if (pack) {

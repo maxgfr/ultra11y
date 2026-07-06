@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { renderReport, renderPackReport, writeReport } from "../src/report.js";
+import { prdUnits } from "../src/prd.js";
 import { loadPack } from "../src/standards/index.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
@@ -32,7 +33,23 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
   it("groups non-conformities by priority with success-criterion titles", () => {
     expect(md).toMatch(/### 🔴 Bloquant/);
     expect(md).toContain("3.1.1 —"); // Language of Page (html-lang NC)
-    expect(md).toContain("_Correction :_");
+  });
+
+  // Task 5 (Phase 4): every NC criterion in §2 is now rendered with the SAME auditor
+  // conformance block `prd`/GitHub issues use (src/auditor.ts `renderAuditorUnit`),
+  // reused via `prdUnits` — not a report-local re-implementation.
+  it("renders each NC criterion with the auditor conformance block (heading, criterion line, finding/expected/verification, checklist)", () => {
+    expect(md).toContain("#### 🔴 3.1.1 — Langue de la page"); // per-criterion heading (h4, under the h3 severity group)
+    expect(md).toContain("**Critère de succès** : 3.1.1 — Langue de la page"); // WCAG core vocabulary
+    expect(md).toMatch(/\*\*Constat \(Non conforme\)\*\* : \d+ occurrence\(s\)/);
+    expect(md).toContain("**Attendu (Conforme)** :");
+    expect(md).toContain("**Vérification** :");
+    expect(md).toMatch(/- \[ \] `.*bad\.html:\d+` \(`html`\) — .*lang/); // the actual finding checklist item
+  });
+
+  it("the NC section is EXACTLY the prd/auditor backlog units for this audit — no report-local re-grouping", () => {
+    const units = prdUnits(bad, "wcag", "fr");
+    for (const u of units) expect(md).toContain(`**Critère de succès** : ${u.criteriaId} — ${u.title}`);
   });
 
   it("lists manual criteria under the residual-risk section with a warning", () => {
@@ -71,6 +88,17 @@ describe("renderPackReport (derived RGAA view)", () => {
     const en = renderPackReport(bad, loadPack("rgaa"), "en");
     const manualSection = en.slice(en.indexOf("## 5."));
     expect(manualSection).toMatch(/RGAA 8\.1 —.*— _Out of engine scope/);
+  });
+
+  // Task 5 (Phase 4): the pack view's NC section renders the SAME auditor block too
+  // (pack vocabulary: "Critère"/"Thématique"), and a pack criterion never leaks into
+  // §2 unless it actually carries findings — outOfScope criteria stay §5-only.
+  it("renders each NC criterion with the auditor conformance block using RGAA's own vocabulary", () => {
+    const ncSection = md.slice(md.indexOf("## 2."), md.indexOf("## 3."));
+    expect(ncSection).toMatch(/#### 🔴 RGAA 8\.3 —/);
+    expect(ncSection).toContain("**Thématique** : 8.");
+    expect(ncSection).toMatch(/\*\*Critère\*\* : 8\.3 —/);
+    expect(ncSection).not.toContain("RGAA 8.1"); // out-of-scope — §5 only, never a fake NC block
   });
 });
 

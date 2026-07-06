@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { loadPack, getPack, isCore, hasStandard, listStandards, packsForSc, resolveStandard, derivePackResults } from "../src/standards/index.js";
-import { hasSC } from "../src/wcag.js";
+import { hasSC, knownScStatus } from "../src/wcag.js";
 import type { AuditResult, Finding } from "../src/types.js";
 
 const finding = (criteriaId: string): Finding => ({
@@ -90,14 +90,16 @@ describe("RGAA pack schema", () => {
     }
   });
 
-  it("maps every criterion to well-formed SCs; only 4.1.1 (removed in 2.2) falls outside the AA core", () => {
+  it("maps every criterion to well-formed SCs; any SC outside the AA core is a REAL known WCAG SC (out-of-core or removed), never unknown", () => {
     for (const c of pack.criteria) {
       expect(c.wcag.length, `wcag of ${c.id}`).toBeGreaterThan(0);
       for (const sc of c.wcag) {
         expect(sc, `SC shape ${sc}`).toMatch(/^\d+\.\d+\.\d+$/);
-        // RGAA (a WCAG 2.1 standard) may map to SCs outside our WCAG 2.2 AA core, but
-        // the ONLY such SC is 4.1.1 Parsing — obsolete and removed in 2.2.
-        if (!hasSC(sc)) expect(sc, `${c.id} → ${sc} is the removed 4.1.1`).toBe("4.1.1");
+        // RGAA (a WCAG 2.1 standard) may map to SCs outside our WCAG 2.2 AA core; today
+        // the ONLY such SC is 4.1.1 Parsing (obsolete, removed in 2.2) — but the
+        // assertion is against the real SC-universe classification, not a hardcoded id,
+        // so a future pack citing a real AAA SC is equally tolerated.
+        if (!hasSC(sc)) expect(knownScStatus(sc), `${c.id} → ${sc} must be a real out-of-core/removed WCAG SC`).toMatch(/^(out-of-core|removed)$/);
       }
     }
   });

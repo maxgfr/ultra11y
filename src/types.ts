@@ -88,6 +88,30 @@ export interface WcagData {
   criteria: Sc[];
 }
 
+// ---- WCAG SC universe (src/data/wcag-universe.json, produced by
+// scripts/build-standards.mjs --refresh-universe + build()): EVERY real WCAG 2.x
+// success criterion — every level (A/AA/AAA), plus the obsolete/removed 4.1.1 Parsing —
+// derived from the same vendored W3C source as the AA core, never invented. This is the
+// guardrail a pack's out-of-core SC mapping (e.g. an AAA criterion, or the removed 4.1.1)
+// is checked against, so validation never has to hardcode a single tolerated exception —
+// see src/wcag.ts `knownScStatus` and src/standards/validate.ts `classifySc`.
+export type ScStatus = "core-AA" | "out-of-core" | "removed";
+
+export interface WcagUniverseEntry {
+  id: string; // dotted SC id, e.g. "1.4.6"
+  title: string;
+  level: string; // "A" | "AA" | "AAA" | "" (no level ⇒ removed/obsolete)
+  status: ScStatus;
+}
+
+export interface WcagUniverseData {
+  wcagVersion: string;
+  source: string;
+  criteriaSource: string;
+  provenance: string;
+  criteria: WcagUniverseEntry[];
+}
+
 // ---- engine findings + audit result
 export interface Finding {
   ruleId: string;

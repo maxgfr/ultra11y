@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { loadPack, getCriterion, listTheme, resolveGlossary } from "../src/standards/index.js";
-import { hasSC } from "../src/wcag.js";
+import { hasSC, knownScStatus } from "../src/wcag.js";
 
 // The RGAA pack is the flagship country standard derived onto the WCAG 2.2 core. Its
 // dataset (13 themes / 106 criteria + glossary) must keep the exact official shape —
@@ -37,14 +37,19 @@ describe("RGAA pack dataset integrity", () => {
     }
   });
 
-  it("every criterion maps to ≥1 well-formed WCAG SC; in-core SCs resolve", () => {
+  it("every criterion maps to ≥1 well-formed WCAG SC; any out-of-core SC is a REAL removed/AAA SC (the SC-universe classification), never an unknown/fabricated one", () => {
     for (const c of rgaa.criteria) {
       expect(c.wcag.length, `wcag of ${c.id}`).toBeGreaterThan(0);
       for (const sc of c.wcag) {
         expect(sc, `SC shape ${sc}`).toMatch(/^\d+\.\d+\.\d+$/);
-        if (!hasSC(sc)) expect(sc, `${c.id} → ${sc} is the removed 4.1.1`).toBe("4.1.1");
+        if (!hasSC(sc)) expect(knownScStatus(sc), `${c.id} → ${sc} must classify as out-of-core or removed`).toMatch(/^(out-of-core|removed)$/);
       }
     }
+  });
+
+  it("the removed 4.1.1 Parsing (RGAA 8.1's only mapping) classifies as exactly 'removed' — strict, nothing unknown tolerated", () => {
+    expect(knownScStatus("4.1.1")).toBe("removed");
+    expect(knownScStatus("9.9.9")).toBeUndefined(); // a fabricated id is UNKNOWN, not a status
   });
 
   it("every glossary anchor referenced anywhere in a criterion (title, tests, particularCases, technicalNote) resolves in the pack glossary", () => {

@@ -70,8 +70,11 @@ export function checkGuidance(ds: unknown, pack: StandardPack): { errors: string
           case "unknown":
             errors.push(`${at}: SC "${sc}" is not a recognized WCAG success criterion — fabricated?`);
             break;
-          case "legit":
-            warnings.push(`${at}: SC "${sc}" is outside the WCAG 2.2 AA core (removed in 2.2)`);
+          case "out-of-core":
+            warnings.push(`${at}: SC "${sc}" is a real WCAG AAA success criterion, outside the WCAG 2.2 AA core`);
+            break;
+          case "removed":
+            warnings.push(`${at}: SC "${sc}" is a real but removed WCAG success criterion (obsolete)`);
             break;
         }
       }

@@ -4,11 +4,14 @@
 // success criteria through here. Country standards (RGAA, …) are derived packs that map
 // their criteria onto these SCs — see src/standards/.
 import wcagJson from "./data/wcag.json";
-import type { WcagData, Sc, WcagPrinciple, WcagGuideline, Automatability } from "./types.js";
+import wcagUniverseJson from "./data/wcag-universe.json";
+import type { WcagData, Sc, WcagPrinciple, WcagGuideline, Automatability, WcagUniverseData, ScStatus } from "./types.js";
 
 const data = wcagJson as unknown as WcagData;
+const universe = wcagUniverseJson as unknown as WcagUniverseData;
 
 const byId = new Map<string, Sc>(data.criteria.map((c) => [c.sc, c]));
+const universeById = new Map(universe.criteria.map((c) => [c.id, c]));
 
 export function allSC(): Sc[] {
   return data.criteria;
@@ -20,6 +23,15 @@ export function getSC(id: string): Sc | undefined {
 
 export function hasSC(id: string): boolean {
   return byId.has(id);
+}
+
+/** Classify ANY real WCAG 2.x success criterion against the shipped AA core — "core-AA"
+ *  (in `allSC()`), "out-of-core" (a real WCAG AAA criterion), "removed" (obsolete, e.g.
+ *  4.1.1 Parsing), or `undefined` if `id` is not a real WCAG success criterion at all
+ *  (fabricated). Backs a pack's out-of-core SC mappings (src/standards/validate.ts
+ *  `classifySc`, src/standards/derive.ts) without hardcoding a single tolerated id. */
+export function knownScStatus(id: string): ScStatus | undefined {
+  return universeById.get(id)?.status;
 }
 
 export function allPrinciples(): WcagPrinciple[] {

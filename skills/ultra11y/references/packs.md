@@ -39,11 +39,12 @@ node scripts/ultra11y.mjs pack scaffold > ./packs/mypack.json     # a blank, val
 `pack check` fails (exit 1) on any error: a missing required field, a `key` that collides
 with the reserved core `wcag`, an `idPattern` that won't compile, a theme `count` that
 disagrees with its criteria, a criterion whose `wcag` SC is **not a recognized WCAG
-success criterion** (a fabricated `9.9.9` fails; only the removed `4.1.1` is tolerated as
-a documented out-of-core mapping, with a warning), and — with `--guidance` — a guidance
-entry whose `criterionId` doesn't resolve to a real pack criterion, or whose code example
-won't parse. This is what makes an AI-authored pack trustworthy: the model proposes, the
-deterministic gate refuses fabrication.
+success criterion** (a fabricated `9.9.9` fails; any REAL WCAG SC outside the shipped 2.2
+AA core — a WCAG AAA criterion, or an obsolete/removed one like `4.1.1` — is tolerated as
+a documented out-of-core mapping, with a warning, per the full WCAG 2.x SC universe), and
+— with `--guidance` — a guidance entry whose `criterionId` doesn't resolve to a real pack
+criterion, or whose code example won't parse. This is what makes an AI-authored pack
+trustworthy: the model proposes, the deterministic gate refuses fabrication.
 
 ## AI-assisted ingestion of any rule source (the primary path)
 
@@ -69,8 +70,8 @@ usage.
 
 ## Gate-compatibility note (id grammar)
 
-`check` and `verify` parse pack criterion ids as the 2-segment `<n>.<n>` RGAA grammar. A
-pack whose ids use a different shape (e.g. Section 508 `E205.4`) still audits and reports,
-but `pack check` warns that those reports may not pass the `check`/`verify` gates. Prefer
-RGAA-style ids for full gate compatibility (generalizing the gate grammar from a pack's
-`idPattern` is a planned follow-up).
+`check` and `verify` recognize a pack's criterion ids in a rendered report by building
+their citation regex FROM the pack's own `idPattern` (already validated compilable by
+`pack check`) — not a single fixed shape. RGAA's 2-segment `<n>.<n>` (`8.3`) and a
+hypothetical Section 508 `E<n>.<n>` (`E205.4`) are both fully gate-compatible out of the
+box; any `idPattern` a pack declares works, with zero engine changes.

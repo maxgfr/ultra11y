@@ -9,9 +9,10 @@
 // only SC ids/titles/levels are reproduced. See NOTICE.
 //
 // Usage:
-//   node scripts/build-standards.mjs                 # emit src/data/wcag.json from the vendored snapshot
-//   node scripts/build-standards.mjs --offline       # same (alias; the snapshot is always local)
-//   node scripts/build-standards.mjs --refresh <dir> # re-derive the vendored snapshot from a w3c/wcag checkout
+//   node scripts/build-standards.mjs                 # emit src/data/wcag.json + wcag-universe.json from the vendored snapshots
+//   node scripts/build-standards.mjs --offline       # same (alias; the snapshots are always local)
+//   node scripts/build-standards.mjs --refresh <dir> # re-derive the vendored AA snapshot from a w3c/wcag checkout
+//   node scripts/build-standards.mjs --refresh-universe # re-fetch (network) the vendored FULL SC universe (all levels + removed 4.1.1)
 import { writeFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +20,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = join(root, "src", "data");
 const VENDOR = join(root, "scripts", "vendor", "wcag-2.2-sc.json");
+const VENDOR_UNIVERSE = join(root, "scripts", "vendor", "wcag-2.2-sc-universe.json");
 const PACKS_DIR = join(DATA, "standards");
 
 const VER_DIR = { 20: "2.0", 21: "2.1", 22: "2.2" };
@@ -88,6 +90,107 @@ function deriveSnapshot(srcDir) {
   writeFileSync(VENDOR, JSON.stringify(snapshot, null, 2) + "\n");
   console.log(`build-standards --refresh: ${aa.length} A/AA criteria derived from ${srcDir} → ${VENDOR}`);
   return snapshot;
+}
+
+// ---------------------------------------------------------------------------
+// Universe mode: the COMPLETE WCAG 2.x success-criterion list — every level (A/AA/AAA)
+// PLUS the obsolete/removed 4.1.1 Parsing — vendored so a pack's out-of-core SC mapping
+// (e.g. an EN 301 549 criterion citing an AAA success criterion, or RGAA citing the
+// removed 4.1.1) can be checked against the REAL W3C universe instead of a single
+// hardcoded exception. deriveSnapshot() above already reads this same W3C numbering from
+// a *local* w3c/wcag checkout, but only persists the shipped AA slice; this fetches
+// (network, dev-only, mirrors scripts/build-pack-rgaa.mjs's own `--fetch` source
+// vendoring) the same guidelines/index.html + every sc/<version>/<slug>.html fragment via
+// raw.githubusercontent.com and vendors the UNFILTERED result — nothing invented, only
+// the minimum extra data (id/title/level) needed to classify what falls outside the core.
+// Re-run only when the W3C source changes (a WCAG erratum or new version):
+//   node scripts/build-standards.mjs --refresh-universe
+// ---------------------------------------------------------------------------
+const RAW_BASE = "https://raw.githubusercontent.com/w3c/wcag/main";
+
+async function fetchText(path) {
+  const r = await fetch(`${RAW_BASE}/${path}`);
+  if (!r.ok) throw new Error(`build-standards --refresh-universe: GET ${path} → HTTP ${r.status}`);
+  return r.text();
+}
+
+async function deriveUniverse() {
+  const idx = await fetchText("guidelines/index.html");
+  const tok =
+    /<section class="(principle|guideline)" id="([^"]+)">|<h([23])>\s*([\s\S]*?)\s*<\/h\3>|data-include="sc\/(\d+)\/([^"]+)\.html"/g;
+  let p = 0,
+    g = 0,
+    s = 0,
+    curP = null,
+    curG = null,
+    awaitP = false,
+    awaitG = false;
+  const principles = [];
+  const guidelines = [];
+  const stubs = []; // { sc, slug, version, principle, guideline } — title/level fetched next
+  let m;
+  while ((m = tok.exec(idx))) {
+    if (m[1] === "principle") {
+      p++;
+      g = 0;
+      curP = { number: p, title: "" };
+      principles.push(curP);
+      awaitP = true;
+    } else if (m[1] === "guideline") {
+      g++;
+      s = 0;
+      curG = { number: `${p}.${g}`, title: "" };
+      guidelines.push(curG);
+      awaitG = true;
+    } else if (m[3] === "2" && awaitP) {
+      curP.title = m[4].replace(/\s+/g, " ").trim();
+      awaitP = false;
+    } else if (m[3] === "3" && awaitG) {
+      curG.title = m[4].replace(/\s+/g, " ").trim();
+      awaitG = false;
+    } else if (m[5]) {
+      s++;
+      stubs.push({ sc: `${p}.${g}.${s}`, slug: m[6], version: Number(m[5]), principle: p, guideline: curG.number });
+    }
+  }
+
+  const criteria = [];
+  for (const stub of stubs) {
+    const frag = await fetchText(`guidelines/sc/${stub.version}/${stub.slug}.html`);
+    const title = (frag.match(/<h4>\s*([\s\S]*?)\s*<\/h4>/) || [])[1]?.replace(/\s+/g, " ").trim() ?? "";
+    // No <p class="conformance-level"> at all ⇒ the SC has no current level — the
+    // (so far unique) case is the obsolete/removed 4.1.1 Parsing.
+    const level = (frag.match(/<p class="conformance-level">\s*([A]{1,3})\s*<\/p>/) || [])[1] ?? "";
+    const status = !level ? "removed" : level === "AAA" ? "out-of-core" : "core-AA";
+    criteria.push({
+      sc: stub.sc,
+      slug: stub.slug,
+      title,
+      level,
+      addedIn: VER_DIR[stub.version],
+      principle: stub.principle,
+      guideline: stub.guideline,
+      status,
+    });
+  }
+
+  const universe = {
+    wcagVersion: "2.2",
+    source: "https://www.w3.org/TR/WCAG22/",
+    criteriaSource: "https://github.com/w3c/wcag",
+    provenance:
+      `Full WCAG 2.x SC universe (all levels incl. AAA, and the removed 4.1.1 Parsing) fetched from ` +
+      `raw.githubusercontent.com/w3c/wcag@main on ${new Date().toISOString().slice(0, 10)} via ` +
+      "`node scripts/build-standards.mjs --refresh-universe`. Classification: core-AA = ships in " +
+      "src/data/wcag.json (the shipped WCAG 2.2 AA core); out-of-core = WCAG AAA; removed = obsolete (4.1.1).",
+    principles,
+    guidelines,
+    criteria,
+  };
+  mkdirSync(dirname(VENDOR_UNIVERSE), { recursive: true });
+  writeFileSync(VENDOR_UNIVERSE, JSON.stringify(universe, null, 2) + "\n");
+  console.log(`build-standards --refresh-universe: ${criteria.length} SCs (all levels) derived → ${VENDOR_UNIVERSE}`);
+  return universe;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,6 +285,45 @@ function seedFromPacks() {
   return { techniques: dedup(techniques), sources };
 }
 
+// Emit src/data/wcag-universe.json — the classification dataset src/wcag.ts
+// `knownScStatus()` loads — from the vendored full universe. `shipped` is the AA
+// criteria list `build()` just wrote to wcag.json: the guard below fails loudly if the
+// two independently-vendored snapshots ever disagree on what's in the core.
+function buildUniverse(shipped) {
+  if (!existsSync(VENDOR_UNIVERSE)) {
+    console.error(`build-standards: missing vendored universe snapshot ${VENDOR_UNIVERSE}. Run: node scripts/build-standards.mjs --refresh-universe`);
+    process.exit(1);
+  }
+  const univ = JSON.parse(readFileSync(VENDOR_UNIVERSE, "utf8"));
+  const criteria = univ.criteria.map((c) => ({ id: c.sc, title: c.title, level: c.level, status: c.status }));
+  const out = {
+    wcagVersion: univ.wcagVersion,
+    source: univ.source,
+    criteriaSource: univ.criteriaSource,
+    provenance: univ.provenance,
+    criteria,
+  };
+  mkdirSync(DATA, { recursive: true });
+  writeFileSync(join(DATA, "wcag-universe.json"), JSON.stringify(out, null, 2) + "\n");
+
+  const coreIds = new Set(criteria.filter((c) => c.status === "core-AA").map((c) => c.id));
+  const shippedIds = new Set(shipped.map((c) => c.sc));
+  const missingFromUniverse = [...shippedIds].filter((id) => !coreIds.has(id));
+  const extraInUniverse = [...coreIds].filter((id) => !shippedIds.has(id));
+  if (missingFromUniverse.length || extraInUniverse.length) {
+    console.error(
+      `build-standards: wcag-universe.json's core-AA set disagrees with src/data/wcag.json — ` +
+        `missing: ${missingFromUniverse.join(", ") || "none"}; extra: ${extraInUniverse.join(", ") || "none"}`,
+    );
+    process.exit(1);
+  }
+  const tally = { "core-AA": 0, "out-of-core": 0, removed: 0 };
+  for (const c of criteria) tally[c.status]++;
+  console.log(
+    `build-standards: ${criteria.length} WCAG 2.x SCs classified — core-AA ${tally["core-AA"]}, out-of-core ${tally["out-of-core"]}, removed ${tally.removed} → src/data/wcag-universe.json`,
+  );
+}
+
 function build() {
   if (!existsSync(VENDOR)) {
     console.error(`build-standards: missing vendored snapshot ${VENDOR}. Run: node scripts/build-standards.mjs --refresh <w3c/wcag checkout>`);
@@ -243,8 +385,18 @@ function build() {
   console.log(`build-standards: ${criteria.length} WCAG 2.2 A/AA criteria → src/data/wcag.json`);
   console.log(`build-standards: automatability — static ${tally.static}, needs-rendering ${tally["needs-rendering"]}, judgment ${tally.judgment}`);
   console.log(`build-standards: seeded techniques from ${sources.length ? sources.map((s) => s.replace(root + "/", "")).join(", ") : "(no pack found — empty)"}`);
+
+  buildUniverse(criteria);
 }
 
-const refreshIdx = process.argv.indexOf("--refresh");
-if (refreshIdx !== -1) deriveSnapshot(process.argv[refreshIdx + 1]);
-build();
+async function main() {
+  const refreshIdx = process.argv.indexOf("--refresh");
+  if (refreshIdx !== -1) deriveSnapshot(process.argv[refreshIdx + 1]);
+  if (process.argv.includes("--refresh-universe")) await deriveUniverse();
+  build();
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

@@ -5,29 +5,28 @@
 // hand-authored) pack cannot fabricate a criterion→SC mapping and slip through. No new
 // dependency: pure TS over the bundled types + the WCAG core (`hasSC`).
 import type { StandardPack } from "./types.js";
-import type { Lang } from "../types.js";
-import { hasSC } from "../wcag.js";
+import { hasSC, knownScStatus } from "../wcag.js";
 
 // Mirrors CORE_KEY in registry.ts; inlined to avoid an import cycle (the registry
 // imports this validator for registerRuntimePack).
 const RESERVED_CORE_KEY = "wcag";
-const KNOWN_LANGS: readonly Lang[] = ["fr", "en"];
+// A pack locale is a BCP-47-ish tag ("fr", "en", "pt-BR", "nl-BE"…) — NOT constrained to
+// the UI frame's `Lang` ("fr"|"en"): a pack may legitimately be authored in any language
+// (see src/standards/types.ts `LocaleString`).
+const LOCALE_SHAPE = /^[a-z]{2,3}(-[a-zA-Z]{2,4})?$/;
 const SC_SHAPE = /^\d+\.\d+\.\d+$/; // a WCAG success-criterion id, e.g. "1.4.3"
 
-// WCAG SCs that legitimately appear in country packs but are absent from our WCAG 2.2 AA
-// core dataset — currently only 4.1.1 Parsing (valid in 2.0/2.1, removed in 2.2; RGAA 8.1
-// maps to it). Any OTHER well-formed-but-unknown SC is treated as fabricated (error), so
-// an AI cannot invent a plausible-looking "9.9.9" and have it pass the gate.
-const LEGIT_OUT_OF_CORE: ReadonlySet<string> = new Set(["4.1.1"]);
-
-/** Classify a WCAG SC id for pack/guidance validation. */
-export function classifySc(sc: string): "core" | "legit" | "malformed" | "unknown" {
+/** Classify a WCAG SC id for pack/guidance validation, against the REAL WCAG 2.x
+ *  universe (src/wcag.ts `knownScStatus`) — never a single hardcoded tolerated id, so a
+ *  second pack (Section 508, EN 301 549…) can legitimately cite an AAA success criterion
+ *  or the removed 4.1.1 without the gate having to special-case it. */
+export function classifySc(sc: string): "core" | "out-of-core" | "removed" | "malformed" | "unknown" {
   if (!SC_SHAPE.test(sc)) return "malformed";
   if (hasSC(sc)) return "core";
-  if (LEGIT_OUT_OF_CORE.has(sc)) return "legit";
+  const status = knownScStatus(sc);
+  if (status === "out-of-core" || status === "removed") return status;
   return "unknown";
 }
-const GATE_ID_SHAPE = /^\d+\.\d+$/; // the 2-segment pack-id grammar check.ts/verify.ts parse
 const REQUIRED_STRING_FIELDS = ["key", "name", "org", "country", "baseVersion", "wcagVersion", "license", "source", "attribution", "idPattern"] as const;
 
 export interface PackIssue {
@@ -78,13 +77,18 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
   const locales = Array.isArray(p.locales) ? p.locales : [];
   if (locales.length === 0) err("locales", "locales must be a non-empty array");
   for (const l of locales) {
-    if (!KNOWN_LANGS.includes(l as Lang)) err("locales", `unsupported locale "${String(l)}" (known: ${KNOWN_LANGS.join(", ")})`);
+    if (typeof l !== "string" || !LOCALE_SHAPE.test(l)) err("locales", `malformed locale "${String(l)}" (expected a BCP-47-ish tag, e.g. "en", "fr", "pt-BR")`);
+  }
+  // A pack need not carry fr/en at all (a "de"-only standard is legitimate — the UI frame
+  // falls back to its own generic terms), but it's worth flagging: WARNING, not an error.
+  if (locales.length && !locales.some((l) => l === "fr" || l === "en")) {
+    warn("locales", 'pack carries neither "fr" nor "en" — the UI frame will fall back to its own generic auditor-display terms');
   }
   const defaultLocale = p.defaultLocale;
   if (typeof defaultLocale !== "string" || !locales.includes(defaultLocale)) {
     err("defaultLocale", "defaultLocale must be one of locales");
   }
-  const loc = (typeof defaultLocale === "string" ? defaultLocale : KNOWN_LANGS[0]) as Lang;
+  const loc = typeof defaultLocale === "string" ? defaultLocale : ((locales[0] as string | undefined) ?? "en");
 
   let idRe: RegExp | null = null;
   if (typeof p.idPattern === "string") {
@@ -114,7 +118,6 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
   if (!criteria) err("criteria", "criteria must be an array");
   const ids = new Set<string>();
   const countByTheme = new Map<number, number>();
-  let nonGateId = false;
   criteria?.forEach((c, i) => {
     const id = c?.id;
     if (typeof id !== "string" || id === "") {
@@ -123,7 +126,6 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
       if (ids.has(id)) err(`criteria[${i}].id`, `duplicate criterion id "${id}"`);
       ids.add(id);
       if (idRe && !idRe.test(id)) err(`criteria[${i}].id`, `id "${id}" does not match idPattern ${String(p.idPattern)}`);
-      if (!GATE_ID_SHAPE.test(id)) nonGateId = true;
     }
     const theme = c?.theme;
     if (typeof theme !== "number") {
@@ -151,10 +153,22 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
             err(where, `malformed SC id "${sc}" (expected N.N.N)`);
             break;
           case "unknown":
-            err(where, `SC "${sc}" is not a recognized WCAG success criterion (not in the WCAG 2.2 AA core and not a known removed SC) — fabricated?`);
+            err(
+              where,
+              `SC "${sc}" is not a recognized WCAG success criterion (not in the WCAG 2.2 AA core, and not a real WCAG AAA or removed SC) — fabricated?`,
+            );
             break;
-          case "legit":
-            warn(where, `SC "${sc}" is outside the WCAG 2.2 AA core (removed in 2.2) — kept as a pack-local mapping`);
+          case "out-of-core":
+            warn(
+              where,
+              `SC "${sc}" is a real WCAG AAA success criterion, outside the WCAG 2.2 AA core — kept as a pack-local mapping (out of engine scope; derive as manual)`,
+            );
+            break;
+          case "removed":
+            warn(
+              where,
+              `SC "${sc}" is a real but removed WCAG success criterion (obsolete) — kept as a pack-local mapping (out of engine scope; derive as manual)`,
+            );
             break;
         }
       });
@@ -170,13 +184,6 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
       err(`themes[${i}].count`, `theme ${n} declares count ${declared} but has ${actual} criteria`);
     }
   });
-
-  if (nonGateId) {
-    warn(
-      "criteria",
-      "some criterion ids are not the 2-segment <n>.<n> grammar that `check`/`verify` parse — reports against this pack may not pass those gates (see references/packs.md)",
-    );
-  }
 
   // Optional auditor-display vocabulary. Absent → the generic/core defaults apply (never an
   // error). Present → each supplied term must be a LocaleString carrying at least the default

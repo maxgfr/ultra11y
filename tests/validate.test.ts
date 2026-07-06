@@ -54,6 +54,15 @@ describe("validatePack", () => {
     expect(warns(legacy).some((w) => w.message.includes("4.1.1"))).toBe(true);
   });
 
+  it("also warns (never errors) on a real WCAG AAA success criterion — not just the removed 4.1.1", () => {
+    // 1.4.6 Contrast (Enhanced) is a REAL WCAG AAA criterion, outside the shipped 2.2 AA
+    // core: a second pack (EN 301 549, Section 508…) legitimately mapping to it must not
+    // be rejected as fabricated — this is the whole point of the SC-universe classifier.
+    const r = validatePack({ ...base(), criteria: [{ id: "1.1", theme: 1, title: { en: "x" }, titlePlain: { en: "x" }, wcag: ["1.4.6"] }] });
+    expect(r.ok).toBe(true);
+    expect(warns(r).some((w) => w.message.includes("1.4.6"))).toBe(true);
+  });
+
   it("errors on a theme count that disagrees with the criteria", () => {
     expect(validatePack({ ...base(), themes: [{ number: 1, name: { en: "Images" }, count: 7 }] }).ok).toBe(false);
   });
@@ -67,21 +76,45 @@ describe("validatePack", () => {
     expect(validatePack(noName).ok).toBe(false);
   });
 
-  it("warns when a criterion id is not the 2-segment gate grammar", () => {
+  it("accepts an arbitrary idPattern grammar (e.g. Section 508 E205.4) with no gate-compatibility warning", () => {
+    // check.ts/verify.ts now build their citation regex FROM the pack's own idPattern
+    // (see src/standards/pack.ts idCaptureSource) — any grammar is gate-compatible, so
+    // this is no longer a warning-worthy shape.
     const r = validatePack({
       ...base(),
       idPattern: "^E?\\d+(\\.\\d+)*$",
       criteria: [{ id: "E205.4", theme: 1, title: { en: "x" }, titlePlain: { en: "x" }, wcag: ["1.1.1"] }],
     });
     expect(r.ok).toBe(true);
-    expect(warns(r).some((w) => /check.*verify|grammar|gate/i.test(w.message))).toBe(true);
+    expect(warns(r)).toHaveLength(0);
+  });
+
+  it("warns (not errors) when a pack carries neither fr nor en, and accepts a de-only pack", () => {
+    const deOnly = {
+      ...base(),
+      locales: ["de"],
+      defaultLocale: "de",
+      themes: [{ number: 1, name: { de: "Bilder" }, count: 1 }],
+      criteria: [{ id: "1.1", theme: 1, title: { de: "Alt" }, titlePlain: { de: "Alt" }, wcag: ["1.1.1"] }],
+    };
+    const r = validatePack(deOnly);
+    expect(r.ok).toBe(true);
+    expect(warns(r).some((w) => /fr.*en|neither/i.test(w.message))).toBe(true);
+  });
+
+  it("errors on a malformed locale tag but accepts any well-formed BCP-47-ish tag", () => {
+    const bad = validatePack({ ...base(), locales: ["ENGLISH"], defaultLocale: "ENGLISH" });
+    expect(errs(bad).some((e) => e.path === "locales")).toBe(true);
+    const good = validatePack({ ...base(), locales: ["pt-BR", "en"], defaultLocale: "en" });
+    expect(errs(good).some((e) => e.path === "locales")).toBe(false);
   });
 });
 
 describe("classifySc", () => {
-  it("classifies core / legit / unknown / malformed", () => {
+  it("classifies core / out-of-core / removed / unknown / malformed", () => {
     expect(classifySc("1.1.1")).toBe("core");
-    expect(classifySc("4.1.1")).toBe("legit");
+    expect(classifySc("4.1.1")).toBe("removed");
+    expect(classifySc("1.4.6")).toBe("out-of-core"); // Contrast (Enhanced), a real WCAG AAA SC
     expect(classifySc("9.9.9")).toBe("unknown");
     expect(classifySc("1.1")).toBe("malformed");
   });

@@ -1106,9 +1106,543 @@ var wcag_default = {
   ]
 };
 
+// src/data/wcag-universe.json
+var wcag_universe_default = {
+  wcagVersion: "2.2",
+  source: "https://www.w3.org/TR/WCAG22/",
+  criteriaSource: "https://github.com/w3c/wcag",
+  provenance: "Full WCAG 2.x SC universe (all levels incl. AAA, and the removed 4.1.1 Parsing) fetched from raw.githubusercontent.com/w3c/wcag@main on 2026-07-06 via `node scripts/build-standards.mjs --refresh-universe`. Classification: core-AA = ships in src/data/wcag.json (the shipped WCAG 2.2 AA core); out-of-core = WCAG AAA; removed = obsolete (4.1.1).",
+  criteria: [
+    {
+      id: "1.1.1",
+      title: "Non-text Content",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.2.1",
+      title: "Audio-only and Video-only (Prerecorded)",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.2.2",
+      title: "Captions (Prerecorded)",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.2.3",
+      title: "Audio Description or Media Alternative (Prerecorded)",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.2.4",
+      title: "Captions (Live)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.2.5",
+      title: "Audio Description (Prerecorded)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.2.6",
+      title: "Sign Language (Prerecorded)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.2.7",
+      title: "Extended Audio Description (Prerecorded)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.2.8",
+      title: "Media Alternative (Prerecorded)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.2.9",
+      title: "Audio-only (Live)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.3.1",
+      title: "Info and Relationships",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.3.2",
+      title: "Meaningful Sequence",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.3.3",
+      title: "Sensory Characteristics",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.3.4",
+      title: "Orientation",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.3.5",
+      title: "Identify Input Purpose",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.3.6",
+      title: "Identify Purpose",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.4.1",
+      title: "Use of Color",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.2",
+      title: "Audio Control",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.3",
+      title: "Contrast (Minimum)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.4",
+      title: "Resize Text",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.5",
+      title: "Images of Text",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.6",
+      title: "Contrast (Enhanced)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.4.7",
+      title: "Low or No Background Audio",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.4.8",
+      title: "Visual Presentation",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.4.9",
+      title: "Images of Text (No Exception)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "1.4.10",
+      title: "Reflow",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.11",
+      title: "Non-text Contrast",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.12",
+      title: "Text Spacing",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "1.4.13",
+      title: "Content on Hover or Focus",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "2.1.1",
+      title: "Keyboard",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.1.2",
+      title: "No Keyboard Trap",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.1.3",
+      title: "Keyboard (No Exception)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.1.4",
+      title: "Character Key Shortcuts",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.2.1",
+      title: "Timing Adjustable",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.2.2",
+      title: "Pause, Stop, Hide",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.2.3",
+      title: "No Timing",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.2.4",
+      title: "Interruptions",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.2.5",
+      title: "Re-authenticating",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.2.6",
+      title: "Timeouts",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.3.1",
+      title: "Three Flashes or Below Threshold",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.3.2",
+      title: "Three Flashes",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.3.3",
+      title: "Animation from Interactions",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.4.1",
+      title: "Bypass Blocks",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.2",
+      title: "Page Titled",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.3",
+      title: "Focus Order",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.4",
+      title: "Link Purpose (In Context)",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.5",
+      title: "Multiple Ways",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.6",
+      title: "Headings and Labels",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.7",
+      title: "Focus Visible",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.8",
+      title: "Location",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.4.9",
+      title: "Link Purpose (Link Only)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.4.10",
+      title: "Section Headings",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.4.11",
+      title: "Focus Not Obscured (Minimum)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "2.4.12",
+      title: "Focus Not Obscured (Enhanced)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.4.13",
+      title: "Focus Appearance",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.5.1",
+      title: "Pointer Gestures",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.5.2",
+      title: "Pointer Cancellation",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.5.3",
+      title: "Label in Name",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.5.4",
+      title: "Motion Actuation",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "2.5.5",
+      title: "Target Size (Enhanced)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.5.6",
+      title: "Concurrent Input Mechanisms",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "2.5.7",
+      title: "Dragging Movements",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "2.5.8",
+      title: "Target Size (Minimum)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.1.1",
+      title: "Language of Page",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.1.2",
+      title: "Language of Parts",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.1.3",
+      title: "Unusual Words",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.1.4",
+      title: "Abbreviations",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.1.5",
+      title: "Reading Level",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.1.6",
+      title: "Pronunciation",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.2.1",
+      title: "On Focus",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.2.2",
+      title: "On Input",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.2.3",
+      title: "Consistent Navigation",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.2.4",
+      title: "Consistent Identification",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.2.5",
+      title: "Change on Request",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.2.6",
+      title: "Consistent Help",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.1",
+      title: "Error Identification",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.2",
+      title: "Labels or Instructions",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.3",
+      title: "Error Suggestion",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.4",
+      title: "Error Prevention (Legal, Financial, Data)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.5",
+      title: "Help",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.3.6",
+      title: "Error Prevention (All)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "3.3.7",
+      title: "Redundant Entry",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.8",
+      title: "Accessible Authentication (Minimum)",
+      level: "AA",
+      status: "core-AA"
+    },
+    {
+      id: "3.3.9",
+      title: "Accessible Authentication (Enhanced)",
+      level: "AAA",
+      status: "out-of-core"
+    },
+    {
+      id: "4.1.1",
+      title: "Parsing (Obsolete and removed)",
+      level: "",
+      status: "removed"
+    },
+    {
+      id: "4.1.2",
+      title: "Name, Role, Value",
+      level: "A",
+      status: "core-AA"
+    },
+    {
+      id: "4.1.3",
+      title: "Status Messages",
+      level: "AA",
+      status: "core-AA"
+    }
+  ]
+};
+
 // src/wcag.ts
 var data = wcag_default;
+var universe = wcag_universe_default;
 var byId = new Map(data.criteria.map((c) => [c.sc, c]));
+var universeById = new Map(universe.criteria.map((c) => [c.id, c]));
 function allSC() {
   return data.criteria;
 }
@@ -1117,6 +1651,9 @@ function getSC(id) {
 }
 function hasSC(id) {
   return byId.has(id);
+}
+function knownScStatus(id) {
+  return universeById.get(id)?.status;
 }
 function allPrinciples() {
   return data.principles;
@@ -20215,7 +20752,7 @@ function isBold(el) {
 function isLarge(el) {
   const px = fontPx(el);
   if (px === null) return false;
-  return px >= 24 || px >= 18.5 && isBold(el);
+  return px >= 24 || px >= 18.66 && isBold(el);
 }
 function hasDirectText(el) {
   return el.children.some((c) => c.type === "text" && c.data.trim() !== "");
@@ -24678,16 +25215,15 @@ var rgaa_glossary_default = {
 
 // src/standards/validate.ts
 var RESERVED_CORE_KEY = "wcag";
-var KNOWN_LANGS = ["fr", "en"];
+var LOCALE_SHAPE = /^[a-z]{2,3}(-[a-zA-Z]{2,4})?$/;
 var SC_SHAPE = /^\d+\.\d+\.\d+$/;
-var LEGIT_OUT_OF_CORE = /* @__PURE__ */ new Set(["4.1.1"]);
 function classifySc(sc) {
   if (!SC_SHAPE.test(sc)) return "malformed";
   if (hasSC(sc)) return "core";
-  if (LEGIT_OUT_OF_CORE.has(sc)) return "legit";
+  const status = knownScStatus(sc);
+  if (status === "out-of-core" || status === "removed") return status;
   return "unknown";
 }
-var GATE_ID_SHAPE = /^\d+\.\d+$/;
 var REQUIRED_STRING_FIELDS = ["key", "name", "org", "country", "baseVersion", "wcagVersion", "license", "source", "attribution", "idPattern"];
 function validatePack(raw, opts = {}) {
   const issues = [];
@@ -24715,13 +25251,16 @@ function validatePack(raw, opts = {}) {
   const locales = Array.isArray(p.locales) ? p.locales : [];
   if (locales.length === 0) err("locales", "locales must be a non-empty array");
   for (const l of locales) {
-    if (!KNOWN_LANGS.includes(l)) err("locales", `unsupported locale "${String(l)}" (known: ${KNOWN_LANGS.join(", ")})`);
+    if (typeof l !== "string" || !LOCALE_SHAPE.test(l)) err("locales", `malformed locale "${String(l)}" (expected a BCP-47-ish tag, e.g. "en", "fr", "pt-BR")`);
+  }
+  if (locales.length && !locales.some((l) => l === "fr" || l === "en")) {
+    warn("locales", 'pack carries neither "fr" nor "en" \u2014 the UI frame will fall back to its own generic auditor-display terms');
   }
   const defaultLocale = p.defaultLocale;
   if (typeof defaultLocale !== "string" || !locales.includes(defaultLocale)) {
     err("defaultLocale", "defaultLocale must be one of locales");
   }
-  const loc = typeof defaultLocale === "string" ? defaultLocale : KNOWN_LANGS[0];
+  const loc = typeof defaultLocale === "string" ? defaultLocale : locales[0] ?? "en";
   let idRe = null;
   if (typeof p.idPattern === "string") {
     try {
@@ -24748,7 +25287,6 @@ function validatePack(raw, opts = {}) {
   if (!criteria) err("criteria", "criteria must be an array");
   const ids = /* @__PURE__ */ new Set();
   const countByTheme = /* @__PURE__ */ new Map();
-  let nonGateId = false;
   criteria?.forEach((c, i) => {
     const id = c?.id;
     if (typeof id !== "string" || id === "") {
@@ -24757,7 +25295,6 @@ function validatePack(raw, opts = {}) {
       if (ids.has(id)) err(`criteria[${i}].id`, `duplicate criterion id "${id}"`);
       ids.add(id);
       if (idRe && !idRe.test(id)) err(`criteria[${i}].id`, `id "${id}" does not match idPattern ${String(p.idPattern)}`);
-      if (!GATE_ID_SHAPE.test(id)) nonGateId = true;
     }
     const theme = c?.theme;
     if (typeof theme !== "number") {
@@ -24785,10 +25322,22 @@ function validatePack(raw, opts = {}) {
             err(where, `malformed SC id "${sc}" (expected N.N.N)`);
             break;
           case "unknown":
-            err(where, `SC "${sc}" is not a recognized WCAG success criterion (not in the WCAG 2.2 AA core and not a known removed SC) \u2014 fabricated?`);
+            err(
+              where,
+              `SC "${sc}" is not a recognized WCAG success criterion (not in the WCAG 2.2 AA core, and not a real WCAG AAA or removed SC) \u2014 fabricated?`
+            );
             break;
-          case "legit":
-            warn(where, `SC "${sc}" is outside the WCAG 2.2 AA core (removed in 2.2) \u2014 kept as a pack-local mapping`);
+          case "out-of-core":
+            warn(
+              where,
+              `SC "${sc}" is a real WCAG AAA success criterion, outside the WCAG 2.2 AA core \u2014 kept as a pack-local mapping (out of engine scope; derive as manual)`
+            );
+            break;
+          case "removed":
+            warn(
+              where,
+              `SC "${sc}" is a real but removed WCAG success criterion (obsolete) \u2014 kept as a pack-local mapping (out of engine scope; derive as manual)`
+            );
             break;
         }
       });
@@ -24803,12 +25352,6 @@ function validatePack(raw, opts = {}) {
       err(`themes[${i}].count`, `theme ${n} declares count ${declared} but has ${actual} criteria`);
     }
   });
-  if (nonGateId) {
-    warn(
-      "criteria",
-      "some criterion ids are not the 2-segment <n>.<n> grammar that `check`/`verify` parse \u2014 reports against this pack may not pass those gates (see references/packs.md)"
-    );
-  }
   if (p.vocabulary !== void 0) {
     if (typeof p.vocabulary !== "object" || p.vocabulary === null || Array.isArray(p.vocabulary)) {
       warn("vocabulary", "vocabulary must be an object of localized terms \u2014 ignored");
@@ -24869,6 +25412,9 @@ function getPack(key) {
 function listStandards() {
   return [CORE_KEY, ...registry.keys()];
 }
+function listPacks() {
+  return [...registry.values()].map((r) => r.pack);
+}
 function packsForSc(sc) {
   const out = [];
   for (const { pack } of registry.values()) {
@@ -24902,6 +25448,9 @@ function title(pack, c, lang) {
 function titlePlain(pack, c, lang) {
   return localize(pack, c.titlePlain, lang);
 }
+function idCaptureSource(pack) {
+  return pack.idPattern.replace(/^\^/, "").replace(/\$$/, "");
+}
 
 // src/standards/derive.ts
 function aggregate(statuses) {
@@ -24914,6 +25463,13 @@ function derivePackResults(audit, packKey) {
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
   return pack.criteria.map((pc) => {
+    const outOfScope = pc.wcag.every((sc) => {
+      const s = knownScStatus(sc);
+      return s === "out-of-core" || s === "removed";
+    });
+    if (outOfScope) {
+      return { id: pc.id, theme: pc.theme, status: "manual", findings: [], scs: pc.wcag, outOfScope: true };
+    }
     const scResults = pc.wcag.map((sc) => byScId.get(sc)).filter((x) => !!x);
     const findings = scResults.flatMap((r) => r.findings);
     const status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
@@ -24949,7 +25505,7 @@ function vocabularyFor(standard, lang) {
   const pack = isCore(standard) ? void 0 : getPack(standard);
   const voc = pack?.vocabulary;
   const packDefault = pack?.defaultLocale ?? "en";
-  const term = (k) => pick(voc?.[k], lang, packDefault) ?? base[k][lang];
+  const term = (k) => pick(voc?.[k], lang, packDefault) ?? base[k][lang] ?? base[k].en;
   return {
     theme: term("theme"),
     criterion: term("criterion"),
@@ -25001,6 +25557,7 @@ var L = {
     naTitle: "4. Crit\xE8res non applicables (NA)",
     manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
     manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
+    outOfScope: "Hors p\xE9rim\xE8tre moteur \u2014 mapp\xE9 sur des SC hors WCAG 2.2 AA ; v\xE9rification manuelle.",
     nothing: "Aucun.",
     dedup: "D\xE9dup",
     canonical: "fichier(s) canonique(s) audit\xE9(s)",
@@ -25037,6 +25594,7 @@ var L = {
     naTitle: "4. Not-applicable criteria (NA)",
     manualTitle: "5. Criteria to assess manually (rendering / judgment)",
     manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
+    outOfScope: "Out of engine scope \u2014 mapped to SCs outside WCAG 2.2 AA; manual verification.",
     nothing: "None.",
     dedup: "Dedup",
     canonical: "canonical file(s) audited",
@@ -25119,7 +25677,7 @@ function render(r, lang, opts) {
   out.push(na.length ? na.map((x) => `- ${x.label}${x.justification ? ` \u2014 _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
   out.push(`## ${s.manualTitle}`, "", `> ${s.manualWarn}`, "");
   const manual = rows.filter((x) => x.status === "manual");
-  out.push(manual.length ? manual.map((x) => `- ${x.label}`).join("\n") : s.nothing, "");
+  out.push(manual.length ? manual.map((x) => `- ${x.label}${x.justification ? ` \u2014 _${x.justification}_` : ""}`).join("\n") : s.nothing, "");
   return out.join("\n");
 }
 function renderReport(r, lang = "en") {
@@ -25136,6 +25694,7 @@ function renderReport(r, lang = "en") {
 function renderPackReport(r, pack, lang = "en") {
   const derived = derivePackResults(r, pack.key);
   const std = `${pack.name} ${pack.baseVersion}`;
+  const s = L[lang];
   const naReason = lang === "fr" ? "Aucun crit\xE8re de succ\xE8s WCAG mapp\xE9 n'est applicable dans le p\xE9rim\xE8tre." : "No mapped WCAG success criterion is applicable in scope.";
   const byTheme = /* @__PURE__ */ new Map();
   for (const pr of derived) {
@@ -25145,7 +25704,9 @@ function renderPackReport(r, pack, lang = "en") {
       label: `${pack.name} ${pr.id} \u2014 ${title(pack, pc, lang)}`,
       status: pr.status,
       findings: pr.findings,
-      ...pr.status === "NA" ? { justification: naReason } : {}
+      // outOfScope criteria are "manual" (not NA) with their own dedicated justification —
+      // never mixed with the ordinary NA reason (see the manual-section justification above).
+      ...pr.outOfScope ? { justification: s.outOfScope } : pr.status === "NA" ? { justification: naReason } : {}
     };
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)).push(row);
   }
@@ -25761,8 +26322,8 @@ var rgaa_default2 = {
         en: "Sufficient text/background contrast"
       },
       summary: {
-        fr: "Le contraste texte/arri\xE8re-plan doit \xEAtre d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (\u2265 24 px, ou \u2265 18,5 px en gras). Le texte plac\xE9 sur une image ou un d\xE9grad\xE9 doit \xEAtre v\xE9rifi\xE9 visuellement.",
-        en: "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (\u2265 24 px, or \u2265 18.5 px bold). Text over an image or gradient must be checked visually."
+        fr: "Le contraste texte/arri\xE8re-plan doit \xEAtre d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (\u2265 24 px, ou \u2265 18,66 px en gras). Le texte plac\xE9 sur une image ou un d\xE9grad\xE9 doit \xEAtre v\xE9rifi\xE9 visuellement.",
+        en: "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (\u2265 24 px, or \u2265 18.66 px bold). Text over an image or gradient must be checked visually."
       },
       impact: "high",
       examples: [
@@ -28432,18 +28993,23 @@ function renderCriteriaReference() {
   out.push("");
   out.push("The 55 Level A + AA success criteria across the 4 principles / 13 guidelines, with each");
   out.push("SC's level, the ultra11y automatability class (automatable / needs rendering / judgment),");
-  out.push("the engine rules that cover it, and the RGAA criteria that map to it. SC ids, titles and");
-  out.push("levels are derived from the W3C source (https://github.com/w3c/wcag); WCAG 2.2 \xA9 W3C.");
+  out.push("the engine rules that cover it, and \u2014 one column per registered standards pack \u2014 the pack");
+  out.push("criteria that map to it. SC ids, titles and levels are derived from the W3C source");
+  out.push("(https://github.com/w3c/wcag); WCAG 2.2 \xA9 W3C.");
   out.push("");
+  const packs = listPacks();
   const byG = scsByGuideline();
   for (const g of allGuidelines()) {
     out.push(`## ${g.number} ${g.title}`);
     out.push("");
-    out.push("| SC | Title | Level | Automatability | Rules | RGAA |");
-    out.push("|---|---|---|---|---|---|");
+    const head = ["SC", "Title", "Level", "Automatability", "Rules", ...packs.map((p) => p.name)];
+    out.push(`| ${head.join(" | ")} |`);
+    out.push(`|${"---|".repeat(head.length)}`);
     for (const c of byG.get(g.number) ?? []) {
-      const rgaa = packsForSc(c.sc).find((p) => p.key === "rgaa")?.ids.join(", ") ?? "\u2014";
-      out.push(`| ${c.sc} | ${c.title.replace(/\|/g, "\\|")} | ${c.level} | ${c.automatability} | ${c.ruleIds.join(", ") || "\u2014"} | ${rgaa} |`);
+      const hits = packsForSc(c.sc);
+      const packCols = packs.map((p) => hits.find((h) => h.key === p.key)?.ids.join(", ") ?? "\u2014");
+      const row = [c.sc, c.title.replace(/\|/g, "\\|"), c.level, c.automatability, c.ruleIds.join(", ") || "\u2014", ...packCols];
+      out.push(`| ${row.join(" | ")} |`);
     }
     out.push("");
   }
@@ -28473,8 +29039,8 @@ function checkReport(md, standard = "wcag", lang = "en") {
   const core = isCore(standard);
   const pack = core ? null : loadPack(standard);
   const exists = (id) => core ? hasSC(id) : hasId(pack, id);
-  const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : /(\d{1,2}\.\d{1,2})\s*—/g;
-  const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}\.\d{1,2})\s*—/;
+  const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : new RegExp(`(${idCaptureSource(pack)})\\s*\u2014`, "g");
+  const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack)})\\s*\u2014`);
   for (let n = 1; n <= 5; n++) {
     if (!new RegExp(`^##\\s+${n}\\.`, "m").test(md)) issues.push(s.section(n));
   }
@@ -28515,7 +29081,7 @@ import { join as join7 } from "path";
 var VERIFY_MAX = 40;
 var plain = (s) => s.replace(/\[([^\]]+)\]\(#[^)]*\)/g, "$1");
 function ncHeader(standard) {
-  const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : "\\d{1,2}\\.\\d{1,2}";
+  const id = isCore(standard) ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(loadPack(standard));
   return new RegExp(`^- \\*\\*(?:[A-Za-z]+ )?(${id}) \u2014 (.*?)\\*\\* \u2014 \`([^\`]+):(\\d+)\` \\(\`([^\`]*)\`\\)`);
 }
 function buildWorklist(reportMd, standard = "wcag", max = VERIFY_MAX) {
@@ -29930,8 +30496,11 @@ function checkGuidance(ds, pack) {
           case "unknown":
             errors.push(`${at}: SC "${sc}" is not a recognized WCAG success criterion \u2014 fabricated?`);
             break;
-          case "legit":
-            warnings.push(`${at}: SC "${sc}" is outside the WCAG 2.2 AA core (removed in 2.2)`);
+          case "out-of-core":
+            warnings.push(`${at}: SC "${sc}" is a real WCAG AAA success criterion, outside the WCAG 2.2 AA core`);
+            break;
+          case "removed":
+            warnings.push(`${at}: SC "${sc}" is a real but removed WCAG success criterion (obsolete)`);
             break;
         }
       }

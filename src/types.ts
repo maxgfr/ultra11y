@@ -104,6 +104,12 @@ export interface Finding {
   severity: Severity;
   message: string;
   remediation: string;
+  // Language-neutral resolution key (src/messages.ts MSG_CATALOG), additive/optional so
+  // older AuditResult JSON (no `msg`) still renders via the baked message/remediation
+  // above. `message`/`remediation` are the canonical ENGLISH bake (AI-facing); a renderer
+  // resolves `msg` through resolveMessage/resolveRemediation for `--lang fr` (or any other
+  // supported lang), falling back to the baked strings when absent or the id is unknown.
+  msg?: { id: string; params?: Record<string, string | number> };
   snippet: string;
   // Source byte range of the anchoring element (htmlparser2 [start, end), open+close
   // tag). Optional so older AuditResult JSON still parses. Used by `fix` (codemods

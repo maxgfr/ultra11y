@@ -8,6 +8,7 @@ import type { Doc, El } from "../parse/html.js";
 import type { Finding, Severity } from "../types.js";
 import { snippet } from "../parse/html.js";
 import { selectorOf } from "./rule.js";
+import { MSG_CATALOG, type MsgParams } from "../messages.js";
 import type { DepGraph } from "../graph/graph.js";
 
 export interface RelatedSite {
@@ -21,8 +22,9 @@ export interface RelatedSite {
 export interface CrossFinding {
   criteriaId: string;
   el: El; // anchor (the usage site) for line/col/snippet/selector
-  message: string;
-  remediation: string;
+  /** catalog key into MSG_CATALOG (src/messages.ts) — mirrors RuleFinding.msgId. */
+  msgId: string;
+  params?: MsgParams;
   severity?: Severity;
   selectorHint?: string;
   related?: RelatedSite; // the OTHER site (definition) that explains the finding
@@ -50,6 +52,11 @@ export interface CrossRule {
 
 /** Normalise a CrossFinding into a Finding (mirrors rule.ts toFinding, plus related). */
 export function crossToFinding(doc: Doc, ruleId: string, def: Severity, cf: CrossFinding): Finding {
+  const entry = MSG_CATALOG[cf.msgId];
+  if (!entry) {
+    throw new Error(`crossToFinding: msgId "${cf.msgId}" (rule "${ruleId}") is not in MSG_CATALOG — add it to src/messages.ts.`);
+  }
+  const params = cf.params ?? {};
   return {
     ruleId,
     criteriaId: cf.criteriaId,
@@ -58,8 +65,9 @@ export function crossToFinding(doc: Doc, ruleId: string, def: Severity, cf: Cros
     col: cf.el.col,
     selectorHint: cf.selectorHint ?? selectorOf(cf.el),
     severity: cf.severity ?? def,
-    message: cf.message,
-    remediation: cf.remediation,
+    message: entry.message.en(params),
+    remediation: entry.remediation.en(params),
+    msg: cf.params ? { id: cf.msgId, params: cf.params } : { id: cf.msgId },
     snippet: snippet(doc, cf.el),
     ...(doc.lossy ? {} : { sourceStart: cf.el.start, sourceEnd: cf.el.end }),
     ...(cf.related ? { related: cf.related } : {}),

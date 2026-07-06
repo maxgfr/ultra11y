@@ -3,6 +3,7 @@
 import type { Doc, El } from "../parse/html.js";
 import type { Finding, Severity } from "../types.js";
 import { snippet, textContent, elementsByTag } from "../parse/html.js";
+import { MSG_CATALOG, type MsgParams } from "../messages.js";
 
 // A build-time / runtime content-injection placeholder left in a framework SHELL
 // template (SvelteKit `%sveltekit.body%`, Mustache/Vue `{{ }}`, EJS/ERB `<% %>`,
@@ -34,8 +35,12 @@ export interface RuleFinding {
   criteriaId: string;
   /** element the finding is anchored to (for line/col/snippet/selector) */
   el: El;
-  message: string;
-  remediation: string;
+  /** catalog key into MSG_CATALOG (src/messages.ts) — a rule id, or "<ruleId>.<variant>"
+   *  when the rule has more than one distinct message shape. */
+  msgId: string;
+  /** language-neutral data interpolated into the catalog templates (tag names, attribute
+   *  values, counts, ids, small enums…) — never a pre-rendered phrase. */
+  params?: MsgParams;
   severity?: Severity; // override the rule default
   selectorHint?: string; // override the derived selector
   preliminary?: boolean; // provisional finding (target/name may resolve at composition/runtime)
@@ -72,6 +77,11 @@ export function selectorOf(el: El): string {
 }
 
 export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFinding): Finding {
+  const entry = MSG_CATALOG[rf.msgId];
+  if (!entry) {
+    throw new Error(`toFinding: msgId "${rf.msgId}" (rule "${ruleId}") is not in MSG_CATALOG — add it to src/messages.ts.`);
+  }
+  const params = rf.params ?? {};
   return {
     ruleId,
     criteriaId: rf.criteriaId,
@@ -80,8 +90,9 @@ export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFindi
     col: rf.el.col,
     selectorHint: rf.selectorHint ?? selectorOf(rf.el),
     severity: rf.severity ?? def,
-    message: rf.message,
-    remediation: rf.remediation,
+    message: entry.message.en(params),
+    remediation: entry.remediation.en(params),
+    msg: rf.params ? { id: rf.msgId, params: rf.params } : { id: rf.msgId },
     snippet: snippet(doc, rf.el),
     // Only carry source offsets when they index into the *real* file. For lossy
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not

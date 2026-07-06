@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.9.0](https://github.com/maxgfr/ultra11y/compare/v2.8.0...v2.9.0) (2026-07-06)
+
+
+### Bug Fixes
+
+* **build:** biome-format generated standards datasets for byte-stable rebuilds ([4136517](https://github.com/maxgfr/ultra11y/commit/4136517bdd31fe2a61956657a7f1a0c73a833f73))
+* **cli:** honest storybook/scaffold UX, docker+storage-state is an error not a degrade ([a373900](https://github.com/maxgfr/ultra11y/commit/a373900f31a882ac3123e1ded21769f172b0a9a7))
+* final review sweep — merge-lang ordering, origin-line tests, stale docs, data guards ([9bfc1a3](https://github.com/maxgfr/ultra11y/commit/9bfc1a3282b5ef58d0a52cfec2352a19844c6ac8))
+* **messages:** localize cross-file related-site notes (last French leak in EN output) ([9d0d09b](https://github.com/maxgfr/ultra11y/commit/9d0d09b032ef20dbdaee6c982e36f7eab3e46e7c))
+* **verify:** neutralize pack idPattern capture groups in gate regexes ([924499d](https://github.com/maxgfr/ultra11y/commit/924499d77f4e6f12559288d739c6e7e54865ab74))
+
+
+### Features
+
+* **capture:** tested escaping source-of-truth, real E2E harvester test, captures in diff mode ([dcdd3c0](https://github.com/maxgfr/ultra11y/commit/dcdd3c01248ee983fffc94c96d9e0e4be1cb5966))
+* **check,verify:** derive the pack citation-id regex from idPattern ([07703a7](https://github.com/maxgfr/ultra11y/commit/07703a79414f42c882c28be88413fab1f1975521))
+* **cli:** --lang auto default — conversation-first language, repo/standard fallback ([eaa4211](https://github.com/maxgfr/ultra11y/commit/eaa421112b08ac1aff64296a48bb96bc6307ea3e))
+* **graph:** close cross-file blind spots — .ts/.js barrels, SFC self-defs, Astro frontmatter ([6cd873b](https://github.com/maxgfr/ultra11y/commit/6cd873b56093e45489f20202c05db5acefa55bbc))
+* **messages:** add the language-neutral message catalog + rule.ts plumbing ([a022adf](https://github.com/maxgfr/ultra11y/commit/a022adf02679e3256fd36d245914b4341f8ea45c))
+* **renderers:** resolve finding message/remediation through the catalog ([6e6a7b8](https://github.com/maxgfr/ultra11y/commit/6e6a7b83ba6f27be42da53da89e841f22641c91d))
+* **report:** render NC criteria with the auditor conformance block ([15c86ab](https://github.com/maxgfr/ultra11y/commit/15c86abb38f9eeccf630c0ca91e7c2e15557e9eb))
+* **standards:** decouple a pack's own locales from the UI frame's Lang ([b5e3084](https://github.com/maxgfr/ultra11y/commit/b5e30846c8214b4cd536238918cc2cf31fb0a2e5))
+* **standards:** derive the real WCAG SC universe; classify out-of-core/removed instead of a single hardcoded exception ([705b548](https://github.com/maxgfr/ultra11y/commit/705b548cdb4511fbac9c08376d2313856f1fc75a))
+* **standards:** surface out-of-scope pack criteria as manual, not a silent NA ([4caa32a](https://github.com/maxgfr/ultra11y/commit/4caa32a5137652a273f1b7d70eebcc55ab39c8ed))
+* **wcag:** official French titles from the W3C authorized translation, resolved at render time ([8c88f46](https://github.com/maxgfr/ultra11y/commit/8c88f46d704e0e3795953794ce43c26ae5334bb6)), closes [--#issues](https://github.com/--/issues/issues)
+
 # [2.8.0](https://github.com/maxgfr/ultra11y/compare/v2.7.1...v2.8.0) (2026-07-06)
 
 

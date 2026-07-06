@@ -19027,6 +19027,645 @@ function parseSource(source, file, opts = {}) {
   return doc;
 }
 
+// src/messages.ts
+var MSG_CATALOG = {
+  // ---- Theme 1 — Images (src/rules/images.ts) ---------------------------------
+  "img-alt-missing": {
+    message: {
+      fr: (p) => `<${p.tag}> sans attribut alt ni nom accessible \u2014 alternative textuelle manquante.`,
+      en: (p) => `<${p.tag}> has no alt attribute or accessible name \u2014 missing text alternative.`
+    },
+    remediation: {
+      fr: () => `Ajoutez alt="\u2026" (description si l'image porte de l'information, alt="" si elle est d\xE9corative).`,
+      en: () => `Add alt="\u2026" (a description if the image conveys information, alt="" if it is decorative).`
+    }
+  },
+  "decorative-alt-misuse.empty-but-named": {
+    message: {
+      fr: () => `Image d\xE9corative (alt="") mais nomm\xE9e par aria-label/title \u2014 incoh\xE9rence d\xE9coratif/informatif.`,
+      en: () => `Decorative image (alt="") but named via aria-label/title \u2014 decorative/informative inconsistency.`
+    },
+    remediation: {
+      fr: () => `Si l'image est d\xE9corative, retirez aria-label/title ; sinon donnez un alt descriptif.`,
+      en: () => `If the image is decorative, remove aria-label/title; otherwise give it a descriptive alt.`
+    }
+  },
+  "decorative-alt-misuse.role-but-alt": {
+    message: {
+      fr: (p) => `Image en role="${p.role}" mais porteuse d'un alt non vide \u2014 d\xE9clar\xE9e d\xE9corative pourtant nomm\xE9e.`,
+      en: (p) => `Image with role="${p.role}" but carrying a non-empty alt \u2014 declared decorative yet named.`
+    },
+    remediation: {
+      fr: (p) => `Retirez role="${p.role}" si l'image est informative, ou videz l'alt si elle est d\xE9corative.`,
+      en: (p) => `Remove role="${p.role}" if the image is informative, or empty the alt if it is decorative.`
+    }
+  },
+  "canvas-fallback-missing": {
+    message: {
+      fr: () => `<canvas> sans contenu alternatif ni nom accessible.`,
+      en: () => `<canvas> has no fallback content or accessible name.`
+    },
+    remediation: {
+      fr: () => `Placez un contenu de repli entre <canvas>\u2026</canvas> ou ajoutez role="img" + aria-label.`,
+      en: () => `Place fallback content between <canvas>\u2026</canvas>, or add role="img" + aria-label.`
+    }
+  },
+  "input-image-alt-missing": {
+    message: {
+      fr: () => `<input type="image"> sans alt ni nom accessible \u2014 le bouton image n'a pas d'alternative textuelle.`,
+      en: () => `<input type="image"> has no alt or accessible name \u2014 the image button has no text alternative.`
+    },
+    remediation: {
+      fr: () => `Ajoutez alt="\u2026" d\xE9crivant l'action du bouton (ex. alt="Rechercher").`,
+      en: () => `Add alt="\u2026" describing the button's action (e.g. alt="Search").`
+    }
+  },
+  "object-embed-no-name": {
+    message: {
+      fr: (p) => `<${p.tag}> sans nom accessible ni contenu de repli \u2014 m\xE9dia embarqu\xE9 sans alternative textuelle.`,
+      en: (p) => `<${p.tag}> has no accessible name or fallback content \u2014 embedded media with no text alternative.`
+    },
+    remediation: {
+      fr: () => `Ajoutez aria-label/title d\xE9crivant le contenu (et un contenu de repli textuel dans <object>\u2026</object>), ou aria-hidden="true" si d\xE9coratif.`,
+      en: () => `Add aria-label/title describing the content (and text fallback content inside <object>\u2026</object>), or aria-hidden="true" if decorative.`
+    }
+  },
+  "chart-no-accessible-name": {
+    message: {
+      fr: (p) => `Graphique (<${p.tag}> ${p.cls}) sans nom accessible \u2014 alternative textuelle manquante.`,
+      en: (p) => `Chart (<${p.tag}> ${p.cls}) has no accessible name \u2014 missing text alternative.`
+    },
+    remediation: {
+      fr: () => `Enveloppez le graphique dans <div role="img" aria-label="\u2026"> d\xE9crivant la tendance (ou ajoutez un <title>/aria-label).`,
+      en: () => `Wrap the chart in <div role="img" aria-label="\u2026"> describing the trend (or add a <title>/aria-label).`
+    }
+  },
+  // ---- Theme 2 — Frames (src/rules/frames.ts) ---------------------------------
+  "iframe-title-missing": {
+    message: {
+      fr: () => `<iframe> sans attribut title \u2014 le cadre n'a pas de titre.`,
+      en: () => `<iframe> has no title attribute \u2014 the frame has no title.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un title d\xE9crivant le contenu du cadre, ex. title="Carte de localisation".`,
+      en: () => `Add a title describing the frame's content, e.g. title="Location map".`
+    }
+  },
+  // ---- Theme 3 — Colours (src/rules/colors.ts) --------------------------------
+  "contrast-literal": {
+    message: {
+      fr: (p) => `Contraste insuffisant : ratio ${p.ratio}:1 entre le texte et son fond (minimum ${p.min}:1 pour du texte ${p.textSize === "large" ? "large" : "normal"}).`,
+      en: (p) => `Insufficient contrast: ${p.ratio}:1 ratio between the text and its background (minimum ${p.min}:1 for ${p.textSize === "large" ? "large" : "normal"} text).`
+    },
+    remediation: {
+      fr: (p) => `Assombrissez le texte ou \xE9claircissez le fond pour atteindre au moins ${p.min}:1 (contraste calcul\xE9 sur des couleurs inline litt\xE9rales).`,
+      en: (p) => `Darken the text or lighten the background to reach at least ${p.min}:1 (contrast computed from literal inline colours).`
+    }
+  },
+  // ---- Theme 5 — Data tables (src/rules/tables.ts) ----------------------------
+  "data-table-no-headers.no-th": {
+    message: {
+      fr: () => `Tableau de donn\xE9es sans <th> \u2014 en-t\xEAtes de colonne/ligne non d\xE9clar\xE9s.`,
+      en: () => `Data table with no <th> \u2014 column/row headers are not declared.`
+    },
+    remediation: {
+      fr: () => `D\xE9clarez les en-t\xEAtes avec <th>, et associez-les via scope="col"/"row" (ou headers/id).`,
+      en: () => `Declare headers with <th>, and associate them via scope="col"/"row" (or headers/id).`
+    }
+  },
+  "data-table-no-headers.no-assoc": {
+    message: {
+      fr: () => `Tableau de donn\xE9es avec <th> mais sans scope/headers \u2014 association cellule\u2194en-t\xEAte absente.`,
+      en: () => `Data table with <th> but no scope/headers \u2014 the cell\u2194header association is missing.`
+    },
+    remediation: {
+      fr: () => `Ajoutez scope="col"/"row" sur les <th> (ou headers="\u2026"/id sur cellules complexes).`,
+      en: () => `Add scope="col"/"row" on the <th> elements (or headers="\u2026"/id for complex cells).`
+    }
+  },
+  "table-caption-missing": {
+    message: {
+      fr: () => `Tableau de donn\xE9es sans <caption> ni nom accessible \u2014 titre du tableau absent.`,
+      en: () => `Data table with no <caption> or accessible name \u2014 the table has no title.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un <caption> en premi\xE8re position du <table> (ou aria-label/aria-labelledby).`,
+      en: () => `Add a <caption> as the first child of the <table> (or aria-label/aria-labelledby).`
+    }
+  },
+  "layout-table-data-markup": {
+    message: {
+      fr: (p) => `Tableau de mise en forme (role="${p.role}") utilisant du balisage de donn\xE9es (th/caption/scope).`,
+      en: (p) => `Layout table (role="${p.role}") using data markup (th/caption/scope).`
+    },
+    remediation: {
+      fr: () => `Retirez th/caption/scope/headers d'un tableau de pr\xE9sentation, ou faites-en un vrai tableau de donn\xE9es.`,
+      en: () => `Remove th/caption/scope/headers from a presentation table, or turn it into a real data table.`
+    }
+  },
+  "sortable-header-no-aria-sort": {
+    message: {
+      fr: () => `En-t\xEAte de colonne triable sans aria-sort \u2014 l'\xE9tat de tri (croissant/d\xE9croissant) n'est pas restitu\xE9.`,
+      en: () => `Sortable column header with no aria-sort \u2014 the sort state (ascending/descending) is not conveyed.`
+    },
+    remediation: {
+      fr: () => `Ajoutez aria-sort="none|ascending|descending" sur le <th> tri\xE9, et masquez le glyphe de tri (aria-hidden="true").`,
+      en: () => `Add aria-sort="none|ascending|descending" on the sorted <th>, and hide the sort glyph (aria-hidden="true").`
+    }
+  },
+  // ---- Theme 6/7 — Links & buttons (src/rules/links.ts) -----------------------
+  "link-empty-name": {
+    message: {
+      fr: () => `Lien sans intitul\xE9 \u2014 aucun nom accessible.`,
+      en: () => `Link with no label \u2014 no accessible name.`
+    },
+    remediation: {
+      fr: () => `Donnez un intitul\xE9 textuel au lien (texte visible, ou aria-label si vraiment n\xE9cessaire).`,
+      en: () => `Give the link a text label (visible text, or aria-label if truly necessary).`
+    }
+  },
+  "button-empty-name": {
+    message: {
+      fr: () => `Bouton sans intitul\xE9 \u2014 aucun nom accessible.`,
+      en: () => `Button with no label \u2014 no accessible name.`
+    },
+    remediation: {
+      fr: () => `Donnez un intitul\xE9 au bouton (texte, value, ou aria-label).`,
+      en: () => `Give the button a label (text, value, or aria-label).`
+    }
+  },
+  "icon-only-control-unnamed": {
+    message: {
+      fr: (p) => `${p.kind === "link" ? "Lien" : "Bouton"} avec une ic\xF4ne seule (img/svg/i) sans nom accessible.`,
+      en: (p) => `${p.kind === "link" ? "Link" : "Button"} with an icon only (img/svg/i) and no accessible name.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un alt/aria-label sur l'ic\xF4ne ou un texte masqu\xE9 visuellement (classe visually-hidden).`,
+      en: () => `Add an alt/aria-label on the icon, or a visually-hidden text (visually-hidden class).`
+    }
+  },
+  "control-name-title-only": {
+    message: {
+      fr: (p) => `${p.kind === "link" ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title \u2014 title n'est pas restitu\xE9 de fa\xE7on fiable (survol uniquement).`,
+      en: (p) => `${p.kind === "link" ? "Link" : "Button"} whose only accessible name comes from the title attribute \u2014 title is not reliably conveyed (hover only).`
+    },
+    remediation: {
+      fr: () => `Donnez un intitul\xE9 via texte visible ou aria-label ; r\xE9servez title \xE0 une information compl\xE9mentaire.`,
+      en: () => `Give it a label via visible text or aria-label; reserve title for supplementary information.`
+    }
+  },
+  // ---- Theme 7 — Scripts / ARIA (src/rules/scripts-aria.ts) -------------------
+  "invalid-aria-role": {
+    message: {
+      fr: (p) => `R\xF4le ARIA invalide : "${p.roles}" n'est pas un r\xF4le WAI-ARIA valide.`,
+      en: (p) => `Invalid ARIA role: "${p.roles}" is not a valid WAI-ARIA role.`
+    },
+    remediation: {
+      fr: () => `Utilisez un r\xF4le ARIA valide ou un \xE9l\xE9ment HTML natif \xE9quivalent.`,
+      en: () => `Use a valid ARIA role, or an equivalent native HTML element.`
+    }
+  },
+  "aria-ref-missing-id": {
+    message: {
+      fr: (p) => `${p.attr} r\xE9f\xE9rence un id inexistant : ${p.ids}.`,
+      en: (p) => `${p.attr} references a non-existent id: ${p.ids}.`
+    },
+    remediation: {
+      fr: () => `Corrigez la r\xE9f\xE9rence ou ajoutez l'\xE9l\xE9ment cible avec l'id attendu.`,
+      en: () => `Fix the reference, or add the target element with the expected id.`
+    }
+  },
+  "redundant-aria": {
+    message: {
+      fr: (p) => `role="${p.role}" est redondant : <${p.tag}> a d\xE9j\xE0 ce r\xF4le implicite.`,
+      en: (p) => `role="${p.role}" is redundant: <${p.tag}> already has this implicit role.`
+    },
+    remediation: {
+      fr: () => `Retirez l'attribut role redondant et laissez la s\xE9mantique native.`,
+      en: () => `Remove the redundant role attribute and let the native semantics apply.`
+    }
+  },
+  "clickable-noninteractive": {
+    message: {
+      fr: (p) => `<${p.tag}> avec onClick mais ${p.focusIssue === "no-tabindex" ? "non focalisable (tabindex absent)" : "sans r\xF4le interactif"} \u2014 contr\xF4le non accessible au clavier/AT.`,
+      en: (p) => `<${p.tag}> has onClick but ${p.focusIssue === "no-tabindex" ? "is not focusable (no tabindex)" : "has no interactive role"} \u2014 control not accessible via keyboard/AT.`
+    },
+    remediation: {
+      fr: () => `Utilisez <button>/<a> natif, ou ajoutez role + tabindex="0" + gestion clavier (Enter/Espace).`,
+      en: () => `Use a native <button>/<a>, or add role + tabindex="0" + keyboard handling (Enter/Space).`
+    }
+  },
+  "aria-required-children": {
+    message: {
+      fr: (p) => `role="${p.role}" sans enfant requis (${p.req}) \u2014 structure ARIA incompl\xE8te.`,
+      en: (p) => `role="${p.role}" with no required child (${p.req}) \u2014 incomplete ARIA structure.`
+    },
+    remediation: {
+      fr: () => `Ajoutez les \xE9l\xE9ments enfants au r\xF4le appropri\xE9, ou utilisez les \xE9l\xE9ments HTML natifs.`,
+      en: () => `Add child elements with the appropriate role, or use native HTML elements.`
+    }
+  },
+  "aria-hidden-focusable": {
+    message: {
+      fr: () => `aria-hidden="true" sur (ou contenant) un \xE9l\xE9ment focalisable \u2014 pi\xE8ge pour les technologies d'assistance.`,
+      en: () => `aria-hidden="true" on (or containing) a focusable element \u2014 a trap for assistive technology.`
+    },
+    remediation: {
+      fr: () => `Retirez aria-hidden, ou rendez l'\xE9l\xE9ment non focalisable (tabindex="-1", disabled).`,
+      en: () => `Remove aria-hidden, or make the element non-focusable (tabindex="-1", disabled).`
+    }
+  },
+  "nested-interactive": {
+    message: {
+      fr: (p) => `\xC9l\xE9ment interactif <${p.tag}> imbriqu\xE9 dans un autre \xE9l\xE9ment interactif \u2014 non restitu\xE9 correctement.`,
+      en: (p) => `Interactive element <${p.tag}> nested inside another interactive element \u2014 not conveyed correctly.`
+    },
+    remediation: {
+      fr: () => `Ne pas imbriquer des contr\xF4les interactifs (lien/bouton) ; mettez-les c\xF4te \xE0 c\xF4te.`,
+      en: () => `Do not nest interactive controls (link/button); place them side by side instead.`
+    }
+  },
+  "live-region-conflict.invalid-value": {
+    message: {
+      fr: (p) => `aria-live="${p.value}" invalide \u2014 seules les valeurs off, polite, assertive sont restitu\xE9es.`,
+      en: (p) => `aria-live="${p.value}" is invalid \u2014 only the values off, polite, assertive are honoured.`
+    },
+    remediation: {
+      fr: () => `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignor\xE9e.`,
+      en: () => `Use aria-live="polite" (or "assertive" for an alert); any other value is ignored.`
+    }
+  },
+  "live-region-conflict.mismatch": {
+    message: {
+      fr: (p) => `role="${p.role}" implique aria-live="${p.want}" mais aria-live="${p.live}" \u2014 message de statut restitu\xE9 de fa\xE7on incoh\xE9rente.`,
+      en: (p) => `role="${p.role}" implies aria-live="${p.want}" but aria-live="${p.live}" \u2014 status message conveyed inconsistently.`
+    },
+    remediation: {
+      fr: (p) => p.want === "assertive" ? `Laissez role="${p.role}" g\xE9rer la restitution (retirez aria-live) ou utilisez aria-live="assertive".` : `Alignez aria-live sur "${p.want}", coh\xE9rent avec role="${p.role}", ou retirez-le.`,
+      en: (p) => p.want === "assertive" ? `Let role="${p.role}" drive the announcement (remove aria-live), or use aria-live="assertive".` : `Align aria-live with "${p.want}", consistent with role="${p.role}", or remove it.`
+    }
+  },
+  "status-message-not-assertive": {
+    message: {
+      fr: () => `Conteneur d'erreur/alerte en aria-live="polite" \u2014 un message d'erreur doit \xEAtre restitu\xE9 de fa\xE7on assertive.`,
+      en: () => `Error/alert container with aria-live="polite" \u2014 an error message must be conveyed assertively.`
+    },
+    remediation: {
+      fr: () => `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annonc\xE9 imm\xE9diatement.`,
+      en: () => `Use role="alert" (or aria-live="assertive") so an error message is announced immediately.`
+    }
+  },
+  // ---- Theme 8 — Mandatory elements (src/rules/mandatory.ts) ------------------
+  "html-lang-missing": {
+    message: {
+      fr: () => `<html> sans attribut lang \u2014 la langue par d\xE9faut de la page n'est pas d\xE9clar\xE9e.`,
+      en: () => `<html> has no lang attribute \u2014 the page's default language is not declared.`
+    },
+    remediation: {
+      fr: () => `Ajoutez lang sur <html>, ex. <html lang="fr">.`,
+      en: () => `Add lang on <html>, e.g. <html lang="en">.`
+    }
+  },
+  "title-missing-empty": {
+    message: {
+      fr: (p) => p.titleState === "empty" ? `<title> vide \u2014 le titre de la page est absent de contenu.` : `<title> absent \u2014 la page n'a pas de titre.`,
+      en: (p) => p.titleState === "empty" ? `<title> is empty \u2014 the page title has no content.` : `<title> is missing \u2014 the page has no title.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un <title> non vide et pertinent dans <head>.`,
+      en: () => `Add a non-empty, relevant <title> in <head>.`
+    }
+  },
+  "duplicate-id": {
+    message: {
+      fr: (p) => `id="${p.id}" dupliqu\xE9 \u2014 un id doit \xEAtre unique dans la page (HTML invalide).`,
+      en: (p) => `id="${p.id}" duplicated \u2014 an id must be unique in the page (invalid HTML).`
+    },
+    remediation: {
+      fr: () => `Donnez un id unique \xE0 chaque \xE9l\xE9ment ; ajustez les r\xE9f\xE9rences (label[for], aria-*).`,
+      en: () => `Give each element a unique id; adjust references accordingly (label[for], aria-*).`
+    }
+  },
+  "inline-lang-change-missing": {
+    message: {
+      fr: (p) => `Attribut lang vide sur <${p.tag}> \u2014 changement de langue mal indiqu\xE9.`,
+      en: (p) => `Empty lang attribute on <${p.tag}> \u2014 the language change is not properly indicated.`
+    },
+    remediation: {
+      fr: () => `Renseignez un code de langue valide (ex. lang="en") ou retirez l'attribut.`,
+      en: () => `Provide a valid language code (e.g. lang="en") or remove the attribute.`
+    }
+  },
+  "lang-invalid": {
+    message: {
+      fr: (p) => `Code de langue invalide lang="${p.lang}" sur <${p.tag}> \u2014 n'est pas un code BCP 47 valide.`,
+      en: (p) => `Invalid language code lang="${p.lang}" on <${p.tag}> \u2014 not a valid BCP 47 code.`
+    },
+    remediation: {
+      fr: () => `Utilisez un code de langue valide (ex. "fr", "en", "fr-CA").`,
+      en: () => `Use a valid language code (e.g. "en", "fr", "en-US").`
+    }
+  },
+  // ---- Theme 9 — Headings (src/rules/headings.ts) -----------------------------
+  "heading-order-skip": {
+    message: {
+      fr: (p) => `Saut de niveau de titre : <h${p.level}> apr\xE8s <h${p.prev}> (niveau h${p.expected} attendu).`,
+      en: (p) => `Heading level skip: <h${p.level}> after <h${p.prev}> (level h${p.expected} expected).`
+    },
+    remediation: {
+      fr: () => `Ne sautez pas de niveau : encha\xEEnez les titres sans omettre de palier.`,
+      en: () => `Do not skip a level: chain heading levels without omitting a step.`
+    }
+  },
+  "h1-missing": {
+    message: {
+      fr: () => `Aucun <h1> dans la page \u2014 le titre principal de niveau 1 est manquant.`,
+      en: () => `No <h1> in the page \u2014 the level-1 main heading is missing.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un <h1> d\xE9crivant le contenu principal de la page.`,
+      en: () => `Add an <h1> describing the page's main content.`
+    }
+  },
+  "h1-multiple": {
+    message: {
+      fr: (p) => `Plusieurs <h1> dans la page (${p.count}) \u2014 un seul titre de niveau 1 est recommand\xE9.`,
+      en: (p) => `Multiple <h1> in the page (${p.count}) \u2014 a single level-1 heading is recommended.`
+    },
+    remediation: {
+      fr: () => `Conservez un unique <h1> et hi\xE9rarchisez le reste avec h2\u2026h6.`,
+      en: () => `Keep a single <h1> and structure the rest with h2\u2026h6.`
+    }
+  },
+  "list-structure.invalid-child": {
+    message: {
+      fr: (p) => `<${p.childTag}> enfant direct de <${p.parentTag}> \u2014 une liste ne doit contenir que des <li>.`,
+      en: (p) => `<${p.childTag}> is a direct child of <${p.parentTag}> \u2014 a list must only contain <li>.`
+    },
+    remediation: {
+      fr: (p) => `Enveloppez le contenu dans des <li>, ou utilisez un autre \xE9l\xE9ment que <${p.parentTag}>.`,
+      en: (p) => `Wrap the content in <li> elements, or use a different element than <${p.parentTag}>.`
+    }
+  },
+  "list-structure.li-outside-list": {
+    message: {
+      fr: (p) => `<li> hors d'une liste (<${p.parentTag}> parent) \u2014 structure de liste invalide.`,
+      en: (p) => `<li> outside a list (<${p.parentTag}> parent) \u2014 invalid list structure.`
+    },
+    remediation: {
+      fr: () => `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`,
+      en: () => `Place each <li> directly inside a <ul>, <ol> or <menu>.`
+    }
+  },
+  "empty-heading": {
+    message: {
+      fr: (p) => `Titre <${p.tag}> de niveau ${p.level} vide \u2014 un titre sans intitul\xE9 d\xE9soriente la navigation au clavier/lecteur d'\xE9cran.`,
+      en: (p) => `Empty level-${p.level} <${p.tag}> heading \u2014 a heading with no label disorients keyboard/screen-reader navigation.`
+    },
+    remediation: {
+      fr: () => `Donnez un intitul\xE9 textuel au titre, ou retirez-le s'il est purement d\xE9coratif.`,
+      en: () => `Give the heading a text label, or remove it if it is purely decorative.`
+    }
+  },
+  // ---- Theme 10 — Presentation / zoom (src/rules/presentation.ts) -------------
+  "meta-viewport-zoom-block": {
+    message: {
+      fr: (p) => `<meta viewport> bloque le zoom (${p.blockedBy === "user-scalable" ? "user-scalable=no" : `maximum-scale=${p.maxScale}`}) \u2014 agrandissement \xE0 200% emp\xEAch\xE9.`,
+      en: (p) => `<meta viewport> blocks zoom (${p.blockedBy === "user-scalable" ? "user-scalable=no" : `maximum-scale=${p.maxScale}`}) \u2014 200% zoom is prevented.`
+    },
+    remediation: {
+      fr: () => `Retirez user-scalable=no et maximum-scale (ou maximum-scale \u2265 2) du content du viewport.`,
+      en: () => `Remove user-scalable=no and maximum-scale (or set maximum-scale \u2265 2) from the viewport content.`
+    }
+  },
+  // ---- Theme 11 — Forms (src/rules/forms.ts) ----------------------------------
+  "control-label-missing": {
+    message: {
+      fr: (p) => `Champ de formulaire <${p.tag}> sans \xE9tiquette \u2014 aucun label associ\xE9.`,
+      en: (p) => `Form field <${p.tag}> has no label \u2014 no associated label.`
+    },
+    remediation: {
+      fr: () => `Associez un <label for="\u2026"> (ou enveloppez le champ d'un <label>, ou aria-label/aria-labelledby).`,
+      en: () => `Associate a <label for="\u2026"> (or wrap the field in a <label>, or use aria-label/aria-labelledby).`
+    }
+  },
+  "placeholder-as-label": {
+    message: {
+      fr: (p) => `placeholder="${p.value}" utilis\xE9 comme seule \xE9tiquette \u2014 le placeholder n'est pas un label.`,
+      en: (p) => `placeholder="${p.value}" used as the only label \u2014 a placeholder is not a label.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un <label> r\xE9el ; le placeholder ne doit que compl\xE9ter, pas remplacer l'\xE9tiquette.`,
+      en: () => `Add a real <label>; the placeholder should only supplement, not replace, the label.`
+    }
+  },
+  "fieldset-legend-missing": {
+    message: {
+      fr: () => `<fieldset> sans <legend> (ou l\xE9gende vide) \u2014 regroupement de champs sans l\xE9gende.`,
+      en: () => `<fieldset> has no <legend> (or an empty one) \u2014 a field group with no legend.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un <legend> non vide en premier enfant du <fieldset>.`,
+      en: () => `Add a non-empty <legend> as the first child of the <fieldset>.`
+    }
+  },
+  "form-field-multiple-labels": {
+    message: {
+      fr: (p) => `Champ <${p.tag}> r\xE9f\xE9renc\xE9 par ${p.count} <label for="${p.id}"> \u2014 \xE9tiquettes multiples ambigu\xEBs.`,
+      en: (p) => `Field <${p.tag}> referenced by ${p.count} <label for="${p.id}"> \u2014 ambiguous multiple labels.`
+    },
+    remediation: {
+      fr: () => `Un seul <label> doit cibler le champ ; fusionnez ou retirez les \xE9tiquettes superflues.`,
+      en: () => `A single <label> should target the field; merge or remove the superfluous labels.`
+    }
+  },
+  "select-has-option": {
+    message: {
+      fr: () => `<select> sans aucune <option> \u2014 liste de choix vide.`,
+      en: () => `<select> has no <option> at all \u2014 empty choice list.`
+    },
+    remediation: {
+      fr: () => `Ajoutez des <option> (et un <optgroup>/option par d\xE9faut si pertinent).`,
+      en: () => `Add <option> elements (and an <optgroup>/default option if relevant).`
+    }
+  },
+  "label-for-dangling": {
+    message: {
+      fr: (p) => `<label for="${p.id}"> ne cible aucun \xE9l\xE9ment \u2014 aucun champ n'a id="${p.id}".`,
+      en: (p) => `<label for="${p.id}"> targets no element \u2014 no field has id="${p.id}".`
+    },
+    remediation: {
+      fr: (p) => `Donnez au champ id="${p.id}", corrigez l'attribut for, ou enveloppez le champ dans le <label>.`,
+      en: (p) => `Give the field id="${p.id}", fix the for attribute, or wrap the field inside the <label>.`
+    }
+  },
+  "aria-invalid-no-description": {
+    message: {
+      fr: (p) => `<${p.tag}> a aria-invalid="true" mais aucun aria-describedby/aria-errormessage \u2014 l'erreur est signal\xE9e sans \xEAtre reli\xE9e \xE0 son message.`,
+      en: (p) => `<${p.tag}> has aria-invalid="true" but no aria-describedby/aria-errormessage \u2014 the error is signalled without being linked to its message.`
+    },
+    remediation: {
+      fr: () => `Reliez le message d'erreur au champ via aria-describedby (ou aria-errormessage) pointant vers le texte d'erreur.`,
+      en: () => `Link the error message to the field via aria-describedby (or aria-errormessage) pointing at the error text.`
+    }
+  },
+  "error-not-associated": {
+    message: {
+      fr: (p) => `Message d'erreur (id="${p.id}") reli\xE9 \xE0 aucun champ \u2014 aucun aria-describedby/aria-errormessage ne le r\xE9f\xE9rence.`,
+      en: (p) => `Error message (id="${p.id}") linked to no field \u2014 no aria-describedby/aria-errormessage references it.`
+    },
+    remediation: {
+      fr: (p) => `Sur le champ concern\xE9, ajoutez aria-describedby="${p.id}" (ou aria-errormessage) et aria-invalid="true".`,
+      en: (p) => `On the relevant field, add aria-describedby="${p.id}" (or aria-errormessage) and aria-invalid="true".`
+    }
+  },
+  "field-purpose-incomplete.autocomplete": {
+    message: {
+      fr: (p) => `Champ d'identification (${p.type === "email" || p.type === "tel" ? `type="${p.type}"` : "name/id"}) sans autocomplete \u2014 objet du champ non expos\xE9.`,
+      en: (p) => `Identification field (${p.type === "email" || p.type === "tel" ? `type="${p.type}"` : "name/id"}) with no autocomplete \u2014 the field's purpose is not exposed.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un autocomplete appropri\xE9 (ex. email, tel, name, postal-code, street-address) \u2014 WCAG 1.3.5.`,
+      en: () => `Add an appropriate autocomplete (e.g. email, tel, name, postal-code, street-address) \u2014 WCAG 1.3.5.`
+    }
+  },
+  "field-purpose-incomplete.aria-required": {
+    message: {
+      fr: (p) => `Widget personnalis\xE9 (role="${p.role}") requis sans aria-required \u2014 l'\xE9tat requis n'est pas restitu\xE9.`,
+      en: (p) => `Custom widget (role="${p.role}") is required but has no aria-required \u2014 the required state is not conveyed.`
+    },
+    remediation: {
+      fr: () => `Ajoutez aria-required="true" sur le widget personnalis\xE9 requis.`,
+      en: () => `Add aria-required="true" on the required custom widget.`
+    }
+  },
+  // ---- Theme 12 — Navigation & landmarks (src/rules/navigation.ts) ------------
+  "skip-link-target-missing": {
+    message: {
+      fr: (p) => `Lien interne href="${p.href}" \u2014 la cible #${p.id} n'existe pas dans la page (lien d'\xE9vitement/ancre cass\xE9).`,
+      en: (p) => `Internal link href="${p.href}" \u2014 target #${p.id} does not exist in the page (broken skip link/anchor).`
+    },
+    remediation: {
+      fr: (p) => `Ajoutez un \xE9l\xE9ment avec id="${p.id}" (ex. <main id="${p.id}">) ou corrigez l'ancre.`,
+      en: (p) => `Add an element with id="${p.id}" (e.g. <main id="${p.id}">) or fix the anchor.`
+    }
+  },
+  "positive-tabindex": {
+    message: {
+      fr: (p) => `tabindex="${p.value}" positif \u2014 force un ordre de tabulation incoh\xE9rent avec l'ordre du DOM.`,
+      en: (p) => `Positive tabindex="${p.value}" \u2014 forces a tab order inconsistent with DOM order.`
+    },
+    remediation: {
+      fr: () => `Utilisez tabindex="0" (ou pas de tabindex) et ordonnez via le DOM ; r\xE9servez les valeurs >0.`,
+      en: () => `Use tabindex="0" (or no tabindex) and order via the DOM; reserve values >0.`
+    }
+  },
+  "missing-main-landmark": {
+    message: {
+      fr: () => `Aucun rep\xE8re <main> dans la page \u2014 le contenu principal n'est pas identifi\xE9 (et la cible d'un lien d'\xE9vitement manque).`,
+      en: () => `No <main> landmark in the page \u2014 the main content is not identified (and a skip link's target is missing).`
+    },
+    remediation: {
+      fr: () => `Enveloppez le contenu principal dans un <main id="content"> (unique par page).`,
+      en: () => `Wrap the main content in a <main id="content"> (unique per page).`
+    }
+  },
+  "multiple-main-landmark": {
+    message: {
+      fr: (p) => `Plusieurs rep\xE8res <main> dans la page (${p.count}) \u2014 un seul contenu principal est autoris\xE9.`,
+      en: (p) => `Multiple <main> landmarks in the page (${p.count}) \u2014 only one main content area is allowed.`
+    },
+    remediation: {
+      fr: () => `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`,
+      en: () => `Keep a single <main>/role="main"; structure the rest with <section>/<aside>.`
+    }
+  },
+  // ---- Theme 4/13 — Multimedia (src/rules/multimedia.ts) ----------------------
+  "autoplay-media.muted-video": {
+    message: {
+      fr: () => `<video autoplay> d\xE9marre automatiquement \u2014 contenu en mouvement non contr\xF4l\xE9.`,
+      en: () => `<video autoplay> starts automatically \u2014 uncontrolled moving content.`
+    },
+    remediation: {
+      fr: () => `\xC9vitez l'autoplay ou fournissez un contr\xF4le pause/stop accessible (et controls).`,
+      en: () => `Avoid autoplay, or provide an accessible pause/stop control (and controls).`
+    }
+  },
+  "autoplay-media.audible": {
+    message: {
+      fr: (p) => `<${p.tag} autoplay> d\xE9marre automatiquement ${p.tag === "audio" ? "du son" : "une vid\xE9o sonore"} \u2014 non contr\xF4lable par l'utilisateur.`,
+      en: (p) => `<${p.tag} autoplay> automatically starts ${p.tag === "audio" ? "sound" : "a video with sound"} \u2014 not controllable by the user.`
+    },
+    remediation: {
+      fr: () => `Retirez autoplay, ou ajoutez un contr\xF4le de lecture (controls + pause/stop) facilement accessible.`,
+      en: () => `Remove autoplay, or add an easily accessible playback control (controls + pause/stop).`
+    }
+  },
+  "media-no-track": {
+    message: {
+      fr: () => `<video> sans \xE9l\xE9ment <track> \u2014 aucune piste de sous-titres/l\xE9gendes synchronis\xE9es.`,
+      en: () => `<video> has no <track> element \u2014 no synchronized captions/subtitles track.`
+    },
+    remediation: {
+      fr: () => `Ajoutez <track kind="captions" src="\u2026" srclang="fr" label="Fran\xE7ais"> (ou subtitles) pour le m\xE9dia synchronis\xE9.`,
+      en: () => `Add <track kind="captions" src="\u2026" srclang="en" label="English"> (or subtitles) for the synchronized media.`
+    }
+  },
+  // ---- Theme 13 — Timing & moving content (src/rules/timing.ts) ---------------
+  "meta-refresh-redirect": {
+    message: {
+      fr: (p) => `<meta http-equiv="refresh" content="${p.content}"> impose un d\xE9lai de ${p.seconds}s \u2014 rafra\xEEchissement/redirection temporis\xE9 non contr\xF4lable.`,
+      en: (p) => `<meta http-equiv="refresh" content="${p.content}"> imposes a ${p.seconds}s delay \u2014 an uncontrollable timed refresh/redirect.`
+    },
+    remediation: {
+      fr: () => `Supprimez le meta refresh temporis\xE9, ou laissez l'utilisateur contr\xF4ler/d\xE9sactiver/prolonger le d\xE9lai.`,
+      en: () => `Remove the timed meta refresh, or let the user control/disable/extend the delay.`
+    }
+  },
+  "blink-marquee": {
+    message: {
+      fr: (p) => `<${p.tag}> \u2014 contenu en mouvement/clignotant automatique sans m\xE9canisme de pause.`,
+      en: (p) => `<${p.tag}> \u2014 automatic moving/blinking content with no pause mechanism.`
+    },
+    remediation: {
+      fr: (p) => `Remplacez <${p.tag}> par du contenu statique, ou fournissez un contr\xF4le pause/stop/masquer.`,
+      en: (p) => `Replace <${p.tag}> with static content, or provide a pause/stop/hide control.`
+    }
+  },
+  // ---- Cross-file rules (src/rules/cross-registry.ts) -------------------------
+  "cross-icon-only-unnamed": {
+    message: {
+      fr: (p) => `<${p.tag}> rend un contr\xF4le \xE0 ic\xF4ne seule mais est utilis\xE9 sans nom accessible (aucun aria-label/title/texte pass\xE9).`,
+      en: (p) => `<${p.tag}> renders an icon-only control but is used with no accessible name (no aria-label/title/text passed).`
+    },
+    remediation: {
+      fr: (p) => `Passez un nom au composant \xE0 cet endroit, p. ex. <${p.tag} aria-label="\u2026" /> (le composant ${p.defName} rend une ic\xF4ne sans texte).`,
+      en: (p) => `Pass a name to the component at this usage, e.g. <${p.tag} aria-label="\u2026" /> (the component ${p.defName} renders an icon with no text).`
+    }
+  },
+  "cross-prop-drilled-name-lost": {
+    message: {
+      fr: (p) => `<${p.tag} ${p.passed}="\u2026"> mais ${p.defName} ne transmet pas ce nom au contr\xF4le rendu \u2014 le nom accessible est perdu.`,
+      en: (p) => `<${p.tag} ${p.passed}="\u2026"> but ${p.defName} does not forward this name to the rendered control \u2014 the accessible name is lost.`
+    },
+    remediation: {
+      fr: (p) => `Dans ${p.defName}, transmettez ${p.passed} (ou {...props}) au <button>/<a> rendu, ou nommez le contr\xF4le directement.`,
+      en: (p) => `In ${p.defName}, forward ${p.passed} (or {...props}) to the rendered <button>/<a>, or name the control directly.`
+    }
+  }
+};
+function entryFor(id) {
+  return id === void 0 ? void 0 : MSG_CATALOG[id];
+}
+function resolveMessage(f, lang) {
+  const entry = entryFor(f.msg?.id);
+  return entry ? entry.message[lang](f.msg?.params ?? {}) : f.message;
+}
+function resolveRemediation(f, lang) {
+  const entry = entryFor(f.msg?.id);
+  return entry ? entry.remediation[lang](f.msg?.params ?? {}) : f.remediation;
+}
+
 // src/rules/rule.ts
 var INJECT_MARKER = /%[a-zA-Z][\w.]*%|\{\{[\s\S]*?\}\}|<%[-=]?[\s\S]*?%>|\{%[\s\S]*?%\}|@RenderBody\b/;
 var MOUNT_IDS = /* @__PURE__ */ new Set(["app", "root", "__next", "__nuxt", "svelte", "q-app", "app-root", "___gatsby"]);
@@ -19059,6 +19698,11 @@ function selectorOf(el) {
   return el.tag;
 }
 function toFinding(doc, ruleId, def, rf) {
+  const entry = MSG_CATALOG[rf.msgId];
+  if (!entry) {
+    throw new Error(`toFinding: msgId "${rf.msgId}" (rule "${ruleId}") is not in MSG_CATALOG \u2014 add it to src/messages.ts.`);
+  }
+  const params = rf.params ?? {};
   return {
     ruleId,
     criteriaId: rf.criteriaId,
@@ -19067,8 +19711,9 @@ function toFinding(doc, ruleId, def, rf) {
     col: rf.el.col,
     selectorHint: rf.selectorHint ?? selectorOf(rf.el),
     severity: rf.severity ?? def,
-    message: rf.message,
-    remediation: rf.remediation,
+    message: entry.message.en(params),
+    remediation: entry.remediation.en(params),
+    msg: rf.params ? { id: rf.msgId, params: rf.params } : { id: rf.msgId },
     snippet: snippet(doc, rf.el),
     // Only carry source offsets when they index into the *real* file. For lossy
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
@@ -19189,8 +19834,8 @@ var imgAltMissing = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<${el.tag}> sans attribut alt ni nom accessible \u2014 alternative textuelle manquante.`,
-        remediation: `Ajoutez alt="\u2026" (description si l'image porte de l'information, alt="" si elle est d\xE9corative).`
+        msgId: "img-alt-missing",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -19212,15 +19857,14 @@ var decorativeAltMisuse = {
         out.push({
           criteriaId: "1.1.1",
           el,
-          message: `Image d\xE9corative (alt="") mais nomm\xE9e par aria-label/title \u2014 incoh\xE9rence d\xE9coratif/informatif.`,
-          remediation: `Si l'image est d\xE9corative, retirez aria-label/title ; sinon donnez un alt descriptif.`
+          msgId: "decorative-alt-misuse.empty-but-named"
         });
       } else if (["presentation", "none"].includes(role) && alt?.trim()) {
         out.push({
           criteriaId: "1.1.1",
           el,
-          message: `Image en role="${role}" mais porteuse d'un alt non vide \u2014 d\xE9clar\xE9e d\xE9corative pourtant nomm\xE9e.`,
-          remediation: `Retirez role="${role}" si l'image est informative, ou videz l'alt si elle est d\xE9corative.`
+          msgId: "decorative-alt-misuse.role-but-alt",
+          params: { role }
         });
       }
     }
@@ -19241,8 +19885,7 @@ var canvasFallbackMissing = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<canvas> sans contenu alternatif ni nom accessible.`,
-        remediation: `Placez un contenu de repli entre <canvas>\u2026</canvas> ou ajoutez role="img" + aria-label.`
+        msgId: "canvas-fallback-missing"
       });
     }
     return out;
@@ -19261,8 +19904,7 @@ var inputImageAltMissing = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<input type="image"> sans alt ni nom accessible \u2014 le bouton image n'a pas d'alternative textuelle.`,
-        remediation: `Ajoutez alt="\u2026" d\xE9crivant l'action du bouton (ex. alt="Rechercher").`
+        msgId: "input-image-alt-missing"
       });
     }
     return out;
@@ -19282,8 +19924,8 @@ var objectEmbedNoName = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `<${el.tag}> sans nom accessible ni contenu de repli \u2014 m\xE9dia embarqu\xE9 sans alternative textuelle.`,
-        remediation: `Ajoutez aria-label/title d\xE9crivant le contenu (et un contenu de repli textuel dans <object>\u2026</object>), ou aria-hidden="true" si d\xE9coratif.`
+        msgId: "object-embed-no-name",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -19310,8 +19952,8 @@ var chartNoAccessibleName = {
       out.push({
         criteriaId: "1.1.1",
         el,
-        message: `Graphique (<${el.tag}> ${cls.trim().split(/\s+/)[0]}) sans nom accessible \u2014 alternative textuelle manquante.`,
-        remediation: `Enveloppez le graphique dans <div role="img" aria-label="\u2026"> d\xE9crivant la tendance (ou ajoutez un <title>/aria-label).`
+        msgId: "chart-no-accessible-name",
+        params: { tag: el.tag, cls: cls.trim().split(/\s+/)[0] ?? "" }
       });
     }
     return out;
@@ -19335,8 +19977,7 @@ var iframeTitleMissing = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `<iframe> sans attribut title \u2014 le cadre n'a pas de titre.`,
-        remediation: `Ajoutez un title d\xE9crivant le contenu du cadre, ex. title="Carte de localisation".`
+        msgId: "iframe-title-missing"
       });
     }
     return out;
@@ -19476,8 +20117,8 @@ var invalidAriaRole = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `R\xF4le ARIA invalide : "${bad.join(" ")}" n'est pas un r\xF4le WAI-ARIA valide.`,
-          remediation: `Utilisez un r\xF4le ARIA valide ou un \xE9l\xE9ment HTML natif \xE9quivalent.`
+          msgId: "invalid-aria-role",
+          params: { roles: bad.join(" ") }
         });
       }
     }
@@ -19506,8 +20147,8 @@ var ariaRefMissingId = {
           out.push({
             criteriaId: "4.1.2",
             el,
-            message: `${a} r\xE9f\xE9rence un id inexistant : ${missing.map((m) => `#${m}`).join(", ")}.`,
-            remediation: `Corrigez la r\xE9f\xE9rence ou ajoutez l'\xE9l\xE9ment cible avec l'id attendu.`
+            msgId: "aria-ref-missing-id",
+            params: { attr: a, ids: missing.map((m) => `#${m}`).join(", ") }
           });
         }
       }
@@ -19550,8 +20191,8 @@ var redundantAria = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `role="${role}" est redondant : <${el.tag}> a d\xE9j\xE0 ce r\xF4le implicite.`,
-          remediation: `Retirez l'attribut role redondant et laissez la s\xE9mantique native.`
+          msgId: "redundant-aria",
+          params: { role, tag: el.tag }
         });
       }
     }
@@ -19576,8 +20217,8 @@ var clickableNoninteractive = {
       out.push({
         criteriaId: noKeyboard ? "2.1.1" : "4.1.2",
         el,
-        message: `<${el.tag}> avec onClick mais ${noKeyboard ? "non focalisable (tabindex absent)" : "sans r\xF4le interactif"} \u2014 contr\xF4le non accessible au clavier/AT.`,
-        remediation: `Utilisez <button>/<a> natif, ou ajoutez role + tabindex="0" + gestion clavier (Enter/Espace).`
+        msgId: "clickable-noninteractive",
+        params: { tag: el.tag, focusIssue: noKeyboard ? "no-tabindex" : "no-role" }
       });
     }
     return out;
@@ -19614,8 +20255,8 @@ var ariaRequiredChildren = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `role="${role}" sans enfant requis (${req.join("/")}) \u2014 structure ARIA incompl\xE8te.`,
-        remediation: `Ajoutez les \xE9l\xE9ments enfants au r\xF4le appropri\xE9, ou utilisez les \xE9l\xE9ments HTML natifs.`
+        msgId: "aria-required-children",
+        params: { role, req: req.join("/") }
       });
     }
     return out;
@@ -19634,8 +20275,7 @@ var ariaHiddenFocusable = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `aria-hidden="true" sur (ou contenant) un \xE9l\xE9ment focalisable \u2014 pi\xE8ge pour les technologies d'assistance.`,
-        remediation: `Retirez aria-hidden, ou rendez l'\xE9l\xE9ment non focalisable (tabindex="-1", disabled).`
+        msgId: "aria-hidden-focusable"
       });
     }
     return out;
@@ -19653,8 +20293,8 @@ var nestedInteractive = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `\xC9l\xE9ment interactif <${el.tag}> imbriqu\xE9 dans un autre \xE9l\xE9ment interactif \u2014 non restitu\xE9 correctement.`,
-        remediation: `Ne pas imbriquer des contr\xF4les interactifs (lien/bouton) ; mettez-les c\xF4te \xE0 c\xF4te.`
+        msgId: "nested-interactive",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -19685,8 +20325,8 @@ var liveRegionConflict = {
         out.push({
           criteriaId: "4.1.3",
           el,
-          message: `aria-live="${liveRaw}" invalide \u2014 seules les valeurs off, polite, assertive sont restitu\xE9es.`,
-          remediation: `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignor\xE9e.`
+          msgId: "live-region-conflict.invalid-value",
+          params: { value: liveRaw }
         });
         continue;
       }
@@ -19698,8 +20338,8 @@ var liveRegionConflict = {
           criteriaId: "4.1.3",
           el,
           severity: want === "assertive" ? "majeur" : "mineur",
-          message: `role="${role}" implique aria-live="${want}" mais aria-live="${live}" \u2014 message de statut restitu\xE9 de fa\xE7on incoh\xE9rente.`,
-          remediation: want === "assertive" ? `Laissez role="${role}" g\xE9rer la restitution (retirez aria-live) ou utilisez aria-live="assertive".` : `Alignez aria-live sur "${want}", coh\xE9rent avec role="${role}", ou retirez-le.`
+          msgId: "live-region-conflict.mismatch",
+          params: { role, want, live }
         });
       }
     }
@@ -19724,8 +20364,7 @@ var statusMessageNotAssertive = {
       out.push({
         criteriaId: "4.1.3",
         el,
-        message: `Conteneur d'erreur/alerte en aria-live="polite" \u2014 un message d'erreur doit \xEAtre restitu\xE9 de fa\xE7on assertive.`,
-        remediation: `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annonc\xE9 imm\xE9diatement.`
+        msgId: "status-message-not-assertive"
       });
     }
     return out;
@@ -19763,8 +20402,7 @@ var htmlLangMissing = {
       {
         criteriaId: "3.1.1",
         el: html,
-        message: `<html> sans attribut lang \u2014 la langue par d\xE9faut de la page n'est pas d\xE9clar\xE9e.`,
-        remediation: `Ajoutez lang sur <html>, ex. <html lang="fr">.`
+        msgId: "html-lang-missing"
       }
     ];
   }
@@ -19785,8 +20423,8 @@ var titleMissingEmpty = {
       {
         criteriaId: "2.4.2",
         el: anchor,
-        message: titles.length ? `<title> vide \u2014 le titre de la page est absent de contenu.` : `<title> absent \u2014 la page n'a pas de titre.`,
-        remediation: `Ajoutez un <title> non vide et pertinent dans <head>.`
+        msgId: "title-missing-empty",
+        params: { titleState: titles.length ? "empty" : "absent" }
       }
     ];
   }
@@ -19806,8 +20444,8 @@ var duplicateId = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `id="${id}" dupliqu\xE9 \u2014 un id doit \xEAtre unique dans la page (HTML invalide).`,
-          remediation: `Donnez un id unique \xE0 chaque \xE9l\xE9ment ; ajustez les r\xE9f\xE9rences (label[for], aria-*).`
+          msgId: "duplicate-id",
+          params: { id }
         });
       }
     }
@@ -19827,8 +20465,8 @@ var inlineLangChangeMissing = {
         out.push({
           criteriaId: "3.1.2",
           el,
-          message: `Attribut lang vide sur <${el.tag}> \u2014 changement de langue mal indiqu\xE9.`,
-          remediation: `Renseignez un code de langue valide (ex. lang="en") ou retirez l'attribut.`
+          msgId: "inline-lang-change-missing",
+          params: { tag: el.tag }
         });
       }
     }
@@ -19849,8 +20487,8 @@ var langInvalid = {
       out.push({
         criteriaId: el.tag === "html" ? "3.1.1" : "3.1.2",
         el,
-        message: `Code de langue invalide lang="${lang}" sur <${el.tag}> \u2014 n'est pas un code BCP 47 valide.`,
-        remediation: `Utilisez un code de langue valide (ex. "fr", "en", "fr-CA").`
+        msgId: "lang-invalid",
+        params: { lang, tag: el.tag }
       });
     }
     return out;
@@ -19911,8 +20549,8 @@ var headingOrderSkip = {
         out.push({
           criteriaId: "1.3.1",
           el,
-          message: `Saut de niveau de titre : <h${level}> apr\xE8s <h${prev}> (niveau h${prev + 1} attendu).`,
-          remediation: `Ne sautez pas de niveau : encha\xEEnez les titres sans omettre de palier.`
+          msgId: "heading-order-skip",
+          params: { level, prev, expected: prev + 1 }
         });
       }
       prev = level;
@@ -19938,8 +20576,7 @@ var h1Missing = {
       {
         criteriaId: "1.3.1",
         el: anchor,
-        message: `Aucun <h1> dans la page \u2014 le titre principal de niveau 1 est manquant.`,
-        remediation: `Ajoutez un <h1> d\xE9crivant le contenu principal de la page.`
+        msgId: "h1-missing"
       }
     ];
   }
@@ -19955,8 +20592,8 @@ var h1Multiple = {
     return h1s.slice(1).map((el) => ({
       criteriaId: "1.3.1",
       el,
-      message: `Plusieurs <h1> dans la page (${h1s.length}) \u2014 un seul titre de niveau 1 est recommand\xE9.`,
-      remediation: `Conservez un unique <h1> et hi\xE9rarchisez le reste avec h2\u2026h6.`
+      msgId: "h1-multiple",
+      params: { count: h1s.length }
     }));
   }
 };
@@ -19974,8 +20611,8 @@ var listStructure = {
           out.push({
             criteriaId: "1.3.1",
             el: bad,
-            message: `<${bad.tag}> enfant direct de <${el.tag}> \u2014 une liste ne doit contenir que des <li>.`,
-            remediation: `Enveloppez le contenu dans des <li>, ou utilisez un autre \xE9l\xE9ment que <${el.tag}>.`
+            msgId: "list-structure.invalid-child",
+            params: { childTag: bad.tag, parentTag: el.tag }
           });
         }
       } else if (el.tag === "li") {
@@ -19985,8 +20622,8 @@ var listStructure = {
         out.push({
           criteriaId: "1.3.1",
           el,
-          message: `<li> hors d'une liste (<${parent.tag}> parent) \u2014 structure de liste invalide.`,
-          remediation: `Placez chaque <li> directement dans un <ul>, <ol> ou <menu>.`
+          msgId: "list-structure.li-outside-list",
+          params: { parentTag: parent.tag }
         });
       }
     }
@@ -20006,8 +20643,8 @@ var emptyHeading = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `Titre <${el.tag}> de niveau ${level} vide \u2014 un titre sans intitul\xE9 d\xE9soriente la navigation au clavier/lecteur d'\xE9cran.`,
-        remediation: `Donnez un intitul\xE9 textuel au titre, ou retirez-le s'il est purement d\xE9coratif.`
+        msgId: "empty-heading",
+        params: { tag: el.tag, level }
       });
     }
     return out;
@@ -20046,15 +20683,13 @@ var dataTableNoHeaders = {
         out.push({
           criteriaId: "1.3.1",
           el: t2,
-          message: `Tableau de donn\xE9es sans <th> \u2014 en-t\xEAtes de colonne/ligne non d\xE9clar\xE9s.`,
-          remediation: `D\xE9clarez les en-t\xEAtes avec <th>, et associez-les via scope="col"/"row" (ou headers/id).`
+          msgId: "data-table-no-headers.no-th"
         });
       } else if (!hasAssoc) {
         out.push({
           criteriaId: "1.3.1",
           el: t2,
-          message: `Tableau de donn\xE9es avec <th> mais sans scope/headers \u2014 association cellule\u2194en-t\xEAte absente.`,
-          remediation: `Ajoutez scope="col"/"row" sur les <th> (ou headers="\u2026"/id sur cellules complexes).`
+          msgId: "data-table-no-headers.no-assoc"
         });
       }
     }
@@ -20074,8 +20709,7 @@ var tableCaptionMissing = {
       out.push({
         criteriaId: "1.3.1",
         el: t2,
-        message: `Tableau de donn\xE9es sans <caption> ni nom accessible \u2014 titre du tableau absent.`,
-        remediation: `Ajoutez un <caption> en premi\xE8re position du <table> (ou aria-label/aria-labelledby).`
+        msgId: "table-caption-missing"
       });
     }
     return out;
@@ -20095,8 +20729,8 @@ var layoutTableDataMarkup = {
       out.push({
         criteriaId: "1.3.1",
         el: t2,
-        message: `Tableau de mise en forme (role="${attr(t2, "role")}") utilisant du balisage de donn\xE9es (th/caption/scope).`,
-        remediation: `Retirez th/caption/scope/headers d'un tableau de pr\xE9sentation, ou faites-en un vrai tableau de donn\xE9es.`
+        msgId: "layout-table-data-markup",
+        params: { role: attr(t2, "role") ?? "" }
       });
     }
     return out;
@@ -20123,8 +20757,7 @@ var sortableHeaderNoAriaSort = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `En-t\xEAte de colonne triable sans aria-sort \u2014 l'\xE9tat de tri (croissant/d\xE9croissant) n'est pas restitu\xE9.`,
-        remediation: `Ajoutez aria-sort="none|ascending|descending" sur le <th> tri\xE9, et masquez le glyphe de tri (aria-hidden="true").`
+        msgId: "sortable-header-no-aria-sort"
       });
     }
     return out;
@@ -20168,8 +20801,7 @@ var linkEmptyName = {
       out.push({
         criteriaId: "2.4.4",
         el,
-        message: `Lien sans intitul\xE9 \u2014 aucun nom accessible.`,
-        remediation: `Donnez un intitul\xE9 textuel au lien (texte visible, ou aria-label si vraiment n\xE9cessaire).`
+        msgId: "link-empty-name"
       });
     }
     return out;
@@ -20190,8 +20822,7 @@ var buttonEmptyName = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `Bouton sans intitul\xE9 \u2014 aucun nom accessible.`,
-        remediation: `Donnez un intitul\xE9 au bouton (texte, value, ou aria-label).`
+        msgId: "button-empty-name"
       });
     }
     return out;
@@ -20214,8 +20845,8 @@ var iconOnlyControlUnnamed = {
       out.push({
         criteriaId: link ? "2.4.4" : "4.1.2",
         el,
-        message: `${link ? "Lien" : "Bouton"} avec une ic\xF4ne seule (img/svg/i) sans nom accessible.`,
-        remediation: `Ajoutez un alt/aria-label sur l'ic\xF4ne ou un texte masqu\xE9 visuellement (classe visually-hidden).`
+        msgId: "icon-only-control-unnamed",
+        params: { kind: link ? "link" : "button" }
       });
     }
     return out;
@@ -20243,8 +20874,8 @@ var controlNameTitleOnly = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `${link ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title \u2014 title n'est pas restitu\xE9 de fa\xE7on fiable (survol uniquement).`,
-        remediation: `Donnez un intitul\xE9 via texte visible ou aria-label ; r\xE9servez title \xE0 une information compl\xE9mentaire.`
+        msgId: "control-name-title-only",
+        params: { kind: link ? "link" : "button" }
       });
     }
     return out;
@@ -20272,8 +20903,8 @@ var controlLabelMissing = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `Champ de formulaire <${el.tag}> sans \xE9tiquette \u2014 aucun label associ\xE9.`,
-        remediation: `Associez un <label for="\u2026"> (ou enveloppez le champ d'un <label>, ou aria-label/aria-labelledby).`
+        msgId: "control-label-missing",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -20293,8 +20924,8 @@ var placeholderAsLabel = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `placeholder="${attr(el, "placeholder")}" utilis\xE9 comme seule \xE9tiquette \u2014 le placeholder n'est pas un label.`,
-        remediation: `Ajoutez un <label> r\xE9el ; le placeholder ne doit que compl\xE9ter, pas remplacer l'\xE9tiquette.`
+        msgId: "placeholder-as-label",
+        params: { value: attr(el, "placeholder") ?? "" }
       });
     }
     return out;
@@ -20315,8 +20946,7 @@ var fieldsetLegendMissing = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `<fieldset> sans <legend> (ou l\xE9gende vide) \u2014 regroupement de champs sans l\xE9gende.`,
-        remediation: `Ajoutez un <legend> non vide en premier enfant du <fieldset>.`
+        msgId: "fieldset-legend-missing"
       });
     }
     return out;
@@ -20341,8 +20971,8 @@ var formFieldMultipleLabels = {
         out.push({
           criteriaId: "4.1.2",
           el,
-          message: `Champ <${el.tag}> r\xE9f\xE9renc\xE9 par ${counts.get(id)} <label for="${id}"> \u2014 \xE9tiquettes multiples ambigu\xEBs.`,
-          remediation: `Un seul <label> doit cibler le champ ; fusionnez ou retirez les \xE9tiquettes superflues.`
+          msgId: "form-field-multiple-labels",
+          params: { tag: el.tag, count: counts.get(id) ?? 0, id }
         });
       }
     }
@@ -20362,8 +20992,7 @@ var selectHasOption = {
       out.push({
         criteriaId: "4.1.2",
         el,
-        message: `<select> sans aucune <option> \u2014 liste de choix vide.`,
-        remediation: `Ajoutez des <option> (et un <optgroup>/option par d\xE9faut si pertinent).`
+        msgId: "select-has-option"
       });
     }
     return out;
@@ -20385,8 +21014,8 @@ var labelForDangling = {
       out.push({
         criteriaId: "1.3.1",
         el,
-        message: `<label for="${f}"> ne cible aucun \xE9l\xE9ment \u2014 aucun champ n'a id="${f}".`,
-        remediation: `Donnez au champ id="${f}", corrigez l'attribut for, ou enveloppez le champ dans le <label>.`
+        msgId: "label-for-dangling",
+        params: { id: f }
       });
     }
     return out;
@@ -20408,8 +21037,8 @@ var ariaInvalidNoDescription = {
       out.push({
         criteriaId: "3.3.1",
         el,
-        message: `<${el.tag}> a aria-invalid="true" mais aucun aria-describedby/aria-errormessage \u2014 l'erreur est signal\xE9e sans \xEAtre reli\xE9e \xE0 son message.`,
-        remediation: `Reliez le message d'erreur au champ via aria-describedby (ou aria-errormessage) pointant vers le texte d'erreur.`
+        msgId: "aria-invalid-no-description",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -20444,8 +21073,8 @@ var errorNotAssociated = {
       out.push({
         criteriaId: "3.3.1",
         el,
-        message: `Message d'erreur (id="${id}") reli\xE9 \xE0 aucun champ \u2014 aucun aria-describedby/aria-errormessage ne le r\xE9f\xE9rence.`,
-        remediation: `Sur le champ concern\xE9, ajoutez aria-describedby="${id}" (ou aria-errormessage) et aria-invalid="true".`
+        msgId: "error-not-associated",
+        params: { id }
       });
     }
     return out;
@@ -20472,8 +21101,8 @@ var fieldPurposeIncomplete = {
             out.push({
               criteriaId: "1.3.5",
               el,
-              message: `Champ d'identification (${type === "email" || type === "tel" ? `type="${type}"` : "name/id"}) sans autocomplete \u2014 objet du champ non expos\xE9.`,
-              remediation: `Ajoutez un autocomplete appropri\xE9 (ex. email, tel, name, postal-code, street-address) \u2014 WCAG 1.3.5.`
+              msgId: "field-purpose-incomplete.autocomplete",
+              params: { type }
             });
           }
         }
@@ -20484,8 +21113,8 @@ var fieldPurposeIncomplete = {
           out.push({
             criteriaId: "4.1.2",
             el,
-            message: `Widget personnalis\xE9 (role="${role}") requis sans aria-required \u2014 l'\xE9tat requis n'est pas restitu\xE9.`,
-            remediation: `Ajoutez aria-required="true" sur le widget personnalis\xE9 requis.`
+            msgId: "field-purpose-incomplete.aria-required",
+            params: { role }
           });
         }
       }
@@ -20538,8 +21167,8 @@ var skipLinkTargetMissing = {
       out.push({
         criteriaId: "2.4.1",
         el,
-        message: `Lien interne href="${href}" \u2014 la cible #${id} n'existe pas dans la page (lien d'\xE9vitement/ancre cass\xE9).`,
-        remediation: `Ajoutez un \xE9l\xE9ment avec id="${id}" (ex. <main id="${id}">) ou corrigez l'ancre.`,
+        msgId: "skip-link-target-missing",
+        params: { href, id },
         // In a JSX/SFC component the target id often lives in a sibling/parent component
         // resolved at composition time (or via --graph). Single-file source can't prove it
         // missing, so flag it provisional rather than a hard NC. Full HTML pages stay firm.
@@ -20562,8 +21191,8 @@ var positiveTabindex = {
         out.push({
           criteriaId: "2.4.3",
           el,
-          message: `tabindex="${ti}" positif \u2014 force un ordre de tabulation incoh\xE9rent avec l'ordre du DOM.`,
-          remediation: `Utilisez tabindex="0" (ou pas de tabindex) et ordonnez via le DOM ; r\xE9servez les valeurs >0.`
+          msgId: "positive-tabindex",
+          params: { value: ti }
         });
       }
     }
@@ -20584,8 +21213,7 @@ var missingMainLandmark = {
       {
         criteriaId: "1.3.1",
         el: anchor,
-        message: `Aucun rep\xE8re <main> dans la page \u2014 le contenu principal n'est pas identifi\xE9 (et la cible d'un lien d'\xE9vitement manque).`,
-        remediation: `Enveloppez le contenu principal dans un <main id="content"> (unique par page).`
+        msgId: "missing-main-landmark"
       }
     ];
   }
@@ -20601,8 +21229,8 @@ var multipleMainLandmark = {
     return mains.slice(1).map((el) => ({
       criteriaId: "1.3.1",
       el,
-      message: `Plusieurs rep\xE8res <main> dans la page (${mains.length}) \u2014 un seul contenu principal est autoris\xE9.`,
-      remediation: `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`
+      msgId: "multiple-main-landmark",
+      params: { count: mains.length }
     }));
   }
 };
@@ -20627,16 +21255,15 @@ var autoplayMedia = {
         out.push({
           criteriaId: "2.2.2",
           el,
-          message: `<video autoplay> d\xE9marre automatiquement \u2014 contenu en mouvement non contr\xF4l\xE9.`,
-          remediation: `\xC9vitez l'autoplay ou fournissez un contr\xF4le pause/stop accessible (et controls).`
+          msgId: "autoplay-media.muted-video"
         });
         continue;
       }
       out.push({
         criteriaId: el.tag === "audio" ? "1.4.2" : "2.2.2",
         el,
-        message: `<${el.tag} autoplay> d\xE9marre automatiquement ${el.tag === "audio" ? "du son" : "une vid\xE9o sonore"} \u2014 non contr\xF4lable par l'utilisateur.`,
-        remediation: `Retirez autoplay, ou ajoutez un contr\xF4le de lecture (controls + pause/stop) facilement accessible.`
+        msgId: "autoplay-media.audible",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -20655,8 +21282,7 @@ var mediaNoTrack = {
       out.push({
         criteriaId: "1.2.2",
         el,
-        message: `<video> sans \xE9l\xE9ment <track> \u2014 aucune piste de sous-titres/l\xE9gendes synchronis\xE9es.`,
-        remediation: `Ajoutez <track kind="captions" src="\u2026" srclang="fr" label="Fran\xE7ais"> (ou subtitles) pour le m\xE9dia synchronis\xE9.`
+        msgId: "media-no-track"
       });
     }
     return out;
@@ -20687,8 +21313,8 @@ var metaViewportZoomBlock = {
       out.push({
         criteriaId: "1.4.4",
         el,
-        message: `<meta viewport> bloque le zoom (${userScalable === "no" || userScalable === "0" ? "user-scalable=no" : `maximum-scale=${maxScale}`}) \u2014 agrandissement \xE0 200% emp\xEAch\xE9.`,
-        remediation: `Retirez user-scalable=no et maximum-scale (ou maximum-scale \u2265 2) du content du viewport.`
+        msgId: "meta-viewport-zoom-block",
+        params: { blockedBy: userScalable === "no" || userScalable === "0" ? "user-scalable" : "maximum-scale", maxScale: maxScale ?? "" }
       });
     }
     return out;
@@ -20856,8 +21482,8 @@ var contrastLiteral = {
       out.push({
         criteriaId: "1.4.3",
         el,
-        message: `Contraste insuffisant : ratio ${ratio.toFixed(2)}:1 entre le texte et son fond (minimum ${min}:1 pour du texte ${large ? "large" : "normal"}).`,
-        remediation: `Assombrissez le texte ou \xE9claircissez le fond pour atteindre au moins ${min}:1 (contraste calcul\xE9 sur des couleurs inline litt\xE9rales).`
+        msgId: "contrast-literal",
+        params: { ratio: ratio.toFixed(2), min, textSize: large ? "large" : "normal" }
       });
     }
     return out;
@@ -20881,8 +21507,8 @@ var metaRefreshRedirect = {
       out.push({
         criteriaId: "2.2.1",
         el,
-        message: `<meta http-equiv="refresh" content="${content}"> impose un d\xE9lai de ${seconds}s \u2014 rafra\xEEchissement/redirection temporis\xE9 non contr\xF4lable.`,
-        remediation: `Supprimez le meta refresh temporis\xE9, ou laissez l'utilisateur contr\xF4ler/d\xE9sactiver/prolonger le d\xE9lai.`
+        msgId: "meta-refresh-redirect",
+        params: { content, seconds }
       });
     }
     return out;
@@ -20899,8 +21525,8 @@ var blinkMarquee = {
       out.push({
         criteriaId: "2.2.2",
         el,
-        message: `<${el.tag}> \u2014 contenu en mouvement/clignotant automatique sans m\xE9canisme de pause.`,
-        remediation: `Remplacez <${el.tag}> par du contenu statique, ou fournissez un contr\xF4le pause/stop/masquer.`
+        msgId: "blink-marquee",
+        params: { tag: el.tag }
       });
     }
     return out;
@@ -20939,6 +21565,11 @@ function runRules(doc, only) {
 
 // src/rules/cross-rule.ts
 function crossToFinding(doc, ruleId, def, cf) {
+  const entry = MSG_CATALOG[cf.msgId];
+  if (!entry) {
+    throw new Error(`crossToFinding: msgId "${cf.msgId}" (rule "${ruleId}") is not in MSG_CATALOG \u2014 add it to src/messages.ts.`);
+  }
+  const params = cf.params ?? {};
   return {
     ruleId,
     criteriaId: cf.criteriaId,
@@ -20947,8 +21578,9 @@ function crossToFinding(doc, ruleId, def, cf) {
     col: cf.el.col,
     selectorHint: cf.selectorHint ?? selectorOf(cf.el),
     severity: cf.severity ?? def,
-    message: cf.message,
-    remediation: cf.remediation,
+    message: entry.message.en(params),
+    remediation: entry.remediation.en(params),
+    msg: cf.params ? { id: cf.msgId, params: cf.params } : { id: cf.msgId },
     snippet: snippet(doc, cf.el),
     ...doc.lossy ? {} : { sourceStart: cf.el.start, sourceEnd: cf.el.end },
     ...cf.related ? { related: cf.related } : {}
@@ -21083,8 +21715,8 @@ var crossIconOnlyUnnamed = {
       findings.push({
         criteriaId: "4.1.2",
         el,
-        message: `<${el.tag}> rend un contr\xF4le \xE0 ic\xF4ne seule mais est utilis\xE9 sans nom accessible (aucun aria-label/title/texte pass\xE9).`,
-        remediation: `Passez un nom au composant \xE0 cet endroit, p. ex. <${el.tag} aria-label="\u2026" /> (le composant ${def.name} rend une ic\xF4ne sans texte).`,
+        msgId: "cross-icon-only-unnamed",
+        params: { tag: el.tag, defName: def.name },
         related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "d\xE9finition du composant \xE0 ic\xF4ne seule" }
       });
     }
@@ -21158,8 +21790,8 @@ var crossPropDrilledNameLost = {
       findings.push({
         criteriaId: "4.1.2",
         el,
-        message: `<${el.tag} ${passed}="\u2026"> mais ${def.name} ne transmet pas ce nom au contr\xF4le rendu \u2014 le nom accessible est perdu.`,
-        remediation: `Dans ${def.name}, transmettez ${passed} (ou {...props}) au <button>/<a> rendu, ou nommez le contr\xF4le directement.`,
+        msgId: "cross-prop-drilled-name-lost",
+        params: { tag: el.tag, passed, defName: def.name },
         related: { file: def.file, line: def.line, col: def.col, selectorHint: def.name, note: "contr\xF4le qui ne re\xE7oit pas le nom pass\xE9" }
       });
     }
@@ -25706,10 +26338,10 @@ var L = {
     blindSpots: (n) => `${n} component(s) without a rendered capture (blind spots) \u2014 audited from opaque source only; audit their rendered DOM (\`render --setup\`).`
   }
 };
-function ncEntry(label, f, s) {
+function ncEntry(label, f, s, lang) {
   const base = `- **${label}** \u2014 \`${f.file}:${f.line}\` (\`${f.selectorHint}\`)
-  - ${f.message}
-  - _${s.fix} :_ ${f.remediation}`;
+  - ${resolveMessage(f, lang)}
+  - _${s.fix} :_ ${resolveRemediation(f, lang)}`;
   if (!f.origin) return base;
   const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
   const srcFile = f.origin.sourceFile ?? f.origin.capture;
@@ -25764,7 +26396,7 @@ function render(r, lang, opts) {
       const group = sorted.filter((x) => x.f.severity === sev);
       if (!group.length) continue;
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
-      for (const { f, label } of group) out.push(ncEntry(label, f, s));
+      for (const { f, label } of group) out.push(ncEntry(label, f, s, lang));
       out.push("");
     }
   }
@@ -28275,14 +28907,14 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
     if (testNums.length) out.push(`**${v.test}(s)** : ${testNums.join(" \xB7 ")}`);
     if (unit.refs.length) out.push(`**WCAG** : ${unit.refs.map((sc) => `${sc}${scLevel(sc)}`).join(" \xB7 ")}`);
   }
-  const messages = uniq(unit.findings.map((f) => f.message));
-  const fixes = uniq(unit.findings.map((f) => f.remediation));
+  const messages = uniq(unit.findings.map((f) => resolveMessage(f, lang)));
+  const fixes = uniq(unit.findings.map((f) => resolveRemediation(f, lang)));
   out.push("");
   out.push(`**${s.finding} (${v.nonConformant})** : ${unit.findings.length} ${s.occ} \u2014 ${messages.join(" ; ")}`);
   if (fixes.length) out.push(`**${s.expected} (${v.conformant})** : ${fixes.join(" ; ")}`);
   out.push(`**${s.verification}** : ${s.verify}`, "");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
@@ -28472,14 +29104,14 @@ function unitBlock(unit, lang, heading, standard) {
   const out = [];
   const refs = unit.refs.length ? `  \xB7  WCAG ${unit.refs.join(", ")}` : "";
   out.push(`${heading} ${ICON3[unit.severity]} ${unit.label}${refs}`, "");
-  const fixes = [...new Set(unit.findings.map((f) => f.remediation))];
+  const fixes = [...new Set(unit.findings.map((f) => resolveRemediation(f, lang)))];
   for (const fx of fixes) out.push(`- _${s.fix} :_ ${fx}`);
   const { bucket, points } = effortOf(unit);
   out.push(`- _${s.effort} :_ ${bucket} (${points} pts)`, "");
   out.push(...guidanceExampleBlock(guidanceFor(unit, standard), lang));
   out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
@@ -28571,7 +29203,7 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
       if (techs.length) out.push("", `_${s.techniques} : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", \u2026" : ""}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
-        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
+        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
         if (f.related) out.push(`  - \u21B3 ${f.related.note} : \`${f.related.file}:${f.related.line}\``);
       }
       out.push("");
@@ -28646,10 +29278,10 @@ function issueBody(unit, lang, standard = "wcag", format = "audit") {
   const t2 = lang === "fr" ? { fix: "Correction", occ: "Occurrence(s)", def: "\u21B3 d\xE9finition" } : { fix: "Fix", occ: "Occurrence(s)", def: "\u21B3 definition" };
   const lines = [];
   if (unit.refs.length) lines.push(`**WCAG** : ${unit.refs.join(", ")}`, "");
-  for (const fx of [...new Set(unit.findings.map((f) => f.remediation))]) lines.push(`**${t2.fix}** : ${fx}`);
+  for (const fx of [...new Set(unit.findings.map((f) => resolveRemediation(f, lang)))]) lines.push(`**${t2.fix}** : ${fx}`);
   lines.push("", `**${t2.occ} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
-    lines.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${f.message}`);
+    lines.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
     if (f.related) lines.push(`  - ${t2.def} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   return lines.join("\n");
@@ -30505,7 +31137,7 @@ function auditSummary(r, lang) {
   } else {
     lines.push(`${t(lang, "findingsTitle")} (${r.findings.length}) :`);
     for (const f of r.findings.slice(0, 20)) {
-      lines.push(`  ${ICON5[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${f.message}`);
+      lines.push(`  ${ICON5[f.severity]} [${f.criteriaId}] ${f.file}:${f.line}  ${resolveMessage(f, lang)}`);
     }
     if (r.findings.length > 20) lines.push(`  \u2026 (+${r.findings.length - 20})`);
   }

@@ -326,6 +326,11 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
   for (const df of dynamic.findings) {
     const c = byId.get(df.criteriaId);
     if (!c) continue;
+    // Catalog id for RE-LOCALIZATION (src/messages.ts): "dyn-reflow" is ultra11y's
+    // own bilingual reflow prose; "dyn-remediation" covers axe-core + the residual
+    // probes, whose MESSAGE is the engine's own text (never translated — passed
+    // through verbatim via params.message) while the REMEDIATION is still ours.
+    const msg = df.engine === "reflow" ? { id: "dyn-reflow" } : { id: "dyn-remediation", params: { message: df.message } };
     const finding = {
       ruleId: df.engine === "axe" ? `axe:${df.axeRule}` : `dyn-${df.engine}`,
       criteriaId: df.criteriaId,
@@ -336,6 +341,7 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
       severity: df.severity,
       message: df.message,
       remediation,
+      msg,
       snippet: df.snippet,
     };
     c.findings.push(finding);

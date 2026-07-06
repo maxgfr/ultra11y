@@ -43,6 +43,10 @@ node scripts/ultra11y.mjs audit              # auto-ingests .ultra11y/captures; 
 - **Coverage + gate.** `render --coverage` lists which components have a capture vs which are
   still opaque-source-only blind spots; `audit --require-captures` fails when an opaque/control
   component lacks one — so "all components" actually get rendered-DOM coverage.
+  `.vue`/`.svelte`/`.astro` self-defined components now count in this coverage universe too
+  (previously invisible to the graph), so a previously-green `--require-captures` gate can newly
+  report blind spots on an SFC-heavy repo — that is intended (a named blind spot beats
+  invisibility); capture those components or scope the gate.
 - **Commit `.ultra11y/captures`.** In diff-scoped mode (`--changed`/`--staged`/`--since`) the
   audit automatically pulls in the captures whose provenance points at a diffed source file —
   the pre-commit gate sees the real rendered markup for a touched component even though the

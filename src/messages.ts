@@ -677,6 +677,41 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: (p) => `In ${p.defName}, forward ${p.passed} (or {...props}) to the rendered <button>/<a>, or name the control directly.`,
     },
   },
+
+  // ---- Dynamic tier (src/scan.ts mergeDynamic) ---------------------------------
+  // `scan --merge` folds axe-core/probe findings into a static AuditResult. Their
+  // MESSAGE is either ultra11y's own authored prose (the 320px reflow check) or the
+  // rendering engine's own text (axe-core's English violation help, or a probe's own
+  // detail string) — never ultra11y prose in the latter case. Only the REMEDIATION
+  // is always ultra11y-authored. Both entries below give these findings a `msg.id`
+  // (set in mergeDynamic) so a LATER `report`/`prd --lang` re-render can still
+  // resolve the OTHER language, instead of staying stuck in whatever language was
+  // baked at merge/scan time.
+  "dyn-reflow": {
+    message: {
+      fr: () => `Défilement horizontal à 320px de large — le contenu ne se redistribue pas (reflow).`,
+      en: () => `Horizontal scrolling at 320px width — content does not reflow.`,
+    },
+    remediation: {
+      fr: () => `Vérifié au rendu par axe-core ; corrigez l'élément cité.`,
+      en: () => `Verified at render time by axe-core; fix the cited element.`,
+    },
+  },
+  "dyn-remediation": {
+    // Covers axe-core findings and the residual-criteria probes (focus-visible,
+    // text-spacing, hover, reflow-zoom). Their message is authored by the engine
+    // itself, not by ultra11y — it passes through UNCHANGED in both languages (never
+    // translated; axe-core only ever speaks English), carried verbatim via `params.
+    // message`. This is the documented "axe's own English messages stay as-is".
+    message: {
+      fr: (p) => String(p.message ?? ""),
+      en: (p) => String(p.message ?? ""),
+    },
+    remediation: {
+      fr: () => `Vérifié au rendu par axe-core ; corrigez l'élément cité.`,
+      en: () => `Verified at render time by axe-core; fix the cited element.`,
+    },
+  },
 };
 
 // ---- Cross-file RelatedSite notes (src/rules/cross-registry.ts) -------------------

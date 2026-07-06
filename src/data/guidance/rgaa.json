@@ -580,8 +580,8 @@
         "en": "Sufficient text/background contrast"
       },
       "summary": {
-        "fr": "Le contraste texte/arrière-plan doit être d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (≥ 24 px, ou ≥ 18,66 px en gras). Le texte placé sur une image ou un dégradé doit être vérifié visuellement.",
-        "en": "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (≥ 24 px, or ≥ 18.66 px bold). Text over an image or gradient must be checked visually."
+        "fr": "Le contraste texte/arrière-plan doit être d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (≥ 24 px, ou ≥ 18,66 px en gras). Le texte placé sur une image ou un dégradé doit être vérifié visuellement. Le RGAA arrondit ce seuil « gras » à 18,5 px ; le moteur applique le seuil WCAG exact de 18,66 px (14pt gras), donc un texte gras entre 18,5 et 18,66 px reste tenu au seuil normal (4,5:1).",
+        "en": "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (≥ 24 px, or ≥ 18.66 px bold). Text over an image or gradient must be checked visually. RGAA rounds this \"bold\" threshold to 18.5 px; the engine applies the exact WCAG threshold of 18.66 px (14pt bold), so bold text between 18.5 and 18.66 px is still held to the normal (4.5:1) threshold."
       },
       "impact": "high",
       "examples": [

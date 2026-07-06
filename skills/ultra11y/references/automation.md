@@ -67,7 +67,9 @@ node scripts/ultra11y.mjs audit --require-captures    # gate: every opaque/contr
 - **Attribution + coverage.** A finding on a capture is reported against the SOURCE
   component (via its `<!-- ultra11y:capture … -->` provenance), not the capture file.
   `render --coverage` shows covered vs blind-spot components; `--require-captures` turns any
-  remaining blind spot into a failure.
+  remaining blind spot into a failure. `.vue`/`.svelte`/`.astro` components now count in this
+  coverage too, so a previously-green gate can newly report blind spots on an SFC-heavy repo —
+  intended (a named blind spot beats invisibility); capture those components or scope the gate.
 - **The gate sees the captures for the diffed components automatically.** In
   `--changed`/`--staged`/`--since` mode the audit pulls in the committed captures whose
   provenance points at a diffed source file (a capture is rarely itself part of the diff —

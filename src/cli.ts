@@ -377,6 +377,21 @@ function isCurrentAudit(r: unknown): r is AuditResult {
   return !!a && a.tool === "ultra11y" && a.standard === "wcag" && typeof a.schemaVersion === "number" && a.schemaVersion >= 2 && Array.isArray(a.criteria);
 }
 
+/** Best-effort load of a `scan --merge <file>` AuditResult, used ONLY to inform
+ *  `resolveLang` before the dynamic scan runs (so a French repo's `scope.langs`
+ *  picks the output language same as `report`/`prd` do). Never throws/reports —
+ *  the actual merge step re-reads and validates the file for real, with the
+ *  original error messages, so an invalid/missing file still fails there. */
+function peekMergeAudit(mergeIn: string | boolean | undefined): AuditResult | undefined {
+  if (typeof mergeIn !== "string" || !mergeIn) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(readText(mergeIn));
+    return isCurrentAudit(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function cmdAudit(p: ParsedArgs): Promise<number> {
   const inputs = p.positionals.length ? p.positionals : ["."];
   if (inputs.length === 0) {
@@ -968,7 +983,11 @@ async function cmdFix(p: ParsedArgs): Promise<number> {
 }
 
 async function cmdScan(p: ParsedArgs): Promise<number> {
-  const lang = resolveLang(p.flags, {}); // scan has no --standard; the merged --in audit isn't loaded yet at this point
+  // scan has no --standard. With --merge, peek the target audit's scope.langs BEFORE
+  // resolving lang (a French repo audited without --lang must not get English dyn-*
+  // text permanently baked with no way back — see peekMergeAudit). --lang stays explicit-wins.
+  const mergeAudit = peekMergeAudit(p.flags.merge);
+  const lang = resolveLang(p.flags, mergeAudit ? { audit: mergeAudit } : {});
   if (p.flags.clean) {
     const r = cleanDynamic();
     console.log(
@@ -1061,16 +1080,22 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const mergeIn = p.flags.merge;
   if (typeof mergeIn === "string" && mergeIn) {
-    let audit: unknown;
-    try {
-      audit = JSON.parse(readText(mergeIn));
-    } catch {
-      console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
-      return 2;
-    }
-    if (!isCurrentAudit(audit)) {
-      console.error("ultra11y scan: --merge input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
-      return 2;
+    let audit: AuditResult;
+    if (mergeAudit) {
+      audit = mergeAudit; // already loaded + validated above for lang resolution
+    } else {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(readText(mergeIn));
+      } catch {
+        console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
+        return 2;
+      }
+      if (!isCurrentAudit(parsed)) {
+        console.error("ultra11y scan: --merge input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
+        return 2;
+      }
+      audit = parsed;
     }
     const merged = mergeDynamic(audit, dynamic, lang);
     mkdirSync(out, { recursive: true });

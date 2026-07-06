@@ -96,6 +96,37 @@ describe("renderAuditorUnit", () => {
     expect(renderAuditorUnit(unit("1.1.1", "X"), "wcag", "en", { heading: "###" })[0]).toMatch(/^### /);
     expect(renderAuditorUnit(unit("1.1.1", "X"), "wcag", "en")[0]).toMatch(/^> /); // starts with the normative note
   });
+
+  // The `_rendered capture of …_` origin-attribution line (moved from report.ts's deleted
+  // ncEntry into this shared block) was untested end to end. Mirrors the origin shape
+  // produced by real capture ingestion (see tests/capture.test.ts).
+  it("renders the origin-attribution line for a capture-originated finding (component + source file)", () => {
+    const u = unit("1.1.1", "Non-text Content");
+    u.findings[0]!.origin = { capture: "captures/button-icon.html", sourceFile: "src/Button.tsx", component: "Button" };
+    const md = renderAuditorUnit(u, "wcag", "en").join("\n");
+    expect(md).toContain("- _rendered capture of `Button` — source `src/Button.tsx`_");
+  });
+
+  it("anchors the origin line at the source component's definition line once graph-resolved (origin.sourceLine)", () => {
+    const u = unit("1.1.1", "Non-text Content");
+    u.findings[0]!.origin = { capture: "captures/button-icon.html", sourceFile: "src/Button.tsx", component: "Button", sourceLine: 12 };
+    const md = renderAuditorUnit(u, "wcag", "en").join("\n");
+    expect(md).toContain("- _rendered capture of `Button` — source `src/Button.tsx:12`_");
+  });
+
+  it("falls back to the finding's own file / capture path when component or sourceFile is unknown", () => {
+    const u = unit("1.1.1", "Non-text Content");
+    u.findings[0]!.origin = { capture: "captures/storybook-dump.html" };
+    const md = renderAuditorUnit(u, "wcag", "en").join("\n");
+    expect(md).toContain("- _rendered capture of `src/a.tsx` — source `captures/storybook-dump.html`_");
+  });
+
+  it("renders the localized (fr) origin-attribution line", () => {
+    const u = unit("1.1.1", "Non-text Content");
+    u.findings[0]!.origin = { capture: "captures/button-icon.html", sourceFile: "src/Button.tsx", component: "Button" };
+    const md = renderAuditorUnit(u, "wcag", "fr").join("\n");
+    expect(md).toContain("- _capture rendue de `Button` — source `src/Button.tsx`_");
+  });
 });
 
 describe("renderAuditorBacklog / renderAuditorPerCriterion", () => {

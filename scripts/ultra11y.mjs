@@ -19671,6 +19671,40 @@ var MSG_CATALOG = {
       fr: (p) => `Dans ${p.defName}, transmettez ${p.passed} (ou {...props}) au <button>/<a> rendu, ou nommez le contr\xF4le directement.`,
       en: (p) => `In ${p.defName}, forward ${p.passed} (or {...props}) to the rendered <button>/<a>, or name the control directly.`
     }
+  },
+  // ---- Dynamic tier (src/scan.ts mergeDynamic) ---------------------------------
+  // `scan --merge` folds axe-core/probe findings into a static AuditResult. Their
+  // MESSAGE is either ultra11y's own authored prose (the 320px reflow check) or the
+  // rendering engine's own text (axe-core's English violation help, or a probe's own
+  // detail string) — never ultra11y prose in the latter case. Only the REMEDIATION
+  // is always ultra11y-authored. Both entries below give these findings a `msg.id`
+  // (set in mergeDynamic) so a LATER `report`/`prd --lang` re-render can still
+  // resolve the OTHER language, instead of staying stuck in whatever language was
+  // baked at merge/scan time.
+  "dyn-reflow": {
+    message: {
+      fr: () => `D\xE9filement horizontal \xE0 320px de large \u2014 le contenu ne se redistribue pas (reflow).`,
+      en: () => `Horizontal scrolling at 320px width \u2014 content does not reflow.`
+    },
+    remediation: {
+      fr: () => `V\xE9rifi\xE9 au rendu par axe-core ; corrigez l'\xE9l\xE9ment cit\xE9.`,
+      en: () => `Verified at render time by axe-core; fix the cited element.`
+    }
+  },
+  "dyn-remediation": {
+    // Covers axe-core findings and the residual-criteria probes (focus-visible,
+    // text-spacing, hover, reflow-zoom). Their message is authored by the engine
+    // itself, not by ultra11y — it passes through UNCHANGED in both languages (never
+    // translated; axe-core only ever speaks English), carried verbatim via `params.
+    // message`. This is the documented "axe's own English messages stay as-is".
+    message: {
+      fr: (p) => String(p.message ?? ""),
+      en: (p) => String(p.message ?? "")
+    },
+    remediation: {
+      fr: () => `V\xE9rifi\xE9 au rendu par axe-core ; corrigez l'\xE9l\xE9ment cit\xE9.`,
+      en: () => `Verified at render time by axe-core; fix the cited element.`
+    }
   }
 };
 var NOTE_CATALOG = {
@@ -26987,8 +27021,8 @@ var rgaa_default2 = {
         en: "Sufficient text/background contrast"
       },
       summary: {
-        fr: "Le contraste texte/arri\xE8re-plan doit \xEAtre d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (\u2265 24 px, ou \u2265 18,66 px en gras). Le texte plac\xE9 sur une image ou un d\xE9grad\xE9 doit \xEAtre v\xE9rifi\xE9 visuellement.",
-        en: "Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (\u2265 24 px, or \u2265 18.66 px bold). Text over an image or gradient must be checked visually."
+        fr: "Le contraste texte/arri\xE8re-plan doit \xEAtre d'au moins 4,5:1 pour le texte courant et 3:1 pour le grand texte (\u2265 24 px, ou \u2265 18,66 px en gras). Le texte plac\xE9 sur une image ou un d\xE9grad\xE9 doit \xEAtre v\xE9rifi\xE9 visuellement. Le RGAA arrondit ce seuil \xAB gras \xBB \xE0 18,5 px ; le moteur applique le seuil WCAG exact de 18,66 px (14pt gras), donc un texte gras entre 18,5 et 18,66 px reste tenu au seuil normal (4,5:1).",
+        en: 'Text/background contrast must be at least 4.5:1 for body text and 3:1 for large text (\u2265 24 px, or \u2265 18.66 px bold). Text over an image or gradient must be checked visually. RGAA rounds this "bold" threshold to 18.5 px; the engine applies the exact WCAG threshold of 18.66 px (14pt bold), so bold text between 18.5 and 18.66 px is still held to the normal (4.5:1) threshold.'
       },
       impact: "high",
       examples: [
@@ -30496,6 +30530,7 @@ function mergeDynamic(audit, dynamic, lang = "en") {
   for (const df of dynamic.findings) {
     const c = byId2.get(df.criteriaId);
     if (!c) continue;
+    const msg = df.engine === "reflow" ? { id: "dyn-reflow" } : { id: "dyn-remediation", params: { message: df.message } };
     const finding = {
       ruleId: df.engine === "axe" ? `axe:${df.axeRule}` : `dyn-${df.engine}`,
       criteriaId: df.criteriaId,
@@ -30506,6 +30541,7 @@ function mergeDynamic(audit, dynamic, lang = "en") {
       severity: df.severity,
       message: df.message,
       remediation,
+      msg,
       snippet: df.snippet
     };
     c.findings.push(finding);
@@ -31868,6 +31904,15 @@ function isCurrentAudit(r) {
   const a = r;
   return !!a && a.tool === "ultra11y" && a.standard === "wcag" && typeof a.schemaVersion === "number" && a.schemaVersion >= 2 && Array.isArray(a.criteria);
 }
+function peekMergeAudit(mergeIn) {
+  if (typeof mergeIn !== "string" || !mergeIn) return void 0;
+  try {
+    const parsed = JSON.parse(readText(mergeIn));
+    return isCurrentAudit(parsed) ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
 async function cmdAudit(p) {
   const inputs = p.positionals.length ? p.positionals : ["."];
   if (inputs.length === 0) {
@@ -32363,7 +32408,8 @@ Iterated over ${rounds} round(s) to a fixpoint \u2014 ${totalWritten} file(s) wr
   return 0;
 }
 async function cmdScan(p) {
-  const lang = resolveLang(p.flags, {});
+  const mergeAudit = peekMergeAudit(p.flags.merge);
+  const lang = resolveLang(p.flags, mergeAudit ? { audit: mergeAudit } : {});
   if (p.flags.clean) {
     const r = cleanDynamic();
     console.log(
@@ -32428,15 +32474,21 @@ async function cmdScan(p) {
   const mergeIn = p.flags.merge;
   if (typeof mergeIn === "string" && mergeIn) {
     let audit;
-    try {
-      audit = JSON.parse(readText(mergeIn));
-    } catch {
-      console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
-      return 2;
-    }
-    if (!isCurrentAudit(audit)) {
-      console.error("ultra11y scan: --merge input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
-      return 2;
+    if (mergeAudit) {
+      audit = mergeAudit;
+    } else {
+      let parsed;
+      try {
+        parsed = JSON.parse(readText(mergeIn));
+      } catch {
+        console.error("ultra11y scan: --merge is not valid JSON (expected an AuditResult).");
+        return 2;
+      }
+      if (!isCurrentAudit(parsed)) {
+        console.error("ultra11y scan: --merge input is not a current ultra11y AuditResult (WCAG-keyed, schema v2). Re-run `audit`.");
+        return 2;
+      }
+      audit = parsed;
     }
     const merged = mergeDynamic(audit, dynamic, lang);
     mkdirSync5(out, { recursive: true });

@@ -12,14 +12,18 @@ import { parseSource } from "../src/parse/source.js";
 import { toFinding } from "../src/rules/rule.js";
 import { crossToFinding } from "../src/rules/cross-rule.js";
 
-const RULES_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "rules");
+const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
+const RULES_DIR = join(SRC_DIR, "rules");
 // rule.ts/cross-rule.ts only *resolve* msgIds (toFinding/crossToFinding); registry.ts
 // just wires rules together — none of the three ever emits a literal msgId.
 const NON_EMITTING = new Set(["rule.ts", "cross-rule.ts", "registry.ts"]);
 
 /** Every literal `msgId: "…"` in a rule module — a static mirror of the sweep, so this
  *  test fails the moment a rule references a catalog key that doesn't exist (or a
- *  catalog key stops being referenced by any rule). */
+ *  catalog key stops being referenced by any rule). Also covers src/scan.ts's
+ *  `mergeDynamic`, the one non-rule emitter (`scan --merge`'s dyn-* findings, built by
+ *  hand rather than through toFinding/crossToFinding — see src/messages.ts's
+ *  "Dynamic tier" section), whose `Finding.msg` is `{ id: "…" }` (not `msgId:`). */
 function emittedMsgIds(): Set<string> {
   const ids = new Set<string>();
   for (const f of readdirSync(RULES_DIR)) {
@@ -27,6 +31,8 @@ function emittedMsgIds(): Set<string> {
     const src = readFileSync(join(RULES_DIR, f), "utf8");
     for (const m of src.matchAll(/msgId:\s*"([^"]+)"/g)) ids.add(m[1]!);
   }
+  const scanSrc = readFileSync(join(SRC_DIR, "scan.ts"), "utf8");
+  for (const m of scanSrc.matchAll(/\bid:\s*"([^"]+)"/g)) ids.add(m[1]!);
   return ids;
 }
 

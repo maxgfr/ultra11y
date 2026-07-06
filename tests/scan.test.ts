@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { toDynamicResult, mergeDynamic, cleanTempContexts } from "../src/scan.js";
 import { runAudit } from "../src/audit.js";
+import { resolveMessage, resolveRemediation } from "../src/messages.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 
@@ -127,5 +128,36 @@ describe("mergeDynamic", () => {
     };
     const merged = mergeDynamic(audit, dyn);
     expect(merged.findings.find((f) => f.ruleId === "axe:color-contrast")?.file).toBe("https://exemple.fr/contact");
+  });
+
+  // Whatever `lang` the CLI resolves at merge time, the baked English/French text must
+  // stay RE-LOCALIZABLE afterwards (a later `report`/`prd --lang` re-render) — not a
+  // dead end. `dyn-reflow` is ultra11y's own bilingual prose; `dyn-remediation` covers
+  // axe/probe findings, whose MESSAGE is the engine's own (never translated).
+  it("attaches a msg catalog id to the reflow finding's ultra11y-authored message + remediation", () => {
+    const dyn = toDynamicResult(sampleOut, "https://exemple.fr", "en");
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    const merged = mergeDynamic(audit, dyn, "en");
+    const reflow = merged.findings.find((f) => f.ruleId === "dyn-reflow");
+    expect(reflow?.msg?.id).toBe("dyn-reflow");
+    expect(resolveMessage(reflow!, "fr")).toBe("Défilement horizontal à 320px de large — le contenu ne se redistribue pas (reflow).");
+    expect(resolveRemediation(reflow!, "fr")).toBe("Vérifié au rendu par axe-core ; corrigez l'élément cité.");
+    // and re-resolves back to English too — it never gets stuck in one language
+    expect(resolveMessage(reflow!, "en")).toBe("Horizontal scrolling at 320px width — content does not reflow.");
+  });
+
+  it("attaches a msg catalog id to axe findings whose MESSAGE passes through unchanged (axe never translates) but whose REMEDIATION is re-localizable", () => {
+    const dyn = toDynamicResult(sampleOut, "https://exemple.fr", "en");
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    const merged = mergeDynamic(audit, dyn, "fr");
+    const axeFinding = merged.findings.find((f) => f.ruleId === "axe:color-contrast");
+    expect(axeFinding?.msg?.id).toBe("dyn-remediation");
+    // axe's own English help text is never translated, in either language
+    expect(resolveMessage(axeFinding!, "en")).toBe(axeFinding!.message);
+    expect(resolveMessage(axeFinding!, "fr")).toBe(axeFinding!.message);
+    // baked at merge time in fr (current lang) …
+    expect(axeFinding!.remediation).toBe("Vérifié au rendu par axe-core ; corrigez l'élément cité.");
+    // … but still resolves back to English on a later re-render
+    expect(resolveRemediation(axeFinding!, "en")).toBe("Verified at render time by axe-core; fix the cited element.");
   });
 });

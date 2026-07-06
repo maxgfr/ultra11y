@@ -451,18 +451,24 @@ function build() {
   // title from the vendored W3C authorized translation — never a silent English-only
   // fallback in the shipped dataset (src/wcag.ts still falls back at read time for older
   // snapshots, but a freshly-built one is never allowed to be incomplete).
+  // `?? {}` guards a corrupted/partial vendor file (e.g. missing a top-level
+  // principles/guidelines/criteria key) so it is reported through the clean
+  // "missing a French title for: …" gate below, not a raw TypeError.
+  const frPrinciples = fr.principles ?? {};
+  const frGuidelines = fr.guidelines ?? {};
+  const frCriteria = fr.criteria ?? {};
   const missingFr = [
-    ...snap.principles.filter((p) => !fr.principles[String(p.number)]).map((p) => `principle ${p.number}`),
-    ...snap.guidelines.filter((g) => !fr.guidelines[g.number]).map((g) => `guideline ${g.number}`),
-    ...snap.criteria.filter((c) => !fr.criteria[c.sc]).map((c) => `SC ${c.sc}`),
+    ...snap.principles.filter((p) => !frPrinciples[String(p.number)]).map((p) => `principle ${p.number}`),
+    ...snap.guidelines.filter((g) => !frGuidelines[g.number]).map((g) => `guideline ${g.number}`),
+    ...snap.criteria.filter((c) => !frCriteria[c.sc]).map((c) => `SC ${c.sc}`),
   ];
   if (missingFr.length) {
     console.error(`build-standards: ${VENDOR_FR} is missing a French title for: ${missingFr.join(", ")}. Re-run: node scripts/build-standards.mjs --refresh-fr`);
     process.exit(1);
   }
 
-  const principles = snap.principles.map((p) => ({ number: p.number, title: p.title, titleFr: fr.principles[String(p.number)] }));
-  const guidelines = snap.guidelines.map((g) => ({ number: g.number, title: g.title, titleFr: fr.guidelines[g.number] }));
+  const principles = snap.principles.map((p) => ({ number: p.number, title: p.title, titleFr: frPrinciples[String(p.number)] }));
+  const guidelines = snap.guidelines.map((g) => ({ number: g.number, title: g.title, titleFr: frGuidelines[g.number] }));
 
   const criteria = snap.criteria.map((c) => {
     const sc = {
@@ -470,7 +476,7 @@ function build() {
       principle: c.principle,
       guideline: c.guideline,
       title: c.title,
-      titleFr: fr.criteria[c.sc],
+      titleFr: frCriteria[c.sc],
       level: c.level,
       addedIn: c.addedIn,
       automatability: automatabilityOf(c.sc),

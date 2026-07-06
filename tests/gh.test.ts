@@ -67,6 +67,13 @@ describe("gh helpers", () => {
     expect(body).toContain("`src/IconButton.tsx:2`");
   });
 
+  it("issueBody renders the origin-attribution line for a capture-originated finding", () => {
+    const u = unit("4.1.2", "X");
+    u.findings[0]!.origin = { capture: "captures/icon-button.html", sourceFile: "src/IconButton.tsx", component: "IconButton" };
+    const body = issueBody(u, "en", "wcag");
+    expect(body).toContain("- _rendered capture of `IconButton` — source `src/IconButton.tsx`_");
+  });
+
   it("ghAvailable reflects whether `gh auth status` succeeds", () => {
     mock.mockReturnValueOnce("");
     expect(ghAvailable()).toBe(true);

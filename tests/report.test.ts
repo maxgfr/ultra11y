@@ -66,6 +66,16 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     expect(renderReport(bad, "en")).toContain("## 2. Non-conformities (by priority)");
     expect(renderReport(bad, "en")).toContain("WCAG 2.2 Level AA");
   });
+
+  // The auditor block's `_rendered capture of …_` origin-attribution line (moved from
+  // report.ts's deleted ncEntry into src/auditor.ts's shared renderAuditorUnit) was
+  // untested end to end through the actual report renderer. Uses the same
+  // provenance-tagged fixture as tests/capture.test.ts.
+  it("renders the origin-attribution line for a capture-originated finding", () => {
+    const capResult = runAudit({ inputs: [`${FIX}captures/button-icon.html`] });
+    const md = renderReport(capResult, "en");
+    expect(md).toContain("- _rendered capture of `Button` — source `src/Button.tsx`_");
+  });
 });
 
 describe("renderPackReport (derived RGAA view)", () => {

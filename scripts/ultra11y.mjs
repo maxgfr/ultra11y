@@ -19225,8 +19225,8 @@ var MSG_CATALOG = {
   },
   "control-name-title-only": {
     message: {
-      fr: (p) => `${p.kind === "link" ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title \u2014 title n'est pas restitu\xE9 de fa\xE7on fiable (survol uniquement).`,
-      en: (p) => `${p.kind === "link" ? "Link" : "Button"} whose only accessible name comes from the title attribute \u2014 title is not reliably conveyed (hover only).`
+      fr: (p) => `${p.kind === "link" ? "Lien" : p.kind === "field" ? "Champ de formulaire" : "Bouton"} dont le seul nom accessible vient de l'attribut title \u2014 title n'est pas restitu\xE9 de fa\xE7on fiable (survol uniquement).`,
+      en: (p) => `${p.kind === "link" ? "Link" : p.kind === "field" ? "Form field" : "Button"} whose only accessible name comes from the title attribute \u2014 title is not reliably conveyed (hover only).`
     },
     remediation: {
       fr: () => `Donnez un intitul\xE9 via texte visible ou aria-label ; r\xE9servez title \xE0 une information compl\xE9mentaire.`,
@@ -19895,7 +19895,9 @@ var imgAltMissing = {
       const isImg = el.tag === "img" || el.tag === "area" || (attr(el, "role") ?? "") === "img";
       if (!isImg) continue;
       if (isHidden(el) && el.tag !== "area") continue;
-      if (hasBoundAttr(el, "alt") || named(el)) continue;
+      const altLiteral = attr(el, "alt");
+      const whitespaceAlt = altLiteral !== void 0 && altLiteral !== "" && altLiteral.trim() === "";
+      if (hasBoundAttr(el, "alt") && !whitespaceAlt || named(el)) continue;
       if (hasDynamicSpread(el)) continue;
       if (el.tag !== "img" && el.tag !== "area" && accessibleName(el, doc).trim() !== "") continue;
       out.push({
@@ -19998,7 +20000,7 @@ var objectEmbedNoName = {
     return out;
   }
 };
-var CHART_CLASS = /(^|[-_ ])(chart|graph|recharts|highcharts|chart-?js|plotly|nivo|apexcharts|echarts|d3)/i;
+var CHART_CLASS = /(^|[-_ ])(charts?|graphs?|recharts|highcharts|chart-?js|plotly|nivo|apexcharts|echarts|d3)([-_ ]|$)/i;
 var chartNoAccessibleName = {
   id: "chart-no-accessible-name",
   criteria: ["1.1.1"],
@@ -20744,8 +20746,19 @@ var dataTableNoHeaders = {
       const ths = desc.filter((d) => d.tag === "th");
       const hasTh = ths.length > 0;
       const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasBoundAttr(d, "scope") || hasBoundAttr(d, "headers")));
+      const rows = desc.filter((d) => d.tag === "tr");
+      const cellsOf = (tr) => tr.children.filter((c) => c.type === "element" && (c.tag === "th" || c.tag === "td"));
       const allThInThead = hasTh && ths.every((th) => ancestors(th).some((a) => a.tag === "thead"));
-      if (hasTh && (hasAssoc || allThInThead)) continue;
+      const headerRow = rows.find((r) => {
+        const cells = cellsOf(r);
+        return cells.length > 0 && cells.every((c) => c.tag === "th");
+      });
+      const allThInHeaderRow = hasTh && headerRow !== void 0 && ths.every((th) => cellsOf(headerRow).includes(th));
+      const allThFirstCol = hasTh && ths.every((th) => {
+        const tr = ancestors(th).find((a) => a.tag === "tr");
+        return tr !== void 0 && cellsOf(tr)[0] === th;
+      });
+      if (hasTh && (hasAssoc || allThInThead || allThInHeaderRow || allThFirstCol)) continue;
       if (!hasTh) {
         out.push({
           criteriaId: "1.3.1",
@@ -20927,22 +20940,24 @@ var controlNameTitleOnly = {
     const out = [];
     for (const el of doc.elements) {
       const link = el.tag === "a" && hasAttr(el, "href");
-      if (!link && !isButton(el)) continue;
+      const field = !link && !isButton(el) && isFormField(el);
+      if (!link && !isButton(el) && !field) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       const title2 = (attr(el, "title") ?? "").trim();
       if (!title2 || title2.includes("{")) continue;
       if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue;
       if (mayInjectContent(el)) continue;
       if (el.tag === "input" && (attr(el, "value") ?? "").trim()) continue;
+      if (field && controlLabel(el, doc).via !== "title") continue;
       const hasContentName = visibleText(el).trim() !== "" || descendants(el).some(
         (d) => d.tag === "img" && (attr(d, "alt") ?? "").trim() !== "" || d.tag === "svg" && descendants(d).some((x) => x.tag === "title" && visibleText(x).trim() !== "")
       );
-      if (hasContentName) continue;
+      if (!field && hasContentName) continue;
       out.push({
         criteriaId: "4.1.2",
         el,
         msgId: "control-name-title-only",
-        params: { kind: link ? "link" : "button" }
+        params: { kind: link ? "link" : field ? "field" : "button" }
       });
     }
     return out;
@@ -20965,6 +20980,7 @@ var controlLabelMissing = {
       if (!isFormField(el)) continue;
       const { via } = controlLabel(el, doc);
       if (via && REAL_LABEL.has(via)) continue;
+      if (via === "title") continue;
       if (hasDynamicSpread(el)) continue;
       if (hasAttr(el, "placeholder")) continue;
       out.push({
@@ -21118,7 +21134,12 @@ var errorNotAssociated = {
   severity: "majeur",
   run(doc) {
     const referenced = /* @__PURE__ */ new Set();
+    const anchorTargets = /* @__PURE__ */ new Set();
     for (const el of doc.elements) {
+      if (el.tag === "a") {
+        const href = (attr(el, "href") ?? "").trim();
+        if (href.startsWith("#") && href.length > 1) anchorTargets.add(href.slice(1));
+      }
       for (const a of ["aria-describedby", "aria-errormessage"]) {
         const v = attr(el, a);
         if (!v) continue;
@@ -21136,6 +21157,9 @@ var errorNotAssociated = {
       const id = (attr(el, "id") ?? "").trim();
       if (!id || id.includes("{")) continue;
       if (referenced.has(id)) continue;
+      const role = (attr(el, "role") ?? "").trim();
+      if (role === "alert" || role === "status" || hasAttr(el, "aria-live")) continue;
+      if (anchorTargets.has(id)) continue;
       if (hasDynamicSpread(el)) continue;
       out.push({
         criteriaId: "3.3.1",
@@ -21148,7 +21172,8 @@ var errorNotAssociated = {
   }
 };
 var PURPOSE_TYPES = /* @__PURE__ */ new Set(["email", "tel"]);
-var PURPOSE_TOKENS = /(e-?mail|tel(ephone)?|phone|mobile|postal|zip|address|street|city|country)/i;
+var PURPOSE_WORDS = /* @__PURE__ */ new Set(["email", "tel", "telephone", "phone", "mobile", "postal", "zip", "address", "street", "city", "country"]);
+var hasPurposeToken = (nameId) => nameId.split(/[-_\s]+|(?<=[a-z0-9])(?=[A-Z])/).some((t2) => PURPOSE_WORDS.has(t2.toLowerCase()));
 var SKIP_INPUT_TYPES = /* @__PURE__ */ new Set(["search", "hidden", "submit", "reset", "button", "password", "checkbox", "radio", "file", "range", "color"]);
 var CUSTOM_WIDGET_ROLES = /* @__PURE__ */ new Set(["textbox", "combobox", "checkbox", "radio", "switch", "spinbutton"]);
 var REQUIRED_SIGNAL = /(^|[-_ ])(required|mandatory|is-required)/i;
@@ -21163,7 +21188,7 @@ var fieldPurposeIncomplete = {
         const type = (attr(el, "type") ?? "text").toLowerCase();
         if (!type.includes("{") && !SKIP_INPUT_TYPES.has(type)) {
           const nameId = `${attr(el, "name") ?? ""} ${attr(el, "id") ?? ""}`;
-          const purpose = PURPOSE_TYPES.has(type) || PURPOSE_TOKENS.test(nameId);
+          const purpose = PURPOSE_TYPES.has(type) || hasPurposeToken(nameId);
           if (purpose && !hasAttr(el, "autocomplete") && !hasDynamicSpread(el)) {
             out.push({
               criteriaId: "1.3.5",
@@ -29909,19 +29934,30 @@ function checkReport(md, standard = "wcag", lang = "en") {
   const core = isCore(standard);
   const pack = core ? null : loadPack(standard);
   const exists = (id) => core ? hasSC(id) : hasId(pack, id);
-  const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : new RegExp(`(${idCaptureSource(pack)})\\s*\u2014`, "g");
+  const idGrammar = core ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(pack);
+  const bound = "(?=\\s|\u2014|$)";
+  const critRefs = [
+    new RegExp(`(${idGrammar})\\s*\u2014`, "g"),
+    // "<id> — <title>" (real criteria, anywhere)
+    new RegExp(`^#{2,4}\\s+\\S+\\s+(?:.*?\\s)?(${idGrammar})${bound}`, "gm"),
+    // auditor-block heading "### 🔴 <id>" (pack: "### 🔴 RGAA <id>")
+    new RegExp(`^\\*\\*[^*\\n]+\\*\\*\\s*:\\s*(${idGrammar})${bound}`, "gm")
+    // "**Success criterion** : <id>" / "**WCAG** : <id>"
+  ];
   const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack)})\\s*\u2014`);
   for (let n = 1; n <= 5; n++) {
     if (!new RegExp(`^##\\s+${n}\\.`, "m").test(md)) issues.push(s.section(n));
   }
   const seen = /* @__PURE__ */ new Set();
-  let m;
-  critRef.lastIndex = 0;
-  while (m = critRef.exec(md)) {
-    const id = m[1];
-    if (seen.has(id)) continue;
-    seen.add(id);
-    if (!exists(id)) issues.push(s.crit(id));
+  for (const critRef of critRefs) {
+    let m;
+    critRef.lastIndex = 0;
+    while (m = critRef.exec(md)) {
+      const id = m[1];
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if (!exists(id)) issues.push(s.crit(id));
+    }
   }
   const naSection = sectionBody(md, 4);
   for (const line of naSection.split("\n")) {

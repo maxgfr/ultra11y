@@ -19,7 +19,11 @@ const imgAltMissing: Rule = {
       const isImg = el.tag === "img" || el.tag === "area" || (attr(el, "role") ?? "") === "img";
       if (!isImg) continue;
       if (isHidden(el) && el.tag !== "area") continue;
-      if (hasBoundAttr(el, "alt") || named(el)) continue; // alt="" / :alt="x" / aria-* → present
+      // alt="" is the decorative opt-out (maps the image to presentation); a whitespace-only
+      // alt is NOT — it provides no accessible name yet keeps the image in the a11y tree.
+      const altLiteral = attr(el, "alt");
+      const whitespaceAlt = altLiteral !== undefined && altLiteral !== "" && altLiteral.trim() === "";
+      if ((hasBoundAttr(el, "alt") && !whitespaceAlt) || named(el)) continue; // alt="" / :alt="x" / aria-* → present
       if (hasDynamicSpread(el)) continue; // {...props} / Svelte {alt} shorthand may carry alt
       // role="img" on a non-<img> element (e.g. <svg role="img"><title>…) is named by its
       // <title>/text content, not an alt attribute — accept that accessible name.
@@ -136,7 +140,9 @@ const objectEmbedNoName: Rule = {
 // (WCAG 1.1.1). Distinct from canvas-fallback-missing (which owns <canvas>): charting
 // libs (recharts/echarts/chart.js/…) render into <svg>/<div>. Only the OUTERMOST chart
 // container is reported (inner chart nodes are skipped), and a class allowlist bounds FP.
-const CHART_CLASS = /(^|[-_ ])(chart|graph|recharts|highcharts|chart-?js|plotly|nivo|apexcharts|echarts|d3)/i;
+// Right boundary (`([-_ ]|$)`) so a generic token matches a WHOLE class token only — else
+// `graph` prefix-matches `graphics`/`typography-graphic` (decorative), a false positive.
+const CHART_CLASS = /(^|[-_ ])(charts?|graphs?|recharts|highcharts|chart-?js|plotly|nivo|apexcharts|echarts|d3)([-_ ]|$)/i;
 
 const chartNoAccessibleName: Rule = {
   id: "chart-no-accessible-name",

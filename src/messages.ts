@@ -207,9 +207,9 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
   "control-name-title-only": {
     message: {
       fr: (p) =>
-        `${p.kind === "link" ? "Lien" : "Bouton"} dont le seul nom accessible vient de l'attribut title — title n'est pas restitué de façon fiable (survol uniquement).`,
+        `${p.kind === "link" ? "Lien" : p.kind === "field" ? "Champ de formulaire" : "Bouton"} dont le seul nom accessible vient de l'attribut title — title n'est pas restitué de façon fiable (survol uniquement).`,
       en: (p) =>
-        `${p.kind === "link" ? "Link" : "Button"} whose only accessible name comes from the title attribute — title is not reliably conveyed (hover only).`,
+        `${p.kind === "link" ? "Link" : p.kind === "field" ? "Form field" : "Button"} whose only accessible name comes from the title attribute — title is not reliably conveyed (hover only).`,
     },
     remediation: {
       fr: () => `Donnez un intitulé via texte visible ou aria-label ; réservez title à une information complémentaire.`,

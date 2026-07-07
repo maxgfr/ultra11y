@@ -13,8 +13,12 @@ describe("data-table-no-headers (5.6/5.7)", () => {
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("1.3.1");
   });
-  it("non-conforming: th without scope/headers → 5.7", () => {
-    const f = findOf(`<table><tr><th>A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers");
+  it("conforming: a single first-row <th> is an implicit column header (H51), no scope needed", () => {
+    // H51: a simple table whose header is the first row needs no explicit scope=.
+    expect(findOf(`<table><tr><th>A</th></tr><tr><td>1</td></tr></table>`, "data-table-no-headers")).toHaveLength(0);
+  });
+  it("non-conforming: th present but neither a full header row/col nor scope → 5.7", () => {
+    const f = findOf(`<table><tr><td>x</td><th>H</th></tr><tr><td>a</td><td>b</td></tr></table>`, "data-table-no-headers");
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("1.3.1");
   });
@@ -56,5 +60,20 @@ describe("table-caption-missing (5.4)", () => {
     const f = findOf(`<table><tr><th scope="col">A</th></tr></table>`, "table-caption-missing");
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("1.3.1");
+  });
+});
+
+describe("data-table-no-headers — H51 implicit scope (1.3.1)", () => {
+  it("conforming: simple table with a first-row header (H51), no thead/scope needed", () => {
+    const t = `<table><caption>Effectifs</caption><tr><th>Service</th><th>Effectif</th></tr><tr><td>Ventes</td><td>12</td></tr></table>`;
+    expect(findOf(t, "data-table-no-headers")).toHaveLength(0);
+  });
+  it("conforming: simple table with a first-column row header (th as first cell of each row)", () => {
+    const t = `<table><tr><th>Ventes</th><td>12</td></tr><tr><th>Support</th><td>7</td></tr></table>`;
+    expect(findOf(t, "data-table-no-headers")).toHaveLength(0);
+  });
+  it("still non-conforming: th scattered (not a full header row/col) with no scope", () => {
+    const t = `<table><tr><td>x</td><th>H</th></tr><tr><td>a</td><td>b</td></tr></table>`;
+    expect(findOf(t, "data-table-no-headers")).toHaveLength(1);
   });
 });

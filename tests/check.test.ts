@@ -57,6 +57,56 @@ describe("checkReport", () => {
     expect(r.issues.some((i) => i.includes("1.4.5"))).toBe(true);
   });
 
+  it("flags a fabricated criterion cited WITHOUT an em-dash title (bare auditor-block shape)", () => {
+    // A non-existent criterion renders its heading, its "**Success criterion** :" line and
+    // its "**WCAG** :" line WITHOUT a title (the title lookup fails) — so an em-dash-only
+    // anchor is blind to it by construction. check must still reject it.
+    const bareFab = `# Accessibility audit report — WCAG 2.2 Level AA
+- **Automatic static-check pass rate** : 50%
+
+## 1. Synthesis by WCAG guideline
+x
+
+## 2. Non-conformities (by priority)
+
+#### 🔴 9.9.9
+
+> Auditor view — WCAG 2.2 AA. Normative mapping.
+
+**Success criterion** : 9.9.9
+**WCAG** : 9.9.9
+
+**Finding (Fail)** : 1 occurrence(s) — Fabricated.
+
+## 3. x
+## 4. x
+## 5. x
+`;
+    const r = checkReport(bareFab, "wcag", "en");
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.includes("9.9.9"))).toBe(true);
+  });
+
+  it("still passes a real criterion cited without an em-dash on its WCAG line", () => {
+    // Guard the fix against over-reach: a real SC on a bare **WCAG** : line must NOT be flagged.
+    const realBare = `# Report — WCAG 2.2 Level AA
+- **Rate** : 50%
+## 1. x
+## 2. y
+
+#### 🔴 1.4.3
+
+**Success criterion** : 1.4.3
+**WCAG** : 1.4.3
+
+## 3. x
+## 4. x
+## 5. x
+`;
+    const r = checkReport(realBare, "wcag", "en");
+    expect(r.issues.some((i) => i.includes("1.4.3"))).toBe(false);
+  });
+
   it("flags a pass rate outside 0–100", () => {
     const tampered = validReport.replace(/:\s*\d+(?:[.,]\d+)?\s*%/, ": 999%");
     const r = checkReport(tampered);

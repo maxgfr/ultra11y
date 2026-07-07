@@ -41,13 +41,21 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
   // `idPattern` declares (RGAA's 2-segment "8.3", a hypothetical Section 508 "E205.4"…) —
   // built from the pack itself so the version token "WCAG 2.2 —" can never be mistaken
   // for a criterion, without the engine hardcoding a single fixed pack shape.
-  // Deliberately UNANCHORED (no `^`/`$`, scans the whole document): this is what makes it
-  // survive report.ts §2's auditor-block NC shape (Phase 4) unchanged — the criterion id
-  // still appears as "<id> — <title>" on the block's heading AND its "**<criterion term>**"
-  // line, wherever that line sits, without this regex caring about the surrounding
-  // vocabulary/heading level. Verified against a freshly-rendered core + RGAA report
-  // (tests/check.test.ts) rather than adjusted, since nothing here needed to change.
-  const critRef = core ? /(\d{1,2}(?:\.\d{1,2}){2})\s*—/g : new RegExp(`(${idCaptureSource(pack!)})\\s*—`, "g");
+  const idGrammar = core ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(pack!);
+  // A REAL criterion always renders "<id> — <title>", so "<id> —" (below) recognizes it
+  // wherever it sits. But a FABRICATED id has no title (the lookup fails), so the auditor
+  // block renders it BARE — on its "### 🔴 <id>" heading and its "**<criterion>** :" /
+  // "**WCAG** :" lines with no em-dash. Anchoring ONLY on "<id> —" is therefore blind to
+  // fabrications by construction (the exact P0 the gate exists to stop), so we ALSO scan
+  // those bare structural positions. The trailing `(?=\s|—|$)` lookahead keeps a pack's
+  // 2-segment grammar from mis-matching a 3-segment WCAG mapping ref (e.g. "1.3.1" on a
+  // pack's **WCAG** line stops at "1.3" then a ".", never a boundary).
+  const bound = "(?=\\s|—|$)";
+  const critRefs = [
+    new RegExp(`(${idGrammar})\\s*—`, "g"), // "<id> — <title>" (real criteria, anywhere)
+    new RegExp(`^#{2,4}\\s+\\S+\\s+(?:.*?\\s)?(${idGrammar})${bound}`, "gm"), // auditor-block heading "### 🔴 <id>" (pack: "### 🔴 RGAA <id>")
+    new RegExp(`^\\*\\*[^*\\n]+\\*\\*\\s*:\\s*(${idGrammar})${bound}`, "gm"), // "**Success criterion** : <id>" / "**WCAG** : <id>"
+  ];
   const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack!)})\\s*—`);
 
   // 1. required sections (language-agnostic: "## 1." … "## 5.")
@@ -57,13 +65,15 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
 
   // 2. every cited criterion id must resolve to a real criterion in the active standard
   const seen = new Set<string>();
-  let m: RegExpExecArray | null;
-  critRef.lastIndex = 0;
-  while ((m = critRef.exec(md))) {
-    const id = m[1]!;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    if (!exists(id)) issues.push(s.crit(id));
+  for (const critRef of critRefs) {
+    let m: RegExpExecArray | null;
+    critRef.lastIndex = 0;
+    while ((m = critRef.exec(md))) {
+      const id = m[1]!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if (!exists(id)) issues.push(s.crit(id));
+    }
   }
 
   // 3. every NA entry must carry a justification (section 4 list items)

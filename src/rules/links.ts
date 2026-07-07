@@ -1,7 +1,7 @@
 // Theme 6 / 7 — Links & buttons: accessible-name presence (empty-name + icon-only).
 import type { Doc, El } from "../parse/html.js";
 import { attr, hasAttr, descendants, visibleText } from "../parse/html.js";
-import { accessibleName, mayInjectContent } from "../name.js";
+import { accessibleName, mayInjectContent, isFormField, controlLabel } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 function hasIconChild(el: El): boolean {
@@ -107,13 +107,18 @@ const controlNameTitleOnly: Rule = {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
       const link = el.tag === "a" && hasAttr(el, "href");
-      if (!link && !isButton(el)) continue;
+      const field = !link && !isButton(el) && isFormField(el);
+      if (!link && !isButton(el) && !field) continue;
       if (attr(el, "aria-hidden") === "true") continue;
       const title = (attr(el, "title") ?? "").trim();
       if (!title || title.includes("{")) continue; // no title, or dynamic value
       if (hasAttr(el, "aria-label") || hasAttr(el, "aria-labelledby")) continue; // named by ARIA, title is supplementary
       if (mayInjectContent(el)) continue; // name may come from a <slot>/child component
       if (el.tag === "input" && (attr(el, "value") ?? "").trim()) continue; // value names the button
+      // A form field is title-only precisely when its resolved label comes from title (a
+      // for=/wrapping/aria label wins over title in controlLabel, so via!=="title" means it
+      // is otherwise named or unlabeled — control-label-missing's job, not this rule's).
+      if (field && controlLabel(el, doc).via !== "title") continue;
       const hasContentName =
         visibleText(el).trim() !== "" ||
         descendants(el).some(
@@ -121,12 +126,12 @@ const controlNameTitleOnly: Rule = {
             (d.tag === "img" && (attr(d, "alt") ?? "").trim() !== "") ||
             (d.tag === "svg" && descendants(d).some((x) => x.tag === "title" && visibleText(x).trim() !== "")),
         );
-      if (hasContentName) continue; // visible text / named image already provides the name
+      if (!field && hasContentName) continue; // visible text / named image already provides the name (fields have no content name)
       out.push({
         criteriaId: "4.1.2",
         el,
         msgId: "control-name-title-only",
-        params: { kind: link ? "link" : "button" },
+        params: { kind: link ? "link" : field ? "field" : "button" },
       });
     }
     return out;

@@ -7,6 +7,11 @@ describe("control-label-missing (11.1)", () => {
     expect(findOf(`<label>Nom <input></label>`, "control-label-missing")).toHaveLength(0);
     expect(findOf(`<input aria-label="Recherche">`, "control-label-missing")).toHaveLength(0);
   });
+  it("conforming for control-label-missing: title provides an accessible name (H65) — not bloquant", () => {
+    // A title-labeled field has a name (accname title fallback); it is poor UX, surfaced as a
+    // minor control-name-title-only finding, but NOT a blocking 'no label'.
+    expect(findOf(`<input type="text" title="Rechercher dans le site">`, "control-label-missing")).toHaveLength(0);
+  });
   it("non-conforming: unlabeled field (no placeholder)", () => {
     const f = findOf(`<input type="text">`, "control-label-missing");
     expect(f).toHaveLength(1);
@@ -70,5 +75,34 @@ describe("error-not-associated — conditional aria-describedby (React pattern)"
     const f = findOf(src, "error-not-associated", "Step.tsx");
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("3.3.1");
+  });
+});
+
+describe("field-purpose-incomplete — token anchoring (1.3.5)", () => {
+  it("non-conforming: a real purpose token needs autocomplete", () => {
+    expect(findOf(`<input type="text" name="city">`, "field-purpose-incomplete")).toHaveLength(1);
+    expect(findOf(`<input type="text" name="phoneNumber">`, "field-purpose-incomplete")).toHaveLength(1);
+  });
+  it("conforming: purpose tokens must not match as substrings of unrelated words", () => {
+    expect(findOf(`<input type="text" name="velocity">`, "field-purpose-incomplete")).toHaveLength(0); // 'city' in veloCITY
+    expect(findOf(`<input type="text" name="hotel">`, "field-purpose-incomplete")).toHaveLength(0); // 'tel' in hoTEL
+  });
+});
+
+describe("control-name-title-only extends to form fields (4.1.2)", () => {
+  it("non-conforming: field labeled only by title → minor title-only finding", () => {
+    const f = findOf(`<input type="text" title="Rechercher dans le site">`, "control-name-title-only");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.severity).toBe("mineur");
+  });
+});
+
+describe("error-not-associated — summary/alert exemption (3.3.1)", () => {
+  it("conforming: a form-level error summary (role=alert, anchor-referenced) is not a per-field association gap", () => {
+    const summary = `<a href="#err-sum">Voir l'erreur</a><div id="err-sum" role="alert" class="error-message">L'email est requis.</div>`;
+    expect(findOf(summary, "error-not-associated")).toHaveLength(0);
+  });
+  it("still non-conforming: a plain field error text with an id referenced by nobody", () => {
+    expect(findOf(`<div id="e1" class="field-error">Requis</div>`, "error-not-associated")).toHaveLength(1);
   });
 });

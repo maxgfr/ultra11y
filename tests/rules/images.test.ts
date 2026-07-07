@@ -8,6 +8,13 @@ describe("img-alt-missing (1.1)", () => {
     expect(findOf(`<img src="a" aria-label="Chat">`, "img-alt-missing")).toHaveLength(0);
     expect(findOf(`<img src="a" aria-hidden="true">`, "img-alt-missing")).toHaveLength(0);
   });
+  it("non-conforming: whitespace-only alt yields no accessible name (only alt=\"\" is decorative)", () => {
+    // alt=" " is not the empty string, so the image is NOT mapped to presentation, yet its
+    // accessible name trims to empty — a non-decorative image with no text alternative.
+    const f = findOf(`<img src="a" alt=" ">`, "img-alt-missing");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("1.1.1");
+  });
   it("non-conforming: img without alt", () => {
     const f = findOf(`<img src="a">`, "img-alt-missing");
     expect(f).toHaveLength(1);
@@ -39,5 +46,19 @@ describe("canvas-fallback-missing (1.1)", () => {
   });
   it("non-conforming: empty canvas", () => {
     expect(findOf(`<canvas></canvas>`, "canvas-fallback-missing")).toHaveLength(1);
+  });
+});
+
+describe("chart-no-accessible-name (1.1.1)", () => {
+  it("non-conforming: charting container with no name", () => {
+    expect(findOf(`<div class="recharts-wrapper"></div>`, "chart-no-accessible-name")).toHaveLength(1);
+    expect(findOf(`<div class="chart"></div>`, "chart-no-accessible-name")).toHaveLength(1);
+  });
+  it("conforming: 'graph' token must not prefix-match 'graphics'/'graphic'", () => {
+    expect(findOf(`<div class="info-graphics"></div>`, "chart-no-accessible-name")).toHaveLength(0);
+    expect(findOf(`<div class="typography-graphic"></div>`, "chart-no-accessible-name")).toHaveLength(0);
+  });
+  it("conforming: named chart", () => {
+    expect(findOf(`<div class="chart" aria-label="Ventes 2024"></div>`, "chart-no-accessible-name")).toHaveLength(0);
   });
 });

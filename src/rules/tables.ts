@@ -37,10 +37,23 @@ const dataTableNoHeaders: Rule = {
       const hasTh = ths.length > 0;
       // hasBoundAttr also matches a dynamic :scope / v-bind:scope binding (Vue/Svelte).
       const hasAssoc = desc.some((d) => (d.tag === "td" || d.tag === "th") && (hasBoundAttr(d, "scope") || hasBoundAttr(d, "headers")));
-      // <th> inside <thead> has an implicit column scope per HTML — a simple table whose
-      // headers are all in <thead> needs no explicit scope=, so don't flag it.
+      // Implicit scope per HTML's header-association algorithm (WCAG technique H51): a simple
+      // table needs no explicit scope= when its headers sit in <thead>, OR form one complete
+      // header ROW (column headers), OR are the first cell of every row (row headers).
+      // (Order-independent: descendants() is not in document order.)
+      const rows = desc.filter((d) => d.tag === "tr");
+      const cellsOf = (tr: El): El[] => tr.children.filter((c): c is El => c.type === "element" && (c.tag === "th" || c.tag === "td"));
       const allThInThead = hasTh && ths.every((th) => ancestors(th).some((a) => a.tag === "thead"));
-      if (hasTh && (hasAssoc || allThInThead)) continue;
+      const headerRow = rows.find((r) => {
+        const cells = cellsOf(r);
+        return cells.length > 0 && cells.every((c) => c.tag === "th");
+      });
+      const allThInHeaderRow = hasTh && headerRow !== undefined && ths.every((th) => cellsOf(headerRow).includes(th));
+      const allThFirstCol = hasTh && ths.every((th) => {
+        const tr = ancestors(th).find((a) => a.tag === "tr");
+        return tr !== undefined && cellsOf(tr)[0] === th;
+      });
+      if (hasTh && (hasAssoc || allThInThead || allThInHeaderRow || allThFirstCol)) continue;
       if (!hasTh) {
         out.push({
           criteriaId: "1.3.1",

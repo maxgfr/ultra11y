@@ -26,6 +26,9 @@ const controlLabelMissing: Rule = {
       if (!isFormField(el)) continue;
       const { via } = controlLabel(el, doc);
       if (via && REAL_LABEL.has(via)) continue;
+      // title yields an accessible name (accname fallback / WCAG H65) — a weak one, surfaced
+      // as a minor control-name-title-only finding, not a blocking "no label".
+      if (via === "title") continue;
       // A spread (JSX {...props} / Vue v-bind="…" / Svelte {...rest}) may inject
       // aria-label/aria-labelledby we can't see — don't assert a missing label.
       if (hasDynamicSpread(el)) continue;
@@ -204,7 +207,15 @@ const errorNotAssociated: Rule = {
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
     const referenced = new Set<string>();
+    // Ids targeted by a same-document in-page anchor (<a href="#id">). An error SUMMARY that
+    // a "jump to error" link points at is a page-level status region (G139), not a per-field
+    // association gap — its restitution comes from the anchor + role/aria-live, not describedby.
+    const anchorTargets = new Set<string>();
     for (const el of doc.elements) {
+      if (el.tag === "a") {
+        const href = (attr(el, "href") ?? "").trim();
+        if (href.startsWith("#") && href.length > 1) anchorTargets.add(href.slice(1));
+      }
       for (const a of ["aria-describedby", "aria-errormessage"]) {
         const v = attr(el, a);
         if (!v) continue;
@@ -226,6 +237,10 @@ const errorNotAssociated: Rule = {
       const id = (attr(el, "id") ?? "").trim();
       if (!id || id.includes("{")) continue; // no stable literal id to reference — not provable
       if (referenced.has(id)) continue; // already linked to a field
+      // A live/alert summary region announces itself; it is not a per-field association gap.
+      const role = (attr(el, "role") ?? "").trim();
+      if (role === "alert" || role === "status" || hasAttr(el, "aria-live")) continue;
+      if (anchorTargets.has(id)) continue; // an in-page "jump to error" link targets it — a summary, not a field error
       if (hasDynamicSpread(el)) continue;
       out.push({
         criteriaId: "3.3.1",
@@ -244,7 +259,13 @@ const errorNotAssociated: Rule = {
 //  (ii) a CUSTOM widget (role=textbox/combobox/checkbox/… on an intrinsic non-native
 //       element) marked required by class but missing aria-required — required state lost.
 const PURPOSE_TYPES = new Set(["email", "tel"]);
-const PURPOSE_TOKENS = /(e-?mail|tel(ephone)?|phone|mobile|postal|zip|address|street|city|country)/i;
+// Whole-token match (split on separators AND camelCase), so `city` doesn't match veloCITY
+// and `tel` doesn't match hoTEL — an unanchored substring regex mislabels them 1.3.5 fields.
+const PURPOSE_WORDS = new Set(["email", "tel", "telephone", "phone", "mobile", "postal", "zip", "address", "street", "city", "country"]);
+const hasPurposeToken = (nameId: string): boolean =>
+  nameId
+    .split(/[-_\s]+|(?<=[a-z0-9])(?=[A-Z])/)
+    .some((t) => PURPOSE_WORDS.has(t.toLowerCase()));
 const SKIP_INPUT_TYPES = new Set(["search", "hidden", "submit", "reset", "button", "password", "checkbox", "radio", "file", "range", "color"]);
 const CUSTOM_WIDGET_ROLES = new Set(["textbox", "combobox", "checkbox", "radio", "switch", "spinbutton"]);
 const REQUIRED_SIGNAL = /(^|[-_ ])(required|mandatory|is-required)/i;
@@ -261,7 +282,7 @@ const fieldPurposeIncomplete: Rule = {
         const type = (attr(el, "type") ?? "text").toLowerCase();
         if (!type.includes("{") && !SKIP_INPUT_TYPES.has(type)) {
           const nameId = `${attr(el, "name") ?? ""} ${attr(el, "id") ?? ""}`;
-          const purpose = PURPOSE_TYPES.has(type) || PURPOSE_TOKENS.test(nameId);
+          const purpose = PURPOSE_TYPES.has(type) || hasPurposeToken(nameId);
           if (purpose && !hasAttr(el, "autocomplete") && !hasDynamicSpread(el)) {
             out.push({
               criteriaId: "1.3.5",

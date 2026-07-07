@@ -76,7 +76,12 @@ jobs:
           test -f "$DIR/scripts/ultra11y.mjs" || { echo "::error::engine not bundled — skills add dropped scripts/"; exit 1; }
           test -d "$DIR/references"           || { echo "::error::references/ not bundled"; exit 1; }
           node "$DIR/scripts/ultra11y.mjs" --help > /dev/null || { echo "::error::installed engine does not run"; exit 1; }
-          echo "install-bundle: skill installed whole and the engine runs."
+          npx --yes skills add "$GITHUB_WORKSPACE" --skill review-a11y --agent claude-code --copy -y
+          RDIR=.claude/skills/review-a11y
+          test -f "$RDIR/SKILL.md"             || { echo "::error::review-a11y SKILL.md not installed"; exit 1; }
+          test -f "$RDIR/scripts/ultra11y.mjs" || { echo "::error::review-a11y engine not bundled — skills add dropped scripts/"; exit 1; }
+          node "$RDIR/scripts/ultra11y.mjs" --help > /dev/null || { echo "::error::review-a11y installed engine does not run"; exit 1; }
+          echo "install-bundle: both skills installed whole and their engines run."
 
   # The shipped scripts/ultra11y.mjs is an install-free bundle declaring
   # engines.node ">=22.18" (the floor @babel/parser 8 requires). This job runs ONLY

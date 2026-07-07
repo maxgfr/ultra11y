@@ -14,6 +14,12 @@ ultra11y is built around an honest **division of labour**. Automated tools only 
 npx skills add maxgfr/ultra11y
 ```
 
+The repository ships **two skills** (pick at the prompt, or pass the skill name):
+`ultra11y` — full audits, compliance reports, PRD backlogs, standards packs — and
+`review-a11y` — the fast review loop that audits **exactly the code under change**
+(staged files, working diff, or branch vs merge-base) and reports like a code reviewer.
+Both bundle the same install-free engine.
+
 Or clone and run the bundled engine directly (Node ≥ 22.18, zero dependencies):
 
 ```sh

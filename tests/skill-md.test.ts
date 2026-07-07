@@ -6,46 +6,56 @@ import { dirname, join } from "node:path";
 import { parse } from "yaml";
 import { VERSION } from "../src/types.js";
 
-// Guards that the published SKILL.md stays installable via `npx skills add` and
-// that its docs never drift from the CLI they describe.
+// Guards that the published skills stay installable via `npx skills add` and
+// that their docs never drift from the CLI they describe.
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
-const SKILL_DIR = "skills/ultra11y";
-const REFS_DIR = join(ROOT, SKILL_DIR, "references");
+const SKILL_NAMES = ["review-a11y", "ultra11y"];
+const REFS_DIR = join(ROOT, "skills/ultra11y", "references");
 
 const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { version: string };
-const raw = readFileSync(join(ROOT, SKILL_DIR, "SKILL.md"), "utf8");
-const match = raw.match(FRONTMATTER_RE);
-const frontmatter = match?.[1] ?? "";
-const body = match?.[2] ?? "";
+const skills = Object.fromEntries(
+  SKILL_NAMES.map((name) => {
+    const raw = readFileSync(join(ROOT, "skills", name, "SKILL.md"), "utf8");
+    const match = raw.match(FRONTMATTER_RE);
+    return [name, { raw, frontmatter: match?.[1] ?? "", body: match?.[2] ?? "", matched: match !== null }];
+  }),
+);
+const body = skills.ultra11y!.body;
 const refFiles = readdirSync(REFS_DIR).filter((f) => f.endsWith(".md"));
 const refBodies = Object.fromEntries(refFiles.map((f) => [f, readFileSync(join(REFS_DIR, f), "utf8")]));
 
-describe("SKILL.md is installable", () => {
-  it("is the only skill", () => {
-    expect(readdirSync(join(ROOT, "skills"))).toEqual(["ultra11y"]);
+describe("the skills are installable", () => {
+  it("ships exactly the two skills", () => {
+    expect(readdirSync(join(ROOT, "skills")).sort()).toEqual(SKILL_NAMES);
   });
 
-  it("has a frontmatter block that parses as YAML", () => {
-    expect(match).not.toBeNull();
-    expect(() => parse(frontmatter)).not.toThrow();
+  it.each(SKILL_NAMES)("%s has a frontmatter block that parses as YAML", (name) => {
+    expect(skills[name]!.matched).toBe(true);
+    expect(() => parse(skills[name]!.frontmatter)).not.toThrow();
   });
 
-  it("exposes name 'ultra11y' and a non-empty description", () => {
-    const data = parse(frontmatter) as Record<string, unknown>;
-    expect(data.name).toBe("ultra11y");
+  it.each(SKILL_NAMES)("%s exposes its own name and a non-empty description", (name) => {
+    const data = parse(skills[name]!.frontmatter) as Record<string, unknown>;
+    expect(data.name).toBe(name);
     expect(typeof data.description).toBe("string");
     expect((data.description as string).length).toBeGreaterThan(0);
   });
 
-  it("describes BOTH scopes (audit AND author/review)", () => {
-    const description = (parse(frontmatter) as { description: string }).description;
+  it("ultra11y describes BOTH scopes (audit AND author/review)", () => {
+    const description = (parse(skills.ultra11y!.frontmatter) as { description: string }).description;
     expect(description).toMatch(/audit/i);
     expect(description).toMatch(/author|accessible|review/i);
   });
 
-  it("keeps version in lockstep with package.json and src/types.ts", () => {
-    const data = parse(frontmatter) as { metadata?: { version?: string } };
+  it("review-a11y describes the review scope and its change-based scoping", () => {
+    const description = (parse(skills["review-a11y"]!.frontmatter) as { description: string }).description;
+    expect(description).toMatch(/review/i);
+    expect(description).toMatch(/staged|diff|branch|change/i);
+  });
+
+  it.each(SKILL_NAMES)("%s keeps version in lockstep with package.json and src/types.ts", (name) => {
+    const data = parse(skills[name]!.frontmatter) as { metadata?: { version?: string } };
     expect(data.metadata?.version).toBe(pkg.version);
     expect(VERSION).toBe(pkg.version);
   });
@@ -54,7 +64,7 @@ describe("SKILL.md is installable", () => {
 const CLI_COMMANDS = new Set(["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack"]);
 
 describe("skill docs stay in sync with the CLI", () => {
-  const docs: [string, string][] = [["SKILL.md", body], ...Object.entries(refBodies)];
+  const docs: [string, string][] = [["ultra11y/SKILL.md", body], ["review-a11y/SKILL.md", skills["review-a11y"]!.body], ...Object.entries(refBodies)];
 
   it.each(docs)("%s only references commands the CLI actually has", (_name, text) => {
     for (const m of text.matchAll(/ultra11y\.mjs\s+([a-z-]+)/g)) {
@@ -64,14 +74,15 @@ describe("skill docs stay in sync with the CLI", () => {
 
   it("teaches the machine-readable surface (--json)", () => {
     expect(body).toContain("--json");
+    expect(skills["review-a11y"]!.body).toContain("--json");
   });
 
-  it("documents every CLI flag the skill mentions (guards help-text drift)", () => {
+  it("documents every CLI flag the skills mention (guards help-text drift)", () => {
     const help = execFileSync(process.execPath, [join(ROOT, "scripts/ultra11y.mjs"), "--help"], { encoding: "utf8" });
-    const docText = [body, ...Object.values(refBodies)].join("\n");
+    const docText = [body, skills["review-a11y"]!.body, ...Object.values(refBodies)].join("\n");
     const flags = new Set(docText.match(/--[a-z][a-z-]+/g) ?? []);
     for (const f of flags) {
-      expect(help.includes(f), `--help omits ${f}, which the skill documents`).toBe(true);
+      expect(help.includes(f), `--help omits ${f}, which the skills document`).toBe(true);
     }
   });
 });

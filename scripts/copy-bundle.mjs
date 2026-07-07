@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Normalise the source-of-truth bundle (scripts/ultra11y.mjs, produced by
-// tsup) and mirror it byte-for-byte into the skill package. The skill ships
-// standalone — `npx skills add` copies the skill directory (skills/ultra11y/),
-// so the engine has to live next to its SKILL.md, not just at the repo root.
-// Keeping the two files identical is what `check:build` asserts so the
-// published skill can never drift from the tested bundle.
+// tsup) and mirror it byte-for-byte into every skill package. Skills ship
+// standalone — `npx skills add` copies one skill directory (skills/<name>/),
+// so the engine has to live next to each SKILL.md, not just at the repo root.
+// Keeping the copies identical is what `check:build` asserts so a published
+// skill can never drift from the tested bundle.
 //
 // REPRODUCIBILITY: esbuild annotates each bundled module with a `// <path>`
 // comment derived from where the dependency physically resides in node_modules.
@@ -20,7 +20,10 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = join(root, "scripts", "ultra11y.mjs");
-const targets = [join(root, "skills", "ultra11y", "scripts", "ultra11y.mjs")];
+const targets = [
+  join(root, "skills", "ultra11y", "scripts", "ultra11y.mjs"),
+  join(root, "skills", "review-a11y", "scripts", "ultra11y.mjs"),
+];
 
 // node_modules/.pnpm/<pkg>@<version>[_<peerhash>]/node_modules/  ->  node_modules/
 const normalizePnpmPaths = (src) =>

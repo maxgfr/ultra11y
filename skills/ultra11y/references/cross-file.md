@@ -67,6 +67,9 @@ node scripts/ultra11y.mjs audit --changed --graph     # git diff, graph over the
   anchor". A target missing everywhere stays a true positive.
 - **`cross-page-lang`** (WCAG 3.1.1, *suppression*): an `<html>` without `lang` whose imported
   layout/wrapper declares the language → suppresses the false positive.
+- **`cross-name-ref-cross-file`** (WCAG 1.3.1, *suppression*): a `<label for="id">` or a
+  heading/`aria-labelledby` whose target id is **defined in another** file → suppresses the
+  false `label-for-dangling` / empty-heading. Suppressed only when the id resolves elsewhere.
 
 ## Benefit for `fix`
 

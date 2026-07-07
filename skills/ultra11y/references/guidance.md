@@ -38,9 +38,11 @@ silent "conforming".
 The headline example: **opening a new window** (`target="_blank"` without warning). Its
 only clean WCAG home is **3.2.5 Change on Request — which is AAA, absent from the AA
 core** (the dataset jumps 3.2.4 → 3.2.6). So ultra11y does **not** ship a WCAG-core
-detector for it. It appears as RGAA guidance and via the RGAA pack (criterion 13.2 →
-WCAG 3.2.1), and is flagged only when you audit `--standard rgaa` — never as a WCAG-core
-non-conformity, and never force-mapped onto a wrong AA criterion. Judgment- and
+detector for it — no static rule flags `target="_blank"` under any standard. It ships as
+RGAA guidance (criterion 13.2 → WCAG 3.2.1): look it up with `criteria --standard rgaa 13.2`,
+and it attaches to the relevant `prd`/`report` entry — it is never raised as an audit
+non-conformity, and never force-mapped onto a wrong AA criterion. (`--standard` is a
+`report`/`prd`/`criteria` flag, not an `audit` one.) Judgment- and
 rendering-dependent rules (alt relevance, computed contrast, reading order) stay guidance
 + residual risk for the same reason.
 

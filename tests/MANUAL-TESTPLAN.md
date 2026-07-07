@@ -19,7 +19,8 @@ Copier-coller dans une session fraîche, au racine du dépôt. Le moteur tourne 
 > commande : lance-la, vérifie **exit code / forme JSON / texte FR-EN / artefacts**.
 > Pour tout ce qui casse : **reproduis → écris un test de non-régression rouge dans
 > `tests/` → corrige la plus petite cause dans `src/` → `pnpm build` → relance**.
-> Ne bumpe pas la version. Garde `ALL_RULES` à 36. Garde les 2 miroirs de bundle
+> Ne bumpe pas la version. Garde `ALL_RULES` à 53 (asserté par `tests/registry.test.ts` ;
+> +7 règles cross-file sous `--graph`). Garde les 2 miroirs de bundle
 > byte-identiques (`pnpm check:build`) et les fichiers `docker/` synchronisés.
 > Mets tous les fichiers temporaires dans `/tmp`, ne modifie jamais les fixtures en
 > place, et n'exécute jamais `init` (sans `--help`) ni `fix --write` dans le dépôt réel
@@ -50,9 +51,10 @@ Copier-coller dans une session fraîche, au racine du dépôt. Le moteur tourne 
 > 6. **fix** — dry-run (défaut) sur `bad.html` (diff, aucune écriture) ; copie en `/tmp`
 >    puis `--write` (n'applique qu'après re-audit sans nouvelle NC) ; classes auto
 >    (tabindex/role/viewport), placeholder (alt/lang/title TODO, lang = BCP-47 `und`),
->    proposal ; `--only <ruleId>` ; `--json` ; JSX → refuse d'écrire (proposal-only).
-> 7. **init** — dépôt git jetable dans `/tmp` ; `init` (défaut hook+baseline) ;
->    **`--baseline` seul → baseline UNIQUEMENT** ; **`--baseline --hook` → les deux** ;
+>    proposal ; `--only <ruleId>` ; `--json` ; JSX/TSX → `--write` applique les codemods
+>    `jsxSafe` (offsets réels, non-lossy) ; le lossy-JSX reste proposal-only.
+> 7. **init** — dépôt git jetable dans `/tmp` ; `init` (défaut = hook staged strict + auto-fix
+>    sûr, SANS baseline) ; **`--baseline` seul → baseline UNIQUEMENT** ; **`--baseline --hook` → les deux** ;
 >    **`--ci --baseline --fail-on majeur` → baseline + workflow gaté en `majeur`** ;
 >    hook = `.git/hooks/pre-commit` (sh POSIX, bypass `SKIP_A11Y`, chemin moteur quoté) ;
 >    **`init --help` n'écrit RIEN (pas d'effet de bord)**.

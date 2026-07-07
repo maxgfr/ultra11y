@@ -29,16 +29,22 @@ node scripts/ultra11y.mjs --help
 ## Commands
 
 ```
-ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang auto|en|fr]
-ultra11y audit    [--changed | --since <ref>] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+ultra11y audit    <globs… | ->  [--out <dir>] [--include <glob>] [--exclude <glob>] [--ext <list>] [--jsx] [--graph] [--json] [--lang auto|en|fr] [--no-default-excludes]
+ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
+ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]              # audit rendered-DOM captures alongside source
 ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang auto|en|fr]
 ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
+ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json]
 ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
 ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
 ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--json]
-ultra11y fix      <globs… | ->  [--write] [--iterate] [--changed | --since <ref>] [--only <ids>] [--jsx] [--json]
+ultra11y fix      <globs… | ->  [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--only <ids>] [--jsx] [--json]
 ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
-ultra11y scan     <url|file> [--merge <audit.json>] [--out <dir>] [--docker] [--json]
+ultra11y pack     check <pack.json> [--guidance <g.json>]  |  scaffold                 # gate an (AI-)authored standards pack
+ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
+ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--runtime …] [--merge <audit.json>] [--json]
+
+# global: --pack <paths> (load external standards pack(s) at runtime) · --override
 ```
 
 ## Standards packs (RGAA France first; add your country)
@@ -66,21 +72,23 @@ a test). See [`CONTRIBUTING.md`](CONTRIBUTING.md) and `skills/ultra11y/reference
   auto-codemods, fill-in `TODO` placeholders for the agent to complete, and judgment-only
   proposals. `--dry-run` is the default; `--write` applies but only after a re-audit proves
   no new non-conformity, and never on lossy JSX/TSX. See `references/fix.md`.
-- **Automation** — `init` wires a zero-dependency git pre-commit hook and/or a GitHub Actions
-  job that run `audit --changed --baseline` so only **new** blocking non-conformities fail (not
-  the existing backlog). See `references/automation.md`.
+- **Automation** — `init --hook` (default) wires a zero-dependency git pre-commit gate over the
+  **strict staged snapshot**: it audits the exact index blobs, auto-applies the safe fixes and
+  re-stages them, and blocks only on judgment issues. `init --baseline`/`--ci` is the opt-in
+  regression variant (hook + committed baseline / GitHub Actions job) that fails only on **new**
+  non-conformities, not the existing backlog. See `references/automation.md`.
 
-### Optional dynamic tier (Docker + axe-core)
+### Optional dynamic tier (axe-core)
 
-`scan` runs **axe-core in a headless browser** (Playwright, in a self-contained Docker image built on first use) to decide the *needs-rendering* criteria the static engine leaves as residual risks — chiefly **computed colour contrast (1.4.3)** plus a 320px **reflow** check (1.4.10) and a render cross-check of the structural rules. `--merge` folds the findings into a static `AuditResult`, upgrading `manual` criteria to `C`/`NC`:
+`scan` runs **axe-core in a headless browser** to decide the *needs-rendering* criteria the static engine leaves as residual risks — chiefly **computed colour contrast (1.4.3)** plus a 320px **reflow** check (1.4.10) and a render cross-check of the structural rules. Two runtimes (default `--runtime auto`): **`--runtime local`** uses a Playwright that resolves from your project (`--cwd`) — **no Docker** — and additionally probes focus visibility (2.4.7), 200% zoom (1.4.4), text spacing (1.4.12) and content-on-hover (1.4.13), and takes `--storage-state` for authenticated pages; **`--runtime docker`** falls back to a self-contained image built on first use. `--merge` folds the findings into a static `AuditResult`, upgrading `manual` criteria to `C`/`NC`:
 
 ```sh
 node scripts/ultra11y.mjs audit "src/**/*.html" --out audits --json > /dev/null
-node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json --out audits
+node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd . --merge audits/audit-latest.json --out audits
 node scripts/ultra11y.mjs report --in audits/audit-latest.json --out audits
 ```
 
-Requires Docker (the rest of the skill is zero-dependency and Docker-free). The runner + Dockerfile are embedded in the engine and mirrored under `docker/` (with a `docker-compose.yml`). See `skills/ultra11y/references/dynamic.md`.
+Only the Docker runtime needs Docker; `--runtime local` needs a project with `@playwright/test` + `@axe-core/playwright`. The rest of the skill is zero-dependency. The Docker runner + Dockerfile are embedded in the engine and mirrored under `docker/` (with a `docker-compose.yml`). See `skills/ultra11y/references/dynamic.md`.
 
 Typical audit flow:
 

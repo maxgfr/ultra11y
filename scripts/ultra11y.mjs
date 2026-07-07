@@ -19795,10 +19795,11 @@ function toFinding(doc, ruleId, def, rf) {
     // JSX/TSX the offsets are into the transformed HTML string, so `fix` must not
     // edit by range and baseline diffing falls back to line/selector identity.
     ...doc.lossy ? {} : { sourceStart: rf.el.start, sourceEnd: rf.el.end },
-    // SFC-source findings are preliminary (slot/dynamic content unseen) — flag for AI/human
-    // verification. A rule may also mark an individual finding preliminary (e.g. a skip-link
-    // whose target legitimately lives in another component resolved at composition time).
-    ...doc.kind === "sfc" || rf.preliminary ? { preliminary: true } : {},
+    // SFC-source findings are preliminary (slot/dynamic content unseen); lossy-JSX findings
+    // are too (regex fallback — offsets into transformed HTML, may be fabricated from string
+    // literals) — flag both for AI/human verification. A rule may also mark an individual
+    // finding preliminary (e.g. a skip-link whose target lives in another component).
+    ...doc.kind === "sfc" || doc.kind === "jsx-lossy" || rf.preliminary ? { preliminary: true } : {},
     // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
     // to the source component recorded in the capture's provenance.
     ...doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}
@@ -19879,7 +19880,8 @@ function isFormField(el) {
   return true;
 }
 function controlLabel(el, doc) {
-  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc) || hasBoundAttr(el, "aria-labelledby")) return { hasLabel: true, via: "aria-labelledby" };
+  if (attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc) || hasBoundAttr(el, "aria-labelledby") && !attr(el, "aria-labelledby"))
+    return { hasLabel: true, via: "aria-labelledby" };
   if ((boundAttr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
   const id = attr(el, "id");
   if (id) {
@@ -21694,6 +21696,10 @@ function crossToFinding(doc, ruleId, def, cf) {
     msg: cf.params ? { id: cf.msgId, params: cf.params } : { id: cf.msgId },
     snippet: snippet(doc, cf.el),
     ...doc.lossy ? {} : { sourceStart: cf.el.start, sourceEnd: cf.el.end },
+    // Mirror toFinding: an SFC/lossy-JSX source is less trustworthy (slots/dynamic content /
+    // regex transform), so its cross-file findings are provisional too — otherwise a cross
+    // finding reads as definitive while the per-doc findings in the same file are preliminary.
+    ...doc.kind === "sfc" || doc.kind === "jsx-lossy" ? { preliminary: true } : {},
     ...cf.related ? { related: cf.related } : {}
   };
 }

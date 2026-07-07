@@ -7,6 +7,14 @@ describe("control-label-missing (11.1)", () => {
     expect(findOf(`<label>Nom <input></label>`, "control-label-missing")).toHaveLength(0);
     expect(findOf(`<input aria-label="Recherche">`, "control-label-missing")).toHaveLength(0);
   });
+  it("non-conforming: aria-labelledby pointing to a nonexistent id is not a working label", () => {
+    // The dead resolution check treated any static aria-labelledby as a label; a dangling
+    // one names nothing, so the field is effectively unlabeled.
+    expect(findOf(`<input aria-labelledby="ghost">`, "control-label-missing")).toHaveLength(1);
+  });
+  it("conforming: aria-labelledby resolving to a real element", () => {
+    expect(findOf(`<span id="lbl">Nom</span><input aria-labelledby="lbl">`, "control-label-missing")).toHaveLength(0);
+  });
   it("conforming for control-label-missing: title provides an accessible name (H65) — not bloquant", () => {
     // A title-labeled field has a name (accname title fallback); it is poor UX, surfaced as a
     // minor control-name-title-only finding, but NOT a blocking 'no label'.

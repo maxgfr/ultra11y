@@ -104,7 +104,11 @@ export interface LabelInfo {
 
 /** Does a form field have a programmatic label/name? (placeholder does NOT count.) */
 export function controlLabel(el: El, doc: Doc): LabelInfo {
-  if ((attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc)) || hasBoundAttr(el, "aria-labelledby")) return { hasLabel: true, via: "aria-labelledby" };
+  // Mirror accessibleName's guard: a labelledby is a real label only when it resolves to
+  // text, OR is a DYNAMIC binding (present but value unknown). A literal aria-labelledby
+  // whose target is missing/empty names nothing — the field is effectively unlabeled.
+  if ((attr(el, "aria-labelledby") && ariaLabelledbyText(el, doc)) || (hasBoundAttr(el, "aria-labelledby") && !attr(el, "aria-labelledby")))
+    return { hasLabel: true, via: "aria-labelledby" };
   if ((boundAttr(el, "aria-label") ?? "").trim()) return { hasLabel: true, via: "aria-label" };
   const id = attr(el, "id");
   if (id) {

@@ -74,6 +74,10 @@ export function crossToFinding(doc: Doc, ruleId: string, def: Severity, cf: Cros
     msg: cf.params ? { id: cf.msgId, params: cf.params } : { id: cf.msgId },
     snippet: snippet(doc, cf.el),
     ...(doc.lossy ? {} : { sourceStart: cf.el.start, sourceEnd: cf.el.end }),
+    // Mirror toFinding: an SFC/lossy-JSX source is less trustworthy (slots/dynamic content /
+    // regex transform), so its cross-file findings are provisional too — otherwise a cross
+    // finding reads as definitive while the per-doc findings in the same file are preliminary.
+    ...(doc.kind === "sfc" || doc.kind === "jsx-lossy" ? { preliminary: true } : {}),
     ...(cf.related ? { related: cf.related } : {}),
   };
 }

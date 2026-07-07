@@ -3,6 +3,10 @@ node_modules/
 /tmp/
 audits/
 .DS_Store
+# Claude Code session dir — the harness locks .claude/workflows/ against external
+# reads/writes, so git must not descend into it. The canonical verification workflow
+# is versioned at .superpowers/verification/verify-impl.workflow.js instead.
+.claude/
 # verify worklist output (root only; anchored so it can't shadow
 # skills/.../references/verify.md on case-insensitive filesystems)
 /VERIFY.todo.json

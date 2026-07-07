@@ -25,6 +25,11 @@ describe("resolveSpecifier", () => {
     expect(resolveSpecifier("src/pages/home.tsx", "../ui/Button.jsx", known)).toBe("src/ui/Button.jsx");
   });
 
+  it("resolves an ESM/NodeNext '.js' specifier to its .tsx/.ts source", () => {
+    expect(resolveSpecifier("src/pages/home.tsx", "../IconButton.js", known)).toBe("src/IconButton.tsx");
+    expect(resolveSpecifier("src/pages/home.tsx", "../lib/index.js", known)).toBe("src/lib/index.ts");
+  });
+
   it("returns null for bare and alias specifiers (out of scope v1)", () => {
     expect(resolveSpecifier("src/pages/home.tsx", "react", known)).toBeNull();
     expect(resolveSpecifier("src/pages/home.tsx", "@/components/Button", known)).toBeNull();

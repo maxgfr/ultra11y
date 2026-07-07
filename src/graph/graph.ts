@@ -46,7 +46,11 @@ export function resolveUsage(graph: DepGraph, file: string, localName: string, s
     const nsImp = node.imports.find((i) => i.imported === "*" && i.local === ns);
     if (!nsImp) return undefined;
     const target = resolveSpecifier(posix, nsImp.source, graph.known, graph.aliases);
-    return target ? graph.nodes.get(target)?.components.get(member) : undefined;
+    if (!target) return undefined;
+    // The namespace target may be a BARREL: `<UI.Button/>` where UI is `import * as UI from
+    // "./components"` and components re-exports Button. If it isn't a direct component there,
+    // follow the barrel's re-export bindings one more hop.
+    return graph.nodes.get(target)?.components.get(member) ?? resolveUsage(graph, target, member, seen);
   }
   const imp = node.imports.find((i) => i.local === localName);
   if (imp) {
@@ -59,7 +63,16 @@ export function resolveUsage(graph: DepGraph, file: string, localName: string, s
     // elsewhere (a barrel of barrels). Follow one more hop.
     return resolveUsage(graph, target, imp.imported, seen);
   }
-  return node.components.get(localName); // locally-defined component
+  const local = node.components.get(localName);
+  if (local) return local; // locally-defined component
+  // `export * from "./x"` wildcard barrel: the name may be defined in any starred source.
+  for (const src of node.starReexports) {
+    const target = resolveSpecifier(posix, src, graph.known, graph.aliases);
+    if (!target) continue;
+    const hit = resolveUsage(graph, target, localName, seen);
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 /** Is `id` defined as a literal id by any file in the graph? */

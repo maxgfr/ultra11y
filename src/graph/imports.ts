@@ -35,6 +35,7 @@ export interface FileGraphNode {
   components: Map<string, ComponentDef>; // by local/export name, plus a "default" alias
   definesIds: string[]; // literal id="…" anywhere in the file
   providesHtmlLang: boolean; // an <html> with a lang attribute (literal or expression)
+  starReexports: string[]; // `export * from "./x"` sources — a name may be defined in any of them
   // Component-LIBRARY specifiers this file renders (e.g. "@codegouvfr/react-dsfr/Button").
   // A non-empty list marks the file as a rendered-output BLIND SPOT for coverage: the
   // real HTML lives in node_modules, so its components need a rendered capture to audit.
@@ -214,6 +215,7 @@ export interface ExtractOpts {
 export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string, opts: ExtractOpts = {}): FileGraphNode {
   const posix = toPosix(file);
   const imports: ImportRec[] = [];
+  const starReexports: string[] = [];
   const components = new Map<string, ComponentDef>();
 
   // Top-level `const X = "literal"` string bindings, so a dynamic id={X} (common for
@@ -276,7 +278,7 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string, op
         if (!components.has("default")) components.set("default", def);
       }
     }
-    return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+    return { file: posix, imports, components, definesIds, providesHtmlLang, starReexports, opaqueComponents };
   };
   if (!ast) return finish();
 
@@ -326,6 +328,14 @@ export function extractGraphNode(ast: AstFile | null, doc: Doc, file: string, op
         const def = components.get(localName);
         if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
       }
+    } else if (stmt.type === "ExportAllDeclaration") {
+      // `export * from "./x"` — a wildcard barrel. We can't enumerate the re-exported names
+      // statically, so record the source; resolveUsage follows each star source when a name
+      // is not bound directly (see graph.ts). `export * as NS from …` is a namespace re-export,
+      // not a flat wildcard, so it is skipped here.
+      const src = asNode(stmt.source);
+      const spec = src && typeof src.value === "string" ? src.value : "";
+      if (spec && !asNode(stmt.exported)) starReexports.push(spec);
     } else if (stmt.type === "ExportDefaultDeclaration") {
       const decl = asNode(stmt.declaration);
       if (!decl) continue;

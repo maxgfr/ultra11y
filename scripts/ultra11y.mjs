@@ -21703,6 +21703,11 @@ import { dirname, join as join2 } from "path";
 var EXT_ORDER = [".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte", ".astro", ".html", ".htm"];
 function candidates(base) {
   const out = [base];
+  const jsExt = /\.(?:js|jsx|mjs|cjs)$/.exec(base);
+  if (jsExt) {
+    const stripped = base.slice(0, -jsExt[0].length);
+    for (const e of EXT_ORDER) out.push(stripped + e);
+  }
   for (const e of EXT_ORDER) out.push(base + e);
   for (const e of EXT_ORDER) out.push(join2(base, `index${e}`));
   return out;
@@ -21764,7 +21769,8 @@ function resolveUsage(graph, file, localName, seen = /* @__PURE__ */ new Set()) 
     const nsImp = node.imports.find((i) => i.imported === "*" && i.local === ns);
     if (!nsImp) return void 0;
     const target = resolveSpecifier(posix, nsImp.source, graph.known, graph.aliases);
-    return target ? graph.nodes.get(target)?.components.get(member) : void 0;
+    if (!target) return void 0;
+    return graph.nodes.get(target)?.components.get(member) ?? resolveUsage(graph, target, member, seen);
   }
   const imp = node.imports.find((i) => i.local === localName);
   if (imp) {
@@ -21775,7 +21781,15 @@ function resolveUsage(graph, file, localName, seen = /* @__PURE__ */ new Set()) 
     if (direct) return direct;
     return resolveUsage(graph, target, imp.imported, seen);
   }
-  return node.components.get(localName);
+  const local = node.components.get(localName);
+  if (local) return local;
+  for (const src of node.starReexports) {
+    const target = resolveSpecifier(posix, src, graph.known, graph.aliases);
+    if (!target) continue;
+    const hit = resolveUsage(graph, target, localName, seen);
+    if (hit) return hit;
+  }
+  return void 0;
 }
 function idDefinedAnywhere(graph, id) {
   return graph.allIds.has(id);
@@ -22134,6 +22148,7 @@ function declComponents(decl, file) {
 function extractGraphNode(ast, doc, file, opts = {}) {
   const posix = toPosix(file);
   const imports = [];
+  const starReexports = [];
   const components = /* @__PURE__ */ new Map();
   const constStrings = /* @__PURE__ */ new Map();
   if (ast) {
@@ -22182,7 +22197,7 @@ function extractGraphNode(ast, doc, file, opts = {}) {
         if (!components.has("default")) components.set("default", def);
       }
     }
-    return { file: posix, imports, components, definesIds, providesHtmlLang, opaqueComponents };
+    return { file: posix, imports, components, definesIds, providesHtmlLang, starReexports, opaqueComponents };
   };
   if (!ast) return finish();
   const body = asNodes((asNode(ast.program) ?? ast).body);
@@ -22224,6 +22239,10 @@ function extractGraphNode(ast, doc, file, opts = {}) {
         const def = components.get(localName);
         if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
       }
+    } else if (stmt.type === "ExportAllDeclaration") {
+      const src = asNode(stmt.source);
+      const spec = src && typeof src.value === "string" ? src.value : "";
+      if (spec && !asNode(stmt.exported)) starReexports.push(spec);
     } else if (stmt.type === "ExportDefaultDeclaration") {
       const decl = asNode(stmt.declaration);
       if (!decl) continue;
@@ -22306,10 +22325,10 @@ var GRAPH_ONLY = new Set(GRAPH_ONLY_EXT);
 function emptyDoc(file, source) {
   return { file, source, lossy: false, kind: "html", roots: [], elements: [], byId: /* @__PURE__ */ new Map(), lineStarts: [0] };
 }
-var SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/i;
+var SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
 function sfcScriptSource(content, file) {
   if (/\.astro$/i.test(file)) return splitAstroFrontmatter(content).frontmatter;
-  return SCRIPT_BLOCK_RE.exec(content)?.[1] ?? "";
+  return [...content.matchAll(SCRIPT_BLOCK_RE)].map((m) => m[1] ?? "").join("\n");
 }
 function buildGraphStreaming(files) {
   const nodes = [];

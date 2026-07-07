@@ -26,14 +26,16 @@ function emptyDoc(file: string, source: string): Doc {
 // .vue/.svelte's own <script>/<script setup>…</script> block — the only part of an
 // SFC that's real JS/TS. Astro's frontmatter fence is handled separately (it isn't
 // a <script> tag) via splitAstroFrontmatter.
-const SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/i;
+const SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
 
 // The graph-relevant script source of an SFC: Astro's `---…---` frontmatter, or a
-// .vue/.svelte file's <script> block. "" when there is none to parse (template-only
-// SFC) — extractGraphNode still synthesizes the self component def either way.
+// .vue/.svelte file's <script> block(s). A Vue SFC commonly has BOTH `<script>` and
+// `<script setup>` — concatenate ALL blocks so imports/exports from either are seen.
+// "" when there is none to parse (template-only SFC) — extractGraphNode still
+// synthesizes the self component def either way.
 function sfcScriptSource(content: string, file: string): string {
   if (/\.astro$/i.test(file)) return splitAstroFrontmatter(content).frontmatter;
-  return SCRIPT_BLOCK_RE.exec(content)?.[1] ?? "";
+  return [...content.matchAll(SCRIPT_BLOCK_RE)].map((m) => m[1] ?? "").join("\n");
 }
 
 export function buildGraphStreaming(files: string[]): DepGraph {

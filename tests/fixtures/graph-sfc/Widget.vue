@@ -9,3 +9,8 @@ export default {
   methods: { helper },
 };
 </script>
+
+<script setup>
+import { helper2 } from "./helper2";
+helper2();
+</script>

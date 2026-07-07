@@ -27,6 +27,14 @@ describe("graph — SFC (.vue/.svelte/.astro) synthesizes a self component def",
     expect(node.imports.some((i) => i.local === "helper" && i.source === "./helper")).toBe(true);
   });
 
+  it("reads BOTH <script> and <script setup> blocks (imports from either are seen)", () => {
+    const g = graph();
+    const widgetFile = [...g.nodes.keys()].find((f) => f.endsWith("Widget.vue"))!;
+    const node = g.nodes.get(widgetFile)!;
+    expect(node.imports.some((i) => i.local === "helper" && i.source === "./helper")).toBe(true); // <script>
+    expect(node.imports.some((i) => i.local === "helper2" && i.source === "./helper2")).toBe(true); // <script setup>
+  });
+
   it("puts the SFC in the capture-coverage universe (hasControl) so it shows as a blind spot without a capture", () => {
     const g = graph();
     const cov = computeCaptureCoverage(g, []);

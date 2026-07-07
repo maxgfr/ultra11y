@@ -13,6 +13,14 @@ const EXT_ORDER = [".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte", ".astro", ".
 
 function candidates(base: string): string[] {
   const out = [base];
+  // An ESM/NodeNext specifier writes the OUTPUT extension ("./Icon.js") even though the
+  // source is "./Icon.ts"/".tsx"; try the base with a trailing js-family ext swapped for
+  // each source ext, before the plain append/index candidates.
+  const jsExt = /\.(?:js|jsx|mjs|cjs)$/.exec(base);
+  if (jsExt) {
+    const stripped = base.slice(0, -jsExt[0].length);
+    for (const e of EXT_ORDER) out.push(stripped + e);
+  }
   for (const e of EXT_ORDER) out.push(base + e);
   for (const e of EXT_ORDER) out.push(join(base, `index${e}`));
   return out;

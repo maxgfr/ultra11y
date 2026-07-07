@@ -85,3 +85,21 @@ describe("graph queries — namespace imports", () => {
     expect(resolveUsage(graph, "nspage.tsx", "UI.Missing")).toBeUndefined();
   });
 });
+
+describe("graph queries — barrels", () => {
+  const BUTTON = `export function Button() { return <button>Save</button>; }`;
+
+  it("resolves a named import through an `export * from` wildcard barrel", () => {
+    const barrel = `export * from "./Button";`;
+    const page = `import { Button } from "./barrel";\nexport default function P(){ return <Button/>; }`;
+    const graph = buildGraph([node(BUTTON, "Button.tsx"), node(barrel, "barrel.tsx"), node(page, "page.tsx")]);
+    expect(resolveUsage(graph, "page.tsx", "Button")?.file).toBe("Button.tsx");
+  });
+
+  it("resolves a namespace member `<UI.Button/>` when the namespace target is a barrel", () => {
+    const barrel = `export { Button } from "./Button";`;
+    const page = `import * as UI from "./barrel";\nexport default function P(){ return <UI.Button/>; }`;
+    const graph = buildGraph([node(BUTTON, "Button.tsx"), node(barrel, "barrel.tsx"), node(page, "page.tsx")]);
+    expect(resolveUsage(graph, "page.tsx", "UI.Button")?.file).toBe("Button.tsx");
+  });
+});

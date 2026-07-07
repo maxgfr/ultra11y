@@ -10,6 +10,11 @@ Copier-coller dans une session fraîche, au racine du dépôt. Le moteur tourne 
 | non conforme | `tests/fixtures/non-conforming/bad.html` |
 | rendu / contraste | `tests/fixtures/dynamic/low-contrast.html` |
 
+> Cette matrice est désormais **automatisée** dans `tests/e2e/` (`cli.e2e.test.ts`,
+> `artifacts.e2e.test.ts`) : elle pilote le bundle `scripts/ultra11y.mjs` en sous-processus
+> et vérifie codes de sortie / forme JSON / artefacts sur disque. Ce prompt reste utile pour
+> l'exploration manuelle et le palier Docker de `scan` (opt-in via `U11Y_E2E_DOCKER=1`).
+
 ---
 
 ## Prompt

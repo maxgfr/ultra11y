@@ -58,6 +58,20 @@ const FR_TELLS = [
 ];
 const EN_TELLS = [/\bmust\b/i, /\bshould\b/i, /\bmissing\b/i, /\badd\b/i, /\bremove\b/i, /\bprovide\b/i, /insufficient contrast/i];
 
+// Technical HTML/ARIA tokens stay in English even in French prose (Core rule 6). The
+// FR_TELLS/EN_TELLS above catch language MIXING; this catches OVER-translation of code
+// tokens into French — the leak the fr catalog must never produce.
+const BANNED_FR_TRANSLATIONS = [
+  /région live/i,
+  /zone live/i,
+  /région dynamique/i,
+  /index de tabulation/i, // tabindex
+  /rôle d'atterrissage/i, // landmark
+  /rôle de repère/i, // landmark
+  /étiquette aria/i, // aria-label
+  /attribut alternatif/i, // alt
+];
+
 describe("MSG_CATALOG completeness", () => {
   const catalogIds = new Set(Object.keys(MSG_CATALOG));
   const emitted = emittedMsgIds();
@@ -100,6 +114,12 @@ describe.each(Object.entries(MSG_CATALOG))("MSG_CATALOG entry %s", (_id, entry) 
     const fr = `${entry.message.fr(p)} ${entry.remediation.fr(p)}`;
     for (const tell of FR_TELLS) expect(en).not.toMatch(tell);
     for (const tell of EN_TELLS) expect(fr).not.toMatch(tell);
+  });
+
+  it("does not over-translate technical tokens in French (aria-live stays aria-live, not « région live »)", () => {
+    const p = fakeParams();
+    const fr = `${entry.message.fr(p)} ${entry.remediation.fr(p)}`;
+    for (const banned of BANNED_FR_TRANSLATIONS) expect(fr, `over-translated technical token: ${banned}`).not.toMatch(banned);
   });
 });
 

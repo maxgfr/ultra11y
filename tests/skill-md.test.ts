@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { parse } from "yaml";
 import { VERSION } from "../src/types.js";
+import { ALL_RULES } from "../src/rules/registry.js";
 
 // Guards that the published skills stay installable via `npx skills add` and
 // that their docs never drift from the CLI they describe.
@@ -63,11 +64,23 @@ describe("the skills are installable", () => {
 
 const CLI_COMMANDS = new Set(["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack"]);
 
+// The user-facing docs the CLI reference must stay true to — SKILL.mds, references, AND the
+// top-level README + manual test plan (which drifted before this oracle covered them).
+const README = readFileSync(join(ROOT, "README.md"), "utf8");
+const TESTPLAN = readFileSync(join(ROOT, "tests/MANUAL-TESTPLAN.md"), "utf8");
+
 describe("skill docs stay in sync with the CLI", () => {
-  const docs: [string, string][] = [["ultra11y/SKILL.md", body], ["review-a11y/SKILL.md", skills["review-a11y"]!.body], ...Object.entries(refBodies)];
+  const docs: [string, string][] = [
+    ["ultra11y/SKILL.md", body],
+    ["review-a11y/SKILL.md", skills["review-a11y"]!.body],
+    ["README.md", README],
+    ["tests/MANUAL-TESTPLAN.md", TESTPLAN],
+    ...Object.entries(refBodies),
+  ];
 
   it.each(docs)("%s only references commands the CLI actually has", (_name, text) => {
-    for (const m of text.matchAll(/ultra11y\.mjs\s+([a-z-]+)/g)) {
+    // Require the command to START with a letter so `ultra11y.mjs --help` isn't read as a command.
+    for (const m of text.matchAll(/ultra11y\.mjs\s+([a-z][a-z-]*)/g)) {
       expect(CLI_COMMANDS.has(m[1]!), `references unknown command "${m[1]}"`).toBe(true);
     }
   });
@@ -77,12 +90,24 @@ describe("skill docs stay in sync with the CLI", () => {
     expect(skills["review-a11y"]!.body).toContain("--json");
   });
 
-  it("documents every CLI flag the skills mention (guards help-text drift)", () => {
+  it("documents every CLI flag the docs mention (guards help-text drift, incl. README + test plan)", () => {
     const help = execFileSync(process.execPath, [join(ROOT, "scripts/ultra11y.mjs"), "--help"], { encoding: "utf8" });
-    const docText = [body, skills["review-a11y"]!.body, ...Object.values(refBodies)].join("\n");
+    const docText = [body, skills["review-a11y"]!.body, README, TESTPLAN, ...Object.values(refBodies)].join("\n");
     const flags = new Set(docText.match(/--[a-z][a-z-]+/g) ?? []);
     for (const f of flags) {
-      expect(help.includes(f), `--help omits ${f}, which the skills document`).toBe(true);
+      expect(help.includes(f), `--help omits ${f}, which the docs document`).toBe(true);
+    }
+  });
+
+  it("pins the '53 static checks' prose claim to the real ALL_RULES count", () => {
+    const count = ALL_RULES.length;
+    for (const [name, text] of [
+      ["SKILL.md", skills.ultra11y!.raw], // the claim is in the frontmatter description
+      ["README.md", README],
+    ] as const) {
+      const m = text.match(/(\d+)\s+(?:machine-detectable\s+)?static check/);
+      expect(m, `${name} states no 'N static checks' claim`).not.toBeNull();
+      expect(Number(m![1]), `${name} static-check count is stale`).toBe(count);
     }
   });
 });

@@ -1097,25 +1097,22 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     return 1;
   }
   if (storageState && !useLocal) {
-    // An EXPLICIT --runtime docker (or its --docker alias) + --storage-state is an
-    // unsupported combination, not a degrade-and-continue: the Docker tier has no
-    // mechanism to use a Playwright storageState, so silently warning and scanning
-    // unauthenticated would look like success while quietly skipping the point of
-    // the flag. --runtime auto falling back to Docker (no local Playwright resolved)
-    // keeps the old warn-and-degrade — the caller didn't ask for Docker specifically.
-    if (runtimeFlag === "docker") {
-      console.error(
-        lang === "fr"
-          ? "ultra11y scan : --storage-state n'est pas pris en charge avec --runtime docker (ou --docker) — combinaison non supportée. Utilisez --runtime local (ou --runtime auto)."
-          : "ultra11y scan: --storage-state is not supported with --runtime docker (or --docker) — unsupported combination. Use --runtime local (or --runtime auto).",
-      );
-      return 2;
-    }
+    // --storage-state + the Docker tier is an unsupported combination, not a
+    // degrade-and-continue: the Docker runner has no mechanism to use a Playwright
+    // storageState, so scanning unauthenticated would produce MISLEADING results (a login
+    // wall instead of the app) while exiting 0. This holds whether Docker was asked for
+    // EXPLICITLY (--runtime docker/--docker) or reached as the auto fallback (no local
+    // Playwright resolved) — in both cases authenticated scanning needs the local runtime.
     console.error(
-      lang === "fr"
-        ? "ultra11y scan : --storage-state n'est pris en charge qu'avec --runtime local — ignoré pour le runtime Docker."
-        : "ultra11y scan: --storage-state is only supported with --runtime local — ignored for the Docker runtime.",
+      runtimeFlag === "docker"
+        ? lang === "fr"
+          ? "ultra11y scan : --storage-state n'est pas pris en charge avec --runtime docker (ou --docker) — combinaison non supportée. Utilisez --runtime local avec --cwd."
+          : "ultra11y scan: --storage-state is not supported with --runtime docker (or --docker) — unsupported combination. Use --runtime local with --cwd."
+        : lang === "fr"
+          ? "ultra11y scan : --storage-state exige le runtime local, mais aucun Playwright local n'a été résolu (auto a basculé sur Docker). Passez --runtime local --cwd <projet>, ou retirez --storage-state."
+          : "ultra11y scan: --storage-state requires the local runtime, but no local Playwright was resolved (auto fell back to Docker). Pass --runtime local --cwd <project>, or drop --storage-state.",
     );
+    return 2;
   }
 
   const sitemap = typeof p.flags.sitemap === "string" ? (p.flags.sitemap as string) : undefined;

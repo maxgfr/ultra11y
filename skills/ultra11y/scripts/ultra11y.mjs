@@ -26212,6 +26212,9 @@ function validatePack(raw, opts = {}) {
   const loc = typeof defaultLocale === "string" ? defaultLocale : locales[0] ?? "en";
   let idRe = null;
   if (typeof p.idPattern === "string") {
+    if (/\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/.test(p.idPattern)) {
+      err("idPattern", "idPattern has a nested quantifier (e.g. (a+)+) \u2014 a catastrophic-backtracking (ReDoS) shape; simplify it");
+    }
     try {
       idRe = new RegExp(p.idPattern);
     } catch (e) {
@@ -32577,15 +32580,10 @@ async function cmdScan(p) {
     return 1;
   }
   if (storageState && !useLocal) {
-    if (runtimeFlag === "docker") {
-      console.error(
-        lang === "fr" ? "ultra11y scan : --storage-state n'est pas pris en charge avec --runtime docker (ou --docker) \u2014 combinaison non support\xE9e. Utilisez --runtime local (ou --runtime auto)." : "ultra11y scan: --storage-state is not supported with --runtime docker (or --docker) \u2014 unsupported combination. Use --runtime local (or --runtime auto)."
-      );
-      return 2;
-    }
     console.error(
-      lang === "fr" ? "ultra11y scan : --storage-state n'est pris en charge qu'avec --runtime local \u2014 ignor\xE9 pour le runtime Docker." : "ultra11y scan: --storage-state is only supported with --runtime local \u2014 ignored for the Docker runtime."
+      runtimeFlag === "docker" ? lang === "fr" ? "ultra11y scan : --storage-state n'est pas pris en charge avec --runtime docker (ou --docker) \u2014 combinaison non support\xE9e. Utilisez --runtime local avec --cwd." : "ultra11y scan: --storage-state is not supported with --runtime docker (or --docker) \u2014 unsupported combination. Use --runtime local with --cwd." : lang === "fr" ? "ultra11y scan : --storage-state exige le runtime local, mais aucun Playwright local n'a \xE9t\xE9 r\xE9solu (auto a bascul\xE9 sur Docker). Passez --runtime local --cwd <projet>, ou retirez --storage-state." : "ultra11y scan: --storage-state requires the local runtime, but no local Playwright was resolved (auto fell back to Docker). Pass --runtime local --cwd <project>, or drop --storage-state."
     );
+    return 2;
   }
   const sitemap = typeof p.flags.sitemap === "string" ? p.flags.sitemap : void 0;
   const crawl = typeof p.flags.crawl === "string" ? p.flags.crawl : void 0;

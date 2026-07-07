@@ -47,6 +47,16 @@ describe("validatePack", () => {
     expect(validatePack({ ...base(), idPattern: "[" }).ok).toBe(false);
   });
 
+  it("rejects an idPattern with a nested quantifier (ReDoS shape)", () => {
+    for (const bad of ["^(a+)+$", "^(a*)*$", "^(\\d+)+$", "(.*)+"]) {
+      const r = validatePack({ ...base(), idPattern: bad });
+      expect(r.ok, bad).toBe(false);
+      expect(errs(r).some((e) => e.message.toLowerCase().includes("redos") || e.message.toLowerCase().includes("nested quantifier"))).toBe(true);
+    }
+    // a normal criterion-id grammar is still accepted
+    expect(validatePack({ ...base(), idPattern: "^E?\\d+(\\.\\d+)*$" }).ok).toBe(true);
+  });
+
   it("rejects a fabricated SC but only warns on the removed 4.1.1", () => {
     const fabricated = validatePack({ ...base(), criteria: [{ id: "1.1", theme: 1, title: { en: "x" }, titlePlain: { en: "x" }, wcag: ["9.9.9"] }] });
     expect(fabricated.ok).toBe(false);

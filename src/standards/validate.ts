@@ -92,6 +92,14 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
 
   let idRe: RegExp | null = null;
   if (typeof p.idPattern === "string") {
+    // Classic catastrophic-backtracking (ReDoS) shape: a group whose body is a SINGLE
+    // quantified atom, itself quantified — (a+)+ / (a*)* / (\d+)+ / (.*)+ . The inner and
+    // outer quantifiers then match overlapping input. A group with a required prefix
+    // (e.g. (\.\d+)*, the normal "E205.4" criterion grammar) is NOT flagged — each outer
+    // iteration is anchored by the literal, so there is no exponential blowup.
+    if (/\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/.test(p.idPattern)) {
+      err("idPattern", "idPattern has a nested quantifier (e.g. (a+)+) — a catastrophic-backtracking (ReDoS) shape; simplify it");
+    }
     try {
       idRe = new RegExp(p.idPattern);
     } catch (e) {

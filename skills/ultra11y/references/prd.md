@@ -43,6 +43,14 @@ node scripts/ultra11y.mjs prd --in audit.json --format remediation # legacy dev 
 - **`--json`**: emits a machine-readable object instead of the file paths —
   `{paths, units, gh?}` where `units` is the structured per-criterion backlog an agent can consume.
 
+## Language of the prose (French deliverables)
+
+When you author or extend PRD/issue prose in French (extra context, acceptance criteria,
+issue comments), keep technical tokens in English exactly as the engine's fr catalog does:
+attribute/element/role names and their values are code, not prose — `aria-live` stays
+`aria-live` (never « région live »), same for `tabindex`, `alt`, `role="alert"`. Normative
+standard vocabulary (e.g. RGAA « lien d'évitement ») keeps its official French wording.
+
 ## GitHub issues (`--gh-issues` / `--gh-single`, opt-in)
 
 - Uses the **`gh` CLI** (which handles its own auth) — **no** npm dependency, no key in

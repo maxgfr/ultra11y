@@ -41,6 +41,13 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 >    the user; ask the user when ambiguous. Without the flag the CLI auto-detects (repo
 >    `<html lang>` → the active standard's default locale → English) — a scripted/CI
 >    fallback, not a substitute for passing `--lang` yourself.
+> 6. **Technical tokens stay in English, even in French prose.** In any French deliverable
+>    you write (report commentary, PRD, GitHub issues, judgment verdicts), attribute/
+>    element/role names and their values are code, not prose — never translate them:
+>    `aria-live` stays `aria-live` (never « région live »), same for `tabindex`, `alt`,
+>    `role="alert"`, landmark role names. The engine's own fr catalog follows this; match
+>    it. Normative standard vocabulary (RGAA wording such as « lien d'évitement ») keeps
+>    its official French.
 
 ## Choose by situation
 

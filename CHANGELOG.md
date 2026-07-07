@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [2.10.1](https://github.com/maxgfr/ultra11y/compare/v2.10.0...v2.10.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* eliminate three static-audit false positives ([acd2174](https://github.com/maxgfr/ultra11y/commit/acd2174e8ff7c3f4b3c10e9c840ff12fd2da1285))
+
 # [2.10.0](https://github.com/maxgfr/ultra11y/compare/v2.9.0...v2.10.0) (2026-07-07)
 
 

@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.10.0](https://github.com/maxgfr/ultra11y/compare/v2.9.0...v2.10.0) (2026-07-07)
+
+
+### Bug Fixes
+
+* **cli,verify:** harden gates & input validation (D6-002, D8-001..006, D5-002) ([ceffe41](https://github.com/maxgfr/ultra11y/commit/ceffe410183fde892ae32148ec19aabf1f3aaa31))
+* **graph:** 3 cross-file resolution gaps (D3-001..003, D4-003) ([5c0d280](https://github.com/maxgfr/ultra11y/commit/5c0d28074c6694c32e53b7d4353c22c3cd41c8fe))
+* **pack,scan:** ReDoS idPattern gate + honest storage-state fallback (D6-003, D8-004) ([6e44145](https://github.com/maxgfr/ultra11y/commit/6e441454594a3de6b259c840bb5c1b6a11bfec75))
+* **rules,check:** close the P0 check gate + 6 content-rule FP/FN (D6-001, D1-001..007) ([ed1b2e1](https://github.com/maxgfr/ultra11y/commit/ed1b2e15019520a8dd99ac06bede080a98aebcd5))
+* **rules,name:** honest preliminary marking + dead labelledby check (D4-001, D4-002, D1-005) ([269c793](https://github.com/maxgfr/ultra11y/commit/269c793f1ca62e7538546c7d372e775c7bf7a06e))
+* **rules,parse:** 6 ARIA/timing FP-FN + JSX numeric attr unwrap (D2-001..006, D7-001, D1-008) ([c754d68](https://github.com/maxgfr/ultra11y/commit/c754d6817d3d155d0e90e974d4399428ec03f982))
+
+
+### Features
+
+* **skill:** add review-a11y — change-scoped accessibility review skill ([013eeba](https://github.com/maxgfr/ultra11y/commit/013eeba7c319bd74ef5eba59fd2fb10f2040aee9))
+* **skill:** keep technical tokens in English in French prose ([a4fa0f4](https://github.com/maxgfr/ultra11y/commit/a4fa0f4b7515985ab6173e8c1ac8503d52d3d081))
+
 # [2.9.0](https://github.com/maxgfr/ultra11y/compare/v2.8.0...v2.9.0) (2026-07-06)
 
 

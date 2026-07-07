@@ -62,3 +62,21 @@ describe("chart-no-accessible-name (1.1.1)", () => {
     expect(findOf(`<div class="chart" aria-label="Ventes 2024"></div>`, "chart-no-accessible-name")).toHaveLength(0);
   });
 });
+
+describe("object-embed-no-name (1.1.1)", () => {
+  it("non-conforming: <object>/<embed> with no accessible name", () => {
+    expect(findOf(`<object data="/f.pdf"></object>`, "object-embed-no-name")).toHaveLength(1);
+    expect(findOf(`<embed src="/f.pdf" />`, "object-embed-no-name")).toHaveLength(1);
+  });
+  it("conforming: a static aria-labelledby that resolves names it", () => {
+    expect(findOf(`<span id="t">Rapport</span><object data="/f.pdf" aria-labelledby="t"></object>`, "object-embed-no-name")).toHaveLength(0);
+  });
+  // A dynamically-bound aria-labelledby names the element (value unknown but present),
+  // exactly as links treat it — must not re-fire as "no name".
+  it("conforming: a dynamically-bound aria-labelledby (Vue : / JSX {}) is a present name", () => {
+    expect(findOf(`<template><object data="/f.pdf" :aria-labelledby="titleId"></object></template>`, "object-embed-no-name", "C.vue")).toHaveLength(0);
+    expect(
+      findOf(`export default function C(){return (<object data="/f.pdf" aria-labelledby={titleId}></object>);}`, "object-embed-no-name", "C.tsx"),
+    ).toHaveLength(0);
+  });
+});

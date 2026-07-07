@@ -20002,7 +20002,7 @@ var objectEmbedNoName = {
       if (el.tag !== "object" && el.tag !== "embed") continue;
       if (isHidden(el)) continue;
       if (hasDynamicSpread(el)) continue;
-      if (accessibleName(el, doc).trim() !== "") continue;
+      if (named(el) || accessibleName(el, doc).trim() !== "") continue;
       out.push({
         criteriaId: "1.1.1",
         el,
@@ -20520,25 +20520,37 @@ var titleMissingEmpty = {
     ];
   }
 };
+function armsExclusive(a, b) {
+  if (!a || !b) return false;
+  const sa = a.split("/").filter(Boolean);
+  const sb = b.split("/").filter(Boolean);
+  const n = Math.min(sa.length, sb.length);
+  for (let i = 0; i < n; i++) {
+    if (sa[i] === sb[i]) continue;
+    const ca = /^c(\d+)/.exec(sa[i])?.[1];
+    const cb = /^c(\d+)/.exec(sb[i])?.[1];
+    return ca !== void 0 && ca === cb;
+  }
+  return false;
+}
 var duplicateId = {
   id: "duplicate-id",
   criteria: ["4.1.2"],
   severity: "majeur",
   run(doc) {
-    const seen = /* @__PURE__ */ new Map();
     const out = [];
+    const byId2 = /* @__PURE__ */ new Map();
     for (const { id, el } of allIds(doc)) {
       if (id.includes("{")) continue;
-      const n = (seen.get(id) ?? 0) + 1;
-      seen.set(id, n);
-      if (n > 1) {
-        out.push({
-          criteriaId: "4.1.2",
-          el,
-          msgId: "duplicate-id",
-          params: { id }
-        });
+      const prior = byId2.get(id);
+      if (!prior) {
+        byId2.set(id, [el]);
+        continue;
       }
+      if (prior.some((p) => !armsExclusive(p.branchArm, el.branchArm))) {
+        out.push({ criteriaId: "4.1.2", el, msgId: "duplicate-id", params: { id } });
+      }
+      prior.push(el);
     }
     return out;
   }
@@ -21554,12 +21566,15 @@ function fontPx(el) {
   for (let p = el; p; p = p.parent) {
     const v = styleOf(p).get("font-size");
     if (!v) continue;
-    const m = /^([\d.]+)(px|pt|rem|em)?$/.exec(v.trim());
-    if (!m) return null;
+    const m = /^([\d.]+)(px|pt|rem|em|%)?$/.exec(v.trim());
+    if (!m) return "unknown";
     const n = parseFloat(m[1]);
-    if (Number.isNaN(n)) return null;
+    if (Number.isNaN(n)) return "unknown";
     const unit = m[2] ?? "px";
-    return unit === "pt" ? n * 4 / 3 : unit === "rem" || unit === "em" ? n * 16 : n;
+    if (unit === "pt") return n * 4 / 3;
+    if (unit === "rem" || unit === "em") return n * 16;
+    if (unit === "%") return n / 100 * 16;
+    return n;
   }
   return null;
 }
@@ -21573,6 +21588,7 @@ function isBold(el) {
 function isLarge(el) {
   const px = fontPx(el);
   if (px === null) return false;
+  if (px === "unknown") return true;
   return px >= 24 || px >= 18.66 && isBold(el);
 }
 function hasDirectText(el) {

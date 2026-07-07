@@ -51,4 +51,26 @@ describe("contrast-literal (3.2)", () => {
   it("ignores elements without their own visible text", () => {
     expect(findOf(`<div style="color:#999;background:#fff"><span>only child text</span></div>`, "contrast-literal")).toHaveLength(1);
   });
+
+  // font-size in % must resolve like em/rem (200% == 2em == 32px = large), not fall
+  // through to the strict normal threshold — #888 on #fff (~3.55:1) passes large (3:1).
+  it("resolves % font-size to the large-text threshold (200% == 2em)", () => {
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:2em">em</p>`, "contrast-literal")).toHaveLength(0);
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:200%">percent</p>`, "contrast-literal")).toHaveLength(0);
+  });
+
+  it("does not assume normal size when font-size is declared in an unresolvable unit (vw/calc)", () => {
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:3vw">vw</p>`, "contrast-literal")).toHaveLength(0);
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:calc(1rem + 1vw)">calc</p>`, "contrast-literal")).toHaveLength(0);
+  });
+
+  it("still flags a definite failure that fails even the large threshold, whatever the unit", () => {
+    // #aaa on #fff ≈ 2.32:1 — below 3:1, so a non-conformity at any text size.
+    expect(findOf(`<p style="color:#aaa;background:#fff;font-size:200%">too light</p>`, "contrast-literal")).toHaveLength(1);
+  });
+
+  it("still holds small text set in % to the normal threshold", () => {
+    // 80% == 12.8px (normal); #888 on #fff (~3.55:1) fails the 4.5 normal threshold.
+    expect(findOf(`<p style="color:#888;background:#fff;font-size:80%">small</p>`, "contrast-literal")).toHaveLength(1);
+  });
 });

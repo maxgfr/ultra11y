@@ -52,16 +52,25 @@ function bgOf(el: El): RGBA | null {
   return null;
 }
 
-function fontPx(el: El): number | null {
+// Resolved px of the nearest declared font-size. Distinguishes three cases:
+//   number      — resolvable (px/pt and the 16px-root approximation for rem/em/%)
+//   "unknown"   — a font-size IS declared but in a unit we can't resolve statically
+//                 (vw/vh/calc()/clamp()…); the size could be large, so we must not
+//                 assume "normal" and apply the strict 4.5 threshold (that FP'd `200%`).
+//   null        — no font-size anywhere → browser default 16px → normal text.
+function fontPx(el: El): number | "unknown" | null {
   for (let p: El | null = el; p; p = p.parent) {
     const v = styleOf(p).get("font-size");
     if (!v) continue;
-    const m = /^([\d.]+)(px|pt|rem|em)?$/.exec(v.trim());
-    if (!m) return null;
+    const m = /^([\d.]+)(px|pt|rem|em|%)?$/.exec(v.trim());
+    if (!m) return "unknown"; // declared but unresolvable (vw, calc(), clamp(), …)
     const n = parseFloat(m[1]!);
-    if (Number.isNaN(n)) return null;
+    if (Number.isNaN(n)) return "unknown";
     const unit = m[2] ?? "px";
-    return unit === "pt" ? (n * 4) / 3 : unit === "rem" || unit === "em" ? n * 16 : n;
+    if (unit === "pt") return (n * 4) / 3;
+    if (unit === "rem" || unit === "em") return n * 16;
+    if (unit === "%") return (n / 100) * 16;
+    return n;
   }
   return null;
 }
@@ -78,7 +87,8 @@ function isBold(el: El): boolean {
  *  the exact 14pt-bold cutoff, not the commonly-rounded 18.5px. */
 function isLarge(el: El): boolean {
   const px = fontPx(el);
-  if (px === null) return false;
+  if (px === null) return false; // no font-size → 16px default → normal
+  if (px === "unknown") return true; // size undeterminable → treat as large (3:1) to avoid inventing an NC
   return px >= 24 || (px >= 18.66 && isBold(el));
 }
 

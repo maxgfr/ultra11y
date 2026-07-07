@@ -52,6 +52,32 @@ describe("duplicate-id (8.2)", () => {
   });
 });
 
+// An id reused across mutually-exclusive JSX conditional arms is unique at runtime (only
+// one arm renders) and must NOT be flagged; genuine collisions still are.
+describe("duplicate-id — JSX conditional arms (branchArm)", () => {
+  const jsx = (body: string) => `export default function C(){ return (<main>${body}</main>); }`;
+
+  it("conforming: same id in the two arms of a ternary (mutually exclusive)", () => {
+    const src = jsx(`{ok ? <p id="s">a</p> : <p id="s">b</p>}`);
+    expect(findOf(src, "duplicate-id", "t.tsx")).toHaveLength(0);
+  });
+
+  it("conforming: same id across nested-ternary arms that are all mutually exclusive", () => {
+    const src = jsx(`{a ? <p id="s">1</p> : (b ? <p id="s">2</p> : <p id="t">3</p>)}`);
+    expect(findOf(src, "duplicate-id", "t.tsx")).toHaveLength(0);
+  });
+
+  it("non-conforming: same id in two INDEPENDENT conditionals (both can render)", () => {
+    const src = jsx(`{a && <span id="s">1</span>}{b && <span id="s">2</span>}`);
+    expect(findOf(src, "duplicate-id", "t.tsx")).toHaveLength(1);
+  });
+
+  it("non-conforming: an unconditional id colliding with a conditional one", () => {
+    const src = jsx(`<span id="s">base</span>{a && <span id="s">extra</span>}`);
+    expect(findOf(src, "duplicate-id", "t.tsx")).toHaveLength(1);
+  });
+});
+
 describe("lang-invalid (8.4/8.8)", () => {
   it("conforming: valid BCP47 codes", () => {
     expect(findOf(page("<p>x</p>", "<title>T</title>", ' lang="fr"'), "lang-invalid")).toHaveLength(0);

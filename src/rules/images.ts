@@ -123,7 +123,10 @@ const objectEmbedNoName: Rule = {
       if (el.tag !== "object" && el.tag !== "embed") continue;
       if (isHidden(el)) continue;
       if (hasDynamicSpread(el)) continue; // a spread may inject aria-label/title
-      if (accessibleName(el, doc).trim() !== "") continue; // aria-label/labelledby, title, or <object> fallback content
+      // named(el) catches a dynamically-bound aria-label / :aria-labelledby / aria-labelledby={x}
+      // (present name, value unknown) the same way chart-no-accessible-name does — without it,
+      // a bound aria-labelledby re-fired as a false "no name" finding on <object>/<embed>.
+      if (named(el) || accessibleName(el, doc).trim() !== "") continue; // aria-label/labelledby, title, or fallback content
       out.push({
         criteriaId: "1.1.1",
         el,

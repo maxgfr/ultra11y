@@ -58,25 +58,46 @@ const titleMissingEmpty: Rule = {
   },
 };
 
+// Two elements are mutually exclusive at runtime when their JSX conditional-arm paths
+// (tagged by the parser: "/c0T" vs "/c0F" for a ternary's two arms, "/c1R" for the
+// right operand of an && / ||) first diverge INSIDE THE SAME conditional — only one of
+// the two arms is ever rendered. Independent conditionals ("/c0R" vs "/c1R") and any
+// unconditional element (no arm) can co-render, so they are NOT exclusive. HTML/SFC docs
+// never set branchArm, so this always returns false there (behaviour unchanged).
+function armsExclusive(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  const sa = a.split("/").filter(Boolean);
+  const sb = b.split("/").filter(Boolean);
+  const n = Math.min(sa.length, sb.length);
+  for (let i = 0; i < n; i++) {
+    if (sa[i] === sb[i]) continue;
+    const ca = /^c(\d+)/.exec(sa[i]!)?.[1];
+    const cb = /^c(\d+)/.exec(sb[i]!)?.[1];
+    return ca !== undefined && ca === cb; // same conditional, different arm → exclusive
+  }
+  return false; // one path is a prefix of the other → they can co-render
+}
+
 const duplicateId: Rule = {
   id: "duplicate-id",
   criteria: ["4.1.2"],
   severity: "majeur",
   run(doc: Doc): RuleFinding[] {
-    const seen = new Map<string, number>();
     const out: RuleFinding[] = [];
+    const byId = new Map<string, El[]>();
     for (const { id, el } of allIds(doc)) {
       if (id.includes("{")) continue; // dynamic id (id={`x-${i}`}/id="x-{id}") — unique per instance at runtime
-      const n = (seen.get(id) ?? 0) + 1;
-      seen.set(id, n);
-      if (n > 1) {
-        out.push({
-          criteriaId: "4.1.2",
-          el,
-          msgId: "duplicate-id",
-          params: { id },
-        });
+      const prior = byId.get(id);
+      if (!prior) {
+        byId.set(id, [el]);
+        continue;
       }
+      // A real collision only when this element can co-render with an earlier one of the
+      // same id. Ids reused across mutually-exclusive JSX conditional arms never coexist.
+      if (prior.some((p) => !armsExclusive(p.branchArm, el.branchArm))) {
+        out.push({ criteriaId: "4.1.2", el, msgId: "duplicate-id", params: { id } });
+      }
+      prior.push(el);
     }
     return out;
   },

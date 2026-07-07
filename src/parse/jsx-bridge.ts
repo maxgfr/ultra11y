@@ -68,9 +68,20 @@ function attribsOf(opening: AstNode, source: string): Record<string, string> {
       attribs[name] = ""; // boolean attribute (present)
     } else if (value.type === "StringLiteral") {
       attribs[name] = typeof value.value === "string" ? value.value : "";
+    } else if (value.type === "JSXExpressionContainer") {
+      // A container wrapping a LITERAL (tabIndex={5}, aria-label={"Save"}, {-1}) carries a
+      // known value — unwrap it (no braces) so value-based rules read "5"/"Save", not "{5}".
+      // Anything else (identifiers, calls, ternaries) stays the raw `{…}` slice = dynamic.
+      const expr = asNode(value.expression);
+      if (expr && (expr.type === "NumericLiteral" || (expr.type === "UnaryExpression" && asNode(expr.argument)?.type === "NumericLiteral"))) {
+        attribs[name] = source.slice(expr.start ?? 0, expr.end ?? 0); // "5" / "-1"
+      } else if (expr && expr.type === "StringLiteral") {
+        attribs[name] = typeof expr.value === "string" ? expr.value : "";
+      } else {
+        attribs[name] = source.slice(value.start ?? 0, value.end ?? 0); // dynamic expression — keep raw {…}
+      }
     } else {
-      // {expr} (or <jsx/>) value → keep the raw `{…}` source slice, so "attribute
-      // present / non-empty name" semantics match the prior lossy behaviour.
+      // <jsx/> value or other → keep the raw source slice ("present / non-empty name").
       attribs[name] = source.slice(value.start ?? 0, value.end ?? 0);
     }
   }

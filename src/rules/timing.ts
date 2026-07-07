@@ -16,6 +16,7 @@ const metaRefreshRedirect: Rule = {
       const content = (attr(el, "content") ?? "").trim();
       const seconds = Number.parseInt(content, 10);
       if (!Number.isFinite(seconds) || seconds <= 0) continue; // non-numeric / instant (0s) handled elsewhere
+      if (seconds > 72000) continue; // WCAG 2.2.1 exception: a time limit longer than 20 hours is exempt
       out.push({
         criteriaId: "2.2.1",
         el,

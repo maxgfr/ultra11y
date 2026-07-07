@@ -20,7 +20,7 @@ describe("parseSource (JSX via real AST)", () => {
     expect(doc.kind).toBe("jsx-ast");
     const div = elementsByTag(doc, "div")[0]!;
     expect(attr(div, "class")).toBe("box");
-    expect(attr(div, "tabindex")).toBe("{0}");
+    expect(attr(div, "tabindex")).toBe("0"); // a numeric JSX container is unwrapped to its literal value
     const label = elementsByTag(doc, "label")[0]!;
     expect(attr(label, "for")).toBe("n");
   });

@@ -13,6 +13,9 @@ describe("meta-refresh-redirect (2.2.1)", () => {
     expect(findOf(`<meta http-equiv="refresh" content="0;url=/x">`, "meta-refresh-redirect")).toHaveLength(0);
     expect(findOf(`<meta charset="utf-8">`, "meta-refresh-redirect")).toHaveLength(0);
   });
+  it("does not flag a refresh longer than 20 hours (WCAG 2.2.1 exception)", () => {
+    expect(findOf(`<meta http-equiv="refresh" content="86400">`, "meta-refresh-redirect")).toHaveLength(0); // 24h > 20h
+  });
 });
 
 describe("blink-marquee (2.2.2)", () => {

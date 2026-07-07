@@ -18619,6 +18619,15 @@ function attribsOf(opening2, source) {
       attribs[name] = "";
     } else if (value.type === "StringLiteral") {
       attribs[name] = typeof value.value === "string" ? value.value : "";
+    } else if (value.type === "JSXExpressionContainer") {
+      const expr = asNode2(value.expression);
+      if (expr && (expr.type === "NumericLiteral" || expr.type === "UnaryExpression" && asNode2(expr.argument)?.type === "NumericLiteral")) {
+        attribs[name] = source.slice(expr.start ?? 0, expr.end ?? 0);
+      } else if (expr && expr.type === "StringLiteral") {
+        attribs[name] = typeof expr.value === "string" ? expr.value : "";
+      } else {
+        attribs[name] = source.slice(value.start ?? 0, value.end ?? 0);
+      }
     } else {
       attribs[name] = source.slice(value.start ?? 0, value.end ?? 0);
     }
@@ -20042,7 +20051,9 @@ var iframeTitleMissing = {
       if (attr(el, "aria-hidden") === "true") continue;
       const title2 = (attr(el, "title") ?? "").trim();
       const aria = (attr(el, "aria-label") ?? "").trim();
-      if (title2 || aria) continue;
+      const labelledby = (attr(el, "aria-labelledby") ?? "").trim();
+      if (title2 || aria || labelledby) continue;
+      if (hasBoundAttr(el, "aria-labelledby")) continue;
       out.push({
         criteriaId: "4.1.2",
         el,
@@ -20077,10 +20088,16 @@ function isInteractive(el) {
   if (el.tag === "input") return (attr(el, "type") ?? "text").toLowerCase() !== "hidden";
   return INTERACTIVE_ROLES.includes((attr(el, "role") ?? "").trim());
 }
+var DISABLEABLE = /* @__PURE__ */ new Set(["button", "input", "select", "textarea", "fieldset", "optgroup", "option"]);
+var isDisabled = (el) => DISABLEABLE.has(el.tag) && hasAttr(el, "disabled");
 function isFocusable(el) {
+  const tiRaw = attr(el, "tabindex");
+  if (tiRaw !== void 0) {
+    const ti = Number(tiRaw.trim());
+    if (!Number.isNaN(ti)) return ti >= 0;
+  }
+  if (isDisabled(el)) return false;
   if (isInteractive(el)) return true;
-  const ti = attr(el, "tabindex");
-  if (ti !== void 0 && Number(ti) >= 0) return true;
   return hasAttr(el, "contenteditable") && attr(el, "contenteditable") !== "false";
 }
 var VALID_ROLES = /* @__PURE__ */ new Set([
@@ -20279,8 +20296,9 @@ var clickableNoninteractive = {
       if (!NONINTERACTIVE.has(el.tag)) continue;
       if (!hasAttr(el, "onclick")) continue;
       const role = (attr(el, "role") ?? "").trim();
-      const hasTab = hasAttr(el, "tabindex");
-      const interactiveRole = ["button", "link", "checkbox", "tab", "menuitem", "switch", "option"].includes(role);
+      const tiRaw = (attr(el, "tabindex") ?? "").trim();
+      const hasTab = tiRaw !== "" && Number(tiRaw) >= 0;
+      const interactiveRole = INTERACTIVE_ROLES.includes(role);
       if (interactiveRole && hasTab) continue;
       const noKeyboard = !hasTab;
       out.push({
@@ -20402,7 +20420,7 @@ var liveRegionConflict = {
       const role = (attr(el, "role") ?? "").trim().toLowerCase();
       if (role.includes("{")) continue;
       const want = ROLE_LIVENESS[role];
-      if (want && want !== live) {
+      if (want && want !== "off" && want !== live) {
         out.push({
           criteriaId: "4.1.3",
           el,
@@ -21278,8 +21296,8 @@ var positiveTabindex = {
     const out = [];
     for (const el of doc.elements) {
       if (!hasAttr(el, "tabindex")) continue;
-      const ti = Number((attr(el, "tabindex") ?? "").trim());
-      if (Number.isInteger(ti) && ti > 0) {
+      const ti = Number.parseInt((attr(el, "tabindex") ?? "").trim(), 10);
+      if (ti > 0) {
         out.push({
           criteriaId: "2.4.3",
           el,
@@ -21596,6 +21614,7 @@ var metaRefreshRedirect = {
       const content = (attr(el, "content") ?? "").trim();
       const seconds = Number.parseInt(content, 10);
       if (!Number.isFinite(seconds) || seconds <= 0) continue;
+      if (seconds > 72e3) continue;
       out.push({
         criteriaId: "2.2.1",
         el,

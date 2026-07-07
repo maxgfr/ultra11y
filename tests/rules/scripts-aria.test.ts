@@ -44,6 +44,14 @@ describe("clickable-noninteractive (7.1/7.3)", () => {
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("2.1.1");
   });
+  it("conforming: APG custom radio (role=radio + tabIndex=0 + handler) is a properly upgraded control", () => {
+    expect(findOf(`<div onClick={f} role="radio" aria-checked={true} tabIndex={0}>Basic</div>`, "clickable-noninteractive", "C.tsx")).toHaveLength(0);
+  });
+  it("non-conforming: role upgrade with a NEGATIVE tabindex is not keyboard-reachable → 2.1.1", () => {
+    const f = findOf(`<div onClick={f} role="button" tabIndex={-1}>x</div>`, "clickable-noninteractive", "C.tsx");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("2.1.1");
+  });
 });
 
 describe("aria-required-children (7.1)", () => {
@@ -66,6 +74,21 @@ describe("aria-hidden-focusable (7.1)", () => {
     const f = findOf(`<div aria-hidden="true"><a href="/">Lien</a></div>`, "aria-hidden-focusable");
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("4.1.2");
+  });
+  it("conforming: an interactive element neutralised exactly as prescribed (tabindex=-1 / disabled)", () => {
+    expect(findOf(`<button aria-hidden="true" tabindex="-1">x</button>`, "aria-hidden-focusable")).toHaveLength(0);
+    expect(findOf(`<input aria-hidden="true" disabled>`, "aria-hidden-focusable")).toHaveLength(0);
+  });
+});
+
+describe("live-region-conflict (7.5) — spec-permitted overrides", () => {
+  it("conforming: overriding an 'off'-default role (timer/marquee) up to polite is a valid author choice", () => {
+    expect(findOf(`<div role="timer" aria-live="polite">0:30</div>`, "live-region-conflict")).toHaveLength(0);
+  });
+  it("still non-conforming: an alert downgraded to polite degrades restitution", () => {
+    const f = findOf(`<div role="alert" aria-live="polite">Erreur</div>`, "live-region-conflict");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("4.1.3");
   });
 });
 

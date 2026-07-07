@@ -21,6 +21,15 @@ describe("positive-tabindex (12.8)", () => {
     expect(f).toHaveLength(1);
     expect(f[0]!.criteriaId).toBe("2.4.3");
   });
+  it("non-conforming: idiomatic JSX numeric tabIndex={5}", () => {
+    const f = findOf(`<button tabIndex={5}>x</button>`, "positive-tabindex", "C.tsx");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.criteriaId).toBe("2.4.3");
+  });
+  it("non-conforming: tabindex=\"1.5\" parses to a positive integer per HTML rules", () => {
+    const f = findOf(`<div tabindex="1.5">x</div>`, "positive-tabindex");
+    expect(f).toHaveLength(1);
+  });
 });
 
 describe("skip-link-target-missing — provisional in component sources", () => {

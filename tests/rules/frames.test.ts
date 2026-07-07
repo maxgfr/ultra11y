@@ -14,3 +14,10 @@ describe("iframe-title-missing (2.1)", () => {
     expect(f[0]!.severity).toBe("bloquant");
   });
 });
+
+describe("iframe-title-missing — aria-labelledby (4.1.2)", () => {
+  it("conforming: iframe named via aria-labelledby resolving in-document", () => {
+    const src = `<h2 id="vid">Weekly briefing</h2><iframe src="x" aria-labelledby="vid"></iframe>`;
+    expect(findOf(src, "iframe-title-missing")).toHaveLength(0);
+  });
+});

@@ -62,8 +62,9 @@ const positiveTabindex: Rule = {
     const out: RuleFinding[] = [];
     for (const el of doc.elements) {
       if (!hasAttr(el, "tabindex")) continue;
-      const ti = Number((attr(el, "tabindex") ?? "").trim());
-      if (Number.isInteger(ti) && ti > 0) {
+      // HTML parses tabindex with integer rules (parseInt), so "1.5" is a positive 1.
+      const ti = Number.parseInt((attr(el, "tabindex") ?? "").trim(), 10);
+      if (ti > 0) {
         out.push({
           criteriaId: "2.4.3",
           el,

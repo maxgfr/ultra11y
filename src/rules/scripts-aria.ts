@@ -29,10 +29,19 @@ function isInteractive(el: El): boolean {
   return INTERACTIVE_ROLES.includes((attr(el, "role") ?? "").trim());
 }
 
+const DISABLEABLE = new Set(["button", "input", "select", "textarea", "fieldset", "optgroup", "option"]);
+const isDisabled = (el: El): boolean => DISABLEABLE.has(el.tag) && hasAttr(el, "disabled");
+
 function isFocusable(el: El): boolean {
+  // An explicit tabindex wins: -1 removes an element from the tab order (not keyboard-
+  // focusable), >=0 puts it in — even on an intrinsically-interactive element.
+  const tiRaw = attr(el, "tabindex");
+  if (tiRaw !== undefined) {
+    const ti = Number(tiRaw.trim());
+    if (!Number.isNaN(ti)) return ti >= 0;
+  }
+  if (isDisabled(el)) return false; // a disabled control is not focusable
   if (isInteractive(el)) return true;
-  const ti = attr(el, "tabindex");
-  if (ti !== undefined && Number(ti) >= 0) return true;
   return hasAttr(el, "contenteditable") && attr(el, "contenteditable") !== "false";
 }
 
@@ -243,9 +252,12 @@ const clickableNoninteractive: Rule = {
       if (!NONINTERACTIVE.has(el.tag)) continue;
       if (!hasAttr(el, "onclick")) continue;
       const role = (attr(el, "role") ?? "").trim();
-      const hasTab = hasAttr(el, "tabindex");
-      const interactiveRole = ["button", "link", "checkbox", "tab", "menuitem", "switch", "option"].includes(role);
-      if (interactiveRole && hasTab) continue; // properly upgraded
+      // Keyboard-focusable via tabindex means value >= 0 (a negative tabindex is not in the
+      // tab order); check the VALUE, not mere presence.
+      const tiRaw = (attr(el, "tabindex") ?? "").trim();
+      const hasTab = tiRaw !== "" && Number(tiRaw) >= 0;
+      const interactiveRole = INTERACTIVE_ROLES.includes(role); // the canonical list (radio/slider/…), not an ad-hoc subset
+      if (interactiveRole && hasTab) continue; // properly upgraded (interactive role + keyboard-focusable)
       const noKeyboard = !hasTab;
       out.push({
         criteriaId: noKeyboard ? "2.1.1" : "4.1.2",
@@ -376,7 +388,10 @@ const liveRegionConflict: Rule = {
       const role = (attr(el, "role") ?? "").trim().toLowerCase();
       if (role.includes("{")) continue; // dynamic role expression — can't compare
       const want = ROLE_LIVENESS[role];
-      if (want && want !== live) {
+      // Overriding an 'off'-default role (timer/marquee) up to polite/assertive is a
+      // spec-permitted author choice (aria-live overrides the implicit default), not a
+      // conflict — so only alert/alertdialog/status/log (want !== "off") are checked.
+      if (want && want !== "off" && want !== live) {
         out.push({
           criteriaId: "4.1.3",
           el,

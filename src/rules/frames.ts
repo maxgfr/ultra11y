@@ -1,6 +1,6 @@
 // Theme 2 — Frames.
 import type { Doc, El } from "../parse/html.js";
-import { attr } from "../parse/html.js";
+import { attr, hasBoundAttr } from "../parse/html.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const iframeTitleMissing: Rule = {
@@ -14,7 +14,11 @@ const iframeTitleMissing: Rule = {
       if (attr(el, "aria-hidden") === "true") continue;
       const title = (attr(el, "title") ?? "").trim();
       const aria = (attr(el, "aria-label") ?? "").trim();
-      if (title || aria) continue;
+      // aria-labelledby is the highest-precedence accname source. A present value names the
+      // frame; whether its ids resolve is aria-ref-missing-id's job, not a second "no title".
+      const labelledby = (attr(el, "aria-labelledby") ?? "").trim();
+      if (title || aria || labelledby) continue;
+      if (hasBoundAttr(el, "aria-labelledby")) continue; // dynamic :aria-labelledby / aria-labelledby={x}
       out.push({
         criteriaId: "4.1.2",
         el: el as El,

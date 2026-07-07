@@ -32704,8 +32704,7 @@ async function main(argv) {
   };
   for (const [flag, allowed] of Object.entries(ENUM_FLAGS)) {
     const v = p.flags[flag];
-    if (typeof v === "string" && v && !allowed.includes(v))
-      console.error(`ultra11y: --${flag} "${v}" is not one of ${allowed.join("|")} \u2014 using the default.`);
+    if (typeof v === "string" && v && !allowed.includes(v)) console.error(`ultra11y: --${flag} "${v}" is not one of ${allowed.join("|")} \u2014 using the default.`);
   }
   const packList = typeof p.flags.pack === "string" ? p.flags.pack.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const loaded = loadRuntimeStandards(process.cwd(), packList, (m) => console.error(m), p.flags.override === true);

@@ -262,10 +262,7 @@ const PURPOSE_TYPES = new Set(["email", "tel"]);
 // Whole-token match (split on separators AND camelCase), so `city` doesn't match veloCITY
 // and `tel` doesn't match hoTEL — an unanchored substring regex mislabels them 1.3.5 fields.
 const PURPOSE_WORDS = new Set(["email", "tel", "telephone", "phone", "mobile", "postal", "zip", "address", "street", "city", "country"]);
-const hasPurposeToken = (nameId: string): boolean =>
-  nameId
-    .split(/[-_\s]+|(?<=[a-z0-9])(?=[A-Z])/)
-    .some((t) => PURPOSE_WORDS.has(t.toLowerCase()));
+const hasPurposeToken = (nameId: string): boolean => nameId.split(/[-_\s]+|(?<=[a-z0-9])(?=[A-Z])/).some((t) => PURPOSE_WORDS.has(t.toLowerCase()));
 const SKIP_INPUT_TYPES = new Set(["search", "hidden", "submit", "reset", "button", "password", "checkbox", "radio", "file", "range", "color"]);
 const CUSTOM_WIDGET_ROLES = new Set(["textbox", "combobox", "checkbox", "radio", "switch", "spinbutton"]);
 const REQUIRED_SIGNAL = /(^|[-_ ])(required|mandatory|is-required)/i;

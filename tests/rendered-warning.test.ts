@@ -10,7 +10,7 @@ describe("preliminary marking for less-trustworthy sources", () => {
   it("marks lossy-JSX findings preliminary (regex fallback, offsets into transformed HTML)", () => {
     // Babel-unparseable JSX → lossy regex fallback. Its findings can be fabricated from
     // string literals at wrong lines, so they must be flagged provisional, not definitive.
-    const lossy = "{/* c\nc */}\nconst fake = `<img src=\"fake.png\">`;\n<a href=\"#\">x</a><img src=\"x.png\"/>\n";
+    const lossy = '{/* c\nc */}\nconst fake = `<img src="fake.png">`;\n<a href="#">x</a><img src="x.png"/>\n';
     const doc = parseSource(lossy, "lossy.tsx");
     expect(doc.kind).toBe("jsx-lossy");
     const findings = runRules(doc, new Set(["img-alt-missing"]));

@@ -1255,8 +1255,7 @@ export async function main(argv: string[]): Promise<number> {
   };
   for (const [flag, allowed] of Object.entries(ENUM_FLAGS)) {
     const v = p.flags[flag];
-    if (typeof v === "string" && v && !allowed.includes(v))
-      console.error(`ultra11y: --${flag} "${v}" is not one of ${allowed.join("|")} — using the default.`);
+    if (typeof v === "string" && v && !allowed.includes(v)) console.error(`ultra11y: --${flag} "${v}" is not one of ${allowed.join("|")} — using the default.`);
   }
 
   // Load any runtime standards packs (--pack / .ultra11yrc.json) BEFORE resolving

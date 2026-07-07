@@ -49,10 +49,12 @@ const dataTableNoHeaders: Rule = {
         return cells.length > 0 && cells.every((c) => c.tag === "th");
       });
       const allThInHeaderRow = hasTh && headerRow !== undefined && ths.every((th) => cellsOf(headerRow).includes(th));
-      const allThFirstCol = hasTh && ths.every((th) => {
-        const tr = ancestors(th).find((a) => a.tag === "tr");
-        return tr !== undefined && cellsOf(tr)[0] === th;
-      });
+      const allThFirstCol =
+        hasTh &&
+        ths.every((th) => {
+          const tr = ancestors(th).find((a) => a.tag === "tr");
+          return tr !== undefined && cellsOf(tr)[0] === th;
+        });
       if (hasTh && (hasAssoc || allThInThead || allThInHeaderRow || allThFirstCol)) continue;
       if (!hasTh) {
         out.push({

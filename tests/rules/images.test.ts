@@ -8,7 +8,7 @@ describe("img-alt-missing (1.1)", () => {
     expect(findOf(`<img src="a" aria-label="Chat">`, "img-alt-missing")).toHaveLength(0);
     expect(findOf(`<img src="a" aria-hidden="true">`, "img-alt-missing")).toHaveLength(0);
   });
-  it("non-conforming: whitespace-only alt yields no accessible name (only alt=\"\" is decorative)", () => {
+  it('non-conforming: whitespace-only alt yields no accessible name (only alt="" is decorative)', () => {
     // alt=" " is not the empty string, so the image is NOT mapped to presentation, yet its
     // accessible name trims to empty — a non-decorative image with no text alternative.
     const f = findOf(`<img src="a" alt=" ">`, "img-alt-missing");

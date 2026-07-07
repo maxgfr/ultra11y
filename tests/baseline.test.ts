@@ -62,9 +62,14 @@ describe("baseline diff gate", () => {
     expect(diffAgainstBaseline(current, null, "bloquant").newFindings.length).toBe(1);
   });
 
-  it("parseFailOn defaults to bloquant", () => {
-    expect(parseFailOn(undefined)).toBe("bloquant");
+  it("parseFailOn: default bloquant, aliases, and STRICT null on an unrecognized value", () => {
+    expect(parseFailOn(undefined)).toBe("bloquant"); // flag absent → default
+    expect(parseFailOn(true)).toBe("bloquant"); // present, no value → default
+    expect(parseFailOn("blocking")).toBe("bloquant");
     expect(parseFailOn("majeur")).toBe("majeur");
-    expect(parseFailOn("nonsense")).toBe("bloquant");
+    expect(parseFailOn("major")).toBe("majeur");
+    expect(parseFailOn("minor")).toBe("mineur");
+    expect(parseFailOn("nonsense")).toBeNull(); // a typo must NOT silently degrade the gate
+    expect(parseFailOn("majr")).toBeNull();
   });
 });

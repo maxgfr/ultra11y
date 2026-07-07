@@ -194,6 +194,28 @@ describe("applyVerdicts", () => {
     expect(r.ok).toBe(false);
   });
 
+  it("with an `expected` worklist, an empty verdicts set FAILS on coverage (missing NCs)", () => {
+    const expected = base();
+    const r = applyVerdicts([], expected);
+    expect(r.ok).toBe(false);
+    expect(r.missing).toBe(expected.length);
+    expect(r.total).toBe(expected.length);
+  });
+
+  it("with an `expected` worklist, dropping one to-be-refuted item is caught as missing", () => {
+    const expected = base();
+    const items = expected.slice(1).map((i) => ({ ...i, verdict: "supported" as const })); // hide item 0
+    const r = applyVerdicts(items, expected);
+    expect(r.ok).toBe(false);
+    expect(r.missing).toBe(1);
+  });
+
+  it("with an `expected` worklist, full coverage all-supported passes", () => {
+    const expected = base();
+    const items = expected.map((i) => ({ ...i, verdict: "supported" as const }));
+    expect(applyVerdicts(items, expected).ok).toBe(true);
+  });
+
   it("normalizes case: 'Refuted' fails the gate, 'Supported' passes", () => {
     const refuted = base().map((i) => ({ ...i, verdict: "Refuted" as unknown as VerifyItem["verdict"] }));
     expect(applyVerdicts(refuted).ok).toBe(false);

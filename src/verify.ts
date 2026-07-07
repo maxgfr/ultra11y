@@ -200,8 +200,11 @@ export interface ApplyResult {
   unsupported: number;
   unadjudicated: number;
   invalid: number;
+  missing: number; // report NCs with no verdict at all (coverage gap) — only when `expected` is given
   failures: VerifyItem[];
 }
+
+const itemKey = (it: VerifyItem): string => `${it.criteriaId}|${it.file}|${it.line}|${it.selector}`;
 
 // Only these two verdicts clear the gate. Everything else — refuted, unsupported,
 // null/unadjudicated, AND any unknown/typo/mis-cased token — must FAIL, so a
@@ -216,11 +219,15 @@ function normalizeVerdict(v: unknown): string | null {
   return s ? s : null;
 }
 
-export function applyVerdicts(items: VerifyItem[]): ApplyResult {
+/** Adjudicate a verdicts file. When `expected` (the worklist derived from the report via
+ *  buildWorklist) is provided, ALSO fail on any report NC the verdicts file does not cover
+ *  — so a truncated/empty verdicts set can't slip a to-be-refuted finding past the gate. */
+export function applyVerdicts(items: VerifyItem[], expected?: VerifyItem[]): ApplyResult {
   let refuted = 0;
   let unsupported = 0;
   let unadjudicated = 0;
   let invalid = 0;
+  let missing = 0;
   const failures: VerifyItem[] = [];
   for (const it of items) {
     const v = normalizeVerdict(it.verdict);
@@ -231,7 +238,17 @@ export function applyVerdicts(items: VerifyItem[]): ApplyResult {
     else if (v === null) unadjudicated++;
     else invalid++; // unknown/typo token — counted as a failure, not silently passed
   }
-  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, invalid, failures };
+  if (expected) {
+    const covered = new Set(items.map(itemKey));
+    for (const e of expected) {
+      if (!covered.has(itemKey(e))) {
+        failures.push(e);
+        missing++;
+      }
+    }
+  }
+  const total = expected ? expected.length : items.length;
+  return { ok: failures.length === 0, total, refuted, unsupported, unadjudicated, invalid, missing, failures };
 }
 
 export interface WriteWorklistResult {

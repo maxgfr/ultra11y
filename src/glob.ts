@@ -177,6 +177,10 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
         files.add(input);
         explicit.add(input);
       }
+    } else if (input !== ".") {
+      // A non-glob path that doesn't exist (a typo, a not-yet-built dist/…) — warn so a
+      // gate never reads "0 files · 100%" on a silent miss. A glob matching nothing is fine.
+      opts.onWarn?.(`ultra11y: input not found: ${input}`);
     }
   }
 

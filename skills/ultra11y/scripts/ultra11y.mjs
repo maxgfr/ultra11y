@@ -18905,6 +18905,8 @@ function expandInputs(inputs, opts = {}) {
         files.add(input);
         explicit.add(input);
       }
+    } else if (input !== ".") {
+      opts.onWarn?.(`ultra11y: input not found: ${input}`);
     }
   }
   let list = [...files];
@@ -30160,17 +30162,19 @@ function formatWorklist(items, semantic, standard = "wcag", lang = "en") {
   out.push("");
   return out.join("\n");
 }
+var itemKey = (it) => `${it.criteriaId}|${it.file}|${it.line}|${it.selector}`;
 var PASSING = /* @__PURE__ */ new Set(["supported", "partial"]);
 function normalizeVerdict(v) {
   if (typeof v !== "string") return null;
   const s = v.trim().toLowerCase();
   return s ? s : null;
 }
-function applyVerdicts(items) {
+function applyVerdicts(items, expected) {
   let refuted = 0;
   let unsupported = 0;
   let unadjudicated = 0;
   let invalid = 0;
+  let missing = 0;
   const failures = [];
   for (const it of items) {
     const v = normalizeVerdict(it.verdict);
@@ -30181,7 +30185,17 @@ function applyVerdicts(items) {
     else if (v === null) unadjudicated++;
     else invalid++;
   }
-  return { ok: failures.length === 0, total: items.length, refuted, unsupported, unadjudicated, invalid, failures };
+  if (expected) {
+    const covered = new Set(items.map(itemKey));
+    for (const e of expected) {
+      if (!covered.has(itemKey(e))) {
+        failures.push(e);
+        missing++;
+      }
+    }
+  }
+  const total = expected ? expected.length : items.length;
+  return { ok: failures.length === 0, total, refuted, unsupported, unadjudicated, invalid, missing, failures };
 }
 function writeWorklist(items, outDir, semantic, standard = "wcag", lang = "en") {
   mkdirSync3(outDir, { recursive: true });
@@ -31234,9 +31248,11 @@ function findingId(f) {
   return `${f.ruleId}|${f.criteriaId}|${f.file}|${pos}`;
 }
 function parseFailOn(v) {
+  if (v === void 0 || v === true) return "bloquant";
+  if (v === "bloquant" || v === "blocking") return "bloquant";
   if (v === "majeur" || v === "major") return "majeur";
   if (v === "mineur" || v === "minor") return "mineur";
-  return "bloquant";
+  return null;
 }
 function findingsAtOrAbove(findings, failOn) {
   return findings.filter((f) => RANK[f.severity] <= RANK[failOn]);
@@ -31955,6 +31971,7 @@ function parseArgs(argv) {
       if (!KNOWN_FLAGS.has(key)) unknown.push(key);
     } else if (a.startsWith("-") && a !== "-") {
       flags[a.slice(1)] = true;
+      unknown.push(a.slice(1));
     } else {
       positionals.push(a);
     }
@@ -31972,6 +31989,17 @@ function resolveLang(flags, ctx = {}) {
 function asList(v) {
   return typeof v === "string" && v ? [v] : void 0;
 }
+function readInputFile(path, cmd, flag) {
+  try {
+    return readText(path);
+  } catch (e) {
+    const code2 = e?.code;
+    console.error(
+      code2 === "ENOENT" ? `ultra11y ${cmd}: ${flag} file not found: ${path}.` : `ultra11y ${cmd}: cannot read ${flag} ${path}: ${e instanceof Error ? e.message : String(e)}.`
+    );
+    return null;
+  }
+}
 function stdOf(p, cmd) {
   try {
     return resolveStandard(p.flags.standard);
@@ -31982,7 +32010,9 @@ function stdOf(p, cmd) {
 }
 function isCurrentAudit(r) {
   const a = r;
-  return !!a && a.tool === "ultra11y" && a.standard === "wcag" && typeof a.schemaVersion === "number" && a.schemaVersion >= 2 && Array.isArray(a.criteria);
+  return !!a && a.tool === "ultra11y" && a.standard === "wcag" && typeof a.schemaVersion === "number" && a.schemaVersion >= 2 && Array.isArray(a.criteria) && // Require the fields the renderers dereference, so a shallow-fabricated object is
+  // rejected cleanly here instead of crashing report/prd with a raw TypeError.
+  typeof a.scope === "object" && a.scope !== null && Array.isArray(a.findings) && Array.isArray(a.residualRisks) && Array.isArray(a.guidelines);
 }
 function peekMergeAudit(mergeIn) {
   if (typeof mergeIn !== "string" || !mergeIn) return void 0;
@@ -32042,6 +32072,12 @@ async function cmdAudit(p) {
     } catch {
     }
   }
+  const failOnRaw = p.flags["fail-on"];
+  const failOnParsed = parseFailOn(failOnRaw);
+  if (failOnRaw !== void 0 && failOnParsed === null) {
+    console.error(`ultra11y audit: --fail-on must be blocking|major|minor (got "${String(failOnRaw)}").`);
+    return 2;
+  }
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
@@ -32057,7 +32093,7 @@ async function cmdAudit(p) {
         console.error(`ultra11y audit: --baseline ${baselineFlag} is not valid JSON; treating as empty.`);
       }
     }
-    const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
+    const diff = diffAgainstBaseline(result, baseline, failOnParsed ?? "bloquant");
     const blindSpots2 = requireCaptures ? result.scope.captureCoverage?.blindSpots ?? [] : [];
     if (p.flags.json)
       console.log(JSON.stringify(requireCaptures && result.scope.captureCoverage ? { ...diff, captureCoverage: result.scope.captureCoverage } : diff, null, 2));
@@ -32067,8 +32103,8 @@ async function cmdAudit(p) {
     }
     return diff.ok && blindSpots2.length === 0 ? 0 : 1;
   }
-  const failOnSet = p.flags["fail-on"] !== void 0;
-  const failOn = failOnSet ? parseFailOn(p.flags["fail-on"]) : void 0;
+  const failOnSet = failOnRaw !== void 0;
+  const failOn = failOnSet ? failOnParsed ?? "bloquant" : void 0;
   const failing = failOn ? findingsAtOrAbove(result.findings, failOn) : [];
   const blindSpots = requireCaptures ? result.scope.captureCoverage?.blindSpots ?? [] : [];
   if (p.flags.json) console.log(JSON.stringify(result, null, 2));
@@ -32093,7 +32129,12 @@ function cmdInit(p) {
     engineRel = abs.startsWith(root + sep2) ? relative3(root, abs) : abs;
   } catch {
   }
-  const failOn = parseFailOn(p.flags["fail-on"]);
+  const failOnParsed = parseFailOn(p.flags["fail-on"]);
+  if (p.flags["fail-on"] !== void 0 && failOnParsed === null) {
+    console.error(`ultra11y init: --fail-on must be blocking|major|minor (got "${String(p.flags["fail-on"])}").`);
+    return 2;
+  }
+  const failOn = failOnParsed ?? "bloquant";
   const legacy = p.flags.baseline === true || p.flags["fail-on"] !== void 0;
   const want = { hook: p.flags.hook === true, ci: p.flags.ci === true, baseline: p.flags.baseline === true };
   if (!want.hook && !want.ci && !want.baseline) want.hook = true;
@@ -32139,7 +32180,8 @@ async function cmdReport(p) {
   }
   const standard = stdOf(p, "report");
   if (standard === null) return 2;
-  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  const raw = inFlag === "-" ? await readStdin() : readInputFile(inFlag, "report", "--in");
+  if (raw === null) return 2;
   let result;
   try {
     result = JSON.parse(raw);
@@ -32172,7 +32214,8 @@ async function cmdPrd(p) {
   }
   const standard = stdOf(p, "prd");
   if (standard === null) return 2;
-  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  const raw = inFlag === "-" ? await readStdin() : readInputFile(inFlag, "prd", "--in");
+  if (raw === null) return 2;
   let result;
   try {
     result = JSON.parse(raw);
@@ -32364,7 +32407,9 @@ function cmdCheck(p) {
   const standard = stdOf(p, "check");
   if (standard === null) return 2;
   const lang = resolveLang(p.flags, { standard });
-  const res = checkReport(readText(rep), standard, lang);
+  const md = readInputFile(rep, "check", "--report");
+  if (md === null) return 2;
+  const res = checkReport(md, standard, lang);
   if (p.flags.json) {
     console.log(JSON.stringify(res, null, 2));
   } else if (!p.flags.quiet) {
@@ -32398,13 +32443,27 @@ function cmdVerify(p) {
       console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
       return 2;
     }
-    const r = applyVerdicts(items2);
+    let expected;
+    const applyReport = p.flags.report;
+    if (typeof applyReport === "string" && applyReport) {
+      const standard2 = stdOf(p, "verify");
+      if (standard2 === null) return 2;
+      let repMd2;
+      try {
+        repMd2 = readText(applyReport);
+      } catch {
+        console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
+        return 2;
+      }
+      expected = buildWorklist(repMd2, standard2);
+    }
+    const r = applyVerdicts(items2, expected);
     if (p.flags.json) console.log(JSON.stringify(r, null, 2));
     else if (r.ok)
       console.log(lang === "fr" ? `\u2713 ${r.total} non-conformit\xE9s v\xE9rifi\xE9es, toutes \xE9tay\xE9es.` : `\u2713 ${r.total} non-conformities verified, all supported.`);
     else
       console.error(
-        lang === "fr" ? `\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).` : `\u2717 ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.invalid ? `, invalid ${r.invalid}` : ""}).`
+        lang === "fr" ? `\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing}` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).` : `\u2717 ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing}` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`
       );
     return r.ok ? 0 : 1;
   }
@@ -32426,7 +32485,9 @@ function cmdVerify(p) {
     }
     max = n;
   }
-  const items = buildWorklist(readText(rep), standard, max);
+  const repMd = readInputFile(rep, "verify", "--report");
+  if (repMd === null) return 2;
+  const items = buildWorklist(repMd, standard, max);
   const out = typeof p.flags.out === "string" ? p.flags.out : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
   if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
@@ -32636,6 +32697,18 @@ async function main(argv) {
     return 0;
   }
   for (const f of p.unknown) console.error(`ultra11y: unknown flag --${f} (ignored). Run \`ultra11y --help\`.`);
+  const ENUM_FLAGS = {
+    lang: ["auto", "en", "fr"],
+    dedup: ["exact", "normalized", "off"],
+    format: ["audit", "doc", "remediation"],
+    split: ["criterion"],
+    runtime: ["auto", "local", "docker"]
+  };
+  for (const [flag, allowed] of Object.entries(ENUM_FLAGS)) {
+    const v = p.flags[flag];
+    if (typeof v === "string" && v && !allowed.includes(v))
+      console.error(`ultra11y: --${flag} "${v}" is not one of ${allowed.join("|")} \u2014 using the default.`);
+  }
   const packList = typeof p.flags.pack === "string" ? p.flags.pack.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const loaded = loadRuntimeStandards(process.cwd(), packList, (m) => console.error(m), p.flags.override === true);
   if (loaded.errors.length) {

@@ -379,3 +379,42 @@ describe("scan --storage-state + an EXPLICIT docker runtime is an unsupported co
     expect(r.code).not.toBe(2); // no local Playwright resolvable in this sandbox → exit 1, not the docker gate
   });
 });
+
+describe("CLI gate & input hardening", () => {
+  it("audit --fail-on with a typo'd value exits 2 (never silently degrades the gate)", async () => {
+    const r = await run(["audit", `${FIX}non-conforming/bad.html`, "--fail-on", "majr"]);
+    expect(r.code).toBe(2);
+    expect(r.err.toLowerCase()).toContain("fail-on");
+  });
+
+  it("report --in rejects a shallow-fabricated AuditResult (no scope) cleanly, not with a TypeError", async () => {
+    const f = join(mkdtempSync(join(tmpdir(), "u-")), "stale.json");
+    writeFileSync(f, JSON.stringify({ tool: "ultra11y", standard: "wcag", schemaVersion: 2, criteria: [] }));
+    const r = await run(["report", "--in", f]);
+    expect(r.code).toBe(2);
+    expect(r.err).toContain("AuditResult");
+  });
+
+  it("report --in on a missing file surfaces a clean 'file not found', not a raw ENOENT", async () => {
+    const r = await run(["report", "--in", join(tmpdir(), "nope-4821.json")]);
+    expect(r.code).toBe(2);
+    expect(r.err.toLowerCase()).toContain("not found");
+    expect(r.err).not.toContain("ENOENT");
+  });
+
+  it("check --report on a missing file surfaces a clean 'file not found'", async () => {
+    const r = await run(["check", "--report", join(tmpdir(), "nope-9931.md")]);
+    expect(r.code).toBe(2);
+    expect(r.err.toLowerCase()).toContain("not found");
+  });
+
+  it("an unsupported --lang value warns (and falls back), never silently coerces", async () => {
+    const r = await run(["criteria", "1.1.1", "--lang", "de"]);
+    expect(r.err.toLowerCase()).toContain("--lang");
+  });
+
+  it("a single-dash flag typo (-grph) is surfaced as unknown", async () => {
+    const r = await run(["audit", `${FIX}conforming/good.html`, "-grph"]);
+    expect(r.err.toLowerCase()).toContain("unknown flag");
+  });
+});

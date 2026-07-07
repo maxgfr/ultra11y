@@ -55,4 +55,11 @@ describe("expandInputs file-type coverage", () => {
     expect(expandInputs([join(dir, "app.js")])).toEqual([]);
     expect(expandInputs([join(dir, "app.js")], { ext: [".js"] })).toEqual([join(dir, "app.js")]);
   });
+
+  it("warns (never silently drops) a non-glob input that does not exist", () => {
+    const warns: string[] = [];
+    const files = expandInputs([join(dir, "does-not-exist.html")], { onWarn: (m) => warns.push(m) });
+    expect(files).toEqual([]);
+    expect(warns.some((w) => w.includes("input not found"))).toBe(true);
+  });
 });

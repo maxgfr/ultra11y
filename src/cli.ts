@@ -332,7 +332,10 @@ export function parseArgs(argv: string[]): ParsedArgs {
       }
       if (!KNOWN_FLAGS.has(key)) unknown.push(key);
     } else if (a.startsWith("-") && a !== "-") {
+      // No single-dash short flags are defined (only `-` = stdin, handled below), so `-grph`
+      // is a typo for `--graph` — set it for backward-compat but surface it as unknown.
       flags[a.slice(1)] = true;
+      unknown.push(a.slice(1));
     } else {
       positionals.push(a);
     }
@@ -360,6 +363,22 @@ function asList(v: string | boolean | undefined): string[] | undefined {
   return typeof v === "string" && v ? [v] : undefined;
 }
 
+/** Read a `--report`/`--in` file, printing a clean CLI error and returning null (so the
+ *  caller can exit 2) instead of surfacing a raw ENOENT stack trace. */
+function readInputFile(path: string, cmd: string, flag: string): string | null {
+  try {
+    return readText(path);
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException | undefined)?.code;
+    console.error(
+      code === "ENOENT"
+        ? `ultra11y ${cmd}: ${flag} file not found: ${path}.`
+        : `ultra11y ${cmd}: cannot read ${flag} ${path}: ${e instanceof Error ? e.message : String(e)}.`,
+    );
+    return null;
+  }
+}
+
 /** Resolve `--standard`; prints the error and returns null on an unknown standard. */
 function stdOf(p: ParsedArgs, cmd: string): StandardId | null {
   try {
@@ -374,7 +393,21 @@ function stdOf(p: ParsedArgs, cmd: string): StandardId | null {
  *  RGAA-keyed) JSON so it is never silently mis-processed against the WCAG engine. */
 function isCurrentAudit(r: unknown): r is AuditResult {
   const a = r as Partial<AuditResult> | null;
-  return !!a && a.tool === "ultra11y" && a.standard === "wcag" && typeof a.schemaVersion === "number" && a.schemaVersion >= 2 && Array.isArray(a.criteria);
+  return (
+    !!a &&
+    a.tool === "ultra11y" &&
+    a.standard === "wcag" &&
+    typeof a.schemaVersion === "number" &&
+    a.schemaVersion >= 2 &&
+    Array.isArray(a.criteria) &&
+    // Require the fields the renderers dereference, so a shallow-fabricated object is
+    // rejected cleanly here instead of crashing report/prd with a raw TypeError.
+    typeof a.scope === "object" &&
+    a.scope !== null &&
+    Array.isArray(a.findings) &&
+    Array.isArray(a.residualRisks) &&
+    Array.isArray(a.guidelines)
+  );
 }
 
 /** Best-effort load of a `scan --merge <file>` AuditResult, used ONLY to inform
@@ -462,6 +495,15 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
     }
   }
 
+  // Validate --fail-on ONCE (strict): an unrecognized value must error, not silently
+  // degrade the gate to blocking-only.
+  const failOnRaw = p.flags["fail-on"];
+  const failOnParsed = parseFailOn(failOnRaw);
+  if (failOnRaw !== undefined && failOnParsed === null) {
+    console.error(`ultra11y audit: --fail-on must be blocking|major|minor (got "${String(failOnRaw)}").`);
+    return 2;
+  }
+
   // Regression-gate mode (used by the init hook / CI): diff against a committed
   // baseline and exit non-zero only on NEW non-conformities at/above --fail-on.
   const baselineFlag = p.flags.baseline;
@@ -479,7 +521,7 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
         console.error(`ultra11y audit: --baseline ${baselineFlag} is not valid JSON; treating as empty.`);
       }
     }
-    const diff = diffAgainstBaseline(result, baseline, parseFailOn(p.flags["fail-on"]));
+    const diff = diffAgainstBaseline(result, baseline, failOnParsed ?? "bloquant");
     const blindSpots = requireCaptures ? (result.scope.captureCoverage?.blindSpots ?? []) : [];
     if (p.flags.json)
       console.log(JSON.stringify(requireCaptures && result.scope.captureCoverage ? { ...diff, captureCoverage: result.scope.captureCoverage } : diff, null, 2));
@@ -493,8 +535,8 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   // Standalone gates (linter-style, no baseline): `--fail-on` gates the whole audit by
   // finding severity; `--require-captures` gates on rendered-capture blind spots. Both
   // compose; a plain audit (neither flag) always exits 0.
-  const failOnSet = p.flags["fail-on"] !== undefined;
-  const failOn = failOnSet ? parseFailOn(p.flags["fail-on"]) : undefined;
+  const failOnSet = failOnRaw !== undefined;
+  const failOn = failOnSet ? (failOnParsed ?? "bloquant") : undefined;
   const failing = failOn ? findingsAtOrAbove(result.findings, failOn) : [];
   const blindSpots = requireCaptures ? (result.scope.captureCoverage?.blindSpots ?? []) : [];
 
@@ -522,7 +564,12 @@ function cmdInit(p: ParsedArgs): number {
   } catch {
     /* keep as-is */
   }
-  const failOn = parseFailOn(p.flags["fail-on"]);
+  const failOnParsed = parseFailOn(p.flags["fail-on"]);
+  if (p.flags["fail-on"] !== undefined && failOnParsed === null) {
+    console.error(`ultra11y init: --fail-on must be blocking|major|minor (got "${String(p.flags["fail-on"])}").`);
+    return 2;
+  }
+  const failOn = failOnParsed ?? "bloquant";
   // The baseline regression gate is opt-in via --baseline or an explicit --fail-on;
   // otherwise init wires the default strict-staged auto-fixing hook (no baseline needed).
   const legacy = p.flags.baseline === true || p.flags["fail-on"] !== undefined;
@@ -574,7 +621,8 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
   }
   const standard = stdOf(p, "report");
   if (standard === null) return 2;
-  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  const raw = inFlag === "-" ? await readStdin() : readInputFile(inFlag, "report", "--in");
+  if (raw === null) return 2;
   let result: unknown;
   try {
     result = JSON.parse(raw);
@@ -608,7 +656,8 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   }
   const standard = stdOf(p, "prd");
   if (standard === null) return 2;
-  const raw = inFlag === "-" ? await readStdin() : readText(inFlag);
+  const raw = inFlag === "-" ? await readStdin() : readInputFile(inFlag, "prd", "--in");
+  if (raw === null) return 2;
   let result: unknown;
   try {
     result = JSON.parse(raw);
@@ -835,7 +884,9 @@ function cmdCheck(p: ParsedArgs): number {
   const standard = stdOf(p, "check");
   if (standard === null) return 2;
   const lang = resolveLang(p.flags, { standard });
-  const res = checkReport(readText(rep), standard, lang);
+  const md = readInputFile(rep, "check", "--report");
+  if (md === null) return 2;
+  const res = checkReport(md, standard, lang);
   if (p.flags.json) {
     console.log(JSON.stringify(res, null, 2));
   } else if (!p.flags.quiet) {
@@ -874,15 +925,32 @@ function cmdVerify(p: ParsedArgs): number {
       console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
       return 2;
     }
-    const r = applyVerdicts(items);
+    // Coverage gate: if --report is also given, re-derive its worklist and fail on any NC
+    // the verdicts file omits — so a truncated/empty verdicts set can't slip a to-be-refuted
+    // finding past the gate (an empty [] against a report with NCs is NOT "all supported").
+    let expected: VerifyItem[] | undefined;
+    const applyReport = p.flags.report;
+    if (typeof applyReport === "string" && applyReport) {
+      const standard = stdOf(p, "verify");
+      if (standard === null) return 2;
+      let repMd: string;
+      try {
+        repMd = readText(applyReport);
+      } catch {
+        console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
+        return 2;
+      }
+      expected = buildWorklist(repMd, standard);
+    }
+    const r = applyVerdicts(items, expected);
     if (p.flags.json) console.log(JSON.stringify(r, null, 2));
     else if (r.ok)
       console.log(lang === "fr" ? `✓ ${r.total} non-conformités vérifiées, toutes étayées.` : `✓ ${r.total} non-conformities verified, all supported.`);
     else
       console.error(
         lang === "fr"
-          ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
-          : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
+          ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing}` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
+          : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing}` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
       );
     return r.ok ? 0 : 1;
   }
@@ -905,7 +973,9 @@ function cmdVerify(p: ParsedArgs): number {
     }
     max = n;
   }
-  const items = buildWorklist(readText(rep), standard, max);
+  const repMd = readInputFile(rep, "verify", "--report");
+  if (repMd === null) return 2;
+  const items = buildWorklist(repMd, standard, max);
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
   if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
@@ -1176,6 +1246,21 @@ export async function main(argv: string[]): Promise<number> {
   // Warn (never silently ignore) on misspelled/unknown flags so `--grph` or
   // `--standrd rgaa` can't quietly leave cross-file/a standard disabled.
   for (const f of p.unknown) console.error(`ultra11y: unknown flag --${f} (ignored). Run \`ultra11y --help\`.`);
+
+  // Enum-valued flags: warn (never silently coerce) on an unsupported value so `--lang de`
+  // or `--dedup fuzzy` is visible instead of quietly falling back to the default.
+  const ENUM_FLAGS: Record<string, readonly string[]> = {
+    lang: ["auto", "en", "fr"],
+    dedup: ["exact", "normalized", "off"],
+    format: ["audit", "doc", "remediation"],
+    split: ["criterion"],
+    runtime: ["auto", "local", "docker"],
+  };
+  for (const [flag, allowed] of Object.entries(ENUM_FLAGS)) {
+    const v = p.flags[flag];
+    if (typeof v === "string" && v && !allowed.includes(v))
+      console.error(`ultra11y: --${flag} "${v}" is not one of ${allowed.join("|")} — using the default.`);
+  }
 
   // Load any runtime standards packs (--pack / .ultra11yrc.json) BEFORE resolving
   // --standard, so an external pack is registered when stdOf/loadPack runs. A bad

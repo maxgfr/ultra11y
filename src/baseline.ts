@@ -15,11 +15,15 @@ export function findingId(f: Finding): string {
 }
 
 // Accept English aliases (blocking|major|minor) on input — the tool is English-first —
-// while the internal Severity union stays fr (bloquant|majeur|mineur).
-export function parseFailOn(v: string | boolean | undefined): Severity {
+// while the internal Severity union stays fr (bloquant|majeur|mineur). STRICT: an
+// unrecognized value returns null (the caller reports and exits) rather than silently
+// degrading to "bloquant" — a `--fail-on majr` typo must not weaken the gate.
+export function parseFailOn(v: string | boolean | undefined): Severity | null {
+  if (v === undefined || v === true) return "bloquant"; // flag absent, or present with no value → default
+  if (v === "bloquant" || v === "blocking") return "bloquant";
   if (v === "majeur" || v === "major") return "majeur";
   if (v === "mineur" || v === "minor") return "mineur";
-  return "bloquant"; // also "blocking"
+  return null; // unrecognized token
 }
 
 /** Findings at or above a severity threshold — the standalone `audit --fail-on`

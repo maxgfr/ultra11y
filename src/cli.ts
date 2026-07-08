@@ -25,6 +25,7 @@ import { runCriteria, renderCriteriaReference } from "./criteria.js";
 import { checkReport, checkSemantic } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
 import { groundItems } from "./grounding.js";
+import { buildAdjudicationWorklist, writeAdjudication, applyAdjudication, type AdjudicationFile } from "./adjudicate.js";
 import { runScan, runScanMany, runCrawlScan, mergeDynamic, cleanDynamic, dockerAvailable } from "./scan.js";
 import { runScanLocal, runScanManyLocal, runCrawlScanLocal, localAvailable } from "./scan-local.js";
 import { runFix, fixSummary } from "./fix.js";
@@ -53,6 +54,8 @@ Usage:
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
+  ultra11y verify   --report <md> --in <audit.json> --manual [--out <dir>] [--json]   (adjudicate the manual criteria)
+  ultra11y verify   --apply <adjudication.json> --in <audit.json> [--out <dir>]        (fold the adjudication into the audit)
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
@@ -204,6 +207,8 @@ Options:
                      check: engage the semantic gate — requires an adjudicated verdicts
                      artifact (fails closed when absent) and re-grounds every passing
                      verdict content-level against the cited source
+  --manual           verify: with --in <audit.json>, emit an adjudication worklist over the
+                     audit's residual (judgment / needs-rendering) criteria for the agent to rule
   --lang auto|en|fr  output language                (default: auto — conversation/repo
                      language: an AI caller should pass --lang explicitly to match the
                      chat; unset resolves repo <html lang> → standard's default locale → en)
@@ -291,6 +296,7 @@ const BOOLEAN_FLAGS = new Set([
   "list",
   "generate",
   "semantic",
+  "manual",
   "gh-issues",
   "gh-single",
   "override",
@@ -957,17 +963,23 @@ function cmdVerify(p: ParsedArgs): number {
       console.error(`ultra11y verify: --apply file not found: ${apply}.`);
       return 2;
     }
-    let items: VerifyItem[];
+    let parsed: unknown;
     try {
-      items = JSON.parse(raw) as VerifyItem[];
+      parsed = JSON.parse(raw);
     } catch {
       console.error("ultra11y verify: --apply file is not valid JSON.");
       return 2;
     }
-    if (!Array.isArray(items)) {
-      console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
+    // Dispatch on shape: an OBJECT with kind:"adjudication" is a manual-criteria adjudication
+    // (src/adjudicate.ts); a plain ARRAY is the classic NC-verdicts worklist.
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && (parsed as { kind?: string }).kind === "adjudication") {
+      return applyAdjudicationFile(p, parsed as AdjudicationFile, lang);
+    }
+    if (!Array.isArray(parsed)) {
+      console.error("ultra11y verify: --apply must be a JSON array of verdicts, or an adjudication object.");
       return 2;
     }
+    const items = parsed as VerifyItem[];
     // Coverage gate (fail closed): --report is REQUIRED — without the report the gate
     // cannot know which NCs the verdicts are supposed to cover, and an empty [] would
     // pass green while covering nothing (family P0: a passing exit must mean the gate
@@ -1017,14 +1029,57 @@ function cmdVerify(p: ParsedArgs): number {
     return ok ? 0 : 1;
   }
 
-  const rep = p.flags.report;
-  if (typeof rep !== "string" || !rep) {
-    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
-    return 2;
-  }
   const standard = stdOf(p, "verify");
   if (standard === null) return 2;
   lang = resolveLang(p.flags, { standard });
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
+
+  // --manual: emit an ADJUDICATION worklist over the audit's residual (manual) criteria —
+  // the judgment/needs-rendering SCs the engine could not decide — pre-loaded with the
+  // evidence the agent rules on. Reads the AUDIT (--in), NOT a report, so --report is
+  // not required here (harvesting re-reads the audited source files).
+  if (p.flags.manual === true) {
+    const inFlag = p.flags.in;
+    if (typeof inFlag !== "string" || !inFlag) {
+      console.error(
+        lang === "fr"
+          ? "ultra11y verify : --manual exige --in <audit.json> (l'audit dont les critères résiduels sont à adjuger)."
+          : "ultra11y verify: --manual requires --in <audit.json> (the audit whose residual criteria are adjudicated).",
+      );
+      return 2;
+    }
+    let audit: AuditResult;
+    try {
+      audit = JSON.parse(readText(inFlag)) as AuditResult;
+    } catch {
+      console.error(`ultra11y verify: --in file not found or not valid JSON: ${inFlag}.`);
+      return 2;
+    }
+    const adjItems = buildAdjudicationWorklist(audit, { standard });
+    const w = writeAdjudication(adjItems, out, { standard, auditDate: audit.date, lang });
+    if (adjItems.every((it) => it.evidence.length === 0)) {
+      console.error(
+        lang === "fr"
+          ? `ultra11y verify : aucune évidence n'a pu être extraite (${audit.scope.inputs.join(", ")} introuvable ?) — lancez --manual depuis le répertoire de l'audit.`
+          : `ultra11y verify: no evidence could be harvested (${audit.scope.inputs.join(", ")} not found?) — run --manual from the audit's directory.`,
+      );
+    }
+    if (p.flags.json) console.log(JSON.stringify({ mdPath: w.mdPath, todoPath: w.todoPath, count: w.count, items: adjItems }, null, 2));
+    else
+      console.log(
+        lang === "fr"
+          ? `${w.count} critère(s) à adjuger → ${w.mdPath}, ${w.todoPath}`
+          : `${w.count} criterion(ia) to adjudicate → ${w.mdPath}, ${w.todoPath}`,
+      );
+    return 0;
+  }
+
+  // Normal NC-verification worklist path — requires --report.
+  const rep = p.flags.report;
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>, or --manual --in <audit.json>).");
+    return 2;
+  }
   let max = VERIFY_MAX;
   const mvFlag = p.flags["max-verify"];
   if (typeof mvFlag === "string" && mvFlag !== "") {
@@ -1038,12 +1093,59 @@ function cmdVerify(p: ParsedArgs): number {
   const repMd = readInputFile(rep, "verify", "--report");
   if (repMd === null) return 2;
   const items = buildWorklist(repMd, standard, max);
-  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
   if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
   else
     console.log(
       lang === "fr" ? `${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify → ${mdPath}, ${todoPath}`,
+    );
+  return 0;
+}
+
+/** `verify --apply <adjudication.json> --in <audit.json> --out <dir>` — fold an AI
+ *  adjudication of the manual criteria back into the audit, fail-closed, then rewrite the
+ *  audit JSON so `report`/`prd` re-render with the adjudicated statuses. */
+function applyAdjudicationFile(p: ParsedArgs, adj: AdjudicationFile, lang: Lang): number {
+  const inFlag = p.flags.in;
+  if (typeof inFlag !== "string" || !inFlag) {
+    console.error(
+      lang === "fr"
+        ? "ultra11y verify : --apply <adjudication> exige --in <audit.json> (l'audit à mettre à jour)."
+        : "ultra11y verify: --apply <adjudication> requires --in <audit.json> (the audit to update).",
+    );
+    return 2;
+  }
+  let audit: AuditResult;
+  try {
+    audit = JSON.parse(readText(inFlag)) as AuditResult;
+  } catch {
+    console.error(`ultra11y verify: --in file not found or not valid JSON: ${inFlag}.`);
+    return 2;
+  }
+  const r = applyAdjudication(audit, adj);
+  if (!r.ok) {
+    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
+    else {
+      console.error(
+        lang === "fr"
+          ? `✗ Adjudication rejetée (${r.issues.length} problème(s)) :`
+          : `✗ Adjudication rejected (${r.issues.length} issue(s)):`,
+      );
+      for (const i of r.issues) console.error(`  ✗ ${i}`);
+    }
+    return 1;
+  }
+  // Persist the updated audit so report/prd re-render with the adjudicated statuses.
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
+  mkdirSync(out, { recursive: true });
+  const auditPath = join(out, "audit-latest.json");
+  writeFileSync(auditPath, JSON.stringify(r.audit, null, 2) + "\n");
+  if (p.flags.json) console.log(JSON.stringify({ ok: true, auditPath, applied: r.applied, stillManual: r.stillManual, grounding: r.grounding }, null, 2));
+  else
+    console.log(
+      lang === "fr"
+        ? `✓ ${r.applied} critère(s) adjugé(s), ${r.stillManual} laissé(s) en résiduel → ${auditPath}`
+        : `✓ ${r.applied} criterion(ia) adjudicated, ${r.stillManual} left residual → ${auditPath}`,
     );
   return 0;
 }

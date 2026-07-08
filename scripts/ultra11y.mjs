@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync10, readFileSync as readFileSync5, appendFileSync } from "fs";
-import { join as join12, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
+import { realpathSync, writeFileSync as writeFileSync8, mkdirSync as mkdirSync6, existsSync as existsSync10, readFileSync as readFileSync5, appendFileSync } from "fs";
+import { join as join13, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -30751,11 +30751,245 @@ function sectionBody(md, n) {
   return next ? md.slice(from, from + next.index) : md.slice(from);
 }
 
+// src/adjudicate.ts
+import { mkdirSync as mkdirSync4, writeFileSync as writeFileSync4 } from "fs";
+import { join as join9 } from "path";
+var ADJUDICATE_MAX_EVIDENCE = 30;
+var selectorFor = (el) => {
+  const id = el.attribs.id ? `#${el.attribs.id}` : "";
+  const cls = el.attribs.class ? `.${el.attribs.class.trim().split(/\s+/)[0]}` : "";
+  return `${el.tag}${id}${cls}`;
+};
+var ev = (doc, el, note) => ({
+  file: doc.file,
+  line: el.line,
+  selector: selectorFor(el),
+  snippet: snippet(doc, el, 160),
+  ...note ? { note } : {}
+});
+function nearestHeading(doc, el) {
+  const headings2 = elementsByTag(doc, "h1", "h2", "h3", "h4", "h5", "h6").filter((h2) => h2.start < el.start);
+  const h = headings2[headings2.length - 1];
+  return h ? textContent(h).trim().slice(0, 80) : void 0;
+}
+var HARVESTERS = {
+  // 1.1.1 Non-text Content — every image-like element's text alternative
+  "1.1.1": (docs) => docs.flatMap(
+    (d) => elementsByTag(d, "img", "svg", "area", "object", "embed", "canvas").concat(d.elements.filter((e) => attr(e, "role") === "img")).filter((e, i, a) => a.indexOf(e) === i).map((e) => ev(d, e, `alt="${attr(e, "alt") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`))
+  ),
+  // 2.4.4 Link Purpose (In Context) — link text + destination + nearest heading
+  "2.4.4": (docs) => docs.flatMap(
+    (d) => elementsByTag(d, "a").filter((e) => attr(e, "href") !== void 0).map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}" href="${attr(e, "href")}" under="${nearestHeading(d, e) ?? ""}"`))
+  ),
+  // 1.4.3 Contrast (Minimum) — literal inline colour pairs (the ones statically visible)
+  "1.4.3": (docs) => docs.flatMap(
+    (d) => d.elements.filter((e) => {
+      const st = parseInlineStyle(attr(e, "style") ?? "");
+      return st.has("color") || st.has("background-color") || st.has("background");
+    }).map((e) => {
+      const st = parseInlineStyle(attr(e, "style") ?? "");
+      return ev(d, e, `color=${st.get("color") ?? "?"} background=${st.get("background-color") ?? st.get("background") ?? "?"}`);
+    })
+  ),
+  // 2.4.6 Headings and Labels — the heading + label text to judge for descriptiveness
+  "2.4.6": (docs) => docs.flatMap((d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`))),
+  // 3.3.2 Labels or Instructions — controls + their associated labels/placeholders
+  "3.3.2": (docs) => docs.flatMap(
+    (d) => elementsByTag(d, "input", "select", "textarea").map((e) => {
+      const id = attr(e, "id");
+      const lbl = id ? elementsByTag(d, "label").find((l) => attr(l, "for") === id) : void 0;
+      return ev(d, e, `label="${lbl ? textContent(lbl).trim().slice(0, 40) : ""}" placeholder="${attr(e, "placeholder") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`);
+    })
+  ),
+  // 1.3.1 Info and Relationships — heading outline + tables (structure to judge)
+  "1.3.1": (docs) => docs.flatMap(
+    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map((e) => ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`))
+  ),
+  // 4.1.2 Name, Role, Value — elements carrying a role or ARIA state
+  "4.1.2": (docs) => docs.flatMap(
+    (d) => d.elements.filter((e) => attr(e, "role") !== void 0 || Object.keys(e.attribs).some((k) => k.startsWith("aria-"))).map((e) => ev(d, e, `role="${attr(e, "role") ?? ""}"`))
+  ),
+  // 2.4.3 Focus Order — explicit tabindex values in DOM order
+  "2.4.3": (docs) => docs.flatMap((d) => d.elements.filter((e) => attr(e, "tabindex") !== void 0).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`))),
+  // 3.1.2 Language of Parts — element-level lang overrides (not the root <html lang>)
+  "3.1.2": (docs) => docs.flatMap((d) => d.elements.filter((e) => e.tag !== "html" && attr(e, "lang") !== void 0).map((e) => ev(d, e, `lang="${attr(e, "lang")}"`)))
+};
+function docsForAudit(audit, cwd) {
+  const inputs = audit.scope.inputs.filter((i) => i !== "-" && i !== "<stdin>");
+  if (!inputs.length) return [];
+  const { files } = discover(inputs, {});
+  const docs = [];
+  for (const f of files) {
+    try {
+      docs.push(parseSource(readText(cwd ? join9(cwd, f) : f), f));
+    } catch {
+    }
+  }
+  return docs;
+}
+function buildAdjudicationWorklist(audit, opts = {}) {
+  const docs = docsForAudit(audit, opts.cwd);
+  return audit.residualRisks.map((r) => {
+    const harvested = HARVESTERS[r.criteriaId]?.(docs) ?? [];
+    const evidence = harvested.slice(0, ADJUDICATE_MAX_EVIDENCE);
+    return {
+      criteriaId: r.criteriaId,
+      automatability: r.automatability,
+      title: scTitle(r.criteriaId) ?? void 0,
+      evidence,
+      ...harvested.length > ADJUDICATE_MAX_EVIDENCE ? { evidenceTruncated: { shown: evidence.length, total: harvested.length } } : {},
+      verdict: null,
+      justification: "",
+      reason: null,
+      findings: [],
+      decidedBy: "agent"
+    };
+  });
+}
+var NC_SEVERITY_DEFAULT = "majeur";
+var MANUAL_REASONS = /* @__PURE__ */ new Set(["needs-rendered-dom", "undecidable"]);
+function applyAdjudication(audit, adj, opts = {}) {
+  const issues = [];
+  const byId2 = new Map(adj.items.map((it) => [it.criteriaId, it]));
+  for (const r of audit.residualRisks) if (!byId2.has(r.criteriaId)) issues.push(`criterion ${r.criteriaId}: missing from the adjudication (coverage gap)`);
+  const groundInputs = [];
+  for (const it of adj.items) {
+    const v = it.verdict;
+    if (v === null) {
+      issues.push(`criterion ${it.criteriaId}: unadjudicated (verdict is null)`);
+    } else if (v === "C" || v === "NA") {
+      if (!it.justification || !it.justification.trim()) issues.push(`criterion ${it.criteriaId}: a ${v} verdict requires a justification`);
+    } else if (v === "NC") {
+      if (!it.findings || it.findings.length === 0) issues.push(`criterion ${it.criteriaId}: an NC verdict requires at least one groundable finding`);
+      for (const f of it.findings ?? []) groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
+    } else if (v === "manual") {
+      if (!it.reason || !MANUAL_REASONS.has(it.reason)) issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason \u2208 {needs-rendered-dom, undecidable}`);
+    } else {
+      issues.push(`criterion ${it.criteriaId}: unknown verdict "${String(v)}"`);
+    }
+  }
+  const grounding = groundItems(groundInputs, { cwd: opts.cwd });
+  for (const gi of grounding.issues) issues.push(gi);
+  if (issues.length) {
+    return { ok: false, audit, issues, applied: 0, stillManual: 0, grounding };
+  }
+  const next = structuredClone(audit);
+  const critById = new Map(next.criteria.map((c) => [c.id, c]));
+  const newFindings = [];
+  let applied = 0;
+  let stillManual = 0;
+  for (const it of adj.items) {
+    const c = critById.get(it.criteriaId);
+    if (!c) continue;
+    if (it.verdict === "manual") {
+      c.status = "manual";
+      c.decidedBy = "agent";
+      c.justification = it.reason === "needs-rendered-dom" ? residualScanReason() : residualUndecidableReason();
+      stillManual++;
+      continue;
+    }
+    applied++;
+    c.status = it.verdict;
+    c.decidedBy = "agent";
+    if (it.verdict === "C" || it.verdict === "NA") c.justification = it.justification.trim();
+    if (it.verdict === "NC") {
+      const fs = it.findings.map((f) => agentFinding(it.criteriaId, c.guideline, f));
+      c.findings = fs;
+      newFindings.push(...fs);
+      delete c.justification;
+    }
+  }
+  next.findings = [...next.findings, ...newFindings];
+  next.residualRisks = next.residualRisks.filter((r) => byId2.get(r.criteriaId)?.verdict === "manual");
+  recomputeTallies(next);
+  next.adjudicated = { date: adj.auditDate, applied, stillManual };
+  return { ok: true, audit: next, issues: [], applied, stillManual, grounding };
+}
+function agentFinding(criteriaId, guideline, f) {
+  return {
+    ruleId: `agent:${criteriaId}`,
+    criteriaId,
+    file: f.file,
+    line: f.line,
+    col: 1,
+    selectorHint: f.selector ?? "",
+    severity: f.severity ?? NC_SEVERITY_DEFAULT,
+    message: f.message,
+    remediation: getSC(criteriaId)?.understanding ? `See WCAG ${criteriaId}.` : "Address the reported non-conformity.",
+    snippet: f.snippet ?? ""
+  };
+}
+function recomputeTallies(a) {
+  for (const g of a.guidelines) {
+    const inG = a.criteria.filter((c) => c.guideline === g.key);
+    g.c = inG.filter((c) => c.status === "C").length;
+    g.nc = inG.filter((c) => c.status === "NC").length;
+    g.na = inG.filter((c) => c.status === "NA").length;
+    g.manual = inG.filter((c) => c.status === "manual").length;
+  }
+  const decided = a.criteria.filter((c) => c.status === "C" || c.status === "NC");
+  const conform = decided.filter((c) => c.status === "C").length;
+  a.conformancePct = decided.length === 0 ? 100 : Math.round(conform / decided.length * 100);
+}
+var residualScanReason = () => "Rendering criterion \u2014 decide on the rendered DOM (`scan`).";
+var residualUndecidableReason = () => "Left as an explicit residual risk (not decidable from the available evidence).";
+var T2 = {
+  fr: {
+    title: "# Adjudication des crit\xE8res \xE0 \xE9valuer (ultra11y)",
+    intro: "Pour CHAQUE crit\xE8re, lisez les \xE9vidences ci-dessous (extraites de la source audit\xE9e) et attribuez un verdict dans `ADJUDICATE.todo.json` (champ `verdict`) :",
+    verdicts: [
+      "- `C` \u2014 conforme (renseignez `justification`) ;",
+      "- `NC` \u2014 non conforme (ajoutez au moins un `findings[]` : file/line/message, avec un `snippet` groundable) ;",
+      "- `NA` \u2014 non applicable (renseignez `justification`) ;",
+      "- `manual` \u2014 ind\xE9cidable statiquement (renseignez `reason` : `needs-rendered-dom` \u2192 `scan`, ou `undecidable`)."
+    ],
+    then: "Puis : `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (\xE9choue si un verdict manque une justification/finding/reason).",
+    evidence: "\xC9vidences",
+    none: "(aucune \xE9vidence automatique \u2014 d\xE9cidez depuis la source, ou laissez `manual` avec une raison)"
+  },
+  en: {
+    title: "# Criteria adjudication (ultra11y)",
+    intro: "For EACH criterion, read the evidence below (harvested from the audited source) and set a verdict in `ADJUDICATE.todo.json` (field `verdict`):",
+    verdicts: [
+      "- `C` \u2014 conformant (fill `justification`);",
+      "- `NC` \u2014 non-conformant (add at least one `findings[]`: file/line/message, with a groundable `snippet`);",
+      "- `NA` \u2014 not applicable (fill `justification`);",
+      "- `manual` \u2014 not statically decidable (fill `reason`: `needs-rendered-dom` \u2192 `scan`, or `undecidable`)."
+    ],
+    then: "Then: `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (fails if any verdict lacks its justification/finding/reason).",
+    evidence: "Evidence",
+    none: "(no automatic evidence \u2014 decide from source, or leave `manual` with a reason)"
+  }
+};
+function formatAdjudication(items, lang = "en") {
+  const s = T2[lang];
+  const out = [s.title, "", s.intro, "", ...s.verdicts, "", s.then, ""];
+  for (const it of items) {
+    out.push(`## ${it.criteriaId}${it.title ? ` \u2014 ${it.title}` : ""}  _(${it.automatability})_`);
+    out.push("", `> ${s.evidence} (${it.evidence.length}${it.evidenceTruncated ? ` / ${it.evidenceTruncated.total}` : ""}):`, "");
+    if (!it.evidence.length) out.push(s.none, "");
+    else {
+      for (const e of it.evidence) out.push(`- \`${e.file}:${e.line}\` (\`${e.selector}\`)${e.note ? ` \u2014 ${e.note}` : ""}`);
+      out.push("");
+    }
+  }
+  return out.join("\n");
+}
+function writeAdjudication(items, outDir, opts) {
+  mkdirSync4(outDir, { recursive: true });
+  const todoPath = join9(outDir, "ADJUDICATE.todo.json");
+  const mdPath = join9(outDir, "ADJUDICATE.md");
+  const file = { tool: "ultra11y", kind: "adjudication", schemaVersion: SCHEMA_VERSION, standard: opts.standard, auditDate: opts.auditDate, items };
+  writeFileSync4(todoPath, JSON.stringify(file, null, 2) + "\n");
+  writeFileSync4(mdPath, formatAdjudication(items, opts.lang ?? "en"));
+  return { todoPath, mdPath, count: items.length };
+}
+
 // src/scan.ts
 import { execFileSync as execFileSync3 } from "child_process";
-import { mkdtempSync, writeFileSync as writeFileSync4, existsSync as existsSync6, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
+import { mkdtempSync, writeFileSync as writeFileSync5, existsSync as existsSync6, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
 import { tmpdir } from "os";
-import { join as join9, resolve as resolve3 } from "path";
+import { join as join10, resolve as resolve3 } from "path";
 
 // src/axe-map.ts
 var PROBE_WCAG = {
@@ -31004,11 +31238,11 @@ function imageExists(tag) {
 }
 var CTX_PREFIX = "ultra11y-dyn-";
 function buildImage(tag = IMAGE_TAG) {
-  const ctx = mkdtempSync(join9(tmpdir(), CTX_PREFIX));
+  const ctx = mkdtempSync(join10(tmpdir(), CTX_PREFIX));
   try {
-    writeFileSync4(join9(ctx, "runner.mjs"), RUNNER);
-    writeFileSync4(join9(ctx, "package.json"), PKG);
-    writeFileSync4(join9(ctx, "Dockerfile"), DOCKERFILE);
+    writeFileSync5(join10(ctx, "runner.mjs"), RUNNER);
+    writeFileSync5(join10(ctx, "package.json"), PKG);
+    writeFileSync5(join10(ctx, "Dockerfile"), DOCKERFILE);
     execFileSync3("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
   } finally {
     rmSync(ctx, { recursive: true, force: true });
@@ -31019,7 +31253,7 @@ function cleanTempContexts() {
   const dir = tmpdir();
   for (const name of readdirSync2(dir)) {
     if (!name.startsWith(CTX_PREFIX)) continue;
-    rmSync(join9(dir, name), { recursive: true, force: true });
+    rmSync(join10(dir, name), { recursive: true, force: true });
     removed++;
   }
   return removed;
@@ -31491,7 +31725,7 @@ async function runCrawlScanLocal(opts) {
 }
 
 // src/fix.ts
-import { writeFileSync as writeFileSync5 } from "fs";
+import { writeFileSync as writeFileSync6 } from "fs";
 
 // src/fix/edits.ts
 function openTag(source, start) {
@@ -31705,7 +31939,7 @@ function fixOne(file, source, opts, canWrite = true) {
     regression = after.length > findings.length || after.some((f) => !beforeKinds.has(f.ruleId));
     if (opts.write && !regression && file !== "<stdin>") {
       if (canWrite) {
-        writeFileSync5(file, output);
+        writeFileSync6(file, output);
         written = true;
       } else {
         skippedPartialStage = true;
@@ -31828,9 +32062,9 @@ function baselineSummary(diff, lang = "fr") {
 }
 
 // src/init.ts
-import { writeFileSync as writeFileSync6, mkdirSync as mkdirSync4, chmodSync } from "fs";
+import { writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, chmodSync } from "fs";
 import { execFileSync as execFileSync4 } from "child_process";
-import { join as join10 } from "path";
+import { join as join11 } from "path";
 var EN_SEV = { bloquant: "blocking", majeur: "major", mineur: "minor" };
 function repoRoot() {
   try {
@@ -31900,18 +32134,18 @@ jobs:
 `;
 }
 function writeHook(root, enginePath, failOn, mode = "staged") {
-  const dir = join10(root, ".git", "hooks");
-  mkdirSync4(dir, { recursive: true });
-  const path = join10(dir, "pre-commit");
-  writeFileSync6(path, mode === "baseline" ? hookScript(enginePath, failOn) : stagedHookScript(enginePath, failOn));
+  const dir = join11(root, ".git", "hooks");
+  mkdirSync5(dir, { recursive: true });
+  const path = join11(dir, "pre-commit");
+  writeFileSync7(path, mode === "baseline" ? hookScript(enginePath, failOn) : stagedHookScript(enginePath, failOn));
   chmodSync(path, 493);
   return path;
 }
 function writeCi(root, enginePath, failOn) {
-  const dir = join10(root, ".github", "workflows");
-  mkdirSync4(dir, { recursive: true });
-  const path = join10(dir, "a11y.yml");
-  writeFileSync6(path, ciWorkflow(enginePath, failOn));
+  const dir = join11(root, ".github", "workflows");
+  mkdirSync5(dir, { recursive: true });
+  const path = join11(dir, "a11y.yml");
+  writeFileSync7(path, ciWorkflow(enginePath, failOn));
   return path;
 }
 
@@ -31996,7 +32230,7 @@ function captureCoverageSummary(cov, lang) {
 
 // src/config.ts
 import { existsSync as existsSync9, statSync as statSync4 } from "fs";
-import { join as join11, isAbsolute } from "path";
+import { join as join12, isAbsolute } from "path";
 
 // src/pack.ts
 import { existsSync as existsSync8 } from "fs";
@@ -32143,7 +32377,7 @@ function packScaffold() {
 // src/config.ts
 var CONFIG_FILE = ".ultra11yrc.json";
 function loadConfig(cwd) {
-  const p = join11(cwd, CONFIG_FILE);
+  const p = join12(cwd, CONFIG_FILE);
   if (!existsSync9(p)) return null;
   let parsed;
   try {
@@ -32159,10 +32393,10 @@ function loadConfig(cwd) {
 function packPaths(path) {
   if (!existsSync9(path)) return null;
   if (statSync4(path).isDirectory()) {
-    const pack = join11(path, "pack.json");
+    const pack = join12(path, "pack.json");
     if (!existsSync9(pack)) return null;
-    const glossary = join11(path, "glossary.json");
-    const guidance = join11(path, "guidance.json");
+    const glossary = join12(path, "glossary.json");
+    const guidance = join12(path, "guidance.json");
     return {
       pack,
       glossary: existsSync9(glossary) ? glossary : void 0,
@@ -32182,7 +32416,7 @@ function loadRuntimeStandards(cwd, packFlags, onWarn, override = false) {
   }
   result.defaultStandard = config?.standard;
   for (const raw of [...config?.packs ?? [], ...packFlags]) {
-    const paths = packPaths(isAbsolute(raw) ? raw : join11(cwd, raw));
+    const paths = packPaths(isAbsolute(raw) ? raw : join12(cwd, raw));
     if (!paths) {
       result.errors.push(`--pack ${raw}: not found (expected a pack JSON file or a directory with pack.json)`);
       continue;
@@ -32212,7 +32446,7 @@ ${formatIssues(v.issues).join("\n")}`);
     result.loadedPacks.push(v.pack.key);
     if (paths.guidance) loadGuidanceFile(paths.guidance, result, onWarn);
   }
-  for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join11(cwd, g), result, onWarn);
+  for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join12(cwd, g), result, onWarn);
   return result;
 }
 function loadGuidanceFile(path, result, onWarn) {
@@ -32271,6 +32505,8 @@ Usage:
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
+  ultra11y verify   --report <md> --in <audit.json> --manual [--out <dir>] [--json]   (adjudicate the manual criteria)
+  ultra11y verify   --apply <adjudication.json> --in <audit.json> [--out <dir>]        (fold the adjudication into the audit)
   ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
@@ -32422,6 +32658,8 @@ Options:
                      check: engage the semantic gate \u2014 requires an adjudicated verdicts
                      artifact (fails closed when absent) and re-grounds every passing
                      verdict content-level against the cited source
+  --manual           verify: with --in <audit.json>, emit an adjudication worklist over the
+                     audit's residual (judgment / needs-rendering) criteria for the agent to rule
   --lang auto|en|fr  output language                (default: auto \u2014 conversation/repo
                      language: an AI caller should pass --lang explicitly to match the
                      chat; unset resolves repo <html lang> \u2192 standard's default locale \u2192 en)
@@ -32496,6 +32734,7 @@ var BOOLEAN_FLAGS = /* @__PURE__ */ new Set([
   "list",
   "generate",
   "semantic",
+  "manual",
   "gh-issues",
   "gh-single",
   "override",
@@ -32628,8 +32867,8 @@ async function cmdAudit(p) {
   if (typeof p.flags.out === "string") {
     const out = p.flags.out;
     try {
-      mkdirSync5(out, { recursive: true });
-      writeFileSync7(join12(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+      mkdirSync6(out, { recursive: true });
+      writeFileSync8(join13(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
     } catch {
     }
   }
@@ -32704,9 +32943,9 @@ function cmdInit(p) {
   if (want.baseline) {
     const inputs = p.positionals.length ? p.positionals : ["."];
     const result = runAudit({ inputs, onWarn: (m) => console.error(m) });
-    mkdirSync5(join12(root, "audits"), { recursive: true });
-    const bp = join12(root, "audits", "baseline.json");
-    writeFileSync7(bp, JSON.stringify(result, null, 2) + "\n");
+    mkdirSync6(join13(root, "audits"), { recursive: true });
+    const bp = join13(root, "audits", "baseline.json");
+    writeFileSync8(bp, JSON.stringify(result, null, 2) + "\n");
     wrote.push(bp);
   }
   if (want.hook) wrote.push(writeHook(root, engineRel, failOn, legacy ? "baseline" : "staged"));
@@ -32823,7 +33062,7 @@ function cmdRender(p) {
   if (p.flags.scaffold === true) {
     const out = typeof p.flags.out === "string" && p.flags.out ? p.flags.out : "ultra11y-render.tsx";
     try {
-      writeFileSync7(out, ssrHarness());
+      writeFileSync8(out, ssrHarness());
     } catch (e) {
       console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
       return 1;
@@ -32837,16 +33076,16 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.setup === true) {
     const rel = ".ultra11y/capture-setup.mjs";
-    const out = join12(root, rel);
+    const out = join13(root, rel);
     try {
-      mkdirSync5(dirname5(out), { recursive: true });
-      writeFileSync7(out, captureSetup());
+      mkdirSync6(dirname5(out), { recursive: true });
+      writeFileSync8(out, captureSetup());
     } catch (e) {
       console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
       return 1;
     }
     let setupDeps = {};
-    const setupPkg = join12(root, "package.json");
+    const setupPkg = join13(root, "package.json");
     if (existsSync10(setupPkg)) {
       try {
         const pkg = JSON.parse(readText(setupPkg));
@@ -32854,10 +33093,10 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
       } catch {
       }
     }
-    const tr = detectTestRunner(setupDeps, (f) => existsSync10(join12(root, f)));
+    const tr = detectTestRunner(setupDeps, (f) => existsSync10(join13(root, f)));
     console.log(captureSetupPlan(tr, rel, lang));
     const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
-    const gaPath = join12(root, ".gitattributes");
+    const gaPath = join13(root, ".gitattributes");
     try {
       const existing = existsSync10(gaPath) ? readFileSync5(gaPath, "utf8") : "";
       if (!existing.includes(".ultra11y/captures/")) {
@@ -32867,7 +33106,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     } catch {
     }
     try {
-      const giPath = join12(root, ".gitignore");
+      const giPath = join13(root, ".gitignore");
       if (existsSync10(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync5(giPath, "utf8")))
         console.error(
           lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
@@ -32878,7 +33117,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.storybook === true || typeof p.flags.storybook === "string") {
     const sbDir = p.positionals[0] ?? "storybook-static";
-    const indexPath = existsSync10(join12(sbDir, "index.json")) ? join12(sbDir, "index.json") : join12(sbDir, "stories.json");
+    const indexPath = existsSync10(join13(sbDir, "index.json")) ? join13(sbDir, "index.json") : join13(sbDir, "stories.json");
     if (!existsSync10(indexPath)) {
       console.error(
         lang === "fr" ? `ultra11y render : aucun index Storybook (index.json/stories.json) dans ${sbDir}.` : `ultra11y render: no Storybook index (index.json/stories.json) in ${sbDir}.`
@@ -32911,8 +33150,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
         continue;
       }
       try {
-        mkdirSync5(outDir, { recursive: true });
-        writeFileSync7(join12(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
+        mkdirSync6(outDir, { recursive: true });
+        writeFileSync8(join13(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
 ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
         attributed++;
       } catch {
@@ -32934,7 +33173,7 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
   }
   if (p.flags.coverage === true) {
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
-    const capturesDir = capturesFlag ?? join12(root, ".ultra11y/captures");
+    const capturesDir = capturesFlag ?? join13(root, ".ultra11y/captures");
     const graphExt = [...GRAPH_ONLY_EXT, ...asList(p.flags.ext) ?? []];
     const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: graphExt }).files;
     const graph = buildGraphStreaming(sourceFiles);
@@ -32946,7 +33185,7 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
     return 0;
   }
   let deps = {};
-  const pkgPath = join12(root, "package.json");
+  const pkgPath = join13(root, "package.json");
   if (existsSync10(pkgPath)) {
     try {
       const pkg = JSON.parse(readText(pkgPath));
@@ -32954,7 +33193,7 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
     } catch {
     }
   }
-  const detection = detectFrameworks(deps, (f) => existsSync10(join12(root, f)));
+  const detection = detectFrameworks(deps, (f) => existsSync10(join13(root, f)));
   if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
   else console.log(renderPlan(detection, lang));
   return 0;
@@ -33017,17 +33256,21 @@ function cmdVerify(p) {
       console.error(`ultra11y verify: --apply file not found: ${apply}.`);
       return 2;
     }
-    let items2;
+    let parsed;
     try {
-      items2 = JSON.parse(raw);
+      parsed = JSON.parse(raw);
     } catch {
       console.error("ultra11y verify: --apply file is not valid JSON.");
       return 2;
     }
-    if (!Array.isArray(items2)) {
-      console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && parsed.kind === "adjudication") {
+      return applyAdjudicationFile(p, parsed, lang);
+    }
+    if (!Array.isArray(parsed)) {
+      console.error("ultra11y verify: --apply must be a JSON array of verdicts, or an adjudication object.");
       return 2;
     }
+    const items2 = parsed;
     const applyReport = p.flags.report;
     if (typeof applyReport !== "string" || !applyReport) {
       console.error(
@@ -33063,14 +33306,44 @@ function cmdVerify(p) {
     }
     return ok ? 0 : 1;
   }
-  const rep = p.flags.report;
-  if (typeof rep !== "string" || !rep) {
-    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
-    return 2;
-  }
   const standard = stdOf(p, "verify");
   if (standard === null) return 2;
   lang = resolveLang(p.flags, { standard });
+  const out = typeof p.flags.out === "string" ? p.flags.out : ".";
+  if (p.flags.manual === true) {
+    const inFlag = p.flags.in;
+    if (typeof inFlag !== "string" || !inFlag) {
+      console.error(
+        lang === "fr" ? "ultra11y verify : --manual exige --in <audit.json> (l'audit dont les crit\xE8res r\xE9siduels sont \xE0 adjuger)." : "ultra11y verify: --manual requires --in <audit.json> (the audit whose residual criteria are adjudicated)."
+      );
+      return 2;
+    }
+    let audit;
+    try {
+      audit = JSON.parse(readText(inFlag));
+    } catch {
+      console.error(`ultra11y verify: --in file not found or not valid JSON: ${inFlag}.`);
+      return 2;
+    }
+    const adjItems = buildAdjudicationWorklist(audit, { standard });
+    const w = writeAdjudication(adjItems, out, { standard, auditDate: audit.date, lang });
+    if (adjItems.every((it) => it.evidence.length === 0)) {
+      console.error(
+        lang === "fr" ? `ultra11y verify : aucune \xE9vidence n'a pu \xEAtre extraite (${audit.scope.inputs.join(", ")} introuvable ?) \u2014 lancez --manual depuis le r\xE9pertoire de l'audit.` : `ultra11y verify: no evidence could be harvested (${audit.scope.inputs.join(", ")} not found?) \u2014 run --manual from the audit's directory.`
+      );
+    }
+    if (p.flags.json) console.log(JSON.stringify({ mdPath: w.mdPath, todoPath: w.todoPath, count: w.count, items: adjItems }, null, 2));
+    else
+      console.log(
+        lang === "fr" ? `${w.count} crit\xE8re(s) \xE0 adjuger \u2192 ${w.mdPath}, ${w.todoPath}` : `${w.count} criterion(ia) to adjudicate \u2192 ${w.mdPath}, ${w.todoPath}`
+      );
+    return 0;
+  }
+  const rep = p.flags.report;
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>, or --manual --in <audit.json>).");
+    return 2;
+  }
   let max = VERIFY_MAX;
   const mvFlag = p.flags["max-verify"];
   if (typeof mvFlag === "string" && mvFlag !== "") {
@@ -33084,12 +33357,48 @@ function cmdVerify(p) {
   const repMd = readInputFile(rep, "verify", "--report");
   if (repMd === null) return 2;
   const items = buildWorklist(repMd, standard, max);
-  const out = typeof p.flags.out === "string" ? p.flags.out : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
   if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
   else
     console.log(
       lang === "fr" ? `${count} non-conformit\xE9(s) \xE0 v\xE9rifier \u2192 ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify \u2192 ${mdPath}, ${todoPath}`
+    );
+  return 0;
+}
+function applyAdjudicationFile(p, adj, lang) {
+  const inFlag = p.flags.in;
+  if (typeof inFlag !== "string" || !inFlag) {
+    console.error(
+      lang === "fr" ? "ultra11y verify : --apply <adjudication> exige --in <audit.json> (l'audit \xE0 mettre \xE0 jour)." : "ultra11y verify: --apply <adjudication> requires --in <audit.json> (the audit to update)."
+    );
+    return 2;
+  }
+  let audit;
+  try {
+    audit = JSON.parse(readText(inFlag));
+  } catch {
+    console.error(`ultra11y verify: --in file not found or not valid JSON: ${inFlag}.`);
+    return 2;
+  }
+  const r = applyAdjudication(audit, adj);
+  if (!r.ok) {
+    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
+    else {
+      console.error(
+        lang === "fr" ? `\u2717 Adjudication rejet\xE9e (${r.issues.length} probl\xE8me(s)) :` : `\u2717 Adjudication rejected (${r.issues.length} issue(s)):`
+      );
+      for (const i of r.issues) console.error(`  \u2717 ${i}`);
+    }
+    return 1;
+  }
+  const out = typeof p.flags.out === "string" ? p.flags.out : ".";
+  mkdirSync6(out, { recursive: true });
+  const auditPath = join13(out, "audit-latest.json");
+  writeFileSync8(auditPath, JSON.stringify(r.audit, null, 2) + "\n");
+  if (p.flags.json) console.log(JSON.stringify({ ok: true, auditPath, applied: r.applied, stillManual: r.stillManual, grounding: r.grounding }, null, 2));
+  else
+    console.log(
+      lang === "fr" ? `\u2713 ${r.applied} crit\xE8re(s) adjug\xE9(s), ${r.stillManual} laiss\xE9(s) en r\xE9siduel \u2192 ${auditPath}` : `\u2713 ${r.applied} criterion(ia) adjudicated, ${r.stillManual} left residual \u2192 ${auditPath}`
     );
   return 0;
 }
@@ -33223,12 +33532,12 @@ async function cmdScan(p) {
       audit = parsed;
     }
     const merged = mergeDynamic(audit, dynamic, lang);
-    mkdirSync5(out, { recursive: true });
-    writeFileSync7(join12(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    mkdirSync6(out, { recursive: true });
+    writeFileSync8(join13(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
     if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
     else
       console.log(
-        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join12(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join12(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
+        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join13(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join13(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
       );
     return 0;
   }

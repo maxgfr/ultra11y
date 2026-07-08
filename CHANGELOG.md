@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.11.0](https://github.com/maxgfr/ultra11y/compare/v2.10.1...v2.11.0) (2026-07-08)
+
+
+### Features
+
+* AI-adjudicated judgment criteria + eval-round backlog (R1–R8 + family P0) ([#5](https://github.com/maxgfr/ultra11y/issues/5)) ([1f808d6](https://github.com/maxgfr/ultra11y/commit/1f808d6d95aaf694cfca3e96540fcfe6277a4171)), closes [hi#traffic](https://github.com/hi/issues/traffic)
+
 ## [2.10.1](https://github.com/maxgfr/ultra11y/compare/v2.10.0...v2.10.1) (2026-07-07)
 
 

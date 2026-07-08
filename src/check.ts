@@ -5,9 +5,13 @@
 // The canonical WCAG report is keyed by 3-segment success criteria (1.4.3); a pack
 // report by the pack's own 2-segment ids (RGAA 8.3) — the id grammar is per-standard
 // so the version token "WCAG 2.2 —" can never be mistaken for a criterion.
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { Lang } from "./types.js";
 import { hasSC } from "./wcag.js";
 import { type StandardId, isCore, loadPack, hasId, idCaptureSource } from "./standards/index.js";
+import { buildWorklist, applyVerdicts, type VerifyItem } from "./verify.js";
+import { groundItems } from "./grounding.js";
 
 export interface CheckResult {
   ok: boolean;
@@ -21,6 +25,11 @@ const M = {
     na: (id: string) => `Critère NA sans justification : ${id}.`,
     rateMissing: "Taux de réussite absent de l'en-tête du rapport.",
     rateRange: (v: string) => `Taux de réussite hors bornes (0–100) : ${v}%.`,
+    semanticMissing: (p: string) =>
+      `Gate sémantique : aucun artefact de verdicts trouvé (${p}). Générez la worklist (\`verify --report <md>\`), statuez, puis relancez — ou passez \`--verdicts <fichier>\`.`,
+    semanticUnreadable: (p: string) => `Gate sémantique : artefact de verdicts illisible ou JSON invalide : ${p}.`,
+    semanticGate: (failed: number, total: number) => `Gate sémantique : ${failed}/${total} verdict(s) en échec (non statué, réfuté, non étayé ou non couvert).`,
+    semanticGround: (issue: string) => `Gate sémantique : ${issue}`,
   },
   en: {
     section: (n: number) => `Section ${n} missing from the report.`,
@@ -28,6 +37,11 @@ const M = {
     na: (id: string) => `NA criterion without a justification: ${id}.`,
     rateMissing: "Pass rate missing from the report header.",
     rateRange: (v: string) => `Pass rate out of range (0–100): ${v}%.`,
+    semanticMissing: (p: string) =>
+      `Semantic gate: no verdicts artifact found (${p}). Generate the worklist (\`verify --report <md>\`), adjudicate it, then re-run — or pass \`--verdicts <file>\`.`,
+    semanticUnreadable: (p: string) => `Semantic gate: verdicts artifact unreadable or invalid JSON: ${p}.`,
+    semanticGate: (failed: number, total: number) => `Semantic gate: ${failed}/${total} verdict(s) failing (unadjudicated, refuted, unsupported or uncovered).`,
+    semanticGround: (issue: string) => `Semantic gate: ${issue}`,
   },
 } as const;
 
@@ -93,6 +107,64 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
   }
 
   return { ok: issues.length === 0, issues };
+}
+
+export interface SemanticOptions {
+  /** Path of the report file — anchors the artifact auto-discovery. */
+  reportPath: string;
+  /** Explicit verdicts artifact; default: `VERIFY.todo.json` next to the report. */
+  verdictsPath?: string;
+  standard?: StandardId;
+  lang?: Lang;
+  /** Base dir for resolving the citations' relative file paths (default: cwd). */
+  cwd?: string;
+}
+
+export interface SemanticResult {
+  ok: boolean;
+  issues: string[];
+  total: number;
+  grounded: number;
+  moved: number;
+  failed: number;
+}
+
+/** `check --semantic` — the support-level gate above the structural `checkReport`.
+ *  Fails CLOSED: no adjudicated verdicts artifact → fail (a green semantic exit must
+ *  always mean the gate actually engaged). Coverage is re-derived from the report
+ *  UNCAPPED, so a truncated worklist can't hide non-conformities; every passing
+ *  verdict is then re-grounded content-level against the cited source (grounding.ts). */
+export function checkSemantic(md: string, opts: SemanticOptions): SemanticResult {
+  const lang = opts.lang ?? "en";
+  const standard = opts.standard ?? "wcag";
+  const s = M[lang];
+  const empty = { total: 0, grounded: 0, moved: 0, failed: 0 };
+
+  const artifact = opts.verdictsPath ?? join(dirname(opts.reportPath), "VERIFY.todo.json");
+  if (!existsSync(artifact)) return { ok: false, issues: [s.semanticMissing(artifact)], ...empty };
+  let items: VerifyItem[];
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(artifact, "utf8"));
+    if (!Array.isArray(parsed)) throw new Error("not an array");
+    items = parsed as VerifyItem[];
+  } catch {
+    return { ok: false, issues: [s.semanticUnreadable(artifact)], ...empty };
+  }
+
+  const issues: string[] = [];
+  const expected = buildWorklist(md, standard, Number.POSITIVE_INFINITY);
+  const gate = applyVerdicts(items, expected);
+  if (!gate.ok) issues.push(s.semanticGate(gate.failures.length, gate.total));
+
+  // Content-level re-validation of every verdict that passed the adjudication gate.
+  const passing = items.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
+  const grounding = groundItems(
+    passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: (it as { snippet?: string }).snippet })),
+    { cwd: opts.cwd },
+  );
+  for (const issue of grounding.issues) issues.push(s.semanticGround(issue));
+
+  return { ok: issues.length === 0, issues, total: gate.total, grounded: grounding.grounded, moved: grounding.moved, failed: grounding.failed };
 }
 
 /** The body of section N (between "## N." and the next "## "). */

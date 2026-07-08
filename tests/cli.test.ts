@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { writeFileSync, readFileSync, existsSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { writeFileSync, readFileSync, readdirSync, existsSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main, parseArgs } from "../src/cli.js";
@@ -416,5 +416,82 @@ describe("CLI gate & input hardening", () => {
   it("a single-dash flag typo (-grph) is surfaced as unknown", async () => {
     const r = await run(["audit", `${FIX}conforming/good.html`, "-grph"]);
     expect(r.err.toLowerCase()).toContain("unknown flag");
+  });
+});
+
+// ---- WP: fail-closed verify gates (family P0) ----
+describe("verify — fail-closed apply gate", () => {
+  const makeBig = (n: number) => {
+    const dir = mkdtempSync(join(tmpdir(), "u11y-cov-"));
+    const page = join(dir, "page.html");
+    writeFileSync(page, `<html><body>\n${Array.from({ length: n + 2 }, () => "<img>").join("\n")}\n</body></html>`);
+    const bullets = Array.from(
+      { length: n },
+      (_, i) => `- **1.1.1 — Non-text Content** — \`${page}:${i + 2}\` (\`img\`)\n  - image without a text alternative`,
+    ).join("\n");
+    const md = `# Report\n- **Rate** : 10%\n## 1. s\n## 2. NC\n${bullets}\n## 3. x\n## 4. NA\n## 5. manual\n`;
+    const report = join(dir, "report.md");
+    writeFileSync(report, md);
+    return { dir, page, report };
+  };
+
+  it("--apply WITHOUT --report exits 2: coverage cannot be established", async () => {
+    const f = join(tmpdir(), "u11y-apply-noreport.json");
+    writeFileSync(f, "[]");
+    const r = await run(["verify", "--apply", f]);
+    expect(r.code).toBe(2);
+    expect(r.err).toContain("--report");
+  });
+
+  it("coverage cross-check reaches BEYOND the 40-item worklist cap (missing NCs fail)", async () => {
+    const { dir, report } = makeBig(45);
+    // Generate the capped worklist (default 40), adjudicate everything in it…
+    const g = await run(["verify", "--report", report, "--out", dir, "--json"]);
+    expect(g.code).toBe(0);
+    const todo = JSON.parse(readFileSync(join(dir, "VERIFY.todo.json"), "utf8")) as { verdict: string | null }[];
+    expect(todo).toHaveLength(40);
+    for (const it of todo) it.verdict = "supported";
+    const filled = join(dir, "filled.json");
+    writeFileSync(filled, JSON.stringify(todo));
+    // …the 5 uncovered NCs must still fail the gate, pointing at --max-verify 0.
+    const r = await run(["verify", "--apply", filled, "--report", report]);
+    expect(r.code).toBe(1);
+    expect(r.err).toMatch(/missing|absent/i);
+    expect(r.err).toContain("--max-verify 0");
+  });
+
+  it("--max-verify 0 lifts the cap for worklist generation", async () => {
+    const { dir, report } = makeBig(45);
+    const r = await run(["verify", "--report", report, "--out", dir, "--max-verify", "0", "--json"]);
+    expect(r.code).toBe(0);
+    const parsed = JSON.parse(r.out) as { count: number };
+    expect(parsed.count).toBe(45);
+  });
+
+  it("grounds passing verdicts against the source: a citation to a non-existent element fails", async () => {
+    const { dir, report } = makeBig(3);
+    const g = await run(["verify", "--report", report, "--out", dir, "--max-verify", "0"]);
+    expect(g.code).toBe(0);
+    const todo = JSON.parse(readFileSync(join(dir, "VERIFY.todo.json"), "utf8")) as { verdict: string | null; selector: string }[];
+    for (const it of todo) it.verdict = "supported";
+    todo[0]!.selector = "video#ghost"; // cited element exists nowhere in page.html
+    const filled = join(dir, "filled.json");
+    writeFileSync(filled, JSON.stringify(todo));
+    const r = await run(["verify", "--apply", filled, "--report", report]);
+    expect(r.code).toBe(1);
+  });
+});
+
+describe("check --semantic — the gate engages or fails, never green-but-inactive", () => {
+  it("exits 1 with an explicit message when no verdicts artifact exists", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "u11y-chksem-"));
+    const audit = await run(["audit", `${FIX}non-conforming/bad.html`, "--out", dir, "--json"]);
+    expect([0, 1]).toContain(audit.code);
+    const rep = await run(["report", "--in", join(dir, "audit-latest.json"), "--out", dir, "--lang", "en"]);
+    expect(rep.code).toBe(0);
+    const reportPath = readdirSync(dir).find((f) => f.startsWith("wcag-") && f.endsWith(".md"))!;
+    const r = await run(["check", "--report", join(dir, reportPath), "--semantic"]);
+    expect(r.code).toBe(1);
+    expect(r.err.toLowerCase()).toMatch(/semantic/);
   });
 });

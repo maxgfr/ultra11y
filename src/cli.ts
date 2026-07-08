@@ -22,8 +22,9 @@ import { buildGraphStreaming } from "./graph/build.js";
 import { discover } from "./discover.js";
 import { toPosix, GRAPH_ONLY_EXT } from "./glob.js";
 import { runCriteria, renderCriteriaReference } from "./criteria.js";
-import { checkReport } from "./check.js";
+import { checkReport, checkSemantic } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
+import { groundItems } from "./grounding.js";
 import { runScan, runScanMany, runCrawlScan, mergeDynamic, cleanDynamic, dockerAvailable } from "./scan.js";
 import { runScanLocal, runScanManyLocal, runCrawlScanLocal, localAvailable } from "./scan-local.js";
 import { runFix, fixSummary } from "./fix.js";
@@ -50,7 +51,7 @@ Usage:
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
-  ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
+  ultra11y check    --report <md> [--standard <pack>] [--semantic [--verdicts <file>]] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
@@ -181,7 +182,10 @@ Options:
   --list             criteria: print the WCAG success criteria grouped by guideline
   --generate         criteria: emit the bundled references/criteria.md (WCAG 2.2 AA)
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
-  --max-verify <n>   verify: cap the worklist size                       (default: 40)
+                     (requires --report — coverage is re-derived from the report, uncapped)
+  --max-verify <n>   verify: cap the worklist size; 0 = no cap           (default: 40)
+  --verdicts <file>  check --semantic: the adjudicated verdicts artifact
+                     (default: VERIFY.todo.json next to the report)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --sitemap <url>    scan: scan every URL listed in a sitemap.xml
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
@@ -197,6 +201,9 @@ Options:
                      authenticated pages (e.g. test-results/.auth/user.json)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
+                     check: engage the semantic gate — requires an adjudicated verdicts
+                     artifact (fails closed when absent) and re-grounds every passing
+                     verdict content-level against the cited source
   --lang auto|en|fr  output language                (default: auto — conversation/repo
                      language: an AI caller should pass --lang explicitly to match the
                      chat; unset resolves repo <html lang> → standard's default locale → en)
@@ -223,6 +230,7 @@ const VALUE_FLAGS = new Set([
   "report",
   "theme",
   "apply",
+  "verdicts",
   "max-verify",
   "lang",
   "merge",
@@ -887,18 +895,34 @@ function cmdCheck(p: ParsedArgs): number {
   const md = readInputFile(rep, "check", "--report");
   if (md === null) return 2;
   const res = checkReport(md, standard, lang);
+  // --semantic: the support-level gate ON TOP of the structural check. Fails closed —
+  // a green exit must always mean the gate engaged (family P0: never green-but-inactive).
+  const sem =
+    p.flags.semantic === true
+      ? checkSemantic(md, {
+          reportPath: rep,
+          verdictsPath: typeof p.flags.verdicts === "string" && p.flags.verdicts ? p.flags.verdicts : undefined,
+          standard,
+          lang,
+        })
+      : null;
+  const ok = res.ok && (sem === null || sem.ok);
   if (p.flags.json) {
-    console.log(JSON.stringify(res, null, 2));
+    console.log(JSON.stringify(sem ? { ...res, ok, semantic: sem } : res, null, 2));
   } else if (!p.flags.quiet) {
-    if (res.ok)
+    if (ok)
       console.log(
-        lang === "fr"
-          ? "✓ Rapport valide : sections, critères cités et justifications NA cohérents."
-          : "✓ Report valid: sections, cited criteria and NA justifications are consistent.",
+        sem
+          ? lang === "fr"
+            ? `✓ Rapport valide + gate sémantique engagée : ${sem.total} verdict(s), ${sem.grounded} ancré(s) dans la source${sem.moved ? ` (${sem.moved} déplacé(s))` : ""}.`
+            : `✓ Report valid + semantic gate engaged: ${sem.total} verdict(s), ${sem.grounded} grounded in source${sem.moved ? ` (${sem.moved} moved)` : ""}.`
+          : lang === "fr"
+            ? "✓ Rapport valide : sections, critères cités et justifications NA cohérents."
+            : "✓ Report valid: sections, cited criteria and NA justifications are consistent.",
       );
-    else for (const i of res.issues) console.error(`✗ ${i}`);
+    else for (const i of [...res.issues, ...(sem?.issues ?? [])]) console.error(`✗ ${i}`);
   }
-  return res.ok ? 0 : 1;
+  return ok ? 0 : 1;
 }
 
 function cmdVerify(p: ParsedArgs): number {
@@ -925,34 +949,53 @@ function cmdVerify(p: ParsedArgs): number {
       console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
       return 2;
     }
-    // Coverage gate: if --report is also given, re-derive its worklist and fail on any NC
-    // the verdicts file omits — so a truncated/empty verdicts set can't slip a to-be-refuted
-    // finding past the gate (an empty [] against a report with NCs is NOT "all supported").
-    let expected: VerifyItem[] | undefined;
+    // Coverage gate (fail closed): --report is REQUIRED — without the report the gate
+    // cannot know which NCs the verdicts are supposed to cover, and an empty [] would
+    // pass green while covering nothing (family P0: a passing exit must mean the gate
+    // engaged). Coverage is re-derived UNCAPPED so NCs beyond the worklist cap can't
+    // silently escape adjudication.
     const applyReport = p.flags.report;
-    if (typeof applyReport === "string" && applyReport) {
-      const standard = stdOf(p, "verify");
-      if (standard === null) return 2;
-      let repMd: string;
-      try {
-        repMd = readText(applyReport);
-      } catch {
-        console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
-        return 2;
-      }
-      expected = buildWorklist(repMd, standard);
-    }
-    const r = applyVerdicts(items, expected);
-    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
-    else if (r.ok)
-      console.log(lang === "fr" ? `✓ ${r.total} non-conformités vérifiées, toutes étayées.` : `✓ ${r.total} non-conformities verified, all supported.`);
-    else
+    if (typeof applyReport !== "string" || !applyReport) {
       console.error(
         lang === "fr"
-          ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing}` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
-          : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing}` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
+          ? "ultra11y verify : --apply exige --report <md> (le rapport que les verdicts couvrent) — sans lui la couverture ne peut pas être établie."
+          : "ultra11y verify: --apply requires --report <md> (the report the verdicts cover) — without it coverage cannot be established.",
       );
-    return r.ok ? 0 : 1;
+      return 2;
+    }
+    const standard = stdOf(p, "verify");
+    if (standard === null) return 2;
+    let repMd: string;
+    try {
+      repMd = readText(applyReport);
+    } catch {
+      console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
+      return 2;
+    }
+    const expected = buildWorklist(repMd, standard, Number.POSITIVE_INFINITY);
+    const r = applyVerdicts(items, expected);
+    // Content-level grounding of every verdict that passed adjudication: the cited
+    // file/line/snippet must still exist and match the source (see src/grounding.ts).
+    const passing = items.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
+    const grounding = groundItems(passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: (it as { snippet?: string }).snippet })));
+    const ok = r.ok && grounding.failed === 0;
+    if (p.flags.json) console.log(JSON.stringify({ ...r, ok, grounding }, null, 2));
+    else if (ok)
+      console.log(
+        lang === "fr"
+          ? `✓ ${r.total} non-conformités vérifiées, toutes étayées et ancrées dans la source${grounding.moved ? ` (${grounding.moved} déplacée(s))` : ""}.`
+          : `✓ ${r.total} non-conformities verified, all supported and grounded in source${grounding.moved ? ` (${grounding.moved} moved)` : ""}.`,
+      );
+    else {
+      if (!r.ok)
+        console.error(
+          lang === "fr"
+            ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing} — régénérez la worklist avec --max-verify 0` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
+            : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing} — regenerate the worklist with --max-verify 0` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
+        );
+      for (const issue of grounding.issues) console.error(`✗ ${issue}`);
+    }
+    return ok ? 0 : 1;
   }
 
   const rep = p.flags.report;
@@ -971,7 +1014,7 @@ function cmdVerify(p: ParsedArgs): number {
       console.error("ultra11y verify: --max-verify must be a non-negative integer.");
       return 2;
     }
-    max = n;
+    max = n === 0 ? Number.POSITIVE_INFINITY : n; // 0 = no cap
   }
   const repMd = readInputFile(rep, "verify", "--report");
   if (repMd === null) return 2;

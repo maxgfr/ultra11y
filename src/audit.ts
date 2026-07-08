@@ -63,8 +63,8 @@ const APPLICABLE: Record<string, (d: Doc) => boolean> = {
 
 function residualReason(automatability: string): string {
   return automatability === "needs-rendering"
-    ? "Needs a rendered DOM (contrast, focus visibility, zoom/reflow, target size) — verify manually."
-    : "Judgement criterion — assess manually in context (relevance, wording, reading order).";
+    ? "Needs a rendered DOM (contrast, focus visibility, zoom/reflow, target size) — decide via `scan`."
+    : "Judgement criterion — adjudicated by the agent from source/context (`verify --manual`, gated).";
 }
 
 // Streaming accumulator: parse → run rules → fold → DISCARD each Doc, so the
@@ -181,7 +181,8 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
       // a rule on a needs-rendering / judgment SC raised a DEFINITE failure
       status = "NC";
     } else {
-      // engine can't decide — leave it for the human review
+      // engine can't decide — leave it for the agent to adjudicate (`verify --manual`,
+      // gated) or the `scan` tier (rendering criteria); never a silent conforming.
       status = "manual";
       residualRisks.push({ criteriaId: c.sc, reason: residualReason(c.automatability), automatability: c.automatability });
     }

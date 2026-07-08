@@ -25,7 +25,8 @@ node scripts/ultra11y.mjs audit --staged --fail-on blocking        # gate: block
 Why fix-first: every auto-fixable rule (positive `tabindex`, redundant `role`,
 zoom-blocking viewport) is `major`/`minor`, while the `blocking` findings (missing `alt`,
 missing label) are exactly the ones a codemod must **not** guess. So the safe pass cleans
-up and re-stages what it can, and the gate blocks only on the human-judgment remainder.
+up and re-stages what it can, and the gate blocks only on the judgment remainder for the AI
+agent to adjudicate.
 
 - **`--staged`** scopes to staged adds/mods only (not untracked, not unstaged-only edits)
   and audits the exact bytes a commit would record — including `.gitattributes` clean
@@ -106,6 +107,7 @@ file, source range)` is robust to line drift. **Commit `audits/baseline.json`** 
 down backlog. `--fail-on blocking|major|minor` sets the threshold (French aliases
 `bloquant|majeur|mineur` accepted).
 
-> Either gate relies on the **static** engine. The **rendering** (contrast, focus, zoom)
-> and **judgment** criteria still need checking in the full audit — the gate stops
-> mechanical regressions, it does not replace human review.
+> Either gate relies on the **static** engine. The **rendering** (contrast, focus, zoom) criteria
+> go to `scan` and the **judgment** criteria are adjudicated by the AI agent (`verify --manual`,
+> gated) in the full audit — the gate stops mechanical regressions, it is not the full audit
+> (a human is at most optional oversight).

@@ -6,10 +6,12 @@
 // skill stays a single distributable bundle). `--merge <audit.json>` folds the
 // dynamic findings back into a static AuditResult, upgrading "manual" criteria.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, existsSync, statSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync, statSync, readdirSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { AuditResult, DynamicEngine, DynamicFinding, DynamicResult, Lang, Severity } from "./types.js";
+import { fileURLToPath } from "node:url";
+import type { AuditResult, DynamicEngine, DynamicFinding, DynamicResult, Finding, Lang, Severity } from "./types.js";
+import { lineStartsOf, lineColAt } from "./parse/html.js";
 import { allGuidelines } from "./wcag.js";
 import { PROBE_SEVERITY, PROBE_WCAG, scForAxe, severityFromImpact } from "./axe-map.js";
 import { parseSitemapUrls, crawlUrls } from "./crawl.js";
@@ -175,8 +177,25 @@ function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {
   return JSON.parse(line) as RunnerOutput;
 }
 
+/** Map the runner's reported page back to a HOST-meaningful citation: the container mount
+ *  (`/work/input.html`) and a `file://` URL both resolve to the host file we scanned; a
+ *  real served URL (http/https) is kept as-is. This is what lets a dynamic finding cite a
+ *  path a reader (and `verify --semantic`) can actually open, instead of `/work/input.html`. */
+function hostPageOf(url: string | undefined, target: string): string {
+  if (!url) return target;
+  if (url === MOUNT) return target; // docker file mount → the host file we mounted read-only
+  if (url.startsWith("file://")) {
+    try {
+      return fileURLToPath(url);
+    } catch {
+      return target;
+    }
+  }
+  return url; // a real served URL — no host file to map to
+}
+
 export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = "en", engine = "axe-core@playwright (docker)"): DynamicResult {
-  const page = out.url || target;
+  const page = hostPageOf(out.url, target);
   const findings: DynamicFinding[] = [];
   for (const v of out.violations) {
     const criteriaId = scForAxe(v.id, v.tags);
@@ -315,6 +334,50 @@ export async function runCrawlScan(opts: DiscoverOpts & { tag?: string }): Promi
 
 const sevRank: Record<Severity, number> = { bloquant: 3, majeur: 2, mineur: 1 };
 
+/** Best-effort resolution of an axe outerHTML snippet to a host `file:line` + byte range.
+ *  Only file-backed citations resolve (a served-URL scan has no source file). Tries the
+ *  exact snippet, then just its opening tag (most likely verbatim), then a
+ *  whitespace-normalized line scan. Returns null when nothing matches — the caller then
+ *  keeps line 0 and relies on the selector/snippet, never inventing a line. */
+function resolveHostAnchor(file: string, snippet: string): { line: number; col: number; start: number; end: number } | null {
+  const s = snippet?.trim();
+  if (!s || !existsSync(file)) return null;
+  let source: string;
+  try {
+    source = readFileSync(file, "utf8");
+  } catch {
+    return null;
+  }
+  const starts = lineStartsOf(source);
+  const at = (start: number, len: number) => {
+    const { line, col } = lineColAt(starts, start);
+    return { line, col, start, end: start + len };
+  };
+  // 1. exact snippet
+  let idx = source.indexOf(s);
+  if (idx >= 0) return at(idx, s.length);
+  // 2. the opening tag alone (up to and including the first ">") — attributes/text after
+  //    it may differ between the rendered DOM and source, the open tag rarely does.
+  const openMatch = /^<[^>]*>/.exec(s);
+  if (openMatch) {
+    idx = source.indexOf(openMatch[0]);
+    if (idx >= 0) return at(idx, openMatch[0].length);
+  }
+  // 3. whitespace-normalized line scan (collapse runs of whitespace on both sides).
+  const norm = (t: string) => t.replace(/\s+/g, " ").trim();
+  const needle = norm(openMatch ? openMatch[0] : s);
+  if (needle) {
+    const lines = source.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (norm(lines[i]!).includes(needle)) {
+        const start = starts[i] ?? 0;
+        return { line: i + 1, col: 1, start, end: start + lines[i]!.length };
+      }
+    }
+  }
+  return null;
+}
+
 /** Fold dynamic findings into a static AuditResult: a needs-rendering/manual or
  *  clean criterion that axe flags becomes NC; tallies + conformance recompute. */
 export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: Lang = "en"): AuditResult {
@@ -331,18 +394,25 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
     // probes, whose MESSAGE is the engine's own text (never translated — passed
     // through verbatim via params.message) while the REMEDIATION is still ours.
     const msg = df.engine === "reflow" ? { id: "dyn-reflow" } : { id: "dyn-remediation", params: { message: df.message } };
-    const finding = {
+    const file = df.page ?? dynamic.target;
+    // Anchor at a real host file:line by locating the cited outerHTML in the source (R3).
+    // selector + snippet are ALWAYS kept as the anchor of last resort; line stays 0 (never
+    // a fabricated line) when the snippet resolves nowhere (e.g. a served-URL scan, or DOM
+    // that differs from source).
+    const anchor = resolveHostAnchor(file, df.snippet);
+    const finding: Finding = {
       ruleId: df.engine === "axe" ? `axe:${df.axeRule}` : `dyn-${df.engine}`,
       criteriaId: df.criteriaId,
-      file: df.page ?? dynamic.target,
-      line: 0,
-      col: 0,
+      file,
+      line: anchor?.line ?? 0,
+      col: anchor?.col ?? 0,
       selectorHint: df.selector,
       severity: df.severity,
       message: df.message,
       remediation,
       msg,
       snippet: df.snippet,
+      ...(anchor ? { sourceStart: anchor.start, sourceEnd: anchor.end } : {}),
     };
     c.findings.push(finding);
     c.status = "NC"; // a rendered-tool finding is authoritative

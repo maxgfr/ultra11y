@@ -1,0 +1,76 @@
+{
+  "_note": "Test cases modelled on the W3C ACT Rules Format (https://www.w3.org/TR/act-rules-format/) rule semantics. The HTML is original (authored for ultra11y), not reproduced from W3C. Each rule lists engine rule ids and passed/failed/inapplicable examples. The suite asserts the engine NEVER flags a passed/inapplicable example (an `inconsistent` result is a hard fail) and records caught/cannot-tell for failed ones.",
+  "rules": [
+    {
+      "actRule": "image-alt (23a2a8) — image has non-empty accessible name",
+      "engineRuleIds": ["img-alt-missing", "input-image-alt-missing"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><img src=\"cat.png\" alt=\"A sleeping cat\"></main></body></html>" },
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><input type=\"image\" src=\"go.png\" alt=\"Search\"></main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><img src=\"cat.png\"></main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><input type=\"image\" src=\"go.png\"></main></body></html>" },
+        { "expected": "inapplicable", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><img src=\"divider.png\" alt=\"\"></main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "button-name (97a4e1) — button has non-empty accessible name",
+      "engineRuleIds": ["button-empty-name"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><button>Save</button></main></body></html>" },
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><button aria-label=\"Close\"><svg aria-hidden=\"true\"><path d=\"M0 0\"/></svg></button></main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><button></button></main></body></html>" },
+        { "expected": "inapplicable", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><a href=\"/next\">Next</a></main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "link-name (c487ae) — link has non-empty accessible name",
+      "engineRuleIds": ["link-empty-name"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><a href=\"/about\">About us</a></main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><a href=\"/next\"></a></main></body></html>" },
+        { "expected": "inapplicable", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><a>anchor without href</a></main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "html-has-lang (b5c3f8) — html element has a lang attribute",
+      "engineRuleIds": ["html-lang-missing"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main>x</main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html><head><title>t</title></head><body><main>x</main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "html-lang-valid (bf051a) — html lang attribute has a valid language tag",
+      "engineRuleIds": ["lang-invalid"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main>x</main></body></html>" },
+        { "expected": "passed", "html": "<!doctype html><html lang=\"fr-CA\"><head><title>t</title></head><body><main>x</main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"english\"><head><title>t</title></head><body><main>x</main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "document-title (2779a5) — HTML page has a non-empty title",
+      "engineRuleIds": ["title-missing-empty"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>Home — Example</title></head><body><main>x</main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title></title></head><body><main>x</main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "duplicate-id (3ea0c8) — id attribute value is unique",
+      "engineRuleIds": ["duplicate-id"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><p id=\"a\">1</p><p id=\"b\">2</p></main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><p id=\"dup\">1</p><p id=\"dup\">2</p></main></body></html>" }
+      ]
+    },
+    {
+      "actRule": "iframe-name (cae760) — iframe has a non-empty accessible name",
+      "engineRuleIds": ["iframe-title-missing"],
+      "examples": [
+        { "expected": "passed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><iframe src=\"/embed\" title=\"Weather map\"></iframe></main></body></html>" },
+        { "expected": "failed", "html": "<!doctype html><html lang=\"en\"><head><title>t</title></head><body><main><iframe src=\"/embed\"></iframe></main></body></html>" }
+      ]
+    }
+  ]
+}

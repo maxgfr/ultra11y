@@ -143,6 +143,13 @@ export interface CriterionResult {
   status: Status;
   findings: Finding[];
   justification?: string;
+  // Who decided this criterion's status. Absent = the deterministic engine (the default
+  // for every audit). "agent" = an AI adjudication of a formerly-`manual` judgment/
+  // rendering criterion, recorded via `verify --manual` → `verify --apply` (each carries a
+  // justification; an NC carries groundable findings). "scan" = the dynamic tier upgraded
+  // a needs-rendering residual to C/NC (src/scan.ts mergeDynamic). Optional/additive — no
+  // SCHEMA_VERSION bump; older AuditResult JSON (no `decidedBy`) reads as engine-decided.
+  decidedBy?: "engine" | "agent" | "scan";
 }
 
 export interface GuidelineTally {
@@ -203,6 +210,11 @@ export interface AuditResult {
   // static set + any judgment SC that fired a definite NC). NOT a full conformance
   // rate — most SCs are needs-rendering/judgment and stay manual (residual risk).
   conformancePct: number;
+  // Set once `verify --apply <adjudication>` has folded an AI adjudication of the manual
+  // criteria back into the audit (src/adjudicate.ts). `stillManual` = criteria the agent
+  // left as an explicit residual (needs a rendered DOM → `scan`, or genuinely undecidable).
+  // Optional/additive — absent on a plain engine audit.
+  adjudicated?: { date: string; applied: number; stillManual: number };
 }
 
 // ---- optional dynamic tier (axe-core in a headless browser): Docker image, or a

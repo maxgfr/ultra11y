@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Stylesheet contrast — statically undecidable</title>
+    <style>
+      /* Solid low-contrast colours defined in a STYLESHEET (class rule), not inline.
+         The static engine only reads literal inline `style=` colours — it does not run
+         the CSS cascade — so it correctly leaves 1.4.3 as a residual (manual) risk.
+         axe-core, rendering the page, resolves the class to solid #949494 on #ffffff
+         (~2.9:1) and flags a real contrast violation — the delta the dynamic tier adds. */
+      .muted {
+        color: #949494;
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Dynamic-only contrast</h1>
+      <p class="muted">
+        Grey text set by a stylesheet class — insufficient contrast, invisible to static
+        analysis but caught at render time.
+      </p>
+      <a href="/">Home</a>
+    </main>
+  </body>
+</html>

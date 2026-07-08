@@ -14,7 +14,8 @@ change, no regressions) applied in priority order.
    - **placeholder** — inserts a valid attribute with a `TODO` (alt/lang/title/aria-label) that
      you replace with a real, in-context value.
    - **proposal** — judgment only; the engine never invents content (alt text, link purpose,
-     table structure) — you write it.
+     table structure) — the AI agent writes it and adjudicates the criterion (`verify --manual`,
+     gated).
 3. **Conforming / non-conforming examples**: for each pattern, start from the smallest change
    that makes the **rendered** HTML conforming (not just the source). If a library component
    does not instantiate correctly (e.g. an icon-only DSFR button with no `title`), fix at the

@@ -146,6 +146,22 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
     if (!title || typeof title[loc] !== "string") err(`criteria[${i}].title`, `criterion "${String(id)}" missing title[${loc}]`);
     const titlePlain = c?.titlePlain as Record<string, unknown> | undefined;
     if (!titlePlain || typeof titlePlain[loc] !== "string") err(`criteria[${i}].titlePlain`, `criterion "${String(id)}" missing titlePlain[${loc}]`);
+    // Optional per-criterion applicability (src/standards/types.ts PackCriterion.appliesTo).
+    // Present → must be { ruleIds: string[] } of non-empty strings; an empty list is legal
+    // (a criterion no engine rule can evidence). Registry-existence of the ruleIds is an
+    // advisory `pack check` WARNING (src/pack.ts), not a hard error here.
+    if (c?.appliesTo !== undefined) {
+      const a = c.appliesTo as Record<string, unknown> | undefined;
+      const ruleIds = a && typeof a === "object" && !Array.isArray(a) ? a.ruleIds : undefined;
+      if (!a || typeof a !== "object" || Array.isArray(a) || !Array.isArray(ruleIds)) {
+        err(`criteria[${i}].appliesTo`, `criterion "${String(id)}" appliesTo must be an object { ruleIds: string[] }`);
+      } else {
+        (ruleIds as unknown[]).forEach((r, k) => {
+          if (typeof r !== "string" || r.trim() === "")
+            err(`criteria[${i}].appliesTo.ruleIds[${k}]`, `criterion "${String(id)}" appliesTo.ruleIds must be non-empty strings`);
+        });
+      }
+    }
     const wcag = Array.isArray(c?.wcag) ? (c.wcag as unknown[]) : null;
     if (!wcag || wcag.length === 0) {
       err(`criteria[${i}].wcag`, `criterion "${String(id)}" must map to at least one WCAG SC`);

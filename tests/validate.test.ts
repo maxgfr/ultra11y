@@ -162,3 +162,25 @@ describe("classifySc", () => {
     expect(classifySc("1.1")).toBe("malformed");
   });
 });
+
+describe("validatePack — appliesTo (per-criterion applicability)", () => {
+  const withApplies = (appliesTo: unknown) => {
+    const b = base();
+    (b.criteria as Record<string, unknown>[])[0]!.appliesTo = appliesTo;
+    return b;
+  };
+  it("accepts a well-formed appliesTo", () => {
+    expect(validatePack(withApplies({ ruleIds: ["img-alt-missing", "axe:image-alt"] })).ok).toBe(true);
+  });
+  it("accepts an empty ruleIds list (a criterion no engine rule can evidence)", () => {
+    expect(validatePack(withApplies({ ruleIds: [] })).ok).toBe(true);
+  });
+  it("errors when appliesTo is not an object or ruleIds is not a string array", () => {
+    expect(validatePack(withApplies({ ruleIds: "img-alt-missing" })).ok).toBe(false);
+    expect(validatePack(withApplies({ ruleIds: [1, 2] })).ok).toBe(false);
+    expect(validatePack(withApplies([])).ok).toBe(false);
+  });
+  it("errors on an empty-string ruleId", () => {
+    expect(errs(validatePack(withApplies({ ruleIds: [""] }))).length).toBeGreaterThan(0);
+  });
+});

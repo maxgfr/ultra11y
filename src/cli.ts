@@ -22,8 +22,10 @@ import { buildGraphStreaming } from "./graph/build.js";
 import { discover } from "./discover.js";
 import { toPosix, GRAPH_ONLY_EXT } from "./glob.js";
 import { runCriteria, renderCriteriaReference } from "./criteria.js";
-import { checkReport } from "./check.js";
+import { checkReport, checkSemantic } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
+import { groundItems } from "./grounding.js";
+import { buildAdjudicationWorklist, writeAdjudication, applyAdjudication, type AdjudicationFile } from "./adjudicate.js";
 import { runScan, runScanMany, runCrawlScan, mergeDynamic, cleanDynamic, dockerAvailable } from "./scan.js";
 import { runScanLocal, runScanManyLocal, runCrawlScanLocal, localAvailable } from "./scan-local.js";
 import { runFix, fixSummary } from "./fix.js";
@@ -50,8 +52,10 @@ Usage:
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
-  ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
+  ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
+  ultra11y verify   --report <md> --in <audit.json> --manual [--out <dir>] [--json]   (adjudicate the manual criteria)
+  ultra11y verify   --apply <adjudication.json> --in <audit.json> [--out <dir>]        (fold the adjudication into the audit)
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
@@ -64,8 +68,9 @@ Commands:
              and emit an AuditResult JSON keyed by WCAG 2.2 success criteria
              (consumed by 'report'). Without --json, prints a summary in --lang
              (default auto: repo <html lang> → the active standard's default locale
-             → English). The engine decides the machine-detectable criteria; you
-             supply the judgment + needs-rendering ones.
+             → English). The engine decides the machine-detectable criteria; the AI
+             agent adjudicates the judgment ones (verify --manual, gated) and the
+             scan tier decides the needs-rendering ones.
   report     Render an AuditResult into a dated WCAG 2.2 AA compliance report
              (audits/wcag-YYYY-MM-DD.md): metadata, per-guideline synthesis table,
              non-conformities by priority, conforming + not-applicable lists.
@@ -130,7 +135,9 @@ Commands:
 
 Options:
   --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
-                     audit-latest.json here — a plain audit writes nothing without it
+                     audit-latest.json here — a plain audit writes nothing without it.
+                     For audit, a value ending in .json is a FILE target (written exactly);
+                     the path actually written is echoed on stderr
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit/fix: only include paths matching (comma-separated)
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
@@ -181,7 +188,10 @@ Options:
   --list             criteria: print the WCAG success criteria grouped by guideline
   --generate         criteria: emit the bundled references/criteria.md (WCAG 2.2 AA)
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
-  --max-verify <n>   verify: cap the worklist size                       (default: 40)
+                     (requires --report — coverage is re-derived from the report, uncapped)
+  --max-verify <n>   verify: cap the worklist size; 0 = no cap           (default: 40)
+  --verdicts <file>  check --semantic: the adjudicated verdicts artifact
+                     (default: VERIFY.todo.json next to the report)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --sitemap <url>    scan: scan every URL listed in a sitemap.xml
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
@@ -197,6 +207,11 @@ Options:
                      authenticated pages (e.g. test-results/.auth/user.json)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
+                     check: engage the semantic gate — requires an adjudicated verdicts
+                     artifact (fails closed when absent) and re-grounds every passing
+                     verdict content-level against the cited source
+  --manual           verify: with --in <audit.json>, emit an adjudication worklist over the
+                     audit's residual (judgment / needs-rendering) criteria for the agent to rule
   --lang auto|en|fr  output language                (default: auto — conversation/repo
                      language: an AI caller should pass --lang explicitly to match the
                      chat; unset resolves repo <html lang> → standard's default locale → en)
@@ -223,6 +238,7 @@ const VALUE_FLAGS = new Set([
   "report",
   "theme",
   "apply",
+  "verdicts",
   "max-verify",
   "lang",
   "merge",
@@ -283,6 +299,7 @@ const BOOLEAN_FLAGS = new Set([
   "list",
   "generate",
   "semantic",
+  "manual",
   "gh-issues",
   "gh-single",
   "override",
@@ -485,11 +502,18 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   // `audit` streams to stdout (--json / text summary) and must NOT litter the CWD with an
   // audits/ folder. Chain via `audit … --out audits` when you want the file (e.g. for
   // `scan --merge audits/audit-latest.json` or `report --in audits/audit-latest.json`).
+  // R6: an `--out` value ending in `.json` is a FILE target (write exactly there);
+  // otherwise it's a directory and the canonical `audit-latest.json` lands inside it — so
+  // `--out run.json` no longer surprises the user with `run.json/audit-latest.json`.
   if (typeof p.flags.out === "string") {
     const out = p.flags.out;
+    const asFile = out.toLowerCase().endsWith(".json");
+    const target = asFile ? out : join(out, "audit-latest.json");
     try {
-      mkdirSync(out, { recursive: true });
-      writeFileSync(join(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+      mkdirSync(asFile ? dirname(out) : out, { recursive: true });
+      writeFileSync(target, JSON.stringify(result, null, 2) + "\n");
+      // Report the path actually written on STDERR so `--json` stdout stays parseable.
+      console.error(lang === "fr" ? `→ audit écrit dans ${target}` : `→ audit written to ${target}`);
     } catch {
       /* non-fatal: still print the result */
     }
@@ -886,19 +910,54 @@ function cmdCheck(p: ParsedArgs): number {
   const lang = resolveLang(p.flags, { standard });
   const md = readInputFile(rep, "check", "--report");
   if (md === null) return 2;
-  const res = checkReport(md, standard, lang);
-  if (p.flags.json) {
-    console.log(JSON.stringify(res, null, 2));
-  } else if (!p.flags.quiet) {
-    if (res.ok)
-      console.log(
-        lang === "fr"
-          ? "✓ Rapport valide : sections, critères cités et justifications NA cohérents."
-          : "✓ Report valid: sections, cited criteria and NA justifications are consistent.",
-      );
-    else for (const i of res.issues) console.error(`✗ ${i}`);
+  // --in <audit.json>: enable the pack applicability gate (R1) — re-derive from the audit
+  // and fail on any NC criterion the report over-/under-projects.
+  let audit: AuditResult | undefined;
+  const inFlag = p.flags.in;
+  if (typeof inFlag === "string" && inFlag) {
+    let rawAudit: string;
+    try {
+      rawAudit = readText(inFlag);
+    } catch {
+      console.error(`ultra11y check: --in file not found: ${inFlag}.`);
+      return 2;
+    }
+    try {
+      audit = JSON.parse(rawAudit) as AuditResult;
+    } catch {
+      console.error("ultra11y check: --in file is not valid JSON.");
+      return 2;
+    }
   }
-  return res.ok ? 0 : 1;
+  const res = checkReport(md, standard, lang, { audit });
+  // --semantic: the support-level gate ON TOP of the structural check. Fails closed —
+  // a green exit must always mean the gate engaged (family P0: never green-but-inactive).
+  const sem =
+    p.flags.semantic === true
+      ? checkSemantic(md, {
+          reportPath: rep,
+          verdictsPath: typeof p.flags.verdicts === "string" && p.flags.verdicts ? p.flags.verdicts : undefined,
+          standard,
+          lang,
+        })
+      : null;
+  const ok = res.ok && (sem === null || sem.ok);
+  if (p.flags.json) {
+    console.log(JSON.stringify(sem ? { ...res, ok, semantic: sem } : res, null, 2));
+  } else if (!p.flags.quiet) {
+    if (ok)
+      console.log(
+        sem
+          ? lang === "fr"
+            ? `✓ Rapport valide + gate sémantique engagée : ${sem.total} verdict(s), ${sem.grounded} ancré(s) dans la source${sem.moved ? ` (${sem.moved} déplacé(s))` : ""}.`
+            : `✓ Report valid + semantic gate engaged: ${sem.total} verdict(s), ${sem.grounded} grounded in source${sem.moved ? ` (${sem.moved} moved)` : ""}.`
+          : lang === "fr"
+            ? "✓ Rapport valide : sections, critères cités et justifications NA cohérents."
+            : "✓ Report valid: sections, cited criteria and NA justifications are consistent.",
+      );
+    else for (const i of [...res.issues, ...(sem?.issues ?? [])]) console.error(`✗ ${i}`);
+  }
+  return ok ? 0 : 1;
 }
 
 function cmdVerify(p: ParsedArgs): number {
@@ -914,55 +973,123 @@ function cmdVerify(p: ParsedArgs): number {
       console.error(`ultra11y verify: --apply file not found: ${apply}.`);
       return 2;
     }
-    let items: VerifyItem[];
+    let parsed: unknown;
     try {
-      items = JSON.parse(raw) as VerifyItem[];
+      parsed = JSON.parse(raw);
     } catch {
       console.error("ultra11y verify: --apply file is not valid JSON.");
       return 2;
     }
-    if (!Array.isArray(items)) {
-      console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
+    // Dispatch on shape: an OBJECT with kind:"adjudication" is a manual-criteria adjudication
+    // (src/adjudicate.ts); a plain ARRAY is the classic NC-verdicts worklist.
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && (parsed as { kind?: string }).kind === "adjudication") {
+      return applyAdjudicationFile(p, parsed as AdjudicationFile, lang);
+    }
+    if (!Array.isArray(parsed)) {
+      console.error("ultra11y verify: --apply must be a JSON array of verdicts, or an adjudication object.");
       return 2;
     }
-    // Coverage gate: if --report is also given, re-derive its worklist and fail on any NC
-    // the verdicts file omits — so a truncated/empty verdicts set can't slip a to-be-refuted
-    // finding past the gate (an empty [] against a report with NCs is NOT "all supported").
-    let expected: VerifyItem[] | undefined;
+    const items = parsed as VerifyItem[];
+    // Coverage gate (fail closed): --report is REQUIRED — without the report the gate
+    // cannot know which NCs the verdicts are supposed to cover, and an empty [] would
+    // pass green while covering nothing (family P0: a passing exit must mean the gate
+    // engaged). Coverage is re-derived UNCAPPED so NCs beyond the worklist cap can't
+    // silently escape adjudication.
     const applyReport = p.flags.report;
-    if (typeof applyReport === "string" && applyReport) {
-      const standard = stdOf(p, "verify");
-      if (standard === null) return 2;
-      let repMd: string;
-      try {
-        repMd = readText(applyReport);
-      } catch {
-        console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
-        return 2;
-      }
-      expected = buildWorklist(repMd, standard);
-    }
-    const r = applyVerdicts(items, expected);
-    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
-    else if (r.ok)
-      console.log(lang === "fr" ? `✓ ${r.total} non-conformités vérifiées, toutes étayées.` : `✓ ${r.total} non-conformities verified, all supported.`);
-    else
+    if (typeof applyReport !== "string" || !applyReport) {
       console.error(
         lang === "fr"
-          ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing}` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
-          : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing}` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
+          ? "ultra11y verify : --apply exige --report <md> (le rapport que les verdicts couvrent) — sans lui la couverture ne peut pas être établie."
+          : "ultra11y verify: --apply requires --report <md> (the report the verdicts cover) — without it coverage cannot be established.",
       );
-    return r.ok ? 0 : 1;
+      return 2;
+    }
+    const standard = stdOf(p, "verify");
+    if (standard === null) return 2;
+    let repMd: string;
+    try {
+      repMd = readText(applyReport);
+    } catch {
+      console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
+      return 2;
+    }
+    const expected = buildWorklist(repMd, standard, Number.POSITIVE_INFINITY);
+    const r = applyVerdicts(items, expected);
+    // Content-level grounding of every verdict that passed adjudication: the cited
+    // file/line/snippet must still exist and match the source (see src/grounding.ts).
+    const passing = items.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
+    const grounding = groundItems(
+      passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: (it as { snippet?: string }).snippet })),
+    );
+    const ok = r.ok && grounding.failed === 0;
+    if (p.flags.json) console.log(JSON.stringify({ ...r, ok, grounding }, null, 2));
+    else if (ok)
+      console.log(
+        lang === "fr"
+          ? `✓ ${r.total} non-conformités vérifiées, toutes étayées et ancrées dans la source${grounding.moved ? ` (${grounding.moved} déplacée(s))` : ""}.`
+          : `✓ ${r.total} non-conformities verified, all supported and grounded in source${grounding.moved ? ` (${grounding.moved} moved)` : ""}.`,
+      );
+    else {
+      if (!r.ok)
+        console.error(
+          lang === "fr"
+            ? `✗ ${r.failures.length}/${r.total} en échec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statué ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing} — régénérez la worklist avec --max-verify 0` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).`
+            : `✗ ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing} — regenerate the worklist with --max-verify 0` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`,
+        );
+      for (const issue of grounding.issues) console.error(`✗ ${issue}`);
+    }
+    return ok ? 0 : 1;
   }
 
-  const rep = p.flags.report;
-  if (typeof rep !== "string" || !rep) {
-    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>).");
-    return 2;
-  }
   const standard = stdOf(p, "verify");
   if (standard === null) return 2;
   lang = resolveLang(p.flags, { standard });
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
+
+  // --manual: emit an ADJUDICATION worklist over the audit's residual (manual) criteria —
+  // the judgment/needs-rendering SCs the engine could not decide — pre-loaded with the
+  // evidence the agent rules on. Reads the AUDIT (--in), NOT a report, so --report is
+  // not required here (harvesting re-reads the audited source files).
+  if (p.flags.manual === true) {
+    const inFlag = p.flags.in;
+    if (typeof inFlag !== "string" || !inFlag) {
+      console.error(
+        lang === "fr"
+          ? "ultra11y verify : --manual exige --in <audit.json> (l'audit dont les critères résiduels sont à adjuger)."
+          : "ultra11y verify: --manual requires --in <audit.json> (the audit whose residual criteria are adjudicated).",
+      );
+      return 2;
+    }
+    let audit: AuditResult;
+    try {
+      audit = JSON.parse(readText(inFlag)) as AuditResult;
+    } catch {
+      console.error(`ultra11y verify: --in file not found or not valid JSON: ${inFlag}.`);
+      return 2;
+    }
+    const adjItems = buildAdjudicationWorklist(audit, { standard });
+    const w = writeAdjudication(adjItems, out, { standard, auditDate: audit.date, lang });
+    if (adjItems.every((it) => it.evidence.length === 0)) {
+      console.error(
+        lang === "fr"
+          ? `ultra11y verify : aucune évidence n'a pu être extraite (${audit.scope.inputs.join(", ")} introuvable ?) — lancez --manual depuis le répertoire de l'audit.`
+          : `ultra11y verify: no evidence could be harvested (${audit.scope.inputs.join(", ")} not found?) — run --manual from the audit's directory.`,
+      );
+    }
+    if (p.flags.json) console.log(JSON.stringify({ mdPath: w.mdPath, todoPath: w.todoPath, count: w.count, items: adjItems }, null, 2));
+    else
+      console.log(
+        lang === "fr" ? `${w.count} critère(s) à adjuger → ${w.mdPath}, ${w.todoPath}` : `${w.count} criterion(ia) to adjudicate → ${w.mdPath}, ${w.todoPath}`,
+      );
+    return 0;
+  }
+
+  // Normal NC-verification worklist path — requires --report.
+  const rep = p.flags.report;
+  if (typeof rep !== "string" || !rep) {
+    console.error("ultra11y verify: --report <md> is required (or --apply <verdicts.json>, or --manual --in <audit.json>).");
+    return 2;
+  }
   let max = VERIFY_MAX;
   const mvFlag = p.flags["max-verify"];
   if (typeof mvFlag === "string" && mvFlag !== "") {
@@ -971,17 +1098,60 @@ function cmdVerify(p: ParsedArgs): number {
       console.error("ultra11y verify: --max-verify must be a non-negative integer.");
       return 2;
     }
-    max = n;
+    max = n === 0 ? Number.POSITIVE_INFINITY : n; // 0 = no cap
   }
   const repMd = readInputFile(rep, "verify", "--report");
   if (repMd === null) return 2;
   const items = buildWorklist(repMd, standard, max);
-  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
   const { todoPath, mdPath, count } = writeWorklist(items, out, p.flags.semantic === true, standard, lang);
   if (p.flags.json) console.log(JSON.stringify({ mdPath, todoPath, count, items }, null, 2));
   else
     console.log(
       lang === "fr" ? `${count} non-conformité(s) à vérifier → ${mdPath}, ${todoPath}` : `${count} non-conformity(ies) to verify → ${mdPath}, ${todoPath}`,
+    );
+  return 0;
+}
+
+/** `verify --apply <adjudication.json> --in <audit.json> --out <dir>` — fold an AI
+ *  adjudication of the manual criteria back into the audit, fail-closed, then rewrite the
+ *  audit JSON so `report`/`prd` re-render with the adjudicated statuses. */
+function applyAdjudicationFile(p: ParsedArgs, adj: AdjudicationFile, lang: Lang): number {
+  const inFlag = p.flags.in;
+  if (typeof inFlag !== "string" || !inFlag) {
+    console.error(
+      lang === "fr"
+        ? "ultra11y verify : --apply <adjudication> exige --in <audit.json> (l'audit à mettre à jour)."
+        : "ultra11y verify: --apply <adjudication> requires --in <audit.json> (the audit to update).",
+    );
+    return 2;
+  }
+  let audit: AuditResult;
+  try {
+    audit = JSON.parse(readText(inFlag)) as AuditResult;
+  } catch {
+    console.error(`ultra11y verify: --in file not found or not valid JSON: ${inFlag}.`);
+    return 2;
+  }
+  const r = applyAdjudication(audit, adj);
+  if (!r.ok) {
+    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
+    else {
+      console.error(lang === "fr" ? `✗ Adjudication rejetée (${r.issues.length} problème(s)) :` : `✗ Adjudication rejected (${r.issues.length} issue(s)):`);
+      for (const i of r.issues) console.error(`  ✗ ${i}`);
+    }
+    return 1;
+  }
+  // Persist the updated audit so report/prd re-render with the adjudicated statuses.
+  const out = typeof p.flags.out === "string" ? (p.flags.out as string) : ".";
+  mkdirSync(out, { recursive: true });
+  const auditPath = join(out, "audit-latest.json");
+  writeFileSync(auditPath, JSON.stringify(r.audit, null, 2) + "\n");
+  if (p.flags.json) console.log(JSON.stringify({ ok: true, auditPath, applied: r.applied, stillManual: r.stillManual, grounding: r.grounding }, null, 2));
+  else
+    console.log(
+      lang === "fr"
+        ? `✓ ${r.applied} critère(s) adjugé(s), ${r.stillManual} laissé(s) en résiduel → ${auditPath}`
+        : `✓ ${r.applied} criterion(ia) adjudicated, ${r.stillManual} left residual → ${auditPath}`,
     );
   return 0;
 }

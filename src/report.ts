@@ -21,12 +21,12 @@ const L = {
     wcagStd: "WCAG 2.2 niveau AA",
     date: "Date",
     tool: "Outil",
-    toolNote: "moteur statique — audit préliminaire à compléter par une revue humaine",
+    toolNote: "moteur statique — audit préliminaire, critères de jugement à adjuger par l'agent IA (statique, gaté), rendu via `scan`",
     scope: "Périmètre",
     files: "fichier(s)",
     rate: "Taux de réussite automatique (vérifications statiques)",
     rateNote: "sous-ensemble décidable par la machine : C ÷ (C + NC)",
-    warn: "Ce rapport couvre le sous-ensemble de critères vérifiables automatiquement. Les critères « à évaluer » (rendu / jugement) doivent être complétés par une revue humaine (voir la dernière section).",
+    warn: "Ce rapport couvre le sous-ensemble de critères vérifiables automatiquement. Les critères « à évaluer » (rendu / jugement) sont adjugés par l'agent IA (`verify --manual`, de façon gatée) ; le rendu passe par `scan` (voir la dernière section).",
     derived: (std: string) =>
       `Vue dérivée du ${std} : projection des critères de succès WCAG audités sur le référentiel. La vérification d'intégrité (\`check\`/\`verify\`) opère sur le rapport WCAG canonique.`,
     synthTitle: (by: string) => `1. Synthèse par ${by}`,
@@ -39,9 +39,11 @@ const L = {
     none: "Aucune non-conformité détectée par le moteur statique.",
     cTitle: "3. Critères conformes (C)",
     naTitle: "4. Critères non applicables (NA)",
-    manualTitle: "5. Critères à évaluer manuellement (rendu / jugement)",
-    manualWarn: "Ne marquez aucun de ces critères « conforme » sans vérification humaine.",
+    manualTitle: "5. Critères à adjuger (jugement / rendu) — non décidés par le moteur statique",
+    manualWarn:
+      "Adjugez-les avec `verify --manual` (l'agent décide depuis la source, de façon gatée) ; les critères de rendu passent par `scan`. Aucun ne doit être marqué « conforme » sans justification enregistrée et gatée.",
     outOfScope: "Hors périmètre moteur — mappé sur des SC hors WCAG 2.2 AA ; vérification manuelle.",
+    scopedOut: "Les non-conformités WCAG relevées concernent des éléments hors du périmètre de ce critère — à évaluer séparément.",
     nothing: "Aucun.",
     dedup: "Dédup",
     canonical: "fichier(s) canonique(s) audité(s)",
@@ -61,12 +63,12 @@ const L = {
     wcagStd: "WCAG 2.2 Level AA",
     date: "Date",
     tool: "Tool",
-    toolNote: "static engine — preliminary audit to be completed by a human review",
+    toolNote: "static engine — preliminary audit; judgment criteria adjudicated by the AI agent (statically, gated), rendering via `scan`",
     scope: "Scope",
     files: "file(s)",
     rate: "Automatic static-check pass rate",
     rateNote: "machine-decidable subset: C ÷ (C + NC)",
-    warn: "This report covers the subset of criteria checkable automatically. The “to assess” criteria (rendering / judgment) must be completed by a human review (see the last section).",
+    warn: "This report covers the subset of criteria checkable automatically. The “to assess” criteria (rendering / judgment) are adjudicated by the AI agent (`verify --manual`, gated); rendering goes through `scan` (see the last section).",
     derived: (std: string) =>
       `Derived view of ${std}: the audited WCAG success criteria projected onto this standard. The integrity gates (\`check\`/\`verify\`) operate on the canonical WCAG report.`,
     synthTitle: (by: string) => `1. Synthesis by ${by}`,
@@ -79,9 +81,11 @@ const L = {
     none: "No non-conformity detected by the static engine.",
     cTitle: "3. Conforming criteria (C)",
     naTitle: "4. Not-applicable criteria (NA)",
-    manualTitle: "5. Criteria to assess manually (rendering / judgment)",
-    manualWarn: "Do not mark any of these criteria “conforming” without a human check.",
+    manualTitle: "5. Criteria to adjudicate (judgment / rendering) — not decided by the static engine",
+    manualWarn:
+      "Adjudicate these with `verify --manual` (the agent decides from source, gated); rendering criteria go to `scan`. None may be marked “conforming” without a recorded, gated justification.",
     outOfScope: "Out of engine scope — mapped to SCs outside WCAG 2.2 AA; manual verification.",
+    scopedOut: "The WCAG failures found concern elements outside this criterion's scope — assess separately.",
     nothing: "None.",
     dedup: "Dedup",
     canonical: "canonical file(s) audited",
@@ -220,9 +224,15 @@ export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang 
       label: `${pack.name} ${pr.id} — ${packTitle(pack, pc, lang)}`,
       status: pr.status,
       findings: pr.findings,
-      // outOfScope criteria are "manual" (not NA) with their own dedicated justification —
-      // never mixed with the ordinary NA reason (see the manual-section justification above).
-      ...(pr.outOfScope ? { justification: s.outOfScope } : pr.status === "NA" ? { justification: naReason } : {}),
+      // outOfScope / scopedOut criteria are "manual" (not NA) with their own dedicated
+      // justification — never mixed with the ordinary NA reason (see the manual section above).
+      ...(pr.outOfScope
+        ? { justification: s.outOfScope }
+        : pr.scopedOut
+          ? { justification: s.scopedOut }
+          : pr.status === "NA"
+            ? { justification: naReason }
+            : {}),
     };
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)!).push(row);
   }

@@ -21,7 +21,8 @@ node scripts/ultra11y.mjs fix page.html --only positive-tabindex --write
   `iframe-title-missing` (`title="TODO"`), `img-alt-missing` (`alt="TODO"` or
   `aria-label="TODO"`), `control-label-missing` (`aria-label="TODO"`).
 - **judgment (proposal)** — the engine never fixes on its own: alt relevance (1.1.1), link/
-  button purpose (2.4.4/4.1.2), contrast, table/fieldset structure… You write the content.
+  button purpose (2.4.4/4.1.2), contrast, table/fieldset structure… the AI agent writes the
+  content and adjudicates the criterion (`verify --manual`, gated).
 
 ## Guarantees
 
@@ -40,5 +41,6 @@ node scripts/ultra11y.mjs fix page.html --only positive-tabindex --write
 
 native semantics → accessible names / labels → keyboard access → visible focus → meaning not
 carried by colour alone → media. See `references/authoring.md` and
-`references/forbidden-patterns.md`. After fixing, re-audit and complete the judgment and
-rendering criteria (never marked conforming without verification).
+`references/forbidden-patterns.md`. After fixing, re-audit; the AI agent adjudicates the judgment
+criteria (`verify --manual`, gated) and the rendering criteria go to `scan` — never marked
+conforming without a recorded, gated justification.

@@ -1,6 +1,6 @@
 ---
 name: ultra11y
-description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated auditor-conformance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 53 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — deciding what it can; YOU supply judgment (alt relevance, link purpose) and needs-rendering criteria (contrast, focus, zoom) as residual risks. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`), gated by `pack check`. JSX/TSX parse to a real AST (`audit --graph` cross-file); `report`/`prd`/`--gh-issues` share one auditor conformance block per criterion, in --lang (auto-detected otherwise); check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
+description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated auditor-conformance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 53 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — deciding what it can; the AI agent adjudicates the judgment criteria (alt relevance, link purpose) itself via `verify --manual`, gated, and the needs-rendering ones (contrast, focus, zoom) go to the scan tier — never silently conforming. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`). JSX/TSX parse to a real AST (`audit --graph`); `report`/`prd`/`--gh-issues` share one auditor block per criterion; check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
 license: MIT
 metadata:
   version: 2.10.1
@@ -12,10 +12,13 @@ On accessibility, an automated tool only sees part of the problem. `ultra11y` ow
 that with a **division of labour**: the deterministic, install-free engine
 (`node scripts/ultra11y.mjs <command>` — no `npm install`, no key; the JSX/TSX parser
 is embedded in the bundle) does the *mechanical* work — detect the machine-checkable
-non-conformities and tie each to the right **WCAG success criterion** — and **you** do
-the *judgment* — alt relevance, link purpose in context, reading order — plus the
-criteria that need a **rendered DOM** (contrast, focus, zoom). Gates stop any
-hallucinated non-conformity from surviving.
+non-conformities and tie each to the right **WCAG success criterion** — and **the AI agent**
+(Claude running this skill) *adjudicates the judgment criteria itself* — alt relevance, link
+purpose in context, reading order — statically, from the evidence the engine harvests
+(`verify --manual`), each verdict gated by `verify`/`check`. Only the truly **rendered-DOM**
+criteria (computed contrast, visible focus, zoom/reflow, content-on-hover) fall to the `scan`
+tier (axe-core in a real browser); a human is at most optional oversight. Gates stop any
+hallucinated non-conformity from surviving, and nothing is ever silently "conforming".
 
 **WCAG 2.2 Level AA is the worldwide core.** Country standards — France's **RGAA**, the
 US **Section 508**, the EU **EN 301 549** — are pluggable *standards packs* that map their
@@ -29,8 +32,10 @@ contribute your country (see `references/standards.md`). Packs (and their concre
 > **Core rules:**
 > 1. **Never invent a non-conformity**: every `NC` cites a real, resolvable element (`check` verifies it).
 > 2. **Native HTML first, ARIA last**; never duplicate implicit semantics.
-> 3. **Residual is explicit**: any *rendering*/*judgment* criterion not proven goes to
->    "to assess manually", never silently marked conforming.
+> 3. **Residual is explicit, never silently conforming**: the AI agent *adjudicates* every
+>    *judgment* criterion itself (`verify --manual`, gated), and the *rendering* criteria go to
+>    `scan`; any criterion still unproven stays "to assess manually" — no status without a
+>    recorded, justified verdict.
 > 4. **The FINAL rendered semantic HTML must be correct.** The engine sees only source; a
 >    component library (DSFR/MUI…) or `.vue`/`.svelte`/`.astro` SFC hides the real markup, so
 >    a green source audit is not proof. Verify the produced semantic HTML — install the
@@ -84,13 +89,17 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   anti-hallucination guardrail), `pack scaffold` to start one; concrete before/after
   implementation guidance attaches to findings/PRD; read **`references/packs.md`** and
   **`references/guidance.md`**.
-- **"Decide the judgment / rendering criteria (judgment phase)"** → `verify` produces a
-  checklist grounded in each SC's W3C Understanding reference; rule on each, then
-  `verify --apply`; read **`references/judgment.md`**.
-- **"Focus, keyboard & interaction logic (the human-logic part)"** → the engine marks
-  focus order/visible/trap and on-focus/on-input criteria as residual risks; YOU read the
-  full component source and reason about the keyboard/focus behaviour; read
-  **`references/focus-and-logic.md`**.
+- **"Adjudicate the judgment criteria (judgment phase)"** → `verify --manual --in audit.json`
+  emits an ADJUDICATION worklist (`ADJUDICATE.todo.json` + `ADJUDICATE.md`), one item per
+  residual criterion, pre-loaded with the engine's harvested evidence (every alt, link text +
+  context, literal colour pairs, control labels, heading outline, ARIA state, tabindex,
+  lang-of-parts); the AI agent fills each `verdict` — `C`/`NA` (with a `justification`), `NC`
+  (with a groundable finding), or `manual` (with a `reason`) — then `verify --apply … --in
+  audit.json` folds them back FAIL-CLOSED; read **`references/judgment.md`**.
+- **"Focus, keyboard & interaction logic (the interaction-logic part)"** → the engine marks
+  focus order/visible/trap and on-focus/on-input criteria as residual risks; the AI agent reads
+  the full component source and adjudicates the keyboard/focus behaviour (visible-focus and the
+  other rendered criteria go to `scan`); read **`references/focus-and-logic.md`**.
 - **"Put the fixes in place"** → `fix` (dry-run by default, `--write` applies the safe
   codemods, proposes the rest without inventing anything); read **`references/fix.md`**.
 - **"Fix by priority, no regressions (correction phase)"** → `fix` (`--write`,
@@ -162,9 +171,14 @@ drive the judgment and content stages:
 1. **Audit** the source (`audit … --graph`) for a first map; on library-rendered code,
    **audit the render** (`render` → build/SSR → `audit`) for reliable verdicts (otherwise
    the scope-risk note reminds you).
-2. **Judge & refute** with `verify` (W3C Understanding grounding): rule on each
-   rendering/judgment criterion, AND **refute any `preliminary`/SFC/library-source finding**
-   that the rendered DOM disproves — fill the `VERIFY.todo.json` verdicts, then
+2. **Adjudicate & refute** with `verify`, two worklists. (a) `verify --manual --in audit.json`
+   emits `ADJUDICATE.todo.json` — one item per residual *judgment* criterion, pre-loaded with the
+   engine's harvested evidence — which the AI agent rules on (`C`/`NC`/`NA`, or `manual` with a
+   `reason` when it truly `needs-rendered-dom`), each verdict carrying a `justification` or a
+   groundable finding; `verify --apply … --in audit.json` folds them back FAIL-CLOSED (agent NCs
+   become real `agent:<sc>` findings that re-render in §2). (b) `verify --report … [--semantic]`
+   builds `VERIFY.todo.json` to **refute any `preliminary`/SFC/library-source finding** the
+   rendered DOM disproves (verdicts `supported`/`partial`/`refuted`/`unsupported`);
    `verify --apply` drops the refuted/unsupported ones (the anti-hallucination gate). This
    includes **focus & interaction logic** (read the full component source: keyboard
    operability, focus order/visibility, traps, on-focus/on-input changes; see
@@ -189,13 +203,15 @@ re-run this cycle.)
 The `audit` output classes each success criterion: `C`/`NC`/`NA` for the static subset;
 `manual` for the rendering/judgment criteria (listed in `residualRisks`). Each SC carries an
 `automatability` class — **`static`** (the engine can decide), **`needs-rendering`** (decide
-via `scan`/the rendered DOM, never source), or **`judgment`** (you decide from source +
-context) — which tells you *why* a criterion is `manual` and how to close it. The engine's
-`NC`s are **confirmed candidates** (cited `file:line`); a finding marked `preliminary: true`
-(SFC/library source) is provisional — confirm against the render or refute it. You rule on
-the `manual` criteria and mark the rendering criteria "to verify manually". The report is
-complete only when every applicable criterion is a justified `C`/`NC`/`NA` and every residual
-risk is named.
+via `scan`/the rendered DOM, never source), or **`judgment`** (the AI agent adjudicates from the
+source + context the engine harvests) — which tells you *why* a criterion is `manual` and how to
+close it. The engine's `NC`s are **confirmed candidates** (cited `file:line`); a finding marked
+`preliminary: true` (SFC/library source) is provisional — confirm against the render or refute
+it. The agent adjudicates the `judgment` criteria via `verify --manual` (each verdict recorded
+with a `justification` or a groundable finding, folded back FAIL-CLOSED by `verify --apply --in`)
+and routes the rendering criteria to `scan` — a criterion is never silently marked "conforming".
+The report is complete only when every applicable criterion is a justified `C`/`NC`/`NA` and
+every residual risk is named.
 
 ## Do not
 
@@ -203,7 +219,8 @@ risk is named.
   **inline literal colours** is decided statically; **computed** contrast — external CSS,
   variables — goes through `scan` (Docker tier) or is verified at render before being declared).
 - Add ARIA that duplicates native semantics.
-- Mark a rendering/judgment criterion "conforming" without a human check.
+- Mark a rendering/judgment criterion "conforming" without a recorded, gated justification
+  (agent adjudication via `verify --manual`, or `scan` evidence).
 - Hand-edit `references/criteria.md` (generated from the WCAG dataset via `criteria --generate`).
 
 ## Scope
@@ -214,7 +231,8 @@ reflow) are covered by the optional `scan` tier (axe-core, Docker **or** `--runt
 The local runtime additionally **probes** focus visibility (2.4.7), 200% text zoom (1.4.4),
 text spacing (1.4.12) and content-on-hover (1.4.13) — observed in the rendered page, raised
 as NC only when the failure is seen (a clean probe leaves the SC `manual`, never silently
-conforming); reading order and alt relevance stay human judgment.
+conforming); reading order and alt relevance are the AI agent's judgment, adjudicated from the
+harvested evidence and gated (`verify --manual`).
 Data: WCAG 2.2 ©
 W3C (W3C Document License); the RGAA pack is RGAA 4.1.2 © DINUM, Licence Ouverte / Etalab
 2.0 (see `NOTICE`).

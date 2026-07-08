@@ -20,7 +20,7 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     expect(md).toContain("## 2. Non-conformités (par priorité)");
     expect(md).toContain("## 3. Critères conformes (C)");
     expect(md).toContain("## 4. Critères non applicables (NA)");
-    expect(md).toContain("## 5. Critères à évaluer manuellement (rendu / jugement)");
+    expect(md).toContain("## 5. Critères à adjuger (jugement / rendu) — non décidés par le moteur statique");
     expect(md).toMatch(/Taux de réussite automatique[^*]*\*\* : \d+%/);
   });
 
@@ -52,9 +52,22 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     for (const u of units) expect(md).toContain(`**Critère de succès** : ${u.criteriaId} — ${u.title}`);
   });
 
-  it("lists manual criteria under the residual-risk section with a warning", () => {
-    expect(md).toContain("Ne marquez aucun de ces critères");
+  it("lists manual criteria under the residual-risk section with the agent-adjudication warning", () => {
+    expect(md).toContain("verify --manual"); // the agent adjudicates, gated — not a human
+    expect(md).toContain("scan"); // rendering criteria go to the scan tier
+    expect(md).not.toContain("revue humaine");
+    expect(md).not.toContain("vérification humaine");
     expect(md).toContain("1.4.3 —"); // contrast, needs-rendering
+  });
+
+  it("no engine deliverable defers a decision to a human (agent adjudicates, gated)", () => {
+    const en = renderReport(bad, "en");
+    for (const doc of [md, en]) {
+      expect(doc).not.toMatch(/human review|human check/i);
+      expect(doc).not.toContain("revue humaine");
+    }
+    expect(en).toContain("verify --manual");
+    expect(en).toMatch(/agent/i);
   });
 
   it("a conforming page reports no non-conformity", () => {
@@ -130,5 +143,20 @@ describe("writeReport", () => {
     // the core report is unchanged by the pack option
     expect(readFileSync(wcagPath, "utf8")).toBe(renderReport(bad, "fr"));
     expect(readFileSync(rgaaPath, "utf8")).toContain("RGAA 4.1.2");
+  });
+});
+
+// R7: technique lists are no longer truncated with "…" (full actionability)
+describe("report technique lists — full, never truncated (R7)", () => {
+  const md7 = renderReport(bad, "fr");
+  it("renders the whole technique list for a criterion with many techniques (1.3.1 has 67)", () => {
+    // bad.html raises 1.3.1 NCs; its auditor block lists WCAG techniques.
+    expect(md7).not.toContain(", …"); // the old slice(0,12) + ellipsis is gone
+    // the auditor block's technique line ("**Technique** : G1, H2, …") — a 12-item cap
+    // would have shown ≤12 comma-separated codes; 1.3.1's full list is far longer. Pick
+    // the richest technique line in the report.
+    const techLines = md7.split("\n").filter((l: string) => /\*\*Technique\*\*/.test(l));
+    const richest = Math.max(0, ...techLines.map((l: string) => l.split(",").length));
+    expect(richest).toBeGreaterThan(12);
   });
 });

@@ -161,3 +161,92 @@ describe("mergeDynamic", () => {
     expect(resolveRemediation(axeFinding!, "en")).toBe("Verified at render time by axe-core; fix the cited element.");
   });
 });
+
+// ---- R3: host-source anchoring of dynamic findings ----
+import { writeFileSync as wf, mkdtempSync as mkd } from "node:fs";
+import { pathToFileURL } from "node:url";
+
+describe("toDynamicResult — host-source anchoring (R3)", () => {
+  it("maps the container mount (/work/input.html) back to the host target path", () => {
+    const out = {
+      url: "/work/input.html",
+      violations: [{ id: "image-alt", impact: "critical", help: "Images must have alt", nodes: [{ target: ["img"], html: "<img src=x>" }] }],
+    };
+    const dyn = toDynamicResult(out as never, "/repo/site/index.html");
+    expect(dyn.findings[0]!.page).toBe("/repo/site/index.html");
+    expect(dyn.findings[0]!.page).not.toContain("/work/input.html");
+  });
+  it("converts a file:// url to a host filesystem path", () => {
+    const out = { url: pathToFileURL("/repo/site/index.html").href, violations: [] as unknown[], reflow: { horizontalScroll: true } };
+    const dyn = toDynamicResult(out as never, "/repo/site/index.html");
+    expect(dyn.findings.find((f) => f.engine === "reflow")!.page).toBe("/repo/site/index.html");
+  });
+  it("keeps a real served URL untouched", () => {
+    const dyn = toDynamicResult(sampleOut, "https://exemple.fr");
+    expect(dyn.findings[0]!.page).toBe("https://exemple.fr");
+  });
+});
+
+describe("mergeDynamic — resolves an axe snippet to a real host file:line (R3)", () => {
+  const dir = mkd(join(tmpdir(), "u11y-anchor-"));
+  const page = join(dir, "page.html");
+  wf(page, `<!doctype html>\n<html lang="en">\n<head><title>t</title></head>\n<body>\n<main>\n<img src="hero.png">\n</main>\n</body>\n</html>\n`);
+
+  it("anchors the finding at the line where the cited outerHTML actually sits, with a source range", () => {
+    const audit = runAudit({ inputs: [page] });
+    const dyn = {
+      tool: "ultra11y" as const,
+      engine: "axe",
+      target: page,
+      date: "2026-07-08",
+      findings: [
+        {
+          criteriaId: "1.1.1",
+          axeRule: "image-alt",
+          impact: "critical",
+          severity: "bloquant" as const,
+          message: "Images must have alternate text (axe: image-alt)",
+          selector: "img",
+          snippet: '<img src="hero.png">',
+          engine: "axe" as const,
+          page,
+        },
+      ],
+    };
+    const merged = mergeDynamic(audit, dyn);
+    const f = merged.findings.find((x) => x.ruleId === "axe:image-alt")!;
+    expect(f.file).toBe(page);
+    expect(f.line).toBe(6); // the <img> is on line 6
+    expect(f.sourceStart).toBeGreaterThan(0);
+    expect(f.selectorHint).toBe("img"); // selector kept
+    expect(f.snippet).toContain("hero.png"); // snippet kept
+  });
+
+  it("keeps selector + snippet and line 0 when the snippet resolves nowhere — never a fabricated line", () => {
+    const audit = runAudit({ inputs: [page] });
+    const dyn = {
+      tool: "ultra11y" as const,
+      engine: "axe",
+      target: page,
+      date: "2026-07-08",
+      findings: [
+        {
+          criteriaId: "1.4.3",
+          axeRule: "color-contrast",
+          impact: "serious",
+          severity: "majeur" as const,
+          message: "contrast",
+          selector: "span.ghost",
+          snippet: "<span class='ghost'>nowhere</span>",
+          engine: "axe" as const,
+          page,
+        },
+      ],
+    };
+    const merged = mergeDynamic(audit, dyn);
+    const f = merged.findings.find((x) => x.ruleId === "axe:color-contrast")!;
+    expect(f.line).toBe(0);
+    expect(f.selectorHint).toBe("span.ghost");
+    expect(f.snippet).toContain("nowhere");
+  });
+});

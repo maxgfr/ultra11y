@@ -17,6 +17,11 @@ export interface PackCriterionResult {
   // from, so it's neither a genuine C/NC/NA, just permanently out of scope (status
   // "manual" — see src/report.ts renderPackReport for the dedicated justification).
   outOfScope?: boolean;
+  // Set when a mapped SC DID fail, but on elements outside this criterion's applicability
+  // scope (per the pack's `appliesTo`) — so the criterion is NOT non-conformant off a
+  // sibling's failure. It derives as `manual` (assess separately) with a dedicated
+  // scoped-out justification (see src/report.ts renderPackReport).
+  scopedOut?: boolean;
 }
 
 // NC dominates (a real failure anywhere fails the criterion); then a decided C; then
@@ -26,6 +31,18 @@ function aggregate(statuses: Status[]): Status {
   if (statuses.includes("C")) return "C";
   if (statuses.includes("manual")) return "manual";
   return "NA";
+}
+
+/** Does a finding's ruleId satisfy one of a criterion's applicability patterns?
+ *  Exact match, or a "prefix:*" wildcard (axe:* / dyn-* / agent:*), or a bare "*". */
+function ruleMatches(ruleId: string, patterns: string[]): boolean {
+  for (const p of patterns) {
+    if (p === "*") return true;
+    if (p.endsWith(":*") || p.endsWith("-*")) {
+      if (ruleId.startsWith(p.slice(0, -1))) return true;
+    } else if (p === ruleId) return true;
+  }
+  return false;
 }
 
 export function derivePackResults(audit: AuditResult, packKey: string): PackCriterionResult[] {
@@ -43,8 +60,28 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
       return { id: pc.id, theme: pc.theme, status: "manual" as Status, findings: [], scs: pc.wcag, outOfScope: true };
     }
     const scResults = pc.wcag.map((sc) => byScId.get(sc)).filter((x): x is CriterionResult => !!x);
-    const findings = scResults.flatMap((r) => r.findings);
+    const allFindings = scResults.flatMap((r) => r.findings);
+
+    // No applicability data (third-party pack) → legacy fan-out: every mapped SC's
+    // findings attach and the SC statuses aggregate directly.
+    if (!pc.appliesTo) {
+      const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
+      return { id: pc.id, theme: pc.theme, status, findings: allFindings, scs: pc.wcag };
+    }
+
+    // Applicability-aware projection: a finding attaches ONLY if its rule is one this
+    // criterion can actually be non-conformant on.
+    const findings = allFindings.filter((f) => ruleMatches(f.ruleId, pc.appliesTo!.ruleIds));
+    if (findings.length) {
+      return { id: pc.id, theme: pc.theme, status: "NC" as Status, findings, scs: pc.wcag };
+    }
+    // A mapped SC failed but on out-of-scope elements (no applicable finding) → the NC is
+    // NOT ours: derive as manual (assess separately), never a foreign NC, never a silent C.
+    if (scResults.some((r) => r.status === "NC")) {
+      return { id: pc.id, theme: pc.theme, status: "manual" as Status, findings: [], scs: pc.wcag, scopedOut: true };
+    }
+    // Otherwise the ordinary non-NC aggregate (C / manual / NA) over the mapped SCs.
     const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
-    return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
+    return { id: pc.id, theme: pc.theme, status, findings: [], scs: pc.wcag };
   });
 }

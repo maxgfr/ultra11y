@@ -26,8 +26,8 @@ const STR: Record<Lang, Record<Key, string>> = {
     guideline: "Règle WCAG",
     findingsTitle: "Non-conformités détectées",
     noFindings: "Aucune non-conformité détectée par le moteur statique.",
-    residualTitle: "À évaluer manuellement (jugement / rendu)",
-    manualNote: "critères non décidables par le moteur — à compléter par une revue humaine.",
+    residualTitle: "À adjuger (jugement / rendu)",
+    manualNote: "critères non décidés par le moteur — à adjuger par l'agent IA (`verify --manual`, gaté), rendu via `scan`.",
     renderedNote: "fichier(s) rendent des composants de bibliothèque non analysés en source — auditez le build (render) ou scan",
     sfcNote:
       "composant(s) .vue/.svelte/.astro audité(s) en SOURCE (template) — slots et liaisons dynamiques invisibles : verdict préliminaire, auditez le rendu (render/scan)",
@@ -40,8 +40,8 @@ const STR: Record<Lang, Record<Key, string>> = {
     guideline: "WCAG guideline",
     findingsTitle: "Non-conformities detected",
     noFindings: "No non-conformity detected by the static engine.",
-    residualTitle: "To assess manually (judgment / rendering)",
-    manualNote: "criteria the engine cannot decide — complete with a human review.",
+    residualTitle: "To adjudicate (judgment / rendering)",
+    manualNote: "criteria the engine cannot decide — adjudicated by the AI agent (`verify --manual`, gated), rendering via `scan`.",
     renderedNote: "file(s) render component-library output not analysed from source — audit the build (render) or scan",
     sfcNote:
       ".vue/.svelte/.astro file(s) audited as SOURCE (template) — slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)",

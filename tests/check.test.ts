@@ -165,3 +165,93 @@ x
     expect(r.issues.some((i) => i.includes("E205.4"))).toBe(false); // real criterion recognized
   });
 });
+
+// ---- check --semantic (family P0-2/P0-3): the semantic gate must ENGAGE or FAIL — never
+// exit green while silently inactive, and a passing verdict must be re-grounded in source. ----
+import { mkdtempSync, writeFileSync as wf } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { checkSemantic } from "../src/check.js";
+import { buildWorklist } from "../src/verify.js";
+
+function tmpReport(): { dir: string; reportPath: string; md: string } {
+  const dir = mkdtempSync(join(tmpdir(), "u11y-sem-"));
+  const reportPath = join(dir, "wcag-report.md");
+  wf(reportPath, validReport);
+  return { dir, reportPath, md: validReport };
+}
+
+describe("checkSemantic", () => {
+  it("fails closed when no verdicts artifact exists next to the report (never green-but-inactive)", () => {
+    const { reportPath, md } = tmpReport();
+    const r = checkSemantic(md, { reportPath });
+    expect(r.ok).toBe(false);
+    expect(r.issues.join("\n").toLowerCase()).toMatch(/verify|verdict/);
+  });
+
+  it("fails on an unadjudicated / truncated verdicts file (coverage gap)", () => {
+    const { dir, reportPath, md } = tmpReport();
+    const items = buildWorklist(md, "wcag", Number.POSITIVE_INFINITY);
+    // Adjudicate all but one, and drop the last item entirely: both must fail the gate.
+    const filled = items.map((it, i) => ({ ...it, verdict: i === 0 ? null : "supported" })).slice(0, -1);
+    wf(join(dir, "VERIFY.todo.json"), JSON.stringify(filled));
+    const r = checkSemantic(md, { reportPath });
+    expect(r.ok).toBe(false);
+  });
+
+  it("fails when a supported verdict cites content the source file does not contain", () => {
+    const { dir, reportPath, md } = tmpReport();
+    const items = buildWorklist(md, "wcag", Number.POSITIVE_INFINITY).map((it) => ({ ...it, verdict: "supported" }));
+    // Corrupt one citation: point it at a selector/element that exists nowhere in the file.
+    items[0] = { ...items[0]!, selector: "video#does-not-exist", snippet: '<video id="does-not-exist">' } as never;
+    wf(join(dir, "VERIFY.todo.json"), JSON.stringify(items));
+    const r = checkSemantic(md, { reportPath });
+    expect(r.ok).toBe(false);
+    expect(r.failed).toBeGreaterThan(0);
+  });
+
+  it("passes end-to-end on a genuine audit→report→verify→adjudicate chain", () => {
+    const { dir, reportPath, md } = tmpReport();
+    const items = buildWorklist(md, "wcag", Number.POSITIVE_INFINITY).map((it) => ({ ...it, verdict: "supported" }));
+    wf(join(dir, "VERIFY.todo.json"), JSON.stringify(items));
+    const r = checkSemantic(md, { reportPath });
+    expect(r.issues).toEqual([]);
+    expect(r.ok).toBe(true);
+    expect(r.total).toBe(items.length);
+    expect(r.failed).toBe(0);
+  });
+
+  it("honours an explicit --verdicts path over auto-discovery", () => {
+    const { dir, reportPath, md } = tmpReport();
+    const items = buildWorklist(md, "wcag", Number.POSITIVE_INFINITY).map((it) => ({ ...it, verdict: "supported" }));
+    const elsewhere = join(dir, "custom-verdicts.json");
+    wf(elsewhere, JSON.stringify(items));
+    const r = checkSemantic(md, { reportPath, verdictsPath: elsewhere });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---- check --standard rgaa --in <audit.json>: applicability gate (R1) ----
+import { renderPackReport as rpr } from "../src/report.js";
+
+describe("checkReport --in (pack applicability gate)", () => {
+  const rgaaReport = rpr(bad, loadPack("rgaa"), "fr");
+  it("passes a freshly-derived RGAA report against its own audit", () => {
+    const r = checkReport(rgaaReport, "rgaa", "fr", { audit: bad });
+    expect(r.ok).toBe(true);
+  });
+  it("fails a hand-edited RGAA report that over-projects an NC onto an inapplicable criterion", () => {
+    // Inject a fake NC auditor block for RGAA 1.4 (CAPTCHA) — a criterion the audit
+    // never derives as NC. The applicability gate must catch it.
+    const tampered = rgaaReport.replace(
+      "## 3.",
+      "#### 🔴 RGAA 1.4 — CAPTCHA\n**Thématique** : 1.\n**Critère** : 1.4 — CAPTCHA\n- [ ] `x.html:1` (`img`) — bogus\n\n## 3.",
+    );
+    const r = checkReport(tampered, "rgaa", "fr", { audit: bad });
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.includes("1.4"))).toBe(true);
+  });
+  it("does nothing extra without --in (grammar-only, back-compat)", () => {
+    expect(checkReport(rgaaReport, "rgaa", "fr").ok).toBe(true);
+  });
+});

@@ -106,4 +106,5 @@ simplest to most faithful:
 - Full pages / SSG → build output (`dist`/`out`), then `audit`.
 - Rendering criteria (contrast, focus, zoom) → `scan` (browser).
 - In all cases, do not conclude "conforming" on a library component from the source: that is
-  what the scope risk reminds you.
+  what the scope risk reminds you — resolve it on the produced HTML (captures / `scan`), then let
+  the AI agent adjudicate the criterion (`verify --manual`, gated).

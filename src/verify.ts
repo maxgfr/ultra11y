@@ -127,11 +127,12 @@ const T = {
     semantic: "> Mode --semantic : vérifiez que l'extrait cité **étaye** réellement la non-conformité.",
     then: "Puis : `ultra11y verify --apply VERIFY.todo.json` (échoue si un verdict est refuted/unsupported).",
     understand: "Comprendre",
+    moreTests: (n: number, id: string) => `… +${n} autre(s) test(s) — voir \`criteria --standard <pack> ${id}\``,
     checklistTitle: "## Liste de contrôle avant clôture",
     checklist: [
       "- [ ] Chaque entrée porte un verdict (aucun `null`).",
       "- [ ] Aucune non-conformité inventée : chaque verdict `supported` cite un élément réel à la ligne indiquée.",
-      "- [ ] Les critères « à évaluer » (rendu / jugement) du rapport ont été tranchés (ou laissés en risque résiduel explicite).",
+      "- [ ] Les critères « à évaluer » (rendu / jugement) ont été adjugés par l'agent (`verify --manual` → `--apply`), ou laissés en risque résiduel explicite (rendu → `scan`).",
       "- [ ] Pour un code rendu par une bibliothèque (DSFR…), le verdict s'appuie sur le HTML **produit** (build / `scan`), pas sur la source JSX.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` repasse au vert.",
     ],
@@ -146,11 +147,12 @@ const T = {
     semantic: "> --semantic mode: confirm the cited snippet actually **supports** the non-conformity.",
     then: "Then: `ultra11y verify --apply VERIFY.todo.json` (fails if any verdict is refuted/unsupported).",
     understand: "Understanding",
+    moreTests: (n: number, id: string) => `… +${n} more test(s) — see \`criteria --standard <pack> ${id}\``,
     checklistTitle: "## Pre-completion checklist",
     checklist: [
       "- [ ] Every entry has a verdict (no `null`).",
       "- [ ] No invented non-conformity: every `supported` verdict cites a real element at the given line.",
-      "- [ ] The report's “to assess” criteria (rendering / judgment) have been decided (or left as an explicit residual risk).",
+      "- [ ] The “to assess” criteria (rendering / judgment) have been adjudicated by the agent (`verify --manual` → `--apply`), or left as an explicit residual risk (rendering → `scan`).",
       "- [ ] For component-library-rendered code (DSFR…), the verdict relies on the **produced** HTML (build / `scan`), not the JSX source.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` is green again.",
     ],
@@ -175,7 +177,7 @@ export function formatWorklist(items: VerifyItem[], semantic: boolean, standard:
       const sc = getSC(it.criteriaId);
       if (sc) {
         out.push(`      WCAG ${sc.sc} — ${scTitle(sc.sc, lang)} [${sc.level}] · ${s.understand}: ${sc.understanding}`);
-        if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.slice(0, 8).join(", ")}`);
+        if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.join(", ")}`);
       }
     } else if (pack) {
       const c = getPackCriterion(pack, it.criteriaId);
@@ -183,6 +185,8 @@ export function formatWorklist(items: VerifyItem[], semantic: boolean, standard:
       if (tests.length) {
         out.push(`      ${pack.name} ${it.criteriaId} :`);
         for (const test of tests.slice(0, 6)) out.push(`      - ${plain(test)}`);
+        // Honest overflow count instead of a silent drop — point at the full list.
+        if (tests.length > 6) out.push(`      - ${s.moreTests(tests.length - 6, it.criteriaId)}`);
       }
     }
   }

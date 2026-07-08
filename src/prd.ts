@@ -24,7 +24,7 @@ const L = {
     scope: "Périmètre",
     files: "fichier(s)",
     rate: "Taux de réussite automatique",
-    note: "Backlog des corrections détectées automatiquement. Les critères « à évaluer » (rendu / jugement) sont à compléter par une revue humaine (voir le rapport).",
+    note: "Backlog des corrections détectées automatiquement. Les critères « à évaluer » (rendu / jugement) sont adjugés par l'agent IA (`verify --manual`, de façon gatée), le rendu via `scan` (voir le rapport).",
     none: "Aucune correction automatique à faire : le moteur statique n'a relevé aucune non-conformité.",
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" } as Record<Severity, string>,
     fix: "Correction",
@@ -47,7 +47,7 @@ const L = {
     givenElements: (sel: string) => `les éléments ${sel} concernés`,
     techniques: "Techniques WCAG",
     docNote:
-      "Document d'exigences (PRD) généré depuis l'audit statique : une épopée par thème, une user story par critère, des critères d'acceptation ancrés sur les intitulés WCAG. Complétez les critères « à évaluer » par une revue humaine.",
+      "Document d'exigences (PRD) généré depuis l'audit statique : une épopée par thème, une user story par critère, des critères d'acceptation ancrés sur les intitulés WCAG. Adjugez les critères « à évaluer » avec `verify --manual` (agent IA, gaté), le rendu via `scan`.",
   },
   en: {
     title: (std: string) => `Accessibility fix plan — ${std}`,
@@ -55,7 +55,7 @@ const L = {
     scope: "Scope",
     files: "file(s)",
     rate: "Automatic static-check pass rate",
-    note: "Backlog of automatically-detected fixes. The “to assess” criteria (rendering / judgment) must be completed by a human review (see the report).",
+    note: "Backlog of automatically-detected fixes. The “to assess” criteria (rendering / judgment) are adjudicated by the AI agent (`verify --manual`, gated), rendering via `scan` (see the report).",
     none: "No automatic fix to do: the static engine found no non-conformity.",
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" } as Record<Severity, string>,
     fix: "Fix",
@@ -78,7 +78,7 @@ const L = {
     givenElements: (sel: string) => `the affected ${sel} elements`,
     techniques: "WCAG techniques",
     docNote:
-      "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Complete the “to assess” criteria with a human review.",
+      "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Adjudicate the “to assess” criteria with `verify --manual` (AI agent, gated), rendering via `scan`.",
   },
 } as const;
 
@@ -300,7 +300,7 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
         out.push(`- **${s.given}** ${s.givenElements(hints)} · **${s.when}** ${s.acWhen} · **${s.then}** « ${req} » (WCAG ${sc}).`);
       }
       const techs = isCore(standard) ? scTechniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => scTechniques(sc)))];
-      if (techs.length) out.push("", `_${s.techniques} : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", …" : ""}_`);
+      if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
         out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);

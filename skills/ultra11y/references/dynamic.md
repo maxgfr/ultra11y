@@ -102,6 +102,7 @@ verify probe findings (a `verify` pass) before filing them.
 
 ## Limits
 
-Even with the local probes, **reading order**, **alt relevance** and other judgment criteria
-stay human. The probes reduce — but do not eliminate — manual review for 2.4.7/1.4.4/1.4.12/
-1.4.13/2.5.8: confirm a sample on screen. pa11y can be added as a second source if needed.
+Even with the local probes, **reading order**, **alt relevance** and the other judgment criteria
+are the AI agent's to adjudicate (gated, `verify --manual`), not the dynamic tier's. The probes
+reduce — but do not eliminate — the residual on 2.4.7/1.4.4/1.4.12/1.4.13/2.5.8: confirm a sample
+on screen (optional human oversight). pa11y can be added as a second source if needed.

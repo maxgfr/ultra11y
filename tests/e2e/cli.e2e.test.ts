@@ -72,8 +72,8 @@ describe("e2e: audit", () => {
   it("--lang switches the human summary language (code tokens stay untranslated)", () => {
     const en = runCli(["audit", FIX.bad, "--lang", "en"]);
     const fr = runCli(["audit", FIX.bad, "--lang", "fr"]);
-    expect(en.stdout + en.stderr).toContain("To assess manually");
-    expect(fr.stdout + fr.stderr).toContain("À évaluer manuellement");
+    expect(en.stdout + en.stderr).toContain("To adjudicate");
+    expect(fr.stdout + fr.stderr).toContain("À adjuger");
   });
 
   it("--changed on the current repo runs cleanly and yields valid JSON", () => {

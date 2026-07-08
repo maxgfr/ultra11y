@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync8, mkdirSync as mkdirSync6, existsSync as existsSync10, readFileSync as readFileSync5, appendFileSync } from "fs";
+import { realpathSync, writeFileSync as writeFileSync8, mkdirSync as mkdirSync6, existsSync as existsSync10, readFileSync as readFileSync6, appendFileSync } from "fs";
 import { join as join13, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
-import { fileURLToPath, pathToFileURL } from "url";
+import { fileURLToPath as fileURLToPath2, pathToFileURL } from "url";
 
 // src/types.ts
 var VERSION = "2.10.1";
@@ -30987,9 +30987,10 @@ function writeAdjudication(items, outDir, opts) {
 
 // src/scan.ts
 import { execFileSync as execFileSync3 } from "child_process";
-import { mkdtempSync, writeFileSync as writeFileSync5, existsSync as existsSync6, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
+import { mkdtempSync, writeFileSync as writeFileSync5, existsSync as existsSync6, statSync as statSync2, readdirSync as readdirSync2, rmSync, readFileSync as readFileSync5 } from "fs";
 import { tmpdir } from "os";
 import { join as join10, resolve as resolve3 } from "path";
+import { fileURLToPath } from "url";
 
 // src/axe-map.ts
 var PROBE_WCAG = {
@@ -31290,8 +31291,20 @@ function runRunner(target, isFile, tag) {
   const line = stdout.trim().split("\n").filter(Boolean).pop() ?? "{}";
   return JSON.parse(line);
 }
+function hostPageOf(url, target) {
+  if (!url) return target;
+  if (url === MOUNT) return target;
+  if (url.startsWith("file://")) {
+    try {
+      return fileURLToPath(url);
+    } catch {
+      return target;
+    }
+  }
+  return url;
+}
 function toDynamicResult(out, target, lang = "en", engine = "axe-core@playwright (docker)") {
-  const page = out.url || target;
+  const page = hostPageOf(out.url, target);
   const findings = [];
   for (const v of out.violations) {
     const criteriaId = scForAxe(v.id, v.tags);
@@ -31396,6 +31409,40 @@ async function runCrawlScan(opts) {
   return runScanMany(urls, opts.tag ?? IMAGE_TAG);
 }
 var sevRank = { bloquant: 3, majeur: 2, mineur: 1 };
+function resolveHostAnchor(file, snippet2) {
+  const s = snippet2?.trim();
+  if (!s || !existsSync6(file)) return null;
+  let source;
+  try {
+    source = readFileSync5(file, "utf8");
+  } catch {
+    return null;
+  }
+  const starts = lineStartsOf(source);
+  const at = (start, len) => {
+    const { line, col } = lineColAt(starts, start);
+    return { line, col, start, end: start + len };
+  };
+  let idx = source.indexOf(s);
+  if (idx >= 0) return at(idx, s.length);
+  const openMatch = /^<[^>]*>/.exec(s);
+  if (openMatch) {
+    idx = source.indexOf(openMatch[0]);
+    if (idx >= 0) return at(idx, openMatch[0].length);
+  }
+  const norm2 = (t2) => t2.replace(/\s+/g, " ").trim();
+  const needle = norm2(openMatch ? openMatch[0] : s);
+  if (needle) {
+    const lines = source.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (norm2(lines[i]).includes(needle)) {
+        const start = starts[i] ?? 0;
+        return { line: i + 1, col: 1, start, end: start + lines[i].length };
+      }
+    }
+  }
+  return null;
+}
 function mergeDynamic(audit, dynamic, lang = "en") {
   const merged = JSON.parse(JSON.stringify(audit));
   const byId2 = new Map(merged.criteria.map((c) => [c.id, c]));
@@ -31404,18 +31451,21 @@ function mergeDynamic(audit, dynamic, lang = "en") {
     const c = byId2.get(df.criteriaId);
     if (!c) continue;
     const msg = df.engine === "reflow" ? { id: "dyn-reflow" } : { id: "dyn-remediation", params: { message: df.message } };
+    const file = df.page ?? dynamic.target;
+    const anchor = resolveHostAnchor(file, df.snippet);
     const finding = {
       ruleId: df.engine === "axe" ? `axe:${df.axeRule}` : `dyn-${df.engine}`,
       criteriaId: df.criteriaId,
-      file: df.page ?? dynamic.target,
-      line: 0,
-      col: 0,
+      file,
+      line: anchor?.line ?? 0,
+      col: anchor?.col ?? 0,
       selectorHint: df.selector,
       severity: df.severity,
       message: df.message,
       remediation,
       msg,
-      snippet: df.snippet
+      snippet: df.snippet,
+      ...anchor ? { sourceStart: anchor.start, sourceEnd: anchor.end } : {}
     };
     c.findings.push(finding);
     c.status = "NC";
@@ -33099,7 +33149,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
     const gaPath = join13(root, ".gitattributes");
     try {
-      const existing = existsSync10(gaPath) ? readFileSync5(gaPath, "utf8") : "";
+      const existing = existsSync10(gaPath) ? readFileSync6(gaPath, "utf8") : "";
       if (!existing.includes(".ultra11y/captures/")) {
         appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
         console.log(lang === "fr" ? `.gitattributes : ajout\xE9 \xAB ${gaLine} \xBB` : `.gitattributes: added "${gaLine}"`);
@@ -33108,7 +33158,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     }
     try {
       const giPath = join13(root, ".gitignore");
-      if (existsSync10(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync5(giPath, "utf8")))
+      if (existsSync10(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync6(giPath, "utf8")))
         console.error(
           lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
         );
@@ -33647,7 +33697,7 @@ async function main(argv) {
 function isInvokedDirectly() {
   const argv1 = process.argv[1];
   if (argv1 === void 0) return false;
-  const modulePath = fileURLToPath(import.meta.url);
+  const modulePath = fileURLToPath2(import.meta.url);
   try {
     if (realpathSync(argv1) === realpathSync(modulePath)) return true;
   } catch {

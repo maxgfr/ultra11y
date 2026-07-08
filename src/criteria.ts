@@ -21,8 +21,8 @@ import {
 
 const AUTO_LABEL: Record<string, { fr: string; en: string }> = {
   static: { fr: "automatisable (moteur)", en: "automatable (engine)" },
-  "needs-rendering": { fr: "nécessite un rendu", en: "needs rendering" },
-  judgment: { fr: "jugement humain", en: "human judgment" },
+  "needs-rendering": { fr: "nécessite un rendu (tiers scan)", en: "needs rendering (scan tier)" },
+  judgment: { fr: "jugement de l'agent (gaté)", en: "agent judgment (gated)" },
 };
 
 // ---- WCAG core formatting -------------------------------------------------

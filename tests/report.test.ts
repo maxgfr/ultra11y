@@ -20,7 +20,7 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     expect(md).toContain("## 2. Non-conformités (par priorité)");
     expect(md).toContain("## 3. Critères conformes (C)");
     expect(md).toContain("## 4. Critères non applicables (NA)");
-    expect(md).toContain("## 5. Critères à évaluer manuellement (rendu / jugement)");
+    expect(md).toContain("## 5. Critères à adjuger (jugement / rendu) — non décidés par le moteur statique");
     expect(md).toMatch(/Taux de réussite automatique[^*]*\*\* : \d+%/);
   });
 
@@ -52,9 +52,22 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     for (const u of units) expect(md).toContain(`**Critère de succès** : ${u.criteriaId} — ${u.title}`);
   });
 
-  it("lists manual criteria under the residual-risk section with a warning", () => {
-    expect(md).toContain("Ne marquez aucun de ces critères");
+  it("lists manual criteria under the residual-risk section with the agent-adjudication warning", () => {
+    expect(md).toContain("verify --manual"); // the agent adjudicates, gated — not a human
+    expect(md).toContain("scan"); // rendering criteria go to the scan tier
+    expect(md).not.toContain("revue humaine");
+    expect(md).not.toContain("vérification humaine");
     expect(md).toContain("1.4.3 —"); // contrast, needs-rendering
+  });
+
+  it("no engine deliverable defers a decision to a human (agent adjudicates, gated)", () => {
+    const en = renderReport(bad, "en");
+    for (const doc of [md, en]) {
+      expect(doc).not.toMatch(/human review|human check/i);
+      expect(doc).not.toContain("revue humaine");
+    }
+    expect(en).toContain("verify --manual");
+    expect(en).toMatch(/agent/i);
   });
 
   it("a conforming page reports no non-conformity", () => {

@@ -33,7 +33,7 @@ const L = {
     occ: "occurrence(s)",
     verify: "contrôler chaque occurrence ci-dessous (inspecteur / lecteur d'écran), puis rejouer l'audit (`ultra11y` / axe).",
     intro:
-      "Lecture auditeur : une entrée par critère non conforme (constat, attendu, méthode de vérification). Les critères « à évaluer » (rendu / jugement) restent à compléter par une revue humaine.",
+      "Lecture auditeur : une entrée par critère non conforme (constat, attendu, méthode de vérification). Les critères « à évaluer » (rendu / jugement) sont adjugés par l'agent IA (`verify --manual`, de façon gatée), le rendu via `scan`.",
     date: "Date",
     scope: "Périmètre",
     files: "fichier(s)",
@@ -49,7 +49,7 @@ const L = {
     occ: "occurrence(s)",
     verify: "check each occurrence below (inspector / screen reader), then re-run the audit (`ultra11y` / axe).",
     intro:
-      "Auditor view: one entry per non-conforming criterion (finding, expected state, verification method). The “to assess” criteria (rendering / judgment) remain for a human review.",
+      "Auditor view: one entry per non-conforming criterion (finding, expected state, verification method). The “to assess” criteria (rendering / judgment) are adjudicated by the AI agent (`verify --manual`, gated), rendering via `scan`.",
     date: "Date",
     scope: "Scope",
     files: "file(s)",

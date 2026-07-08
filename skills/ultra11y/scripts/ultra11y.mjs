@@ -22500,7 +22500,7 @@ var APPLICABLE = {
   // Language of Page — html-lang-missing / lang-invalid
 };
 function residualReason(automatability) {
-  return automatability === "needs-rendering" ? "Needs a rendered DOM (contrast, focus visibility, zoom/reflow, target size) \u2014 verify manually." : "Judgement criterion \u2014 assess manually in context (relevance, wording, reading order).";
+  return automatability === "needs-rendering" ? "Needs a rendered DOM (contrast, focus visibility, zoom/reflow, target size) \u2014 decide via `scan`." : "Judgement criterion \u2014 adjudicated by the agent from source/context (`verify --manual`, gated).";
 }
 var STATIC_PREDS = allSC().filter((c) => c.automatability === "static").map((c) => [c.sc, APPLICABLE[c.sc] ?? isFullDocument]);
 function newAccum() {
@@ -29323,7 +29323,7 @@ var L = {
     verification: "V\xE9rification",
     occ: "occurrence(s)",
     verify: "contr\xF4ler chaque occurrence ci-dessous (inspecteur / lecteur d'\xE9cran), puis rejouer l'audit (`ultra11y` / axe).",
-    intro: "Lecture auditeur : une entr\xE9e par crit\xE8re non conforme (constat, attendu, m\xE9thode de v\xE9rification). Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) restent \xE0 compl\xE9ter par une revue humaine.",
+    intro: "Lecture auditeur : une entr\xE9e par crit\xE8re non conforme (constat, attendu, m\xE9thode de v\xE9rification). Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) sont adjug\xE9s par l'agent IA (`verify --manual`, de fa\xE7on gat\xE9e), le rendu via `scan`.",
     date: "Date",
     scope: "P\xE9rim\xE8tre",
     files: "fichier(s)",
@@ -29338,7 +29338,7 @@ var L = {
     verification: "Verification",
     occ: "occurrence(s)",
     verify: "check each occurrence below (inspector / screen reader), then re-run the audit (`ultra11y` / axe).",
-    intro: "Auditor view: one entry per non-conforming criterion (finding, expected state, verification method). The \u201Cto assess\u201D criteria (rendering / judgment) remain for a human review.",
+    intro: "Auditor view: one entry per non-conforming criterion (finding, expected state, verification method). The \u201Cto assess\u201D criteria (rendering / judgment) are adjudicated by the AI agent (`verify --manual`, gated), rendering via `scan`.",
     date: "Date",
     scope: "Scope",
     files: "file(s)",
@@ -29444,7 +29444,7 @@ var L2 = {
     scope: "P\xE9rim\xE8tre",
     files: "fichier(s)",
     rate: "Taux de r\xE9ussite automatique",
-    note: "Backlog des corrections d\xE9tect\xE9es automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) sont \xE0 compl\xE9ter par une revue humaine (voir le rapport).",
+    note: "Backlog des corrections d\xE9tect\xE9es automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) sont adjug\xE9s par l'agent IA (`verify --manual`, de fa\xE7on gat\xE9e), le rendu via `scan` (voir le rapport).",
     none: "Aucune correction automatique \xE0 faire : le moteur statique n'a relev\xE9 aucune non-conformit\xE9.",
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
     fix: "Correction",
@@ -29466,7 +29466,7 @@ var L2 = {
     acWhen: "un utilisateur de technologie d'assistance y acc\xE8de",
     givenElements: (sel) => `les \xE9l\xE9ments ${sel} concern\xE9s`,
     techniques: "Techniques WCAG",
-    docNote: "Document d'exigences (PRD) g\xE9n\xE9r\xE9 depuis l'audit statique : une \xE9pop\xE9e par th\xE8me, une user story par crit\xE8re, des crit\xE8res d'acceptation ancr\xE9s sur les intitul\xE9s WCAG. Compl\xE9tez les crit\xE8res \xAB \xE0 \xE9valuer \xBB par une revue humaine."
+    docNote: "Document d'exigences (PRD) g\xE9n\xE9r\xE9 depuis l'audit statique : une \xE9pop\xE9e par th\xE8me, une user story par crit\xE8re, des crit\xE8res d'acceptation ancr\xE9s sur les intitul\xE9s WCAG. Adjugez les crit\xE8res \xAB \xE0 \xE9valuer \xBB avec `verify --manual` (agent IA, gat\xE9), le rendu via `scan`."
   },
   en: {
     title: (std) => `Accessibility fix plan \u2014 ${std}`,
@@ -29474,7 +29474,7 @@ var L2 = {
     scope: "Scope",
     files: "file(s)",
     rate: "Automatic static-check pass rate",
-    note: "Backlog of automatically-detected fixes. The \u201Cto assess\u201D criteria (rendering / judgment) must be completed by a human review (see the report).",
+    note: "Backlog of automatically-detected fixes. The \u201Cto assess\u201D criteria (rendering / judgment) are adjudicated by the AI agent (`verify --manual`, gated), rendering via `scan` (see the report).",
     none: "No automatic fix to do: the static engine found no non-conformity.",
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
     fix: "Fix",
@@ -29496,7 +29496,7 @@ var L2 = {
     acWhen: "a user of assistive technology reaches them",
     givenElements: (sel) => `the affected ${sel} elements`,
     techniques: "WCAG techniques",
-    docNote: "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Complete the \u201Cto assess\u201D criteria with a human review."
+    docNote: "Product-requirements document generated from the static audit: one epic per theme, one user story per criterion, acceptance criteria anchored to the WCAG success-criterion text. Adjudicate the \u201Cto assess\u201D criteria with `verify --manual` (AI agent, gated), rendering via `scan`."
   }
 };
 function prdUnits(r, standard = "wcag", lang = "en") {
@@ -29716,12 +29716,12 @@ var L3 = {
     wcagStd: "WCAG 2.2 niveau AA",
     date: "Date",
     tool: "Outil",
-    toolNote: "moteur statique \u2014 audit pr\xE9liminaire \xE0 compl\xE9ter par une revue humaine",
+    toolNote: "moteur statique \u2014 audit pr\xE9liminaire, crit\xE8res de jugement \xE0 adjuger par l'agent IA (statique, gat\xE9), rendu via `scan`",
     scope: "P\xE9rim\xE8tre",
     files: "fichier(s)",
     rate: "Taux de r\xE9ussite automatique (v\xE9rifications statiques)",
     rateNote: "sous-ensemble d\xE9cidable par la machine : C \xF7 (C + NC)",
-    warn: "Ce rapport couvre le sous-ensemble de crit\xE8res v\xE9rifiables automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) doivent \xEAtre compl\xE9t\xE9s par une revue humaine (voir la derni\xE8re section).",
+    warn: "Ce rapport couvre le sous-ensemble de crit\xE8res v\xE9rifiables automatiquement. Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) sont adjug\xE9s par l'agent IA (`verify --manual`, de fa\xE7on gat\xE9e) ; le rendu passe par `scan` (voir la derni\xE8re section).",
     derived: (std) => `Vue d\xE9riv\xE9e du ${std} : projection des crit\xE8res de succ\xE8s WCAG audit\xE9s sur le r\xE9f\xE9rentiel. La v\xE9rification d'int\xE9grit\xE9 (\`check\`/\`verify\`) op\xE8re sur le rapport WCAG canonique.`,
     synthTitle: (by) => `1. Synth\xE8se par ${by}`,
     byGuideline: "r\xE8gle WCAG",
@@ -29733,8 +29733,8 @@ var L3 = {
     none: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
     cTitle: "3. Crit\xE8res conformes (C)",
     naTitle: "4. Crit\xE8res non applicables (NA)",
-    manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
-    manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
+    manualTitle: "5. Crit\xE8res \xE0 adjuger (jugement / rendu) \u2014 non d\xE9cid\xE9s par le moteur statique",
+    manualWarn: "Adjugez-les avec `verify --manual` (l'agent d\xE9cide depuis la source, de fa\xE7on gat\xE9e) ; les crit\xE8res de rendu passent par `scan`. Aucun ne doit \xEAtre marqu\xE9 \xAB conforme \xBB sans justification enregistr\xE9e et gat\xE9e.",
     outOfScope: "Hors p\xE9rim\xE8tre moteur \u2014 mapp\xE9 sur des SC hors WCAG 2.2 AA ; v\xE9rification manuelle.",
     scopedOut: "Les non-conformit\xE9s WCAG relev\xE9es concernent des \xE9l\xE9ments hors du p\xE9rim\xE8tre de ce crit\xE8re \u2014 \xE0 \xE9valuer s\xE9par\xE9ment.",
     nothing: "Aucun.",
@@ -29752,12 +29752,12 @@ var L3 = {
     wcagStd: "WCAG 2.2 Level AA",
     date: "Date",
     tool: "Tool",
-    toolNote: "static engine \u2014 preliminary audit to be completed by a human review",
+    toolNote: "static engine \u2014 preliminary audit; judgment criteria adjudicated by the AI agent (statically, gated), rendering via `scan`",
     scope: "Scope",
     files: "file(s)",
     rate: "Automatic static-check pass rate",
     rateNote: "machine-decidable subset: C \xF7 (C + NC)",
-    warn: "This report covers the subset of criteria checkable automatically. The \u201Cto assess\u201D criteria (rendering / judgment) must be completed by a human review (see the last section).",
+    warn: "This report covers the subset of criteria checkable automatically. The \u201Cto assess\u201D criteria (rendering / judgment) are adjudicated by the AI agent (`verify --manual`, gated); rendering goes through `scan` (see the last section).",
     derived: (std) => `Derived view of ${std}: the audited WCAG success criteria projected onto this standard. The integrity gates (\`check\`/\`verify\`) operate on the canonical WCAG report.`,
     synthTitle: (by) => `1. Synthesis by ${by}`,
     byGuideline: "WCAG guideline",
@@ -29769,8 +29769,8 @@ var L3 = {
     none: "No non-conformity detected by the static engine.",
     cTitle: "3. Conforming criteria (C)",
     naTitle: "4. Not-applicable criteria (NA)",
-    manualTitle: "5. Criteria to assess manually (rendering / judgment)",
-    manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
+    manualTitle: "5. Criteria to adjudicate (judgment / rendering) \u2014 not decided by the static engine",
+    manualWarn: "Adjudicate these with `verify --manual` (the agent decides from source, gated); rendering criteria go to `scan`. None may be marked \u201Cconforming\u201D without a recorded, gated justification.",
     outOfScope: "Out of engine scope \u2014 mapped to SCs outside WCAG 2.2 AA; manual verification.",
     scopedOut: "The WCAG failures found concern elements outside this criterion's scope \u2014 assess separately.",
     nothing: "None.",
@@ -30249,8 +30249,8 @@ function captureSetupPlan(tr, path, lang = "en") {
 // src/criteria.ts
 var AUTO_LABEL = {
   static: { fr: "automatisable (moteur)", en: "automatable (engine)" },
-  "needs-rendering": { fr: "n\xE9cessite un rendu", en: "needs rendering" },
-  judgment: { fr: "jugement humain", en: "human judgment" }
+  "needs-rendering": { fr: "n\xE9cessite un rendu (tiers scan)", en: "needs rendering (scan tier)" },
+  judgment: { fr: "jugement de l'agent (gat\xE9)", en: "agent judgment (gated)" }
 };
 function formatSC(c, lang = "en") {
   const out = [];
@@ -30465,7 +30465,7 @@ var T = {
     checklist: [
       "- [ ] Chaque entr\xE9e porte un verdict (aucun `null`).",
       "- [ ] Aucune non-conformit\xE9 invent\xE9e : chaque verdict `supported` cite un \xE9l\xE9ment r\xE9el \xE0 la ligne indiqu\xE9e.",
-      "- [ ] Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) du rapport ont \xE9t\xE9 tranch\xE9s (ou laiss\xE9s en risque r\xE9siduel explicite).",
+      "- [ ] Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) ont \xE9t\xE9 adjug\xE9s par l'agent (`verify --manual` \u2192 `--apply`), ou laiss\xE9s en risque r\xE9siduel explicite (rendu \u2192 `scan`).",
       "- [ ] Pour un code rendu par une biblioth\xE8que (DSFR\u2026), le verdict s'appuie sur le HTML **produit** (build / `scan`), pas sur la source JSX.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` repasse au vert."
     ]
@@ -30484,7 +30484,7 @@ var T = {
     checklist: [
       "- [ ] Every entry has a verdict (no `null`).",
       "- [ ] No invented non-conformity: every `supported` verdict cites a real element at the given line.",
-      "- [ ] The report's \u201Cto assess\u201D criteria (rendering / judgment) have been decided (or left as an explicit residual risk).",
+      "- [ ] The \u201Cto assess\u201D criteria (rendering / judgment) have been adjudicated by the agent (`verify --manual` \u2192 `--apply`), or left as an explicit residual risk (rendering \u2192 `scan`).",
       "- [ ] For component-library-rendered code (DSFR\u2026), the verdict relies on the **produced** HTML (build / `scan`), not the JSX source.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` is green again."
     ]
@@ -32158,8 +32158,8 @@ var STR = {
     guideline: "R\xE8gle WCAG",
     findingsTitle: "Non-conformit\xE9s d\xE9tect\xE9es",
     noFindings: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
-    residualTitle: "\xC0 \xE9valuer manuellement (jugement / rendu)",
-    manualNote: "crit\xE8res non d\xE9cidables par le moteur \u2014 \xE0 compl\xE9ter par une revue humaine.",
+    residualTitle: "\xC0 adjuger (jugement / rendu)",
+    manualNote: "crit\xE8res non d\xE9cid\xE9s par le moteur \u2014 \xE0 adjuger par l'agent IA (`verify --manual`, gat\xE9), rendu via `scan`.",
     renderedNote: "fichier(s) rendent des composants de biblioth\xE8que non analys\xE9s en source \u2014 auditez le build (render) ou scan",
     sfcNote: "composant(s) .vue/.svelte/.astro audit\xE9(s) en SOURCE (template) \u2014 slots et liaisons dynamiques invisibles : verdict pr\xE9liminaire, auditez le rendu (render/scan)",
     capturesNote: "fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit"
@@ -32171,8 +32171,8 @@ var STR = {
     guideline: "WCAG guideline",
     findingsTitle: "Non-conformities detected",
     noFindings: "No non-conformity detected by the static engine.",
-    residualTitle: "To assess manually (judgment / rendering)",
-    manualNote: "criteria the engine cannot decide \u2014 complete with a human review.",
+    residualTitle: "To adjudicate (judgment / rendering)",
+    manualNote: "criteria the engine cannot decide \u2014 adjudicated by the AI agent (`verify --manual`, gated), rendering via `scan`.",
     renderedNote: "file(s) render component-library output not analysed from source \u2014 audit the build (render) or scan",
     sfcNote: ".vue/.svelte/.astro file(s) audited as SOURCE (template) \u2014 slots and dynamic bindings are invisible: preliminary verdict, audit the rendered output (render/scan)",
     capturesNote: "rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML"
@@ -32519,8 +32519,9 @@ Commands:
              and emit an AuditResult JSON keyed by WCAG 2.2 success criteria
              (consumed by 'report'). Without --json, prints a summary in --lang
              (default auto: repo <html lang> \u2192 the active standard's default locale
-             \u2192 English). The engine decides the machine-detectable criteria; you
-             supply the judgment + needs-rendering ones.
+             \u2192 English). The engine decides the machine-detectable criteria; the AI
+             agent adjudicates the judgment ones (verify --manual, gated) and the
+             scan tier decides the needs-rendering ones.
   report     Render an AuditResult into a dated WCAG 2.2 AA compliance report
              (audits/wcag-YYYY-MM-DD.md): metadata, per-guideline synthesis table,
              non-conformities by priority, conforming + not-applicable lists.

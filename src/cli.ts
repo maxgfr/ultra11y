@@ -68,8 +68,9 @@ Commands:
              and emit an AuditResult JSON keyed by WCAG 2.2 success criteria
              (consumed by 'report'). Without --json, prints a summary in --lang
              (default auto: repo <html lang> → the active standard's default locale
-             → English). The engine decides the machine-detectable criteria; you
-             supply the judgment + needs-rendering ones.
+             → English). The engine decides the machine-detectable criteria; the AI
+             agent adjudicates the judgment ones (verify --manual, gated) and the
+             scan tier decides the needs-rendering ones.
   report     Render an AuditResult into a dated WCAG 2.2 AA compliance report
              (audits/wcag-YYYY-MM-DD.md): metadata, per-guideline synthesis table,
              non-conformities by priority, conforming + not-applicable lists.

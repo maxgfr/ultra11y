@@ -82,3 +82,14 @@ The audit report format is inspired by the RGAA audit conventions of DINUM and
 the etalab-ia/skills RGAA skill; the native-HTML-first authoring rules are
 adapted from the SocialGouv/skills rgaa-html-css skill. No source code was
 copied from either project; only public conventions and rule lists were adapted.
+
+================================================================================
+ACT Rules Format test methodology (W3C)
+================================================================================
+
+ultra11y's ACT consistency suite (tests/fixtures/act/, tests/act-suite.test.ts)
+is structured after the W3C ACT Rules Format (passed / failed / inapplicable
+expectations, per-rule consistency). The test HTML is ORIGINAL, authored for
+ultra11y — no normative text or example markup is reproduced from the W3C ACT
+rules. The ACT Rules Format is © W3C. Reference:
+        https://www.w3.org/TR/act-rules-format/

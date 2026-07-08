@@ -2,17 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Contrast over a gradient — statically undecidable</title>
+    <title>Stylesheet contrast — statically undecidable</title>
+    <style>
+      /* Solid low-contrast colours defined in a STYLESHEET (class rule), not inline.
+         The static engine only reads literal inline `style=` colours — it does not run
+         the CSS cascade — so it correctly leaves 1.4.3 as a residual (manual) risk.
+         axe-core, rendering the page, resolves the class to solid #949494 on #ffffff
+         (~2.9:1) and flags a real contrast violation — the delta the dynamic tier adds. */
+      .muted {
+        color: #949494;
+        background: #ffffff;
+      }
+    </style>
   </head>
   <body>
     <main>
       <h1>Dynamic-only contrast</h1>
-      <!-- Text painted over a CSS gradient: the static engine cannot compute the
-           contrast against non-literal painted pixels, so it must leave 1.4.3 as a
-           residual (manual) risk. axe-core, rendering the page, measures the real
-           contrast and flags it — the delta the dynamic tier exists to add. -->
-      <p style="color: #9a9a9a; background: linear-gradient(90deg, #ffffff, #f2f2f2)">
-        Light grey text over a near-white gradient — insufficient contrast when painted.
+      <p class="muted">
+        Grey text set by a stylesheet class — insufficient contrast, invisible to static
+        analysis but caught at render time.
       </p>
       <a href="/">Home</a>
     </main>

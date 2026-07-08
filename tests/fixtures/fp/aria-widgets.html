@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Conformant ARIA widgets — a false-positive stress page</title>
+  </head>
+  <body>
+    <header>
+      <a href="#main" class="skip-link">Skip to content</a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/about">About</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main id="main">
+      <h1>Widget gallery</h1>
+
+      <!-- Tabs: valid roles + name wiring -->
+      <h2>Tabs</h2>
+      <div class="tabs">
+        <div role="tablist" aria-label="Sections">
+          <button role="tab" id="tab-1" aria-selected="true" aria-controls="panel-1">Overview</button>
+          <button role="tab" id="tab-2" aria-selected="false" aria-controls="panel-2">Details</button>
+        </div>
+        <div role="tabpanel" id="panel-1" aria-labelledby="tab-1">Overview content.</div>
+        <div role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden>Details content.</div>
+      </div>
+
+      <!-- Menu button + menu: named, valid children -->
+      <h2>Menu</h2>
+      <button id="menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu">Actions</button>
+      <ul role="menu" id="menu" aria-labelledby="menu-btn" hidden>
+        <li role="menuitem">Rename</li>
+        <li role="menuitem">Duplicate</li>
+      </ul>
+
+      <!-- Icon-only button named by aria-label; the SVG glyph is hidden from AT -->
+      <h2>Icon control</h2>
+      <button type="button" aria-label="Close dialog">
+        <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16">
+          <path d="M2 2 L14 14 M14 2 L2 14" />
+        </svg>
+      </button>
+
+      <!-- Inline informative SVG named by a <title> -->
+      <h2>Informative graphic</h2>
+      <svg role="img" width="24" height="24" viewBox="0 0 24 24">
+        <title>Verified account</title>
+        <circle cx="12" cy="12" r="10" />
+      </svg>
+
+      <!-- Decorative image correctly ignored -->
+      <img src="divider.png" alt="" />
+
+      <!-- Purely decorative flourish, hidden from AT -->
+      <span aria-hidden="true" class="flourish">✦✦✦</span>
+
+      <!-- Accessible form: labelled controls, grouped radios -->
+      <h2>Form</h2>
+      <form>
+        <label for="email">Email address</label>
+        <input id="email" type="email" name="email" autocomplete="email" />
+        <fieldset>
+          <legend>Contact preference</legend>
+          <label><input type="radio" name="pref" value="email" /> Email</label>
+          <label><input type="radio" name="pref" value="phone" /> Phone</label>
+        </fieldset>
+        <button type="submit">Save</button>
+      </form>
+
+      <!-- Data table with caption + headers -->
+      <h2>Data</h2>
+      <table>
+        <caption>Quarterly totals</caption>
+        <thead>
+          <tr>
+            <th scope="col">Quarter</th>
+            <th scope="col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Q1</th>
+            <td>100</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Polite status region, correctly announced -->
+      <p role="status">Saved.</p>
+    </main>
+    <footer>
+      <p>© 2026 Example</p>
+    </footer>
+  </body>
+</html>

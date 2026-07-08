@@ -135,7 +135,9 @@ Commands:
 
 Options:
   --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
-                     audit-latest.json here — a plain audit writes nothing without it
+                     audit-latest.json here — a plain audit writes nothing without it.
+                     For audit, a value ending in .json is a FILE target (written exactly);
+                     the path actually written is echoed on stderr
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit/fix: only include paths matching (comma-separated)
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
@@ -500,11 +502,18 @@ async function cmdAudit(p: ParsedArgs): Promise<number> {
   // `audit` streams to stdout (--json / text summary) and must NOT litter the CWD with an
   // audits/ folder. Chain via `audit … --out audits` when you want the file (e.g. for
   // `scan --merge audits/audit-latest.json` or `report --in audits/audit-latest.json`).
+  // R6: an `--out` value ending in `.json` is a FILE target (write exactly there);
+  // otherwise it's a directory and the canonical `audit-latest.json` lands inside it — so
+  // `--out run.json` no longer surprises the user with `run.json/audit-latest.json`.
   if (typeof p.flags.out === "string") {
     const out = p.flags.out;
+    const asFile = out.toLowerCase().endsWith(".json");
+    const target = asFile ? out : join(out, "audit-latest.json");
     try {
-      mkdirSync(out, { recursive: true });
-      writeFileSync(join(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+      mkdirSync(asFile ? dirname(out) : out, { recursive: true });
+      writeFileSync(target, JSON.stringify(result, null, 2) + "\n");
+      // Report the path actually written on STDERR so `--json` stdout stays parseable.
+      console.error(lang === "fr" ? `→ audit écrit dans ${target}` : `→ audit written to ${target}`);
     } catch {
       /* non-fatal: still print the result */
     }

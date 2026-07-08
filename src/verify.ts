@@ -127,6 +127,7 @@ const T = {
     semantic: "> Mode --semantic : vérifiez que l'extrait cité **étaye** réellement la non-conformité.",
     then: "Puis : `ultra11y verify --apply VERIFY.todo.json` (échoue si un verdict est refuted/unsupported).",
     understand: "Comprendre",
+    moreTests: (n: number, id: string) => `… +${n} autre(s) test(s) — voir \`criteria --standard <pack> ${id}\``,
     checklistTitle: "## Liste de contrôle avant clôture",
     checklist: [
       "- [ ] Chaque entrée porte un verdict (aucun `null`).",
@@ -146,6 +147,7 @@ const T = {
     semantic: "> --semantic mode: confirm the cited snippet actually **supports** the non-conformity.",
     then: "Then: `ultra11y verify --apply VERIFY.todo.json` (fails if any verdict is refuted/unsupported).",
     understand: "Understanding",
+    moreTests: (n: number, id: string) => `… +${n} more test(s) — see \`criteria --standard <pack> ${id}\``,
     checklistTitle: "## Pre-completion checklist",
     checklist: [
       "- [ ] Every entry has a verdict (no `null`).",
@@ -175,7 +177,7 @@ export function formatWorklist(items: VerifyItem[], semantic: boolean, standard:
       const sc = getSC(it.criteriaId);
       if (sc) {
         out.push(`      WCAG ${sc.sc} — ${scTitle(sc.sc, lang)} [${sc.level}] · ${s.understand}: ${sc.understanding}`);
-        if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.slice(0, 8).join(", ")}`);
+        if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.join(", ")}`);
       }
     } else if (pack) {
       const c = getPackCriterion(pack, it.criteriaId);
@@ -183,6 +185,8 @@ export function formatWorklist(items: VerifyItem[], semantic: boolean, standard:
       if (tests.length) {
         out.push(`      ${pack.name} ${it.criteriaId} :`);
         for (const test of tests.slice(0, 6)) out.push(`      - ${plain(test)}`);
+        // Honest overflow count instead of a silent drop — point at the full list.
+        if (tests.length > 6) out.push(`      - ${s.moreTests(tests.length - 6, it.criteriaId)}`);
       }
     }
   }

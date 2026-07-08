@@ -145,3 +145,18 @@ describe("writeReport", () => {
     expect(readFileSync(rgaaPath, "utf8")).toContain("RGAA 4.1.2");
   });
 });
+
+// R7: technique lists are no longer truncated with "…" (full actionability)
+describe("report technique lists — full, never truncated (R7)", () => {
+  const md7 = renderReport(bad, "fr");
+  it("renders the whole technique list for a criterion with many techniques (1.3.1 has 67)", () => {
+    // bad.html raises 1.3.1 NCs; its auditor block lists WCAG techniques.
+    expect(md7).not.toContain(", …"); // the old slice(0,12) + ellipsis is gone
+    // the auditor block's technique line ("**Technique** : G1, H2, …") — a 12-item cap
+    // would have shown ≤12 comma-separated codes; 1.3.1's full list is far longer. Pick
+    // the richest technique line in the report.
+    const techLines = md7.split("\n").filter((l: string) => /\*\*Technique\*\*/.test(l));
+    const richest = Math.max(0, ...techLines.map((l: string) => l.split(",").length));
+    expect(richest).toBeGreaterThan(12);
+  });
+});

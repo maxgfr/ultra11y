@@ -29363,7 +29363,7 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
     }
     out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` \u2014 ${unit.title}` : ""}`);
     const techs = techniques(unit.criteriaId);
-    if (techs.length) out.push(`**${v.test}** : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", \u2026" : ""}`);
+    if (techs.length) out.push(`**${v.test}** : ${techs.join(", ")}`);
     out.push(`**WCAG** : ${unit.criteriaId}${sc ? ` (${sc.level})` : ""}`);
   } else {
     const pack = loadPack(standard);
@@ -29673,7 +29673,7 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
         out.push(`- **${s.given}** ${s.givenElements(hints)} \xB7 **${s.when}** ${s.acWhen} \xB7 **${s.then}** \xAB ${req} \xBB (WCAG ${sc}).`);
       }
       const techs = isCore(standard) ? techniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => techniques(sc)))];
-      if (techs.length) out.push("", `_${s.techniques} : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", \u2026" : ""}_`);
+      if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
         out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
@@ -30462,6 +30462,7 @@ var T = {
     semantic: "> Mode --semantic : v\xE9rifiez que l'extrait cit\xE9 **\xE9taye** r\xE9ellement la non-conformit\xE9.",
     then: "Puis : `ultra11y verify --apply VERIFY.todo.json` (\xE9choue si un verdict est refuted/unsupported).",
     understand: "Comprendre",
+    moreTests: (n, id) => `\u2026 +${n} autre(s) test(s) \u2014 voir \`criteria --standard <pack> ${id}\``,
     checklistTitle: "## Liste de contr\xF4le avant cl\xF4ture",
     checklist: [
       "- [ ] Chaque entr\xE9e porte un verdict (aucun `null`).",
@@ -30481,6 +30482,7 @@ var T = {
     semantic: "> --semantic mode: confirm the cited snippet actually **supports** the non-conformity.",
     then: "Then: `ultra11y verify --apply VERIFY.todo.json` (fails if any verdict is refuted/unsupported).",
     understand: "Understanding",
+    moreTests: (n, id) => `\u2026 +${n} more test(s) \u2014 see \`criteria --standard <pack> ${id}\``,
     checklistTitle: "## Pre-completion checklist",
     checklist: [
       "- [ ] Every entry has a verdict (no `null`).",
@@ -30507,7 +30509,7 @@ function formatWorklist(items, semantic, standard = "wcag", lang = "en") {
       const sc = getSC(it.criteriaId);
       if (sc) {
         out.push(`      WCAG ${sc.sc} \u2014 ${scTitle(sc.sc, lang)} [${sc.level}] \xB7 ${s.understand}: ${sc.understanding}`);
-        if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.slice(0, 8).join(", ")}`);
+        if (sc.techniques?.length) out.push(`      Techniques: ${sc.techniques.join(", ")}`);
       }
     } else if (pack) {
       const c = getCriterion(pack, it.criteriaId);
@@ -30515,6 +30517,7 @@ function formatWorklist(items, semantic, standard = "wcag", lang = "en") {
       if (tests.length) {
         out.push(`      ${pack.name} ${it.criteriaId} :`);
         for (const test of tests.slice(0, 6)) out.push(`      - ${plain(test)}`);
+        if (tests.length > 6) out.push(`      - ${s.moreTests(tests.length - 6, it.criteriaId)}`);
       }
     }
   }
@@ -32655,7 +32658,9 @@ Commands:
 
 Options:
   --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
-                     audit-latest.json here \u2014 a plain audit writes nothing without it
+                     audit-latest.json here \u2014 a plain audit writes nothing without it.
+                     For audit, a value ending in .json is a FILE target (written exactly);
+                     the path actually written is echoed on stderr
   --in <file>        report: the AuditResult JSON to render ('-' for stdin)
   --include <glob>   audit/fix: only include paths matching (comma-separated)
   --exclude <glob>   audit/fix: skip paths matching (comma-separated)
@@ -32936,9 +32941,12 @@ async function cmdAudit(p) {
   lang = resolveLang(p.flags, { audit: result });
   if (typeof p.flags.out === "string") {
     const out = p.flags.out;
+    const asFile = out.toLowerCase().endsWith(".json");
+    const target = asFile ? out : join13(out, "audit-latest.json");
     try {
-      mkdirSync6(out, { recursive: true });
-      writeFileSync8(join13(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+      mkdirSync6(asFile ? dirname5(out) : out, { recursive: true });
+      writeFileSync8(target, JSON.stringify(result, null, 2) + "\n");
+      console.error(lang === "fr" ? `\u2192 audit \xE9crit dans ${target}` : `\u2192 audit written to ${target}`);
     } catch {
     }
   }

@@ -82,7 +82,7 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
     }
     out.push(`**${v.criterion}** : ${unit.criteriaId}${sc ? ` — ${unit.title}` : ""}`);
     const techs = scTechniques(unit.criteriaId);
-    if (techs.length) out.push(`**${v.test}** : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", …" : ""}`);
+    if (techs.length) out.push(`**${v.test}** : ${techs.join(", ")}`);
     out.push(`**WCAG** : ${unit.criteriaId}${sc ? ` (${sc.level})` : ""}`);
   } else {
     const pack = loadPack(standard);

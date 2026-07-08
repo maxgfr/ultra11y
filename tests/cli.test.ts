@@ -495,3 +495,26 @@ describe("check --semantic — the gate engages or fails, never green-but-inacti
     expect(r.err.toLowerCase()).toMatch(/semantic/);
   });
 });
+
+// ---- R6: audit --out <file>.json is a FILE target, not a directory ----
+describe("audit --out .json footgun (R6)", () => {
+  it("--out <file>.json writes that exact file (not a dir) and reports the path", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "u11y-outjson-"));
+    const target = join(dir, "run1.json");
+    const r = await run(["audit", `${FIX}conforming/good.html`, "--out", target, "--json"]);
+    expect(r.code).toBe(0);
+    expect(existsSync(target)).toBe(true); // the .json path is a FILE
+    expect(existsSync(join(target, "audit-latest.json"))).toBe(false); // NOT a directory
+    expect(JSON.parse(readFileSync(target, "utf8")).tool).toBe("ultra11y");
+    // the path actually written is reported (on stderr, so --json stdout stays clean)
+    expect(r.err).toContain("run1.json");
+    expect(() => JSON.parse(r.out)).not.toThrow();
+  });
+
+  it("--out <dir> keeps the directory + audit-latest.json convention", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "u11y-outdir-"));
+    const r = await run(["audit", `${FIX}conforming/good.html`, "--out", dir, "--json"]);
+    expect(r.code).toBe(0);
+    expect(existsSync(join(dir, "audit-latest.json"))).toBe(true);
+  });
+});

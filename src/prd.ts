@@ -300,7 +300,7 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
         out.push(`- **${s.given}** ${s.givenElements(hints)} · **${s.when}** ${s.acWhen} · **${s.then}** « ${req} » (WCAG ${sc}).`);
       }
       const techs = isCore(standard) ? scTechniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => scTechniques(sc)))];
-      if (techs.length) out.push("", `_${s.techniques} : ${techs.slice(0, 12).join(", ")}${techs.length > 12 ? ", …" : ""}_`);
+      if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
         out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);

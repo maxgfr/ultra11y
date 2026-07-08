@@ -2,11 +2,11 @@
 
 > Audit HTML/CSS/JSX against **WCAG 2.2 AA** accessibility and produce a dated compliance report — or author/review accessible markup without regressions. A [skills.sh](https://skills.sh) agent skill: a deterministic, zero-dependency static engine **plus** the agent's judgment, with `check`/`verify` gates against hallucinated non-conformities. **The central deliverable is the auditor conformance block** — theme, criterion + official wording, test(s), WCAG mapping + level, finding, expected state, verification, `file:line` occurrences — rendered identically by the `report` (compliance doc), the `prd` backlog and the GitHub issues, in the active standard's vocabulary and **in your language** (`--lang auto` follows the conversation/repo). **WCAG is the worldwide core; country standards (RGAA, …) are pluggable in-repo packs.**
 
-ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — 53 machine-detectable static checks tied to the WCAG 2.2 success criteria — and is explicit about everything it cannot decide:
+ultra11y is built around an honest **division of labour**. Automated tools only catch a fraction of accessibility problems, so the engine does the *mechanical* work — 53 machine-detectable static checks tied to the WCAG 2.2 success criteria — and is explicit about everything it can't decide statically. What it can't, the **AI agent adjudicates** (statically, from the evidence, gated by `verify`/`check`) — not a deferral to a human:
 
 - **Automatable (engine):** missing `alt`/`lang`/`title`, unlabeled fields, empty links/buttons, icon-only controls, iframes without title, tables without headers, heading-level skips, empty/dangling headings & labels, duplicate ids, invalid/broken ARIA, positive `tabindex`, autoplay/timed-refresh/`blink`/`marquee` media…
-- **Needs rendering (you):** computed contrast, visible focus, zoom/reflow, content on hover — flagged as **residual risks**, never silently "conforming".
-- **Human judgment (you):** alt-text relevance, link purpose in context, reading/tab order, caption accuracy…
+- **Agent judgment (gated):** alt-text relevance, link purpose in context, reading/tab order, caption accuracy — the agent rules on these via `verify --manual` → `--apply`, each verdict carrying a justification (or a groundable NC), never a silent "conforming".
+- **Needs rendering (scan tier):** computed contrast, visible focus, zoom/reflow, content on hover — decided by `scan` (axe-core in a real browser); until then they stay **residual risks**, never silently "conforming".
 
 ## Install
 

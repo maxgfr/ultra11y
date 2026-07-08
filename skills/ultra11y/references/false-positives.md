@@ -38,10 +38,11 @@ most of them; this page tells you (the agent) where it still cannot be sure, so 
   and `__tests__/` are excluded (bad-by-design fixtures). Re-include with
   `--no-default-excludes` or by naming the file.
 
-## Where you must still judge
+## Where the AI agent must still adjudicate
 
 A finding's `preliminary: true` (in `--json`) and a `scope.sourceTemplate` / `scope.rendered`
-caveat in the report mean **the verdict is provisional** — confirm against the rendered output.
+caveat in the report mean **the verdict is provisional** — the AI agent confirms it against the
+rendered output (rendering criteria go to `scan`), recording a verdict either way.
 
 | Rule / situation | Why it may still be wrong | How to confirm or refute |
 |---|---|---|

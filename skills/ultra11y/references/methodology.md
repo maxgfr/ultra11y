@@ -5,8 +5,9 @@
 - **C** — conforming (every applicable test passes).
 - **NC** — non-conforming (at least one test fails; a finding cites `file:line`).
 - **NA** — not applicable (no element in scope is concerned — justified).
-- **To assess (manual)** — a criterion the engine cannot decide on its own (rendering or
-  judgment); to be completed by a human review.
+- **To assess (manual)** — a criterion the engine cannot decide on its own: the AI agent
+  adjudicates the *judgment* ones itself (`verify --manual`, gated); the *rendering* ones are
+  decided by the `scan` tier. Only the still-undecidable residue stays listed here.
 
 ## Pass rate
 
@@ -33,10 +34,11 @@ ultra11y is honest about what a static analyzer can decide:
   fields, `iframe` without a title, empty links/buttons, tables without headers, heading
   skips, duplicate `id`s, invalid/broken ARIA, positive `tabindex`, autoplay…
 - **Needs rendering** — computed contrast (1.4.3), focus visible (2.4.7), zoom/reflow
-  (1.4.4/1.4.10), content on hover/focus (1.4.13). **Out of the engine**: verify in a
-  browser, flagged as residual risk.
-- **Human judgment** — alt relevance (1.1.1), link purpose in context (2.4.4), reading/tab
-  order, navigation consistency, caption accuracy…
+  (1.4.4/1.4.10), content on hover/focus (1.4.13). **Out of the engine**: decided by the `scan`
+  tier (axe-core in a real browser), flagged as residual risk until then.
+- **Agent judgment** — alt relevance (1.1.1), link purpose in context (2.4.4), reading/tab
+  order, navigation consistency, caption accuracy…: the AI agent adjudicates these itself from
+  the evidence the engine harvests (`verify --manual`, gated), never silently "conforming".
 
 See the full table of the 55 WCAG 2.2 AA success criteria in `references/criteria.md`.
 

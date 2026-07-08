@@ -13,8 +13,9 @@ compliance deliverables, **this skill reviews exactly the code under change** �
 branch, a PR — and reports like a code reviewer. Same division of labour: the
 deterministic, install-free engine bundled with this skill does the *mechanical* work
 (machine-checkable WCAG 2.2 AA non-conformities, each tied to a success criterion, cited
-`file:line`), and **you** do the *judgment* — refute false positives, decide alt
-relevance/link purpose/focus logic, and name what a static engine cannot decide.
+`file:line`), and **the AI agent** *adjudicates the judgment* — refute false positives, decide
+alt relevance/link purpose/focus logic statically from the code, and route what needs a rendered
+DOM to `scan`. A human is at most optional oversight.
 
 **Engine resolution:** every command below is `node scripts/ultra11y.mjs …` where
 `scripts/ultra11y.mjs` lives **next to this SKILL.md** (the engine ships inside the skill;
@@ -26,9 +27,11 @@ ultra11y repository itself, the repo root's `scripts/ultra11y.mjs` is the same f
 >    see and cite in the code under review.
 > 2. **Review the change, not the world**: findings outside the reviewed scope are noted in
 >    one line at most ("pre-existing, out of scope"), never mixed into the verdict.
-> 3. **Residual is explicit**: rendering/judgment criteria (contrast, focus visibility,
->    zoom/reflow, reading order) are named as residual risks for the changed components —
->    never silently marked conforming, never asserted from source.
+> 3. **Residual is explicit, never silently conforming**: the *rendering* criteria (contrast,
+>    focus visibility, zoom/reflow, content-on-hover) are named as residual risks for the changed
+>    components — never asserted from source, resolved in the rendered page (`scan`). The
+>    *judgment* criteria (alt relevance, link purpose, reading order) the AI agent adjudicates
+>    from the code itself, recording a reason — no status without a justified verdict.
 > 4. **Language**: write the review in the conversation's language, but technical tokens
 >    stay in English even in French prose — `aria-live` stays `aria-live` (never
 >    « région live »), same for `tabindex`, `alt`, `role="alert"`, landmark role names.
@@ -68,9 +71,9 @@ For each finding (`--json` gives `criteria`, `severity`, `file:line`, `message`,
 - **Library-rendered JSX (DSFR, MUI…)**: a clean source review can still ship broken HTML
   (false negatives) — say so explicitly when the change touches such components, and
   recommend a rendered-DOM check (`scan`, or the `ultra11y` capture pipeline).
-- **Judgment criteria are yours**: alt text relevance, link purpose in context, visible
-  label vs accessible name, keyboard/focus logic of the changed component (read the full
-  component source, not just the flagged line).
+- **The judgment criteria are the AI agent's to adjudicate**: alt text relevance, link purpose
+  in context, visible label vs accessible name, keyboard/focus logic of the changed component
+  (read the full component source, not just the flagged line), recording a reason for each call.
 - Refuting a finding requires **cited evidence** (the code that disproves it); silently
   dropping findings is forbidden.
 
@@ -89,7 +92,7 @@ Render in the conversation's language (Core rule 4), grouped by severity:
 ### 🟠 Major / 🟡 Minor
 - …same shape…
 
-### Residual risks (not decidable statically — check in the rendered page)
+### Residual risks (rendering-dependent — resolve in the rendered page via scan)
 - contrast of the new button variants (1.4.3), focus visibility on the custom menu (2.4.7)
 
 ### Verdict
@@ -115,6 +118,6 @@ rendered DOM; residual risks listed above.
 ## Do not
 
 - Invent a non-conformity the engine did not find and you cannot cite.
-- Assert contrast/focus/zoom from source — they are residual risks until rendered.
+- Assert contrast/focus/zoom from source — they are residual risks until rendered (resolve via `scan`).
 - Mix pre-existing repo issues into the verdict on the change.
 - Translate technical tokens in French prose (`aria-live`, never « région live »).

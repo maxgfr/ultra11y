@@ -1,8 +1,9 @@
 # Audit existing code → WCAG report
 
 Goal: produce a dated, reliable WCAG 2.2 AA compliance report. The engine decides the
-automatable subset; **you** complete the judgment and rendering criteria; the gates stop
-any hallucinated non-conformity.
+automatable subset; the **AI agent** adjudicates the judgment criteria (`verify --manual`,
+gated) and routes the rendering criteria to `scan`; the gates stop any hallucinated
+non-conformity.
 
 ## The loop
 
@@ -27,11 +28,11 @@ any hallucinated non-conformity.
 3. **Triage the results:**
    - engine `NC` = confirmed candidates (each finding cites `file:line`);
    - `manual` *needs-rendering* criteria (contrast 1.4.3, focus visible 2.4.7, reflow
-     1.4.10…) → mark "to verify manually", **never** silently `C`. Note: contrast on
+     1.4.10…) → route to `scan`, **never** silently `C`. Note: contrast on
      **inline literal colours** is now decided statically (1.4.3 turns `NC` for that
      subset); contrast via external CSS or variables stays residual (→ dynamic tier);
    - `manual` *judgment* criteria (alt relevance under 1.1.1, link purpose 2.4.4, reading
-     / tab order…) → assess them with context.
+     / tab order…) → the AI agent adjudicates them from context via `verify --manual` (gated).
 4. **Decide each applicable criterion**: `C`, `NC` or `NA` (with a justification). For a
    criterion's detail and grounding: `node scripts/ultra11y.mjs criteria 1.1.1`.
 5. **Render the report:**
@@ -59,7 +60,8 @@ any hallucinated non-conformity.
 
 - **Never invent a non-conformity**: every `NC` must cite a real, resolvable element
   (`check` verifies it).
-- **Residual is explicit**: any *needs-rendering* / *judgment* criterion not proven goes in
-  the "to assess manually" section, never passed to `C`.
+- **Residual is explicit, never silently `C`**: an unproven *needs-rendering* criterion goes to
+  `scan`; a *judgment* criterion the AI agent adjudicates via `verify --manual` (gated). Any
+  criterion still undecided stays in the "to assess manually" section with a recorded reason.
 - The report's **automatic static-check pass rate** covers only the machine-decidable
   subset; full WCAG conformance requires your manual review (it is not a conformance rate).

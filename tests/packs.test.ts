@@ -15,8 +15,8 @@ import {
 import { hasSC, knownScStatus } from "../src/wcag.js";
 import type { AuditResult, Finding } from "../src/types.js";
 
-const finding = (criteriaId: string): Finding => ({
-  ruleId: "x",
+const finding = (criteriaId: string, ruleId = "x"): Finding => ({
+  ruleId,
   criteriaId,
   file: "a.html",
   line: 1,
@@ -39,10 +39,12 @@ const synthetic = (): AuditResult => ({
   scope: { inputs: ["a.html"], files: 1 },
   guidelines: [],
   criteria: [
-    { id: "3.1.1", guideline: "3.1", status: "NC", findings: [finding("3.1.1")] },
+    // A realistic finding (html-lang-missing → 3.1.1) so the applicability-aware derive
+    // attaches it to RGAA 8.3 (default-language), not to every 3.1.1-mapped sibling.
+    { id: "3.1.1", guideline: "3.1", status: "NC", findings: [finding("3.1.1", "html-lang-missing")] },
     { id: "1.1.1", guideline: "1.1", status: "C", findings: [] },
   ],
-  findings: [finding("3.1.1")],
+  findings: [finding("3.1.1", "html-lang-missing")],
   residualRisks: [],
   conformancePct: 50,
 });

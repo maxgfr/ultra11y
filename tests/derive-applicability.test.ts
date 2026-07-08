@@ -1,0 +1,113 @@
+import { describe, it, expect } from "vitest";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { runAudit } from "../src/audit.js";
+import { derivePackResults, loadPack, registerRuntimePack } from "../src/standards/index.js";
+
+const dir = mkdtempSync(join(tmpdir(), "u11y-derive-"));
+function auditHtml(html: string) {
+  const f = join(dir, `page-${Math.abs(hash(html))}.html`);
+  writeFileSync(f, html);
+  return runAudit({ inputs: [f] });
+}
+// deterministic label helper (no Math.random / Date in tests here)
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+const statusOf = (rows: ReturnType<typeof derivePackResults>, id: string) => rows.find((r) => r.id === id)?.status;
+
+describe("RGAA applicability — an image-alt NC no longer over-projects", () => {
+  // A page whose ONLY failure is an informative <img> with no alt (WCAG 1.1.1).
+  const audit = auditHtml(`<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>H</h1><img src="hero.png"></main></body></html>`);
+  const rows = derivePackResults(audit, "rgaa");
+
+  it("attaches the finding to RGAA 1.1 (informative image alternative) as NC", () => {
+    expect(statusOf(rows, "1.1")).toBe("NC");
+    const c11 = rows.find((r) => r.id === "1.1")!;
+    expect(c11.findings.some((f) => f.ruleId === "img-alt-missing")).toBe(true);
+  });
+
+  it("leaves the plainly-inapplicable image criteria NON-NC (CAPTCHA 1.4/1.5, detailed-description 1.6/1.7)", () => {
+    for (const id of ["1.4", "1.5", "1.6", "1.7"]) {
+      expect(statusOf(rows, id), `RGAA ${id} must not be NC`).not.toBe("NC");
+    }
+  });
+
+  it("leaves downloadable-document (13.3/13.4) and layout-table (5.3) criteria NON-NC", () => {
+    for (const id of ["13.3", "13.4", "5.3"]) {
+      expect(statusOf(rows, id), `RGAA ${id} must not be NC`).not.toBe("NC");
+    }
+  });
+
+  it("a criterion whose mapped SC failed on out-of-scope elements derives as manual with a scoped justification (never a foreign finding)", () => {
+    const c14 = rows.find((r) => r.id === "1.4")!;
+    expect(c14.status).toBe("manual");
+    expect(c14.findings).toHaveLength(0); // no img-alt finding leaks in
+    expect(c14.scopedOut).toBe(true);
+  });
+});
+
+describe("RGAA applicability — real per-element mapping holds across themes", () => {
+  const audit = auditHtml(`<!doctype html><html><head></head><body><main><h1>H</h1><iframe src="x"></iframe></main></body></html>`);
+  const rows = derivePackResults(audit, "rgaa");
+
+  it("html-lang-missing → RGAA 8.3 (default language) NC, not other 3.1.1 criteria", () => {
+    expect(statusOf(rows, "8.3")).toBe("NC");
+  });
+
+  it("iframe-title-missing → RGAA 2.1 (frame title) NC", () => {
+    expect(statusOf(rows, "2.1")).toBe("NC");
+    // 2.2 (frame-title relevance, judgment) must stay non-NC.
+    expect(statusOf(rows, "2.2")).not.toBe("NC");
+  });
+});
+
+describe("RGAA applicability — a pack WITHOUT appliesTo keeps the legacy fan-out (third-party compat)", () => {
+  registerRuntimePack({
+    key: "legacyfan",
+    name: "LegacyFan",
+    org: "O",
+    country: "US",
+    baseVersion: "1",
+    wcagVersion: "2.2",
+    locales: ["en"],
+    defaultLocale: "en",
+    license: "x",
+    source: "x",
+    attribution: "x",
+    idPattern: "^L\\d+$",
+    themes: [{ number: 1, name: { en: "T" }, count: 2 }],
+    // Two criteria BOTH mapping 1.1.1, neither declaring appliesTo → both fan out.
+    criteria: [
+      { id: "L1", theme: 1, title: { en: "A" }, titlePlain: { en: "A" }, wcag: ["1.1.1"] },
+      { id: "L2", theme: 1, title: { en: "B" }, titlePlain: { en: "B" }, wcag: ["1.1.1"] },
+    ],
+  });
+  it("both criteria are NC (no applicability data = old behavior, unchanged)", () => {
+    const audit = auditHtml(`<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>H</h1><img src="x"></main></body></html>`);
+    const rows = derivePackResults(audit, "legacyfan");
+    expect(statusOf(rows, "L1")).toBe("NC");
+    expect(statusOf(rows, "L2")).toBe("NC");
+  });
+});
+
+describe("the built RGAA pack carries applicability data", () => {
+  it("every RGAA criterion declares an explicit appliesTo (so no SC-sibling can leak a foreign finding)", () => {
+    const pack = loadPack("rgaa");
+    for (const c of pack.criteria) {
+      expect(c.appliesTo, `RGAA ${c.id} missing appliesTo`).toBeDefined();
+      expect(Array.isArray(c.appliesTo!.ruleIds)).toBe(true);
+    }
+  });
+  it("RGAA 1.1 lists the image-alt rules and 1.4 (CAPTCHA) lists none", () => {
+    const pack = loadPack("rgaa");
+    const c11 = pack.criteria.find((c) => c.id === "1.1")!;
+    expect(c11.appliesTo!.ruleIds).toContain("img-alt-missing");
+    const c14 = pack.criteria.find((c) => c.id === "1.4")!;
+    expect(c14.appliesTo!.ruleIds).toEqual([]);
+  });
+});

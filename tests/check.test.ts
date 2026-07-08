@@ -230,3 +230,29 @@ describe("checkSemantic", () => {
     expect(r.ok).toBe(true);
   });
 });
+
+// ---- check --standard rgaa --in <audit.json>: applicability gate (R1) ----
+import { derivePackResults } from "../src/standards/index.js";
+import { renderPackReport as rpr } from "../src/report.js";
+
+describe("checkReport --in (pack applicability gate)", () => {
+  const rgaaReport = rpr(bad, loadPack("rgaa"), "fr");
+  it("passes a freshly-derived RGAA report against its own audit", () => {
+    const r = checkReport(rgaaReport, "rgaa", "fr", { audit: bad });
+    expect(r.ok).toBe(true);
+  });
+  it("fails a hand-edited RGAA report that over-projects an NC onto an inapplicable criterion", () => {
+    // Inject a fake NC auditor block for RGAA 1.4 (CAPTCHA) — a criterion the audit
+    // never derives as NC. The applicability gate must catch it.
+    const tampered = rgaaReport.replace(
+      "## 3.",
+      "#### 🔴 RGAA 1.4 — CAPTCHA\n**Thématique** : 1.\n**Critère** : 1.4 — CAPTCHA\n- [ ] `x.html:1` (`img`) — bogus\n\n## 3.",
+    );
+    const r = checkReport(tampered, "rgaa", "fr", { audit: bad });
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.includes("1.4"))).toBe(true);
+  });
+  it("does nothing extra without --in (grammar-only, back-compat)", () => {
+    expect(checkReport(rgaaReport, "rgaa", "fr").ok).toBe(true);
+  });
+});

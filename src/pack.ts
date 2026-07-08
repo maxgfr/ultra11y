@@ -10,6 +10,7 @@ import { existsSync } from "node:fs";
 import { readText } from "./util.js";
 import { validatePack, classifySc } from "./standards/validate.js";
 import { getCriterion } from "./standards/pack.js";
+import { ruleIds as engineRuleIds } from "./rules/registry.js";
 import type { StandardPack } from "./standards/types.js";
 import type { GuidanceDataset, GuidanceExample } from "./guidance/types.js";
 import { parseHtml } from "./parse/html.js";
@@ -110,6 +111,18 @@ export function runPackCheck(packPath: string, guidancePath: string | undefined)
   // checking a file, not registering it), so the built-in rgaa.json passes `pack check`.
   const v = validatePack(raw);
   for (const issue of v.issues) (issue.severity === "error" ? errors : warnings).push(`${issue.path ? `${issue.path}: ` : ""}${issue.message}`);
+  // Advisory: an appliesTo ruleId unknown to the engine registry is a WARNING, not a hard
+  // error — a pack may target a renamed/future rule, and axe:*/dyn-*/agent:* namespaced ids
+  // (dynamic-tier + agent-adjudicated findings) are legitimately outside the static registry.
+  if (v.ok && v.pack) {
+    const known = new Set(engineRuleIds());
+    const isNamespaced = (r: string) => /^(axe:|dyn-|agent:)/.test(r);
+    for (const c of v.pack.criteria) {
+      for (const r of c.appliesTo?.ruleIds ?? []) {
+        if (!isNamespaced(r) && !known.has(r)) warnings.push(`criteria "${c.id}": appliesTo ruleId "${r}" is not a known engine rule (renamed/future?)`);
+      }
+    }
+  }
   if (v.ok && v.pack && guidancePath) {
     if (!existsSync(guidancePath)) {
       errors.push(`guidance file not found: ${guidancePath}`);

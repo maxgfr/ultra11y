@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync8, readFileSync as readFileSync3, appendFileSync } from "fs";
-import { join as join11, relative as relative3, sep as sep2, dirname as dirname4 } from "path";
+import { realpathSync, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, existsSync as existsSync10, readFileSync as readFileSync5, appendFileSync } from "fs";
+import { join as join12, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 // src/types.ts
@@ -21682,6 +21682,9 @@ var ALL_RULES = [
   ...timingRules
 ];
 var SEVERITY_ORDER = { bloquant: 0, majeur: 1, mineur: 2 };
+function ruleIds() {
+  return ALL_RULES.map((r) => r.id);
+}
 function runRules(doc, only) {
   const out = [];
   const fullDoc = isFullDocument(doc);
@@ -22621,8 +22624,8 @@ function finalize(acc, inputs, extra = {}) {
   };
 }
 function hashContent(content, mode) {
-  const norm = mode === "normalized" ? content.replace(/>\s+</g, "><").trim() : content;
-  return createHash("sha1").update(norm).digest("hex");
+  const norm2 = mode === "normalized" ? content.replace(/>\s+</g, "><").trim() : content;
+  return createHash("sha1").update(norm2).digest("hex");
 }
 function runAudit(opts) {
   const acc = newAccum();
@@ -22893,7 +22896,22 @@ var rgaa_default = {
         ]
       },
       techniques: ["H36", "H37", "H53", "F65", "H24"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: [
+          "axe:area-alt",
+          "axe:image-alt",
+          "axe:input-image-alt",
+          "axe:object-alt",
+          "axe:role-img-alt",
+          "axe:svg-img-alt",
+          "canvas-fallback-missing",
+          "chart-no-accessible-name",
+          "img-alt-missing",
+          "input-image-alt-missing",
+          "object-embed-no-name"
+        ]
+      }
     },
     {
       id: "1.2",
@@ -22946,7 +22964,10 @@ var rgaa_default = {
         "Dans le cas d'une image vectorielle (balise `<svg>`) de d\xE9coration qui serait affich\xE9e au travers d'un \xE9l\xE9ment `<use href=\"\u2026\">` enfant de l'\xE9l\xE9ment `<svg>`, le test 1.2.4 s'appliquera \xE9galement \xE0 l'\xE9l\xE9ment `<svg>` associ\xE9e par le biais de l'\xE9l\xE9ment `<use>`.",
         'Un attribut WAI-ARIA `role="presentation"` peut \xEAtre utilis\xE9 sur les images de d\xE9coration et les zones non cliquables de d\xE9coration. Le r\xF4le `"none"` introduit en ARIA 1.1 et synonyme du r\xF4le `"presentation"` peut \xEAtre aussi utilis\xE9. Il reste pr\xE9f\xE9rable cependant d\'utiliser le r\xF4le `"presentation"` en attendant un support satisfaisant du r\xF4le `"none"`.'
       ],
-      wcag: ["1.1.1", "4.1.2"]
+      wcag: ["1.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: ["axe:image-redundant-alt", "decorative-alt-misuse"]
+      }
     },
     {
       id: "1.3",
@@ -23018,7 +23039,10 @@ var rgaa_default = {
         "Il existe une gestion de cas particuliers lorsque l\u2019image est utilis\xE9e comme [CAPTCHA](#captcha) ou comme [image-test](#image-test). Dans cette situation, o\xF9 il n\u2019est pas possible de donner une alternative pertinente sans d\xE9truire l\u2019objet du CAPTCHA ou du test, le crit\xE8re est non applicable.",
         "Note\xA0: le cas des CAPTCHA et des images-test est trait\xE9 de mani\xE8re sp\xE9cifique par le crit\xE8re 1.4."
       ],
-      wcag: ["1.1.1", "4.1.2"]
+      wcag: ["1.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "1.4",
@@ -23084,7 +23108,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G100", "G143"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "1.5",
@@ -23108,7 +23135,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G144"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "1.6",
@@ -23183,7 +23213,10 @@ var rgaa_default = {
         'La [description d\xE9taill\xE9e](#description-detaillee-image) adjacente peut \xEAtre impl\xE9ment\xE9e via une balise `<figcaption>`, dans ce cas le crit\xE8re 1.9 doit \xEAtre v\xE9rifi\xE9 (utilisation de `<figure>` et des attributs WAI-ARIA `role="figure"` et `aria-label`, notamment).',
         "L'attribut `longdesc` qui constitue une des conditions du test 1.6.1 (et dont la pertinence est v\xE9rifi\xE9e avec le test 1.7.1) est d\xE9sormais consid\xE9r\xE9 comme obsol\xE8te par la sp\xE9cification HTML en cours. La v\xE9rification de cet attribut ne sera donc requise que pour les versions de la sp\xE9cification HTML ant\xE9rieure \xE0 HTML 5."
       ],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "1.7",
@@ -23241,7 +23274,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G92", "F67"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "1.8",
@@ -23277,7 +23313,10 @@ var rgaa_default = {
       particularCases: [
         "Pour ce crit\xE8re, il existe une gestion de cas particulier lorsque le texte fait partie du logo, d\u2019une d\xE9nomination commerciale, d\u2019un [CAPTCHA](#captcha), d\u2019une [image-test](#image-test) ou d\u2019une image dont l\u2019exactitude graphique serait consid\xE9r\xE9e comme essentielle \xE0 la bonne transmission de l\u2019information v\xE9hicul\xE9e par l\u2019image. Dans ces situations, le crit\xE8re est non applicable pour ces \xE9l\xE9ments."
       ],
-      wcag: ["1.4.5"]
+      wcag: ["1.4.5"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "1.9",
@@ -23332,7 +23371,10 @@ var rgaa_default = {
         "Les attributs WAI-ARIA `aria-labelledby` et `aria-describedby` ne peuvent pas \xEAtre utilis\xE9s actuellement par manque de support par les technologies d\u2019assistance.",
         "Note\xA0: les images l\xE9gend\xE9es doivent par ailleurs respecter le crit\xE8re 1.1 et le crit\xE8re 1.3 relatifs aux images porteuses d\u2019information."
       ],
-      wcag: ["1.1.1", "4.1.2"]
+      wcag: ["1.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "2.1",
@@ -23347,7 +23389,10 @@ var rgaa_default = {
         "1": ["Chaque cadre (balise `<iframe>` ou `<frame>`) a-t-il un attribut `title`\xA0?"]
       },
       techniques: ["H64"],
-      wcag: ["4.1.2"]
+      wcag: ["4.1.2"],
+      appliesTo: {
+        ruleIds: ["axe:frame-title", "axe:frame-title-unique", "iframe-title-missing"]
+      }
     },
     {
       id: "2.2",
@@ -23362,7 +23407,10 @@ var rgaa_default = {
         "1": ["Pour chaque cadre (balise `<iframe>` ou `<frame>`) ayant un attribut `title`, le contenu de cet attribut est-il pertinent\xA0?"]
       },
       techniques: ["H64"],
-      wcag: ["4.1.2"]
+      wcag: ["4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "3.1",
@@ -23394,7 +23442,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G14", "G182", "G111", "G117", "G138", "G205"],
-      wcag: ["1.3.1", "1.4.1"]
+      wcag: ["1.3.1", "1.4.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "3.2",
@@ -23432,7 +23483,10 @@ var rgaa_default = {
       },
       techniques: ["G18", "G136", "G148", "G174", "G145", "C29"],
       particularCases: ["Dans ces situations, les crit\xE8res sont non applicables pour ces \xE9l\xE9ments\xA0:", "[object Object]"],
-      wcag: ["1.4.3"]
+      wcag: ["1.4.3"],
+      appliesTo: {
+        ruleIds: ["axe:color-contrast", "axe:color-contrast-enhanced", "contrast-literal"]
+      }
     },
     {
       id: "3.3",
@@ -23465,7 +23519,10 @@ var rgaa_default = {
       },
       techniques: ["G18", "G195", "G207", "G174", "G145", "G183", "F78"],
       particularCases: ["Les cas suivants sont non applicables pour ce crit\xE8re\xA0:", "[object Object]"],
-      wcag: ["1.4.11"]
+      wcag: ["1.4.11"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.1",
@@ -23506,7 +23563,10 @@ var rgaa_default = {
         "Dans ces situations, le crit\xE8re est non applicable.",
         "Ce cas particulier s\u2019applique \xE9galement aux crit\xE8res 4.2, 4.3, 4.5."
       ],
-      wcag: ["1.2.1", "1.2.3"]
+      wcag: ["1.2.1", "1.2.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.2",
@@ -23537,7 +23597,10 @@ var rgaa_default = {
       },
       techniques: ["F30", "F67", "SM6", "SM7"],
       particularCases: ["Voir cas particuliers crit\xE8re 4.1."],
-      wcag: ["1.2.1", "1.2.3"]
+      wcag: ["1.2.1", "1.2.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.3",
@@ -23560,7 +23623,10 @@ var rgaa_default = {
       },
       techniques: ["G58", "G93", "G87", "H95", "SM11", "SM12", "F74", "F75"],
       particularCases: ["Voir cas particuliers crit\xE8re 4.1."],
-      wcag: ["1.2.2"]
+      wcag: ["1.2.2"],
+      appliesTo: {
+        ruleIds: ["axe:audio-caption", "axe:video-caption", "media-no-track"]
+      }
     },
     {
       id: "4.4",
@@ -23577,7 +23643,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G93", "G87", "SM11", "SM12", "F8", "F74", "F75"],
-      wcag: ["1.2.2"]
+      wcag: ["1.2.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.5",
@@ -23602,7 +23671,10 @@ var rgaa_default = {
       },
       techniques: ["G8", "G58", "G78", "G173", "H96", "SM1", "SM2", "SM6", "SM7"],
       particularCases: ["Voir cas particuliers crit\xE8re 4.1."],
-      wcag: ["1.2.5"]
+      wcag: ["1.2.5"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.6",
@@ -23622,7 +23694,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["SM1", "SM2", "SM6", "SM7"],
-      wcag: ["1.2.5"]
+      wcag: ["1.2.5"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.7",
@@ -23642,7 +23717,10 @@ var rgaa_default = {
       particularCases: [
         "Il existe une gestion de cas particulier lorsque le [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) est utilis\xE9 \xE0 des fins d\xE9coratives (c\u2019est-\xE0-dire qu\u2019il n\u2019apporte aucune information). Dans cette situation, le crit\xE8re est non applicable."
       ],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.8",
@@ -23667,7 +23745,10 @@ var rgaa_default = {
       },
       techniques: ["H35", "H46"],
       particularCases: ["Il existe une gestion de cas particulier lorsque\xA0:", "[object Object]", "Dans ces situations, le crit\xE8re est non applicable."],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.9",
@@ -23684,7 +23765,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H46", "F30"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.10",
@@ -23704,7 +23788,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G60", "G170", "G171", "F23", "F93"],
-      wcag: ["1.4.2"]
+      wcag: ["1.4.2"],
+      appliesTo: {
+        ruleIds: ["autoplay-media", "axe:no-autoplay-audio"]
+      }
     },
     {
       id: "4.11",
@@ -23731,7 +23818,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G4", "G90", "G202"],
-      wcag: ["2.1.1", "2.1.2"]
+      wcag: ["2.1.1", "2.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.12",
@@ -23755,7 +23845,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G4", "G90"],
-      wcag: ["2.1.1", "2.1.2"]
+      wcag: ["2.1.1", "2.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "4.13",
@@ -23784,7 +23877,10 @@ var rgaa_default = {
         "Il existe une gestion de cas particulier lorsque\xA0le [m\xE9dia temporel](#media-temporel-type-son-video-et-synchronise) ou [non temporel](#media-non-temporel) est utilis\xE9 \xE0 des fins d\xE9coratives (c\u2019est-\xE0-dire qu\u2019il n\u2019apporte aucune information).",
         "Dans ces situations, le crit\xE8re est non applicable."
       ],
-      wcag: ["4.1.2"]
+      wcag: ["4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "5.1",
@@ -23802,7 +23898,10 @@ var rgaa_default = {
       technicalNote: [
         "La sp\xE9cification HTML propose plusieurs [m\xE9thodes pour lier un r\xE9sum\xE9 \xE0 un tableau](#table-descriptions-techniques) (tableau li\xE9 \xE0 un passage de texte avec l\u2019attribut `aria-describedby`, tableau group\xE9 dans un \xE9l\xE9ment `figure` avec un r\xE9sum\xE9 pr\xE9sent dans un \xE9l\xE9ment `figcaption` ou un \xE9l\xE9ment `p`, r\xE9sum\xE9 pr\xE9sent dans un \xE9l\xE9ment `details` contenu dans l\u2019\xE9l\xE9ment `caption`). Ces m\xE9thodes n\u2019ont pas un support suffisant pour \xEAtre utilis\xE9es actuellement."
       ],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "5.2",
@@ -23817,7 +23916,10 @@ var rgaa_default = {
         "1": ["Pour chaque [tableau de donn\xE9es complexe](#tableau-de-donnees-complexe) ayant un [r\xE9sum\xE9](#resume-de-tableau), celui-ci est-il pertinent\xA0?"]
       },
       techniques: ["H73"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "5.3",
@@ -23836,7 +23938,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F49", "ARIA4"],
-      wcag: ["1.3.2", "4.1.2"]
+      wcag: ["1.3.2", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "5.4",
@@ -23853,7 +23958,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H39"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: ["table-caption-missing"]
+      }
     },
     {
       id: "5.5",
@@ -23870,7 +23978,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H39"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "5.6",
@@ -23900,7 +24011,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H51", "F91"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: ["axe:empty-table-header", "axe:td-has-header", "axe:th-has-data-cells", "data-table-no-headers"]
+      }
     },
     {
       id: "5.7",
@@ -23947,7 +24061,10 @@ var rgaa_default = {
       particularCases: [
         "Dans le cas de tableaux de donn\xE9es ayant des en-t\xEAtes sur une seule ligne ou une seule colonne, les en-t\xEAtes peuvent \xEAtre structur\xE9s \xE0 l\u2019aide de balise `<th>` sans attribut `scope`."
       ],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: ["axe:scope-attr-valid", "axe:td-headers-attr", "data-table-no-headers", "sortable-header-no-aria-sort"]
+      }
     },
     {
       id: "5.8",
@@ -23966,7 +24083,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F46"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: ["axe:table-fake-caption", "layout-table-data-markup"]
+      }
     },
     {
       id: "6.1",
@@ -24015,7 +24135,10 @@ var rgaa_default = {
         "[object Object]",
         "Note\xA0: si l\u2019\xE9tiquette visible repr\xE9sente une expression math\xE9matique, les symboles math\xE9matiques peuvent \xEAtre repris litt\xE9ralement pour servir d\u2019\xE9tiquette au nom accessible (ex.\xA0: \u201CA>B\u201D). Il est laiss\xE9 \xE0 l\u2019utilisateur le soin d\u2019op\xE9rer la correspondance entre l\u2019expression et ce qu\u2019il doit \xE9peler compte tenu de la connaissance qu\u2019il a du fonctionnement de son logiciel de saisie vocale (\u201CA plus grand que B\u201D ou \u201CA sup\xE9rieur \xE0 B\u201D)."
       ],
-      wcag: ["1.1.1", "2.4.4", "2.5.3"]
+      wcag: ["1.1.1", "2.4.4", "2.5.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "6.2",
@@ -24033,7 +24156,10 @@ var rgaa_default = {
       technicalNote: [
         "Une ancre n\u2019est pas un lien m\xEAme si pendant longtemps l\u2019\xE9l\xE9ment `<a>` a servi de support \xE0 cette technique. Elle n\u2019est donc pas concern\xE9e par le pr\xE9sent crit\xE8re."
       ],
-      wcag: ["1.1.1", "2.4.4"]
+      wcag: ["1.1.1", "2.4.4"],
+      appliesTo: {
+        ruleIds: ["axe:link-name", "icon-only-control-unnamed", "link-empty-name"]
+      }
     },
     {
       id: "7.1",
@@ -24073,7 +24199,31 @@ var rgaa_default = {
         "[object Object]",
         "Note\xA0: si l\u2019\xE9tiquette visible repr\xE9sente une expression math\xE9matique, les symboles math\xE9matiques peuvent \xEAtre repris litt\xE9ralement pour servir d\u2019\xE9tiquette au nom accessible (ex.\xA0: \u201CA>B\u201D). Il est laiss\xE9 \xE0 l\u2019utilisateur le soin d\u2019op\xE9rer la correspondance entre l\u2019expression et ce qu\u2019il doit \xE9peler compte tenu de la connaissance qu\u2019il a du fonctionnement de son logiciel de saisie vocale (\u201CA plus grand que B\u201D ou \u201CA sup\xE9rieur \xE0 B\u201D)."
       ],
-      wcag: ["2.5.3", "4.1.2"]
+      wcag: ["2.5.3", "4.1.2"],
+      appliesTo: {
+        ruleIds: [
+          "aria-hidden-focusable",
+          "aria-ref-missing-id",
+          "aria-required-children",
+          "axe:aria-allowed-attr",
+          "axe:aria-allowed-role",
+          "axe:aria-hidden-focus",
+          "axe:aria-required-attr",
+          "axe:aria-required-children",
+          "axe:aria-required-parent",
+          "axe:aria-roles",
+          "axe:aria-valid-attr",
+          "axe:aria-valid-attr-value",
+          "axe:nested-interactive",
+          "axe:presentation-role-conflict",
+          "cross-aria-forwarding",
+          "cross-aria-ref-cross-file",
+          "cross-prop-drilled-name-lost",
+          "invalid-aria-role",
+          "nested-interactive",
+          "redundant-aria"
+        ]
+      }
     },
     {
       id: "7.2",
@@ -24100,7 +24250,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G136", "F19", "F20"],
-      wcag: ["1.1.1", "4.1.2"]
+      wcag: ["1.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "7.3",
@@ -24123,7 +24276,10 @@ var rgaa_default = {
       particularCases: [
         "Il existe une gestion de cas particuliers lorsque la fonctionnalit\xE9 d\xE9pend de l\u2019utilisation d\u2019un gestionnaire d\u2019\xE9v\xE9nement sans \xE9quivalent universel\xA0; par exemple, une application de dessin \xE0 main lev\xE9e ne pourra pas \xEAtre rendue contr\xF4lable au clavier. Dans ces situations, le crit\xE8re est non applicable."
       ],
-      wcag: ["1.3.1", "2.1.1", "2.4.7"]
+      wcag: ["1.3.1", "2.1.1", "2.4.7"],
+      appliesTo: {
+        ruleIds: ["clickable-noninteractive"]
+      }
     },
     {
       id: "7.4",
@@ -24143,7 +24299,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G13", "G76", "G80", "G107", "H32", "H84", "F9", "F22", "F36", "F37", "F41", "SCR19"],
-      wcag: ["3.2.1", "3.2.2"]
+      wcag: ["3.2.1", "3.2.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "7.5",
@@ -24171,7 +24330,10 @@ var rgaa_default = {
         "[object Object]",
         "C\u2019est sous r\xE9serve que la nature du message de statut satisfasse bien \xE0 la correspondance implicitement \xE9tablie. Dans le cas d\u2019un message de statut indiquant la progression d\u2019un processus et mat\xE9rialis\xE9 graphiquement par une barre de progression, un r\xF4le WAI-ARIA `progressbar` explicite est n\xE9cessaire."
       ],
-      wcag: ["4.1.3"]
+      wcag: ["4.1.3"],
+      appliesTo: {
+        ruleIds: ["live-region-conflict", "status-message-not-assertive"]
+      }
     },
     {
       id: "8.1",
@@ -24190,7 +24352,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G134", "G192"],
-      wcag: ["4.1.1"]
+      wcag: ["4.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "8.2",
@@ -24212,7 +24377,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H74", "H93", "H94", "F70", "F77"],
-      wcag: ["4.1.1", "4.1.2"]
+      wcag: ["4.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: ["axe:duplicate-id", "axe:duplicate-id-active", "axe:duplicate-id-aria", "duplicate-id"]
+      }
     },
     {
       id: "8.3",
@@ -24231,7 +24399,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H57"],
-      wcag: ["3.1.1"]
+      wcag: ["3.1.1"],
+      appliesTo: {
+        ruleIds: ["axe:html-has-lang", "axe:html-xml-lang-mismatch", "cross-page-lang", "html-lang-missing"]
+      }
     },
     {
       id: "8.4",
@@ -24250,7 +24421,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H57"],
-      wcag: ["3.1.1"]
+      wcag: ["3.1.1"],
+      appliesTo: {
+        ruleIds: ["axe:html-lang-valid", "lang-invalid"]
+      }
     },
     {
       id: "8.5",
@@ -24265,7 +24439,10 @@ var rgaa_default = {
         "1": ["Chaque page web a-t-elle un [titre de page](#titre-de-page) (balise `<title>`)\xA0?"]
       },
       techniques: ["G88", "G127", "H25"],
-      wcag: ["2.4.2"]
+      wcag: ["2.4.2"],
+      appliesTo: {
+        ruleIds: ["axe:document-title", "title-missing-empty"]
+      }
     },
     {
       id: "8.6",
@@ -24280,7 +24457,10 @@ var rgaa_default = {
         "1": ["Pour chaque page web ayant un [titre de page](#titre-de-page) (balise `<title>`), le contenu de cette balise est-il pertinent\xA0?"]
       },
       techniques: ["G88", "G127", "H25"],
-      wcag: ["2.4.2"]
+      wcag: ["2.4.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "8.7",
@@ -24305,7 +24485,10 @@ var rgaa_default = {
         "Note 1\xA0: le dictionnaire officiel est celui recommand\xE9 par l\u2019acad\xE9mie en charge de la langue en question. Pour la France, par exemple, le lien vers le dictionnaire officiel se trouve sur le site de l\u2019Acad\xE9mie fran\xE7aise \xE0 l\u2019adresse suivante\xA0: http://www.academie-francaise.fr/le-dictionnaire/la-9e-edition. Pour toute demande aupr\xE8s du service du dictionnaire de l\u2019Acad\xE9mie fran\xE7aise, utiliser le formulaire de contact du service du dictionnaire.",
         "Note 2\xA0: pour les noms communs de langue \xE9trang\xE8re, absents dans le dictionnaire officiel de la langue par d\xE9faut de la page web, et qui sont pass\xE9s dans le langage commun (exemple\xA0: newsletter)\xA0: le crit\xE8re est applicable, uniquement lorsque l\u2019absence d\u2019indication de langue peut provoquer une incompr\xE9hension pour la restitution."
       ],
-      wcag: ["3.1.2"]
+      wcag: ["3.1.2"],
+      appliesTo: {
+        ruleIds: ["inline-lang-change-missing"]
+      }
     },
     {
       id: "8.8",
@@ -24324,7 +24507,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H58"],
-      wcag: ["3.1.2"]
+      wcag: ["3.1.2"],
+      appliesTo: {
+        ruleIds: ["axe:valid-lang", "lang-invalid"]
+      }
     },
     {
       id: "8.9",
@@ -24341,7 +24527,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G115", "H88", "F43", "F92"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "8.10",
@@ -24363,7 +24552,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H56"],
-      wcag: ["1.3.2"]
+      wcag: ["1.3.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "9.1",
@@ -24389,7 +24581,19 @@ var rgaa_default = {
       technicalNote: [
         "WAI-ARIA permet de d\xE9finir des titres via le r\xF4le `heading` et l\u2019attribut `aria-level` (indication du niveau de titre). Bien qu\u2019il soit pr\xE9f\xE9rable d\u2019utiliser l\u2019\xE9l\xE9ment de titre natif en HTML `<hx>`, l\u2019utilisation du r\xF4le WAI-ARIA `heading` est compatible avec l\u2019accessibilit\xE9."
       ],
-      wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"]
+      wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
+      appliesTo: {
+        ruleIds: [
+          "axe:empty-heading",
+          "axe:heading-order",
+          "axe:page-has-heading-one",
+          "cross-name-ref-cross-file",
+          "empty-heading",
+          "h1-missing",
+          "h1-multiple",
+          "heading-order-skip"
+        ]
+      }
     },
     {
       id: "9.2",
@@ -24416,7 +24620,10 @@ var rgaa_default = {
         "La balise `<main>` peut \xEAtre utilis\xE9e plusieurs fois dans le m\xEAme document HTML. N\xE9anmoins, il ne peut y avoir en permanence qu\u2019une seule balise visible et lisible par les technologies d\u2019assistances, les autres devant disposer d\u2019un attribut `hidden` ou d\u2019un style permettant de les masquer aux technologies d\u2019assistances. \xC0 noter cependant que l\u2019utilisation d\u2019un style seul restera insuffisante pour assurer l\u2019unicit\xE9 d\u2019une balise `<main>` visible en cas de d\xE9sactivation des feuilles de styles."
       ],
       particularCases: ["Lorsque le doctype d\xE9clar\xE9 dans la page n\u2019est pas le doctype HTML5, ce crit\xE8re est non applicable."],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: ["missing-main-landmark", "multiple-main-landmark"]
+      }
     },
     {
       id: "9.3",
@@ -24447,7 +24654,10 @@ var rgaa_default = {
         'Les attributs WAI-ARIA `role="list"` et `role="listitem"` peuvent n\xE9cessiter l\u2019utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas o\xF9 l\u2019ensemble de la liste n\u2019est pas disponible via le DOM g\xE9n\xE9r\xE9 au moment de la consultation.',
         'Les attributs WAI-ARIA `role="tree"`, `role="tablist"`, `role="menu"`, `role="combobox"` et `role="listbox"` ne sont pas \xE9quivalents \xE0 une liste HTML `<ul>` ou `<ol>`.'
       ],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: ["axe:definition-list", "axe:dlitem", "axe:list", "axe:listitem", "list-structure"]
+      }
     },
     {
       id: "9.4",
@@ -24463,7 +24673,10 @@ var rgaa_default = {
         "2": ["Dans chaque page web, chaque bloc de citation utilise-t-il une balise `<blockquote>`\xA0?"]
       },
       techniques: ["G115", "H49", "F2"],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.1",
@@ -24489,7 +24702,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G140", "F32", "F33", "F34", "F48", "C6", "C8", "C18", "C22"],
-      wcag: ["1.3.1", "1.3.2"]
+      wcag: ["1.3.1", "1.3.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.2",
@@ -24504,7 +24720,10 @@ var rgaa_default = {
         "1": ["Dans chaque page web, l\u2019information reste-t-elle pr\xE9sente lorsque les [feuilles de styles](#feuille-de-style) sont d\xE9sactiv\xE9es\xA0?"]
       },
       techniques: ["G140", "F3", "F87"],
-      wcag: ["1.1.1", "1.3.1"]
+      wcag: ["1.1.1", "1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.3",
@@ -24521,7 +24740,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G59", "G140", "F1"],
-      wcag: ["1.3.2", "2.4.3"]
+      wcag: ["1.3.2", "2.4.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.4",
@@ -24551,7 +24773,10 @@ var rgaa_default = {
         "Font exception \xE0 ce crit\xE8re, les contenus pour lesquels l\u2019utilisateur n\u2019a pas de possibilit\xE9 de personnalisation\xA0:",
         "[object Object]"
       ],
-      wcag: ["1.4.4"]
+      wcag: ["1.4.4"],
+      appliesTo: {
+        ruleIds: ["axe:meta-viewport", "axe:meta-viewport-large", "dyn-reflow-zoom", "meta-viewport-zoom-block"]
+      }
     },
     {
       id: "10.5",
@@ -24574,7 +24799,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F24"],
-      wcag: ["1.4.3"]
+      wcag: ["1.4.3"],
+      appliesTo: {
+        ruleIds: ["axe:color-contrast", "axe:color-contrast-enhanced", "contrast-literal"]
+      }
     },
     {
       id: "10.6",
@@ -24594,7 +24822,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G183", "F73"],
-      wcag: ["1.4.1"]
+      wcag: ["1.4.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.7",
@@ -24613,7 +24844,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G149", "G165", "G183", "G195", "F73", "F78", "SCR31", "C15"],
-      wcag: ["1.4.1", "2.4.7"]
+      wcag: ["1.4.1", "2.4.7"],
+      appliesTo: {
+        ruleIds: ["dyn-focus-visible"]
+      }
     },
     {
       id: "10.8",
@@ -24638,7 +24872,10 @@ var rgaa_default = {
         'La sp\xE9cification HTML5 propose un attribut `hidden` qui permet de rendre indisponible (quand l\u2019attribut `hidden` est pr\xE9sent) un contenu dans le DOM g\xE9n\xE9r\xE9 (de mani\xE8re similaire au `type="hidden"` sur un contr\xF4le de formulaire).',
         "Il est possible d\u2019avoir des situations o\xF9 un contenu contr\xF4l\xE9 par `hidden` ou `aria-hidden` se trouve momentan\xE9ment dans un \xE9tat incoh\xE9rent avec le statut affich\xE9 ou masqu\xE9 du contenu, par exemple si l\u2019on d\xE9sire rendre disponible un \xE9l\xE9ment, mais que son affichage \xE0 l\u2019\xE9cran reste d\xE9pendant d\u2019une action ult\xE9rieure. Dans ce cas, c\u2019est l\u2019\xE9tat final du contenu qui doit \xEAtre consid\xE9r\xE9."
       ],
-      wcag: ["1.3.2", "4.1.2"]
+      wcag: ["1.3.2", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.9",
@@ -24664,7 +24901,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G96", "G140", "F14", "F26"],
-      wcag: ["1.3.3", "1.4.1"]
+      wcag: ["1.3.3", "1.4.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.10",
@@ -24690,7 +24930,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G96", "G140", "F14", "F26"],
-      wcag: ["1.3.3", "1.4.1"]
+      wcag: ["1.3.3", "1.4.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "10.11",
@@ -24717,7 +24960,10 @@ var rgaa_default = {
         "[object Object]",
         "Note\xA0: la majorit\xE9 des navigateurs sur les syst\xE8mes d'exploitation sur mobile (Android, iOS) ne g\xE8re pas correctement la redistribution en cas de zoom. Dans ce contexte, le crit\xE8re sera consid\xE9r\xE9 comme non applicable sur ces environnements."
       ],
-      wcag: ["1.4.10"]
+      wcag: ["1.4.10"],
+      appliesTo: {
+        ruleIds: ["dyn-reflow"]
+      }
     },
     {
       id: "10.12",
@@ -24742,7 +24988,10 @@ var rgaa_default = {
         "Font exception \xE0 ce crit\xE8re, les contenus pour lesquels l\u2019utilisateur n\u2019a pas de possibilit\xE9 de personnalisation\xA0:",
         "[object Object]"
       ],
-      wcag: ["1.4.12"]
+      wcag: ["1.4.12"],
+      appliesTo: {
+        ruleIds: ["dyn-text-spacing"]
+      }
     },
     {
       id: "10.13",
@@ -24772,7 +25021,10 @@ var rgaa_default = {
         "Lorsque le contenu additionnel est contr\xF4l\xE9 par l\u2019agent utilisateur (par exemple, attribut `title` ou validation native de formulaire) ou correspond \xE0 une fen\xEAtre modale conforme au [motif de conception](#motif-de-conception) WAI-ARIA `dialog`, le crit\xE8re 10.13 est non applicable.",
         "Lorsque le contenu additionnel ne masque ou ne remplace aucun contenu porteur d\u2019information, le test 10.13.1 est non applicable."
       ],
-      wcag: ["1.4.13"]
+      wcag: ["1.4.13"],
+      appliesTo: {
+        ruleIds: ["dyn-hover"]
+      }
     },
     {
       id: "10.14",
@@ -24798,7 +25050,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G202"],
-      wcag: ["2.1.1"]
+      wcag: ["2.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.1",
@@ -24831,7 +25086,22 @@ var rgaa_default = {
         ]
       },
       techniques: ["G82", "G131", "H44", "H65", "F68", "F82", "F86", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
-      wcag: ["1.3.1", "2.4.6", "3.3.2", "4.1.2"]
+      wcag: ["1.3.1", "2.4.6", "3.3.2", "4.1.2"],
+      appliesTo: {
+        ruleIds: [
+          "axe:form-field-multiple-labels",
+          "axe:label",
+          "axe:label-title-only",
+          "axe:select-name",
+          "control-label-missing",
+          "control-name-title-only",
+          "field-purpose-incomplete",
+          "form-field-multiple-labels",
+          "label-for-dangling",
+          "placeholder-as-label",
+          "select-has-option"
+        ]
+      }
     },
     {
       id: "11.2",
@@ -24873,7 +25143,10 @@ var rgaa_default = {
         "Note\xA0: si l\u2019\xE9tiquette visible repr\xE9sente une expression math\xE9matique, les symboles math\xE9matiques peuvent \xEAtre repris litt\xE9ralement pour servir d\u2019\xE9tiquette au nom accessible (ex.\xA0: \u201CA>B\u201D). Il est laiss\xE9 \xE0 l\u2019utilisateur le soin d\u2019op\xE9rer la correspondance entre l\u2019expression et ce qu\u2019il doit \xE9peler compte tenu de la connaissance qu\u2019il a du fonctionnement de son logiciel de saisie vocale (\u201CA plus grand que B\u201D ou \u201CA sup\xE9rieur \xE0 B\u201D).",
         "Ce cas particulier s\u2019applique \xE9galement au test 11.9.2."
       ],
-      wcag: ["2.4.6", "2.5.3", "3.3.2"]
+      wcag: ["2.4.6", "2.5.3", "3.3.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.3",
@@ -24893,7 +25166,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F31"],
-      wcag: ["3.2.4"]
+      wcag: ["3.2.4"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.4",
@@ -24921,7 +25197,10 @@ var rgaa_default = {
       },
       techniques: ["G162"],
       particularCases: ["Les tests 11.4.2 et 11.4.3 seront consid\xE9r\xE9s comme non applicables\xA0:", "[object Object]"],
-      wcag: ["3.3.2"]
+      wcag: ["3.3.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.5",
@@ -24941,7 +25220,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H71", "ARIA17"],
-      wcag: ["1.3.1", "3.3.2"]
+      wcag: ["1.3.1", "3.3.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.6",
@@ -24956,7 +25238,10 @@ var rgaa_default = {
         "1": ["Chaque regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) poss\xE8de-t-il une [l\xE9gende](#legende)\xA0?"]
       },
       techniques: ["H71", "ARIA17"],
-      wcag: ["1.3.1", "3.3.2"]
+      wcag: ["1.3.1", "3.3.2"],
+      appliesTo: {
+        ruleIds: ["axe:fieldset", "fieldset-legend-missing"]
+      }
     },
     {
       id: "11.7",
@@ -24971,7 +25256,10 @@ var rgaa_default = {
         "1": ["Chaque [l\xE9gende](#legende) associ\xE9e \xE0 un regroupement de [champs de m\xEAme nature](#champs-de-meme-nature) est-elle pertinente\xA0?"]
       },
       techniques: ["H71", "ARIA17"],
-      wcag: ["1.3.1", "3.3.2"]
+      wcag: ["1.3.1", "3.3.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.8",
@@ -24993,7 +25281,10 @@ var rgaa_default = {
       technicalNote: [
         'Il est possible d\u2019utiliser une balise ayant un attribut WAI-ARIA `role="listbox"` en remplacement d\u2019une balise `<select>`. En revanche, il est impossible de cr\xE9er des groupes d\u2019options via l\u2019utilisation de WAI-ARIA. De ce fait, une liste n\xE9cessitant un regroupement d\u2019options structur\xE9e \xE0 l\u2019aide d\u2019une balise ayant un attribut WAI-ARIA `role="listbox"` sera consid\xE9r\xE9e comme non conforme au crit\xE8re 11.8.'
       ],
-      wcag: ["1.3.1"]
+      wcag: ["1.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.9",
@@ -25026,7 +25317,10 @@ var rgaa_default = {
       },
       techniques: ["H36", "H91", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
       particularCases: ["Pour le test 11.9.2, voir cas particuliers crit\xE8re 11.2."],
-      wcag: ["2.5.3", "4.1.2"]
+      wcag: ["2.5.3", "4.1.2"],
+      appliesTo: {
+        ruleIds: ["axe:button-name", "axe:input-button-name", "button-empty-name", "cross-icon-only-unnamed", "icon-only-control-unnamed"]
+      }
     },
     {
       id: "11.10",
@@ -25103,7 +25397,10 @@ var rgaa_default = {
         "[object Object]",
         "Dans le cas o\xF9 l\u2019ensemble des champs d\u2019un formulaire sont obligatoires, les tests 11.10.1 et 11.10.2 restent applicables."
       ],
-      wcag: ["3.3.1", "3.3.2"]
+      wcag: ["3.3.1", "3.3.2"],
+      appliesTo: {
+        ruleIds: ["aria-invalid-no-description", "error-not-associated"]
+      }
     },
     {
       id: "11.11",
@@ -25122,7 +25419,10 @@ var rgaa_default = {
       technicalNote: [
         "Certains types de contr\xF4les en HTML5 proposent des messages d\u2019aide \xE0 la saisie automatique\xA0: par exemple le type `email` affiche un message du type \xAB\xA0veuillez saisir une adresse e-mail valide\xA0\xBB dans le cas o\xF9 l\u2019adresse e-mail saisie ne correspond pas au format attendu. Ces messages sont personnalisables via l\u2019API Constraint Validation, ce qui permet de personnaliser les messages d\u2019erreur et de valider le crit\xE8re. L\u2019attribut `pattern` permet d\u2019effectuer automatiquement des contr\xF4les de format (via des expressions r\xE9guli\xE8res) et affiche un message d\u2019aide personnalisable via l\u2019attribut `title`\xA0: ce dispositif valide \xE9galement le crit\xE8re."
       ],
-      wcag: ["3.3.3"]
+      wcag: ["3.3.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.12",
@@ -25147,7 +25447,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G98", "G99", "G155", "G164", "G168"],
-      wcag: ["3.3.4"]
+      wcag: ["3.3.4"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "11.13",
@@ -25171,7 +25474,10 @@ var rgaa_default = {
         "La [liste des valeurs possibles pour l\u2019attribut `autocomplete`](#liste-des-valeurs-possibles-pour-l-attribut-autocomplete) repose sur la liste des valeurs pr\xE9sentes dans la sp\xE9cification WCAG2.1 qui reprend elle-m\xEAme la liste des valeurs de type \u201Cfield name\u201D de la sp\xE9cification HTML5.2. Le crit\xE8re WCAG demande \xE0 ce que l\u2019une de ces valeurs soit pr\xE9sente pour qualifier un champ de saisie concernant l\u2019utilisateur.",
         'Ce que le crit\xE8re WCAG laisse implicite, ce sont les diff\xE9rentes r\xE8gles de construction possibles pour obtenir une valeur (simple ou compos\xE9e) pour l\u2019attribut `autocomplete`. C\u2019est cependant l\u2019affaire du d\xE9veloppeur de fournir \xE0 l\u2019attribut `autocomplete` une valeur ou un ensemble de valeurs valides au regard des exigences de l\u2019algorithme fourni par la sp\xE9cification HTML5.2. Ainsi, un attribut `autocomplete` ne peut contenir qu\u2019une seule valeur de type `\u201Cfield name\u201D`, comme `"name"` ou `"street-address"`. On peut avoir \xE9galement un ensemble compos\xE9 de diff\xE9rentes valeurs comme, par exemple, `autocomplete="shipping name"` ou `autocomplete="section-software shipping street-address"`\xA0: `"section-software"` renvoie \xE0 une valeur de type <span lang="en">\u201Cscope\u201D</span> et `"shipping"` \xE0 une valeur de type <span lang="en">\u201Chint set\u201D</span>, mais toujours une seule valeur de type <span lang="en">\u201Cfield name\u201D</span>.'
       ],
-      wcag: ["1.3.5"]
+      wcag: ["1.3.5"],
+      appliesTo: {
+        ruleIds: ["axe:autocomplete-valid", "field-purpose-incomplete"]
+      }
     },
     {
       id: "12.1",
@@ -25196,7 +25502,10 @@ var rgaa_default = {
         "Le crit\xE8re est \xE9galement non applicable pour les pages d\u2019un ensemble de pages qui sont le r\xE9sultat ou une partie d\u2019un processus (un processus de paiement ou de prise de commande, par exemple).",
         "Note\xA0: l\u2019appr\xE9ciation d\u2019un nombre tr\xE8s limit\xE9 de pages devrait \xEAtre r\xE9serv\xE9 \xE0 un site dont l\u2019ensemble des pages sont atteignables depuis la page d\u2019accueil."
       ],
-      wcag: ["2.4.5"]
+      wcag: ["2.4.5"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.2",
@@ -25216,7 +25525,10 @@ var rgaa_default = {
       },
       techniques: ["G61", "F66"],
       particularCases: ["Il existe une gestion de cas particuliers lorsque\xA0:", "[object Object]", "Dans ces situations, le crit\xE8re est non applicable."],
-      wcag: ["3.2.3"]
+      wcag: ["3.2.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.3",
@@ -25233,7 +25545,10 @@ var rgaa_default = {
         "3": ["Les liens du [plan du site](#page-plan-du-site) renvoient-ils bien vers les pages indiqu\xE9es par l\u2019intitul\xE9\xA0?"]
       },
       techniques: ["G63"],
-      wcag: ["2.4.5"]
+      wcag: ["2.4.5"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.4",
@@ -25256,7 +25571,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G61", "G63"],
-      wcag: ["2.4.5", "3.2.3"]
+      wcag: ["2.4.5", "3.2.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.5",
@@ -25279,7 +25597,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G61", "F66"],
-      wcag: ["3.2.3"]
+      wcag: ["3.2.3"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.6",
@@ -25301,7 +25622,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["H69", "G115", "ARIA4", "ARIA11"],
-      wcag: ["1.3.1", "2.4.1", "4.1.2"]
+      wcag: ["1.3.1", "2.4.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: ["axe:landmark-one-main", "missing-main-landmark", "multiple-main-landmark"]
+      }
     },
     {
       id: "12.7",
@@ -25329,7 +25653,10 @@ var rgaa_default = {
         "Il existe une gestion de cas particuliers lorsque le site web est constitu\xE9 d\u2019une seule page.",
         "Dans ce cas de figure, l\u2019obligation de la pr\xE9sence d\u2019un lien d\u2019acc\xE8s rapide est li\xE9e au contexte de la page\xA0: pr\xE9sence ou absence de navigation ou de contenus additionnels, par exemple. Le crit\xE8re peut \xEAtre consid\xE9r\xE9 comme non applicable lorsqu\u2019il est av\xE9r\xE9 qu\u2019un lien d\u2019acc\xE8s rapide est inutile."
       ],
-      wcag: ["2.4.1", "2.4.3", "3.2.3"]
+      wcag: ["2.4.1", "2.4.3", "3.2.3"],
+      appliesTo: {
+        ruleIds: ["axe:bypass", "axe:skip-link", "cross-skip-link-target", "skip-link-target-missing"]
+      }
     },
     {
       id: "12.8",
@@ -25347,7 +25674,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G59", "H4", "F44", "F85", "SCR26", "SCR27", "SCR37", "C27"],
-      wcag: ["2.4.3"]
+      wcag: ["2.4.3"],
+      appliesTo: {
+        ruleIds: ["axe:tabindex", "positive-tabindex"]
+      }
     },
     {
       id: "12.9",
@@ -25366,7 +25696,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G21", "H91", "F10"],
-      wcag: ["2.1.1", "2.1.2"]
+      wcag: ["2.1.1", "2.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.10",
@@ -25386,7 +25719,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F99", "G217"],
-      wcag: ["2.1.4"]
+      wcag: ["2.1.4"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "12.11",
@@ -25406,7 +25742,10 @@ var rgaa_default = {
       technicalNote: [
         "Ce crit\xE8re adresse les situations o\xF9 un contenu additionnel contient des [composants d\u2019interface](#composant-d-interface) avec lesquels il doit \xEAtre possible d\u2019interagir au clavier. Par exemple, une infobulle personnalis\xE9e qui propose un lien dans son contenu."
       ],
-      wcag: ["2.1.1"]
+      wcag: ["2.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.1",
@@ -25445,7 +25784,10 @@ var rgaa_default = {
         "Il existe une gestion de cas particuliers lorsque la limite de temps est essentielle, notamment lorsqu\u2019elle ne pourrait pas \xEAtre supprim\xE9e sans changer fondamentalement le contenu ou les fonctionnalit\xE9s li\xE9es au contenu.",
         "Dans ces situations, le crit\xE8re est non applicable. Par exemple, le rafra\xEEchissement d\u2019un flux RSS dans une page n\u2019est pas une limite de temps essentielle\xA0; le crit\xE8re est applicable. En revanche, une redirection automatique qui am\xE8ne vers la nouvelle version d\u2019une page \xE0 partir d\u2019une URL obsol\xE8te est essentielle\xA0; le crit\xE8re est non applicable."
       ],
-      wcag: ["2.2.1", "2.2.2"]
+      wcag: ["2.2.1", "2.2.2"],
+      appliesTo: {
+        ruleIds: ["meta-refresh-redirect"]
+      }
     },
     {
       id: "13.2",
@@ -25462,7 +25804,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F55", "G107"],
-      wcag: ["3.2.1"]
+      wcag: ["3.2.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.3",
@@ -25483,7 +25828,10 @@ var rgaa_default = {
       },
       techniques: ["F15", "G10", "G135"],
       particularCases: ["Il existe une gestion de cas particuliers\xA0:", "[object Object]", "Dans cette situation, le crit\xE8re est non applicable."],
-      wcag: ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"]
+      wcag: ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.4",
@@ -25502,7 +25850,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F15", "G10", "G135"],
-      wcag: ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"]
+      wcag: ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.5",
@@ -25521,7 +25872,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F71", "F70", "G135", "H86"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.6",
@@ -25540,7 +25894,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F71", "F72", "H86"],
-      wcag: ["1.1.1"]
+      wcag: ["1.1.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.7",
@@ -25569,7 +25926,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["G15", "G19", "G176"],
-      wcag: ["2.3.1"]
+      wcag: ["2.3.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.8",
@@ -25597,7 +25957,10 @@ var rgaa_default = {
         ]
       },
       techniques: ["F4", "F7", "F16", "F47", "F50", "G4", "G11", "G152", "G186", "G187", "G191", "SCR22", "SCR33", "SCR36", "SM11", "SM12"],
-      wcag: ["2.2.1", "2.2.2"]
+      wcag: ["2.2.1", "2.2.2"],
+      appliesTo: {
+        ruleIds: ["autoplay-media", "axe:blink", "axe:marquee", "blink-marquee"]
+      }
     },
     {
       id: "13.9",
@@ -25621,7 +25984,10 @@ var rgaa_default = {
         "Dans ces situations, le crit\xE8re est non applicable. Il peut s\u2019agir d\u2019interfaces de jeu, de piano, de d\xE9p\xF4t de ch\xE8ques bancaires, etc.",
         "Si l\u2019interface est le seul moyen d\u2019acc\xE9der au service propos\xE9, une alternative devrait \xEAtre mise en place pour pallier cette carence."
       ],
-      wcag: ["1.3.4"]
+      wcag: ["1.3.4"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.10",
@@ -25642,7 +26008,10 @@ var rgaa_default = {
       },
       techniques: ["G215", "G216"],
       particularCases: ["Il existe une gestion de cas particuliers dans deux types de situation\xA0:", "[object Object]"],
-      wcag: ["2.5.1"]
+      wcag: ["2.5.1"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.11",
@@ -25669,7 +26038,10 @@ var rgaa_default = {
       particularCases: [
         "Il existe une gestion de cas particulier lorsque la fonctionnalit\xE9 n\xE9cessite que le comportement attendu soit r\xE9alis\xE9 lors d\u2019un \xE9v\xE9nement descendant, par exemple, un \xE9mulateur de clavier dont les touches doivent s\u2019activer \xE0 la pression comme sur un clavier physique. Dans ces situations, le crit\xE8re est non applicable."
       ],
-      wcag: ["2.5.2"]
+      wcag: ["2.5.2"],
+      appliesTo: {
+        ruleIds: []
+      }
     },
     {
       id: "13.12",
@@ -25693,7 +26065,10 @@ var rgaa_default = {
       },
       techniques: [],
       particularCases: ["Il existe une gestion de cas particulier lorsque\xA0:", "[object Object]"],
-      wcag: ["2.5.4"]
+      wcag: ["2.5.4"],
+      appliesTo: {
+        ruleIds: []
+      }
     }
   ]
 };
@@ -26275,6 +26650,17 @@ function validatePack(raw, opts = {}) {
     if (!title2 || typeof title2[loc] !== "string") err(`criteria[${i}].title`, `criterion "${String(id)}" missing title[${loc}]`);
     const titlePlain2 = c?.titlePlain;
     if (!titlePlain2 || typeof titlePlain2[loc] !== "string") err(`criteria[${i}].titlePlain`, `criterion "${String(id)}" missing titlePlain[${loc}]`);
+    if (c?.appliesTo !== void 0) {
+      const a = c.appliesTo;
+      const ruleIds2 = a && typeof a === "object" && !Array.isArray(a) ? a.ruleIds : void 0;
+      if (!a || typeof a !== "object" || Array.isArray(a) || !Array.isArray(ruleIds2)) {
+        err(`criteria[${i}].appliesTo`, `criterion "${String(id)}" appliesTo must be an object { ruleIds: string[] }`);
+      } else {
+        ruleIds2.forEach((r, k) => {
+          if (typeof r !== "string" || r.trim() === "") err(`criteria[${i}].appliesTo.ruleIds[${k}]`, `criterion "${String(id)}" appliesTo.ruleIds must be non-empty strings`);
+        });
+      }
+    }
     const wcag = Array.isArray(c?.wcag) ? c.wcag : null;
     if (!wcag || wcag.length === 0) {
       err(`criteria[${i}].wcag`, `criterion "${String(id)}" must map to at least one WCAG SC`);
@@ -26440,6 +26826,15 @@ function aggregate(statuses) {
   if (statuses.includes("manual")) return "manual";
   return "NA";
 }
+function ruleMatches(ruleId, patterns) {
+  for (const p of patterns) {
+    if (p === "*") return true;
+    if (p.endsWith(":*") || p.endsWith("-*")) {
+      if (ruleId.startsWith(p.slice(0, -1))) return true;
+    } else if (p === ruleId) return true;
+  }
+  return false;
+}
 function derivePackResults(audit, packKey) {
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
@@ -26452,9 +26847,20 @@ function derivePackResults(audit, packKey) {
       return { id: pc.id, theme: pc.theme, status: "manual", findings: [], scs: pc.wcag, outOfScope: true };
     }
     const scResults = pc.wcag.map((sc) => byScId.get(sc)).filter((x) => !!x);
-    const findings = scResults.flatMap((r) => r.findings);
+    const allFindings = scResults.flatMap((r) => r.findings);
+    if (!pc.appliesTo) {
+      const status2 = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
+      return { id: pc.id, theme: pc.theme, status: status2, findings: allFindings, scs: pc.wcag };
+    }
+    const findings = allFindings.filter((f) => ruleMatches(f.ruleId, pc.appliesTo.ruleIds));
+    if (findings.length) {
+      return { id: pc.id, theme: pc.theme, status: "NC", findings, scs: pc.wcag };
+    }
+    if (scResults.some((r) => r.status === "NC")) {
+      return { id: pc.id, theme: pc.theme, status: "manual", findings: [], scs: pc.wcag, scopedOut: true };
+    }
     const status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
-    return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
+    return { id: pc.id, theme: pc.theme, status, findings: [], scs: pc.wcag };
   });
 }
 
@@ -29330,6 +29736,7 @@ var L3 = {
     manualTitle: "5. Crit\xE8res \xE0 \xE9valuer manuellement (rendu / jugement)",
     manualWarn: "Ne marquez aucun de ces crit\xE8res \xAB conforme \xBB sans v\xE9rification humaine.",
     outOfScope: "Hors p\xE9rim\xE8tre moteur \u2014 mapp\xE9 sur des SC hors WCAG 2.2 AA ; v\xE9rification manuelle.",
+    scopedOut: "Les non-conformit\xE9s WCAG relev\xE9es concernent des \xE9l\xE9ments hors du p\xE9rim\xE8tre de ce crit\xE8re \u2014 \xE0 \xE9valuer s\xE9par\xE9ment.",
     nothing: "Aucun.",
     dedup: "D\xE9dup",
     canonical: "fichier(s) canonique(s) audit\xE9(s)",
@@ -29365,6 +29772,7 @@ var L3 = {
     manualTitle: "5. Criteria to assess manually (rendering / judgment)",
     manualWarn: "Do not mark any of these criteria \u201Cconforming\u201D without a human check.",
     outOfScope: "Out of engine scope \u2014 mapped to SCs outside WCAG 2.2 AA; manual verification.",
+    scopedOut: "The WCAG failures found concern elements outside this criterion's scope \u2014 assess separately.",
     nothing: "None.",
     dedup: "Dedup",
     canonical: "canonical file(s) audited",
@@ -29457,9 +29865,9 @@ function renderPackReport(r, pack, lang = "en") {
       label: `${pack.name} ${pr.id} \u2014 ${title(pack, pc, lang)}`,
       status: pr.status,
       findings: pr.findings,
-      // outOfScope criteria are "manual" (not NA) with their own dedicated justification —
-      // never mixed with the ordinary NA reason (see the manual-section justification above).
-      ...pr.outOfScope ? { justification: s.outOfScope } : pr.status === "NA" ? { justification: naReason } : {}
+      // outOfScope / scopedOut criteria are "manual" (not NA) with their own dedicated
+      // justification — never mixed with the ordinary NA reason (see the manual section above).
+      ...pr.outOfScope ? { justification: s.outOfScope } : pr.scopedOut ? { justification: s.scopedOut } : pr.status === "NA" ? { justification: naReason } : {}
     };
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)).push(row);
   }
@@ -29977,74 +30385,8 @@ function renderCriteriaReference() {
 }
 
 // src/check.ts
-var M = {
-  fr: {
-    section: (n) => `Section ${n} manquante dans le rapport.`,
-    crit: (id) => `Crit\xE8re inexistant cit\xE9 dans le rapport : ${id}.`,
-    na: (id) => `Crit\xE8re NA sans justification : ${id}.`,
-    rateMissing: "Taux de r\xE9ussite absent de l'en-t\xEAte du rapport.",
-    rateRange: (v) => `Taux de r\xE9ussite hors bornes (0\u2013100) : ${v}%.`
-  },
-  en: {
-    section: (n) => `Section ${n} missing from the report.`,
-    crit: (id) => `Non-existent criterion cited in the report: ${id}.`,
-    na: (id) => `NA criterion without a justification: ${id}.`,
-    rateMissing: "Pass rate missing from the report header.",
-    rateRange: (v) => `Pass rate out of range (0\u2013100): ${v}%.`
-  }
-};
-function checkReport(md, standard = "wcag", lang = "en") {
-  const issues = [];
-  const s = M[lang];
-  const core = isCore(standard);
-  const pack = core ? null : loadPack(standard);
-  const exists = (id) => core ? hasSC(id) : hasId(pack, id);
-  const idGrammar = core ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(pack);
-  const bound = "(?=\\s|\u2014|$)";
-  const critRefs = [
-    new RegExp(`(${idGrammar})\\s*\u2014`, "g"),
-    // "<id> — <title>" (real criteria, anywhere)
-    new RegExp(`^#{2,4}\\s+\\S+\\s+(?:.*?\\s)?(${idGrammar})${bound}`, "gm"),
-    // auditor-block heading "### 🔴 <id>" (pack: "### 🔴 RGAA <id>")
-    new RegExp(`^\\*\\*[^*\\n]+\\*\\*\\s*:\\s*(${idGrammar})${bound}`, "gm")
-    // "**Success criterion** : <id>" / "**WCAG** : <id>"
-  ];
-  const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack)})\\s*\u2014`);
-  for (let n = 1; n <= 5; n++) {
-    if (!new RegExp(`^##\\s+${n}\\.`, "m").test(md)) issues.push(s.section(n));
-  }
-  const seen = /* @__PURE__ */ new Set();
-  for (const critRef of critRefs) {
-    let m;
-    critRef.lastIndex = 0;
-    while (m = critRef.exec(md)) {
-      const id = m[1];
-      if (seen.has(id)) continue;
-      seen.add(id);
-      if (!exists(id)) issues.push(s.crit(id));
-    }
-  }
-  const naSection = sectionBody(md, 4);
-  for (const line of naSection.split("\n")) {
-    const item = naItem.exec(line);
-    if (item && !line.includes("_")) issues.push(s.na(item[1]));
-  }
-  const rateM = /^-\s+\*\*[^*\n]*\*\*\s*:\s*(\d+(?:[.,]\d+)?)\s*%/m.exec(md);
-  if (!rateM) {
-    issues.push(s.rateMissing);
-  } else {
-    const pct = parseFloat(rateM[1].replace(",", "."));
-    if (pct < 0 || pct > 100) issues.push(s.rateRange(rateM[1]));
-  }
-  return { ok: issues.length === 0, issues };
-}
-function sectionBody(md, n) {
-  const start = new RegExp(`^##\\s+${n}\\.`, "m").exec(md);
-  if (!start) return "";
-  const from = start.index + start[0].length;
-  const next = /^##\s+/m.exec(md.slice(from));
-  return next ? md.slice(from, from + next.index) : md.slice(from);
-}
+import { existsSync as existsSync5, readFileSync as readFileSync4 } from "fs";
+import { dirname as dirname4, join as join8 } from "path";
 
 // src/verify.ts
 import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "fs";
@@ -30225,11 +30567,195 @@ function writeWorklist(items, outDir, semantic, standard = "wcag", lang = "en") 
   return { todoPath, mdPath, count: items.length };
 }
 
+// src/grounding.ts
+import { existsSync as existsSync4, readFileSync as readFileSync3 } from "fs";
+import { resolve as resolve2 } from "path";
+var WINDOW = 10;
+var norm = (s) => s.replace(/\s+/g, " ").trim();
+var isUnresolvable = (file) => !file || file === "-" || file === "<stdin>" || file === "stdin";
+function selectorProbes(selector) {
+  const probes = [];
+  for (const simple of selector.split(/[\s>+~,]+/)) {
+    if (!simple || simple === "\u2014") continue;
+    const tag = /^([a-zA-Z][\w-]*)/.exec(simple);
+    if (tag) probes.push(`<${tag[1].toLowerCase()}`);
+    for (const m of simple.matchAll(/[#.]([\w-]+)/g)) probes.push(m[1]);
+    for (const m of simple.matchAll(/\[([\w-]+)/g)) probes.push(m[1]);
+  }
+  return probes;
+}
+function groundFinding(g, opts = {}) {
+  if (isUnresolvable(g.file)) return { ok: true, moved: false };
+  const path = resolve2(opts.cwd ?? process.cwd(), g.file);
+  if (!existsSync4(path)) return { ok: false, moved: false, issue: `cited file not found: ${g.file}` };
+  let text;
+  try {
+    text = readFileSync3(path, "utf8");
+  } catch {
+    return { ok: false, moved: false, issue: `cited file unreadable: ${g.file}` };
+  }
+  const lines = text.split("\n");
+  if (g.line > lines.length) return { ok: false, moved: false, issue: `cited line out of range: ${g.file}:${g.line} (${lines.length} lines)` };
+  const hasLine = g.line >= 1;
+  const lo = hasLine ? Math.max(0, g.line - 1 - WINDOW) : 0;
+  const hi = hasLine ? Math.min(lines.length, g.line + WINDOW) : lines.length;
+  const windowText = norm(lines.slice(lo, hi).join("\n"));
+  const fileText = hasLine ? norm(text) : windowText;
+  const snippet2 = g.snippet ? norm(g.snippet) : "";
+  if (snippet2) {
+    if (windowText.includes(snippet2)) return { ok: true, moved: false };
+    if (fileText.includes(snippet2)) return { ok: true, moved: true };
+    return { ok: false, moved: false, issue: `cited snippet not found in ${g.file}:${g.line}` };
+  }
+  const probes = selectorProbes(g.selector ?? "");
+  if (!probes.length) return { ok: true, moved: false };
+  if (probes.some((p) => windowText.includes(p))) return { ok: true, moved: false };
+  if (probes.some((p) => fileText.includes(p))) return { ok: true, moved: true };
+  return { ok: false, moved: false, issue: `cited selector "${g.selector}" not found in ${g.file}:${g.line}` };
+}
+function groundItems(items, opts = {}) {
+  const s = { grounded: 0, moved: 0, failed: 0, issues: [] };
+  for (const it of items) {
+    const r = groundFinding(it, opts);
+    if (r.ok) {
+      s.grounded++;
+      if (r.moved) s.moved++;
+    } else {
+      s.failed++;
+      if (r.issue) s.issues.push(r.issue);
+    }
+  }
+  return s;
+}
+
+// src/check.ts
+var M = {
+  fr: {
+    section: (n) => `Section ${n} manquante dans le rapport.`,
+    crit: (id) => `Crit\xE8re inexistant cit\xE9 dans le rapport : ${id}.`,
+    na: (id) => `Crit\xE8re NA sans justification : ${id}.`,
+    rateMissing: "Taux de r\xE9ussite absent de l'en-t\xEAte du rapport.",
+    rateRange: (v) => `Taux de r\xE9ussite hors bornes (0\u2013100) : ${v}%.`,
+    overProject: (id) => `Crit\xE8re sur-projet\xE9 : ${id} est marqu\xE9 non conforme dans le rapport mais l'audit ne le d\xE9rive pas comme NC (\xE9l\xE9ment hors p\xE9rim\xE8tre du crit\xE8re).`,
+    underProject: (id) => `Crit\xE8re absent : l'audit d\xE9rive ${id} comme non conforme mais le rapport ne le pr\xE9sente pas.`,
+    semanticMissing: (p) => `Gate s\xE9mantique : aucun artefact de verdicts trouv\xE9 (${p}). G\xE9n\xE9rez la worklist (\`verify --report <md>\`), statuez, puis relancez \u2014 ou passez \`--verdicts <fichier>\`.`,
+    semanticUnreadable: (p) => `Gate s\xE9mantique : artefact de verdicts illisible ou JSON invalide : ${p}.`,
+    semanticGate: (failed, total) => `Gate s\xE9mantique : ${failed}/${total} verdict(s) en \xE9chec (non statu\xE9, r\xE9fut\xE9, non \xE9tay\xE9 ou non couvert).`,
+    semanticGround: (issue) => `Gate s\xE9mantique : ${issue}`
+  },
+  en: {
+    section: (n) => `Section ${n} missing from the report.`,
+    crit: (id) => `Non-existent criterion cited in the report: ${id}.`,
+    na: (id) => `NA criterion without a justification: ${id}.`,
+    rateMissing: "Pass rate missing from the report header.",
+    rateRange: (v) => `Pass rate out of range (0\u2013100): ${v}%.`,
+    overProject: (id) => `Over-projected criterion: ${id} is marked non-conformant in the report but the audit does not derive it as NC (element outside the criterion's scope).`,
+    underProject: (id) => `Missing criterion: the audit derives ${id} as non-conformant but the report does not present it.`,
+    semanticMissing: (p) => `Semantic gate: no verdicts artifact found (${p}). Generate the worklist (\`verify --report <md>\`), adjudicate it, then re-run \u2014 or pass \`--verdicts <file>\`.`,
+    semanticUnreadable: (p) => `Semantic gate: verdicts artifact unreadable or invalid JSON: ${p}.`,
+    semanticGate: (failed, total) => `Semantic gate: ${failed}/${total} verdict(s) failing (unadjudicated, refuted, unsupported or uncovered).`,
+    semanticGround: (issue) => `Semantic gate: ${issue}`
+  }
+};
+function checkReport(md, standard = "wcag", lang = "en", opts = {}) {
+  const issues = [];
+  const s = M[lang];
+  const core = isCore(standard);
+  const pack = core ? null : loadPack(standard);
+  const exists = (id) => core ? hasSC(id) : hasId(pack, id);
+  const idGrammar = core ? "\\d{1,2}(?:\\.\\d{1,2}){2}" : idCaptureSource(pack);
+  const bound = "(?=\\s|\u2014|$)";
+  const critRefs = [
+    new RegExp(`(${idGrammar})\\s*\u2014`, "g"),
+    // "<id> — <title>" (real criteria, anywhere)
+    new RegExp(`^#{2,4}\\s+\\S+\\s+(?:.*?\\s)?(${idGrammar})${bound}`, "gm"),
+    // auditor-block heading "### 🔴 <id>" (pack: "### 🔴 RGAA <id>")
+    new RegExp(`^\\*\\*[^*\\n]+\\*\\*\\s*:\\s*(${idGrammar})${bound}`, "gm")
+    // "**Success criterion** : <id>" / "**WCAG** : <id>"
+  ];
+  const naItem = core ? /^-\s+(?:[A-Za-z]+\s+)?(\d{1,2}(?:\.\d{1,2}){2})\s*—/ : new RegExp(`^-\\s+(?:[A-Za-z]+\\s+)?(${idCaptureSource(pack)})\\s*\u2014`);
+  for (let n = 1; n <= 5; n++) {
+    if (!new RegExp(`^##\\s+${n}\\.`, "m").test(md)) issues.push(s.section(n));
+  }
+  const seen = /* @__PURE__ */ new Set();
+  for (const critRef of critRefs) {
+    let m;
+    critRef.lastIndex = 0;
+    while (m = critRef.exec(md)) {
+      const id = m[1];
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if (!exists(id)) issues.push(s.crit(id));
+    }
+  }
+  const naSection = sectionBody(md, 4);
+  for (const line of naSection.split("\n")) {
+    const item = naItem.exec(line);
+    if (item && !line.includes("_")) issues.push(s.na(item[1]));
+  }
+  const rateM = /^-\s+\*\*[^*\n]*\*\*\s*:\s*(\d+(?:[.,]\d+)?)\s*%/m.exec(md);
+  if (!rateM) {
+    issues.push(s.rateMissing);
+  } else {
+    const pct = parseFloat(rateM[1].replace(",", "."));
+    if (pct < 0 || pct > 100) issues.push(s.rateRange(rateM[1]));
+  }
+  if (!core && pack && opts.audit) {
+    const derivedNc = new Set(derivePackResults(opts.audit, standard).filter((r) => r.status === "NC").map((r) => r.id));
+    const reportNc = packReportNcIds(md, idCaptureSource(pack));
+    for (const id of reportNc) if (!derivedNc.has(id)) issues.push(s.overProject(id));
+    for (const id of derivedNc) if (!reportNc.has(id)) issues.push(s.underProject(id));
+  }
+  return { ok: issues.length === 0, issues };
+}
+function packReportNcIds(md, idGrammar) {
+  const body = sectionBody(md, 2);
+  const re = new RegExp(`^\\*\\*[^*\\n]+\\*\\*\\s*:\\s*(${idGrammar})\\s*\u2014`, "gm");
+  const ids = /* @__PURE__ */ new Set();
+  let m;
+  while (m = re.exec(body)) ids.add(m[1]);
+  return ids;
+}
+function checkSemantic(md, opts) {
+  const lang = opts.lang ?? "en";
+  const standard = opts.standard ?? "wcag";
+  const s = M[lang];
+  const empty = { total: 0, grounded: 0, moved: 0, failed: 0 };
+  const artifact = opts.verdictsPath ?? join8(dirname4(opts.reportPath), "VERIFY.todo.json");
+  if (!existsSync5(artifact)) return { ok: false, issues: [s.semanticMissing(artifact)], ...empty };
+  let items;
+  try {
+    const parsed = JSON.parse(readFileSync4(artifact, "utf8"));
+    if (!Array.isArray(parsed)) throw new Error("not an array");
+    items = parsed;
+  } catch {
+    return { ok: false, issues: [s.semanticUnreadable(artifact)], ...empty };
+  }
+  const issues = [];
+  const expected = buildWorklist(md, standard, Number.POSITIVE_INFINITY);
+  const gate = applyVerdicts(items, expected);
+  if (!gate.ok) issues.push(s.semanticGate(gate.failures.length, gate.total));
+  const passing = items.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
+  const grounding = groundItems(
+    passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: it.snippet })),
+    { cwd: opts.cwd }
+  );
+  for (const issue of grounding.issues) issues.push(s.semanticGround(issue));
+  return { ok: issues.length === 0, issues, total: gate.total, grounded: grounding.grounded, moved: grounding.moved, failed: grounding.failed };
+}
+function sectionBody(md, n) {
+  const start = new RegExp(`^##\\s+${n}\\.`, "m").exec(md);
+  if (!start) return "";
+  const from = start.index + start[0].length;
+  const next = /^##\s+/m.exec(md.slice(from));
+  return next ? md.slice(from, from + next.index) : md.slice(from);
+}
+
 // src/scan.ts
 import { execFileSync as execFileSync3 } from "child_process";
-import { mkdtempSync, writeFileSync as writeFileSync4, existsSync as existsSync4, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
+import { mkdtempSync, writeFileSync as writeFileSync4, existsSync as existsSync6, statSync as statSync2, readdirSync as readdirSync2, rmSync } from "fs";
 import { tmpdir } from "os";
-import { join as join8, resolve as resolve2 } from "path";
+import { join as join9, resolve as resolve3 } from "path";
 
 // src/axe-map.ts
 var PROBE_WCAG = {
@@ -30478,11 +31004,11 @@ function imageExists(tag) {
 }
 var CTX_PREFIX = "ultra11y-dyn-";
 function buildImage(tag = IMAGE_TAG) {
-  const ctx = mkdtempSync(join8(tmpdir(), CTX_PREFIX));
+  const ctx = mkdtempSync(join9(tmpdir(), CTX_PREFIX));
   try {
-    writeFileSync4(join8(ctx, "runner.mjs"), RUNNER);
-    writeFileSync4(join8(ctx, "package.json"), PKG);
-    writeFileSync4(join8(ctx, "Dockerfile"), DOCKERFILE);
+    writeFileSync4(join9(ctx, "runner.mjs"), RUNNER);
+    writeFileSync4(join9(ctx, "package.json"), PKG);
+    writeFileSync4(join9(ctx, "Dockerfile"), DOCKERFILE);
     execFileSync3("docker", ["build", "-t", tag, ctx], { stdio: "inherit", timeout: 9e5 });
   } finally {
     rmSync(ctx, { recursive: true, force: true });
@@ -30493,7 +31019,7 @@ function cleanTempContexts() {
   const dir = tmpdir();
   for (const name of readdirSync2(dir)) {
     if (!name.startsWith(CTX_PREFIX)) continue;
-    rmSync(join8(dir, name), { recursive: true, force: true });
+    rmSync(join9(dir, name), { recursive: true, force: true });
     removed++;
   }
   return removed;
@@ -30517,7 +31043,7 @@ var PROBE_FIELDS = [
 ];
 function runRunner(target, isFile, tag) {
   const args = ["run", "--rm"];
-  if (isFile) args.push("-v", `${resolve2(target)}:${MOUNT}:ro`);
+  if (isFile) args.push("-v", `${resolve3(target)}:${MOUNT}:ro`);
   args.push(tag, isFile ? MOUNT : target);
   let stdout;
   try {
@@ -30585,7 +31111,7 @@ function toDynamicResult(out, target, lang = "en", engine = "axe-core@playwright
 }
 function runScan(opts) {
   const isUrl = /^https?:\/\//i.test(opts.target);
-  if (!isUrl && !existsSync4(opts.target)) {
+  if (!isUrl && !existsSync6(opts.target)) {
     throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   if (!dockerAvailable()) {
@@ -30593,7 +31119,7 @@ function runScan(opts) {
   }
   const tag = opts.tag ?? IMAGE_TAG;
   if (!imageExists(tag)) buildImage(tag);
-  const isFile = !isUrl && existsSync4(opts.target) && statSync2(opts.target).isFile();
+  const isFile = !isUrl && existsSync6(opts.target) && statSync2(opts.target).isFile();
   const out = runRunner(opts.target, isFile, tag);
   return toDynamicResult(out, opts.target);
 }
@@ -30683,15 +31209,15 @@ function mergeDynamic(audit, dynamic, lang = "en") {
 }
 
 // src/scan-local.ts
-import { existsSync as existsSync5, statSync as statSync3 } from "fs";
+import { existsSync as existsSync7, statSync as statSync3 } from "fs";
 import { createRequire } from "module";
-import { resolve as resolve3 } from "path";
+import { resolve as resolve4 } from "path";
 var LOCAL_ENGINE = "axe-core@playwright (local)";
 var PW_SPEC = "@playwright/test";
 var AXE_SPEC = "@axe-core/playwright";
 function localAvailable(cwd) {
   try {
-    const req = createRequire(resolve3(cwd, "package.json"));
+    const req = createRequire(resolve4(cwd, "package.json"));
     req.resolve(PW_SPEC);
     req.resolve(AXE_SPEC);
     return true;
@@ -30703,7 +31229,7 @@ function resolveLocalDeps(cwd) {
   let chromium;
   let AxeBuilder;
   try {
-    const req = createRequire(resolve3(cwd, "package.json"));
+    const req = createRequire(resolve4(cwd, "package.json"));
     const pw = req(PW_SPEC);
     const axeMod = req(AXE_SPEC);
     chromium = pw.chromium;
@@ -30898,7 +31424,7 @@ async function runOnPage(browser, AxeBuilder, target, isFile, storageState) {
   const context = await browser.newContext(storageState ? { storageState } : {});
   const page = await context.newPage();
   try {
-    const url = isFile ? "file://" + resolve3(target) : target;
+    const url = isFile ? "file://" + resolve4(target) : target;
     await page.goto(url, { waitUntil: "load", timeout: 45e3 });
     await page.waitForLoadState("networkidle", { timeout: 8e3 }).catch(() => {
     });
@@ -30929,7 +31455,7 @@ async function runOnPage(browser, AxeBuilder, target, isFile, storageState) {
 }
 async function runScanLocal(opts) {
   const isUrl = /^https?:\/\//i.test(opts.target);
-  if (!isUrl && !existsSync5(opts.target)) {
+  if (!isUrl && !existsSync7(opts.target)) {
     throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   const isFile = !isUrl && statSync3(opts.target).isFile();
@@ -31304,7 +31830,7 @@ function baselineSummary(diff, lang = "fr") {
 // src/init.ts
 import { writeFileSync as writeFileSync6, mkdirSync as mkdirSync4, chmodSync } from "fs";
 import { execFileSync as execFileSync4 } from "child_process";
-import { join as join9 } from "path";
+import { join as join10 } from "path";
 var EN_SEV = { bloquant: "blocking", majeur: "major", mineur: "minor" };
 function repoRoot() {
   try {
@@ -31374,17 +31900,17 @@ jobs:
 `;
 }
 function writeHook(root, enginePath, failOn, mode = "staged") {
-  const dir = join9(root, ".git", "hooks");
+  const dir = join10(root, ".git", "hooks");
   mkdirSync4(dir, { recursive: true });
-  const path = join9(dir, "pre-commit");
+  const path = join10(dir, "pre-commit");
   writeFileSync6(path, mode === "baseline" ? hookScript(enginePath, failOn) : stagedHookScript(enginePath, failOn));
   chmodSync(path, 493);
   return path;
 }
 function writeCi(root, enginePath, failOn) {
-  const dir = join9(root, ".github", "workflows");
+  const dir = join10(root, ".github", "workflows");
   mkdirSync4(dir, { recursive: true });
-  const path = join9(dir, "a11y.yml");
+  const path = join10(dir, "a11y.yml");
   writeFileSync6(path, ciWorkflow(enginePath, failOn));
   return path;
 }
@@ -31469,11 +31995,11 @@ function captureCoverageSummary(cov, lang) {
 }
 
 // src/config.ts
-import { existsSync as existsSync7, statSync as statSync4 } from "fs";
-import { join as join10, isAbsolute } from "path";
+import { existsSync as existsSync9, statSync as statSync4 } from "fs";
+import { join as join11, isAbsolute } from "path";
 
 // src/pack.ts
-import { existsSync as existsSync6 } from "fs";
+import { existsSync as existsSync8 } from "fs";
 function exampleParses(ex) {
   for (const code2 of [ex.bad, ex.good]) {
     if (!code2) continue;
@@ -31544,7 +32070,7 @@ function checkGuidance(ds, pack) {
 function runPackCheck(packPath, guidancePath) {
   const errors = [];
   const warnings = [];
-  if (!existsSync6(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
+  if (!existsSync8(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
   let raw;
   try {
     raw = JSON.parse(readText(packPath));
@@ -31553,8 +32079,17 @@ function runPackCheck(packPath, guidancePath) {
   }
   const v = validatePack(raw);
   for (const issue of v.issues) (issue.severity === "error" ? errors : warnings).push(`${issue.path ? `${issue.path}: ` : ""}${issue.message}`);
+  if (v.ok && v.pack) {
+    const known = new Set(ruleIds());
+    const isNamespaced = (r) => /^(axe:|dyn-|agent:)/.test(r);
+    for (const c of v.pack.criteria) {
+      for (const r of c.appliesTo?.ruleIds ?? []) {
+        if (!isNamespaced(r) && !known.has(r)) warnings.push(`criteria "${c.id}": appliesTo ruleId "${r}" is not a known engine rule (renamed/future?)`);
+      }
+    }
+  }
   if (v.ok && v.pack && guidancePath) {
-    if (!existsSync6(guidancePath)) {
+    if (!existsSync8(guidancePath)) {
       errors.push(`guidance file not found: ${guidancePath}`);
     } else {
       let gRaw;
@@ -31608,8 +32143,8 @@ function packScaffold() {
 // src/config.ts
 var CONFIG_FILE = ".ultra11yrc.json";
 function loadConfig(cwd) {
-  const p = join10(cwd, CONFIG_FILE);
-  if (!existsSync7(p)) return null;
+  const p = join11(cwd, CONFIG_FILE);
+  if (!existsSync9(p)) return null;
   let parsed;
   try {
     parsed = JSON.parse(readText(p));
@@ -31622,16 +32157,16 @@ function loadConfig(cwd) {
   return parsed;
 }
 function packPaths(path) {
-  if (!existsSync7(path)) return null;
+  if (!existsSync9(path)) return null;
   if (statSync4(path).isDirectory()) {
-    const pack = join10(path, "pack.json");
-    if (!existsSync7(pack)) return null;
-    const glossary = join10(path, "glossary.json");
-    const guidance = join10(path, "guidance.json");
+    const pack = join11(path, "pack.json");
+    if (!existsSync9(pack)) return null;
+    const glossary = join11(path, "glossary.json");
+    const guidance = join11(path, "guidance.json");
     return {
       pack,
-      glossary: existsSync7(glossary) ? glossary : void 0,
-      guidance: existsSync7(guidance) ? guidance : void 0
+      glossary: existsSync9(glossary) ? glossary : void 0,
+      guidance: existsSync9(guidance) ? guidance : void 0
     };
   }
   return { pack: path };
@@ -31647,7 +32182,7 @@ function loadRuntimeStandards(cwd, packFlags, onWarn, override = false) {
   }
   result.defaultStandard = config?.standard;
   for (const raw of [...config?.packs ?? [], ...packFlags]) {
-    const paths = packPaths(isAbsolute(raw) ? raw : join10(cwd, raw));
+    const paths = packPaths(isAbsolute(raw) ? raw : join11(cwd, raw));
     if (!paths) {
       result.errors.push(`--pack ${raw}: not found (expected a pack JSON file or a directory with pack.json)`);
       continue;
@@ -31677,11 +32212,11 @@ ${formatIssues(v.issues).join("\n")}`);
     result.loadedPacks.push(v.pack.key);
     if (paths.guidance) loadGuidanceFile(paths.guidance, result, onWarn);
   }
-  for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join10(cwd, g), result, onWarn);
+  for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join11(cwd, g), result, onWarn);
   return result;
 }
 function loadGuidanceFile(path, result, onWarn) {
-  if (!existsSync7(path)) {
+  if (!existsSync9(path)) {
     onWarn(`ultra11y: guidance ${path} not found \u2014 skipping.`);
     return;
   }
@@ -31734,7 +32269,7 @@ Usage:
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
-  ultra11y check    --report <md> [--standard <pack>] [--quiet] [--json]
+  ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
@@ -31865,7 +32400,10 @@ Options:
   --list             criteria: print the WCAG success criteria grouped by guideline
   --generate         criteria: emit the bundled references/criteria.md (WCAG 2.2 AA)
   --apply <file>     verify: reduce a filled verdicts file to a pass/fail gate
-  --max-verify <n>   verify: cap the worklist size                       (default: 40)
+                     (requires --report \u2014 coverage is re-derived from the report, uncapped)
+  --max-verify <n>   verify: cap the worklist size; 0 = no cap           (default: 40)
+  --verdicts <file>  check --semantic: the adjudicated verdicts artifact
+                     (default: VERIFY.todo.json next to the report)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --sitemap <url>    scan: scan every URL listed in a sitemap.xml
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
@@ -31881,6 +32419,9 @@ Options:
                      authenticated pages (e.g. test-results/.auth/user.json)
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
+                     check: engage the semantic gate \u2014 requires an adjudicated verdicts
+                     artifact (fails closed when absent) and re-grounds every passing
+                     verdict content-level against the cited source
   --lang auto|en|fr  output language                (default: auto \u2014 conversation/repo
                      language: an AI caller should pass --lang explicitly to match the
                      chat; unset resolves repo <html lang> \u2192 standard's default locale \u2192 en)
@@ -31903,6 +32444,7 @@ var VALUE_FLAGS = /* @__PURE__ */ new Set([
   "report",
   "theme",
   "apply",
+  "verdicts",
   "max-verify",
   "lang",
   "merge",
@@ -32056,7 +32598,7 @@ async function cmdAudit(p) {
   const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
   const capturesDir = capturesFlag ?? ".ultra11y/captures";
   const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== void 0;
-  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync8(capturesDir));
+  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync10(capturesDir));
   const useCaptures = capturesWanted && !scopedToDiff && !inputs.includes(capturesDir);
   const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
   if (useCaptures)
@@ -32087,7 +32629,7 @@ async function cmdAudit(p) {
     const out = p.flags.out;
     try {
       mkdirSync5(out, { recursive: true });
-      writeFileSync7(join11(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
+      writeFileSync7(join12(out, "audit-latest.json"), JSON.stringify(result, null, 2) + "\n");
     } catch {
     }
   }
@@ -32100,7 +32642,7 @@ async function cmdAudit(p) {
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
-    if (existsSync8(baselineFlag)) {
+    if (existsSync10(baselineFlag)) {
       try {
         const parsed = JSON.parse(readText(baselineFlag));
         if (isCurrentAudit(parsed)) baseline = parsed;
@@ -32162,8 +32704,8 @@ function cmdInit(p) {
   if (want.baseline) {
     const inputs = p.positionals.length ? p.positionals : ["."];
     const result = runAudit({ inputs, onWarn: (m) => console.error(m) });
-    mkdirSync5(join11(root, "audits"), { recursive: true });
-    const bp = join11(root, "audits", "baseline.json");
+    mkdirSync5(join12(root, "audits"), { recursive: true });
+    const bp = join12(root, "audits", "baseline.json");
     writeFileSync7(bp, JSON.stringify(result, null, 2) + "\n");
     wrote.push(bp);
   }
@@ -32295,29 +32837,29 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.setup === true) {
     const rel = ".ultra11y/capture-setup.mjs";
-    const out = join11(root, rel);
+    const out = join12(root, rel);
     try {
-      mkdirSync5(dirname4(out), { recursive: true });
+      mkdirSync5(dirname5(out), { recursive: true });
       writeFileSync7(out, captureSetup());
     } catch (e) {
       console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
       return 1;
     }
     let setupDeps = {};
-    const setupPkg = join11(root, "package.json");
-    if (existsSync8(setupPkg)) {
+    const setupPkg = join12(root, "package.json");
+    if (existsSync10(setupPkg)) {
       try {
         const pkg = JSON.parse(readText(setupPkg));
         setupDeps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
       } catch {
       }
     }
-    const tr = detectTestRunner(setupDeps, (f) => existsSync8(join11(root, f)));
+    const tr = detectTestRunner(setupDeps, (f) => existsSync10(join12(root, f)));
     console.log(captureSetupPlan(tr, rel, lang));
     const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
-    const gaPath = join11(root, ".gitattributes");
+    const gaPath = join12(root, ".gitattributes");
     try {
-      const existing = existsSync8(gaPath) ? readFileSync3(gaPath, "utf8") : "";
+      const existing = existsSync10(gaPath) ? readFileSync5(gaPath, "utf8") : "";
       if (!existing.includes(".ultra11y/captures/")) {
         appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
         console.log(lang === "fr" ? `.gitattributes : ajout\xE9 \xAB ${gaLine} \xBB` : `.gitattributes: added "${gaLine}"`);
@@ -32325,8 +32867,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     } catch {
     }
     try {
-      const giPath = join11(root, ".gitignore");
-      if (existsSync8(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync3(giPath, "utf8")))
+      const giPath = join12(root, ".gitignore");
+      if (existsSync10(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync5(giPath, "utf8")))
         console.error(
           lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
         );
@@ -32336,8 +32878,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.storybook === true || typeof p.flags.storybook === "string") {
     const sbDir = p.positionals[0] ?? "storybook-static";
-    const indexPath = existsSync8(join11(sbDir, "index.json")) ? join11(sbDir, "index.json") : join11(sbDir, "stories.json");
-    if (!existsSync8(indexPath)) {
+    const indexPath = existsSync10(join12(sbDir, "index.json")) ? join12(sbDir, "index.json") : join12(sbDir, "stories.json");
+    if (!existsSync10(indexPath)) {
       console.error(
         lang === "fr" ? `ultra11y render : aucun index Storybook (index.json/stories.json) dans ${sbDir}.` : `ultra11y render: no Storybook index (index.json/stories.json) in ${sbDir}.`
       );
@@ -32347,7 +32889,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     const provById = new Map(stories.map((s) => [s.id, storyProvenance(s)]));
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
     const htmlDir = capturesFlag ?? sbDir;
-    const htmlFiles = existsSync8(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
+    const htmlFiles = existsSync10(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
     const outDir = ".ultra11y/captures";
     let attributed = 0;
     let skipped = 0;
@@ -32370,7 +32912,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
       }
       try {
         mkdirSync5(outDir, { recursive: true });
-        writeFileSync7(join11(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
+        writeFileSync7(join12(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
 ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
         attributed++;
       } catch {
@@ -32392,11 +32934,11 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
   }
   if (p.flags.coverage === true) {
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
-    const capturesDir = capturesFlag ?? join11(root, ".ultra11y/captures");
+    const capturesDir = capturesFlag ?? join12(root, ".ultra11y/captures");
     const graphExt = [...GRAPH_ONLY_EXT, ...asList(p.flags.ext) ?? []];
     const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: graphExt }).files;
     const graph = buildGraphStreaming(sourceFiles);
-    const capFiles = existsSync8(capturesDir) ? discover([capturesDir]).files : [];
+    const capFiles = existsSync10(capturesDir) ? discover([capturesDir]).files : [];
     const entries = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));
     const cov = computeCaptureCoverage(graph, entries);
     if (p.flags.json) console.log(JSON.stringify(cov, null, 2));
@@ -32404,15 +32946,15 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
     return 0;
   }
   let deps = {};
-  const pkgPath = join11(root, "package.json");
-  if (existsSync8(pkgPath)) {
+  const pkgPath = join12(root, "package.json");
+  if (existsSync10(pkgPath)) {
     try {
       const pkg = JSON.parse(readText(pkgPath));
       deps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
     } catch {
     }
   }
-  const detection = detectFrameworks(deps, (f) => existsSync8(join11(root, f)));
+  const detection = detectFrameworks(deps, (f) => existsSync10(join12(root, f)));
   if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
   else console.log(renderPlan(detection, lang));
   return 0;
@@ -32428,17 +32970,41 @@ function cmdCheck(p) {
   const lang = resolveLang(p.flags, { standard });
   const md = readInputFile(rep, "check", "--report");
   if (md === null) return 2;
-  const res = checkReport(md, standard, lang);
-  if (p.flags.json) {
-    console.log(JSON.stringify(res, null, 2));
-  } else if (!p.flags.quiet) {
-    if (res.ok)
-      console.log(
-        lang === "fr" ? "\u2713 Rapport valide : sections, crit\xE8res cit\xE9s et justifications NA coh\xE9rents." : "\u2713 Report valid: sections, cited criteria and NA justifications are consistent."
-      );
-    else for (const i of res.issues) console.error(`\u2717 ${i}`);
+  let audit;
+  const inFlag = p.flags.in;
+  if (typeof inFlag === "string" && inFlag) {
+    let rawAudit;
+    try {
+      rawAudit = readText(inFlag);
+    } catch {
+      console.error(`ultra11y check: --in file not found: ${inFlag}.`);
+      return 2;
+    }
+    try {
+      audit = JSON.parse(rawAudit);
+    } catch {
+      console.error("ultra11y check: --in file is not valid JSON.");
+      return 2;
+    }
   }
-  return res.ok ? 0 : 1;
+  const res = checkReport(md, standard, lang, { audit });
+  const sem = p.flags.semantic === true ? checkSemantic(md, {
+    reportPath: rep,
+    verdictsPath: typeof p.flags.verdicts === "string" && p.flags.verdicts ? p.flags.verdicts : void 0,
+    standard,
+    lang
+  }) : null;
+  const ok = res.ok && (sem === null || sem.ok);
+  if (p.flags.json) {
+    console.log(JSON.stringify(sem ? { ...res, ok, semantic: sem } : res, null, 2));
+  } else if (!p.flags.quiet) {
+    if (ok)
+      console.log(
+        sem ? lang === "fr" ? `\u2713 Rapport valide + gate s\xE9mantique engag\xE9e : ${sem.total} verdict(s), ${sem.grounded} ancr\xE9(s) dans la source${sem.moved ? ` (${sem.moved} d\xE9plac\xE9(s))` : ""}.` : `\u2713 Report valid + semantic gate engaged: ${sem.total} verdict(s), ${sem.grounded} grounded in source${sem.moved ? ` (${sem.moved} moved)` : ""}.` : lang === "fr" ? "\u2713 Rapport valide : sections, crit\xE8res cit\xE9s et justifications NA coh\xE9rents." : "\u2713 Report valid: sections, cited criteria and NA justifications are consistent."
+      );
+    else for (const i of [...res.issues, ...sem?.issues ?? []]) console.error(`\u2717 ${i}`);
+  }
+  return ok ? 0 : 1;
 }
 function cmdVerify(p) {
   let lang = resolveLang(p.flags, {});
@@ -32462,29 +33028,40 @@ function cmdVerify(p) {
       console.error("ultra11y verify: --apply must be a JSON array of verdicts.");
       return 2;
     }
-    let expected;
     const applyReport = p.flags.report;
-    if (typeof applyReport === "string" && applyReport) {
-      const standard2 = stdOf(p, "verify");
-      if (standard2 === null) return 2;
-      let repMd2;
-      try {
-        repMd2 = readText(applyReport);
-      } catch {
-        console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
-        return 2;
-      }
-      expected = buildWorklist(repMd2, standard2);
-    }
-    const r = applyVerdicts(items2, expected);
-    if (p.flags.json) console.log(JSON.stringify(r, null, 2));
-    else if (r.ok)
-      console.log(lang === "fr" ? `\u2713 ${r.total} non-conformit\xE9s v\xE9rifi\xE9es, toutes \xE9tay\xE9es.` : `\u2713 ${r.total} non-conformities verified, all supported.`);
-    else
+    if (typeof applyReport !== "string" || !applyReport) {
       console.error(
-        lang === "fr" ? `\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing}` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).` : `\u2717 ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing}` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`
+        lang === "fr" ? "ultra11y verify : --apply exige --report <md> (le rapport que les verdicts couvrent) \u2014 sans lui la couverture ne peut pas \xEAtre \xE9tablie." : "ultra11y verify: --apply requires --report <md> (the report the verdicts cover) \u2014 without it coverage cannot be established."
       );
-    return r.ok ? 0 : 1;
+      return 2;
+    }
+    const standard2 = stdOf(p, "verify");
+    if (standard2 === null) return 2;
+    let repMd2;
+    try {
+      repMd2 = readText(applyReport);
+    } catch {
+      console.error(`ultra11y verify: --report file not found: ${applyReport}.`);
+      return 2;
+    }
+    const expected = buildWorklist(repMd2, standard2, Number.POSITIVE_INFINITY);
+    const r = applyVerdicts(items2, expected);
+    const passing = items2.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
+    const grounding = groundItems(passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: it.snippet })));
+    const ok = r.ok && grounding.failed === 0;
+    if (p.flags.json) console.log(JSON.stringify({ ...r, ok, grounding }, null, 2));
+    else if (ok)
+      console.log(
+        lang === "fr" ? `\u2713 ${r.total} non-conformit\xE9s v\xE9rifi\xE9es, toutes \xE9tay\xE9es et ancr\xE9es dans la source${grounding.moved ? ` (${grounding.moved} d\xE9plac\xE9e(s))` : ""}.` : `\u2713 ${r.total} non-conformities verified, all supported and grounded in source${grounding.moved ? ` (${grounding.moved} moved)` : ""}.`
+      );
+    else {
+      if (!r.ok)
+        console.error(
+          lang === "fr" ? `\u2717 ${r.failures.length}/${r.total} en \xE9chec (refuted ${r.refuted}, unsupported ${r.unsupported}, non statu\xE9 ${r.unadjudicated}${r.missing ? `, absent(s) ${r.missing} \u2014 r\xE9g\xE9n\xE9rez la worklist avec --max-verify 0` : ""}${r.invalid ? `, invalide ${r.invalid}` : ""}).` : `\u2717 ${r.failures.length}/${r.total} failed (refuted ${r.refuted}, unsupported ${r.unsupported}, unadjudicated ${r.unadjudicated}${r.missing ? `, missing ${r.missing} \u2014 regenerate the worklist with --max-verify 0` : ""}${r.invalid ? `, invalid ${r.invalid}` : ""}).`
+        );
+      for (const issue of grounding.issues) console.error(`\u2717 ${issue}`);
+    }
+    return ok ? 0 : 1;
   }
   const rep = p.flags.report;
   if (typeof rep !== "string" || !rep) {
@@ -32502,7 +33079,7 @@ function cmdVerify(p) {
       console.error("ultra11y verify: --max-verify must be a non-negative integer.");
       return 2;
     }
-    max = n;
+    max = n === 0 ? Number.POSITIVE_INFINITY : n;
   }
   const repMd = readInputFile(rep, "verify", "--report");
   if (repMd === null) return 2;
@@ -32647,11 +33224,11 @@ async function cmdScan(p) {
     }
     const merged = mergeDynamic(audit, dynamic, lang);
     mkdirSync5(out, { recursive: true });
-    writeFileSync7(join11(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    writeFileSync7(join12(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
     if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
     else
       console.log(
-        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join11(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join11(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
+        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join12(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join12(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
       );
     return 0;
   }

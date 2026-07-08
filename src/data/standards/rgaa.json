@@ -177,7 +177,22 @@
         ]
       },
       "techniques": ["H36", "H37", "H53", "F65", "H24"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": [
+          "axe:area-alt",
+          "axe:image-alt",
+          "axe:input-image-alt",
+          "axe:object-alt",
+          "axe:role-img-alt",
+          "axe:svg-img-alt",
+          "canvas-fallback-missing",
+          "chart-no-accessible-name",
+          "img-alt-missing",
+          "input-image-alt-missing",
+          "object-embed-no-name"
+        ]
+      }
     },
     {
       "id": "1.2",
@@ -230,7 +245,10 @@
         "Dans le cas d'une image vectorielle (balise `<svg>`) de décoration qui serait affichée au travers d'un élément `<use href=\"…\">` enfant de l'élément `<svg>`, le test 1.2.4 s'appliquera également à l'élément `<svg>` associée par le biais de l'élément `<use>`.",
         "Un attribut WAI-ARIA `role=\"presentation\"` peut être utilisé sur les images de décoration et les zones non cliquables de décoration. Le rôle `\"none\"` introduit en ARIA 1.1 et synonyme du rôle `\"presentation\"` peut être aussi utilisé. Il reste préférable cependant d'utiliser le rôle `\"presentation\"` en attendant un support satisfaisant du rôle `\"none\"`."
       ],
-      "wcag": ["1.1.1", "4.1.2"]
+      "wcag": ["1.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:image-redundant-alt", "decorative-alt-misuse"]
+      }
     },
     {
       "id": "1.3",
@@ -302,7 +320,10 @@
         "Il existe une gestion de cas particuliers lorsque l’image est utilisée comme [CAPTCHA](#captcha) ou comme [image-test](#image-test). Dans cette situation, où il n’est pas possible de donner une alternative pertinente sans détruire l’objet du CAPTCHA ou du test, le critère est non applicable.",
         "Note : le cas des CAPTCHA et des images-test est traité de manière spécifique par le critère 1.4."
       ],
-      "wcag": ["1.1.1", "4.1.2"]
+      "wcag": ["1.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "1.4",
@@ -368,7 +389,10 @@
         ]
       },
       "techniques": ["G100", "G143"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "1.5",
@@ -392,7 +416,10 @@
         ]
       },
       "techniques": ["G144"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "1.6",
@@ -467,7 +494,10 @@
         "La [description détaillée](#description-detaillee-image) adjacente peut être implémentée via une balise `<figcaption>`, dans ce cas le critère 1.9 doit être vérifié (utilisation de `<figure>` et des attributs WAI-ARIA `role=\"figure\"` et `aria-label`, notamment).",
         "L'attribut `longdesc` qui constitue une des conditions du test 1.6.1 (et dont la pertinence est vérifiée avec le test 1.7.1) est désormais considéré comme obsolète par la spécification HTML en cours. La vérification de cet attribut ne sera donc requise que pour les versions de la spécification HTML antérieure à HTML 5."
       ],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "1.7",
@@ -525,7 +555,10 @@
         ]
       },
       "techniques": ["G92", "F67"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "1.8",
@@ -561,7 +594,10 @@
       "particularCases": [
         "Pour ce critère, il existe une gestion de cas particulier lorsque le texte fait partie du logo, d’une dénomination commerciale, d’un [CAPTCHA](#captcha), d’une [image-test](#image-test) ou d’une image dont l’exactitude graphique serait considérée comme essentielle à la bonne transmission de l’information véhiculée par l’image. Dans ces situations, le critère est non applicable pour ces éléments."
       ],
-      "wcag": ["1.4.5"]
+      "wcag": ["1.4.5"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "1.9",
@@ -616,7 +652,10 @@
         "Les attributs WAI-ARIA `aria-labelledby` et `aria-describedby` ne peuvent pas être utilisés actuellement par manque de support par les technologies d’assistance.",
         "Note : les images légendées doivent par ailleurs respecter le critère 1.1 et le critère 1.3 relatifs aux images porteuses d’information."
       ],
-      "wcag": ["1.1.1", "4.1.2"]
+      "wcag": ["1.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "2.1",
@@ -631,7 +670,10 @@
         "1": ["Chaque cadre (balise `<iframe>` ou `<frame>`) a-t-il un attribut `title` ?"]
       },
       "techniques": ["H64"],
-      "wcag": ["4.1.2"]
+      "wcag": ["4.1.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:frame-title", "axe:frame-title-unique", "iframe-title-missing"]
+      }
     },
     {
       "id": "2.2",
@@ -646,7 +688,10 @@
         "1": ["Pour chaque cadre (balise `<iframe>` ou `<frame>`) ayant un attribut `title`, le contenu de cet attribut est-il pertinent ?"]
       },
       "techniques": ["H64"],
-      "wcag": ["4.1.2"]
+      "wcag": ["4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "3.1",
@@ -678,7 +723,10 @@
         ]
       },
       "techniques": ["G14", "G182", "G111", "G117", "G138", "G205"],
-      "wcag": ["1.3.1", "1.4.1"]
+      "wcag": ["1.3.1", "1.4.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "3.2",
@@ -716,7 +764,10 @@
       },
       "techniques": ["G18", "G136", "G148", "G174", "G145", "C29"],
       "particularCases": ["Dans ces situations, les critères sont non applicables pour ces éléments :", "[object Object]"],
-      "wcag": ["1.4.3"]
+      "wcag": ["1.4.3"],
+      "appliesTo": {
+        "ruleIds": ["axe:color-contrast", "axe:color-contrast-enhanced", "contrast-literal"]
+      }
     },
     {
       "id": "3.3",
@@ -749,7 +800,10 @@
       },
       "techniques": ["G18", "G195", "G207", "G174", "G145", "G183", "F78"],
       "particularCases": ["Les cas suivants sont non applicables pour ce critère :", "[object Object]"],
-      "wcag": ["1.4.11"]
+      "wcag": ["1.4.11"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.1",
@@ -790,7 +844,10 @@
         "Dans ces situations, le critère est non applicable.",
         "Ce cas particulier s’applique également aux critères 4.2, 4.3, 4.5."
       ],
-      "wcag": ["1.2.1", "1.2.3"]
+      "wcag": ["1.2.1", "1.2.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.2",
@@ -821,7 +878,10 @@
       },
       "techniques": ["F30", "F67", "SM6", "SM7"],
       "particularCases": ["Voir cas particuliers critère 4.1."],
-      "wcag": ["1.2.1", "1.2.3"]
+      "wcag": ["1.2.1", "1.2.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.3",
@@ -844,7 +904,10 @@
       },
       "techniques": ["G58", "G93", "G87", "H95", "SM11", "SM12", "F74", "F75"],
       "particularCases": ["Voir cas particuliers critère 4.1."],
-      "wcag": ["1.2.2"]
+      "wcag": ["1.2.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:audio-caption", "axe:video-caption", "media-no-track"]
+      }
     },
     {
       "id": "4.4",
@@ -861,7 +924,10 @@
         ]
       },
       "techniques": ["G93", "G87", "SM11", "SM12", "F8", "F74", "F75"],
-      "wcag": ["1.2.2"]
+      "wcag": ["1.2.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.5",
@@ -886,7 +952,10 @@
       },
       "techniques": ["G8", "G58", "G78", "G173", "H96", "SM1", "SM2", "SM6", "SM7"],
       "particularCases": ["Voir cas particuliers critère 4.1."],
-      "wcag": ["1.2.5"]
+      "wcag": ["1.2.5"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.6",
@@ -906,7 +975,10 @@
         ]
       },
       "techniques": ["SM1", "SM2", "SM6", "SM7"],
-      "wcag": ["1.2.5"]
+      "wcag": ["1.2.5"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.7",
@@ -926,7 +998,10 @@
       "particularCases": [
         "Il existe une gestion de cas particulier lorsque le [média temporel](#media-temporel-type-son-video-et-synchronise) est utilisé à des fins décoratives (c’est-à-dire qu’il n’apporte aucune information). Dans cette situation, le critère est non applicable."
       ],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.8",
@@ -951,7 +1026,10 @@
       },
       "techniques": ["H35", "H46"],
       "particularCases": ["Il existe une gestion de cas particulier lorsque :", "[object Object]", "Dans ces situations, le critère est non applicable."],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.9",
@@ -968,7 +1046,10 @@
         ]
       },
       "techniques": ["H46", "F30"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.10",
@@ -988,7 +1069,10 @@
         ]
       },
       "techniques": ["G60", "G170", "G171", "F23", "F93"],
-      "wcag": ["1.4.2"]
+      "wcag": ["1.4.2"],
+      "appliesTo": {
+        "ruleIds": ["autoplay-media", "axe:no-autoplay-audio"]
+      }
     },
     {
       "id": "4.11",
@@ -1015,7 +1099,10 @@
         ]
       },
       "techniques": ["G4", "G90", "G202"],
-      "wcag": ["2.1.1", "2.1.2"]
+      "wcag": ["2.1.1", "2.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.12",
@@ -1039,7 +1126,10 @@
         ]
       },
       "techniques": ["G4", "G90"],
-      "wcag": ["2.1.1", "2.1.2"]
+      "wcag": ["2.1.1", "2.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "4.13",
@@ -1068,7 +1158,10 @@
         "Il existe une gestion de cas particulier lorsque le [média temporel](#media-temporel-type-son-video-et-synchronise) ou [non temporel](#media-non-temporel) est utilisé à des fins décoratives (c’est-à-dire qu’il n’apporte aucune information).",
         "Dans ces situations, le critère est non applicable."
       ],
-      "wcag": ["4.1.2"]
+      "wcag": ["4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "5.1",
@@ -1086,7 +1179,10 @@
       "technicalNote": [
         "La spécification HTML propose plusieurs [méthodes pour lier un résumé à un tableau](#table-descriptions-techniques) (tableau lié à un passage de texte avec l’attribut `aria-describedby`, tableau groupé dans un élément `figure` avec un résumé présent dans un élément `figcaption` ou un élément `p`, résumé présent dans un élément `details` contenu dans l’élément `caption`). Ces méthodes n’ont pas un support suffisant pour être utilisées actuellement."
       ],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "5.2",
@@ -1101,7 +1197,10 @@
         "1": ["Pour chaque [tableau de données complexe](#tableau-de-donnees-complexe) ayant un [résumé](#resume-de-tableau), celui-ci est-il pertinent ?"]
       },
       "techniques": ["H73"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "5.3",
@@ -1120,7 +1219,10 @@
         ]
       },
       "techniques": ["F49", "ARIA4"],
-      "wcag": ["1.3.2", "4.1.2"]
+      "wcag": ["1.3.2", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "5.4",
@@ -1137,7 +1239,10 @@
         ]
       },
       "techniques": ["H39"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": ["table-caption-missing"]
+      }
     },
     {
       "id": "5.5",
@@ -1154,7 +1259,10 @@
         ]
       },
       "techniques": ["H39"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "5.6",
@@ -1184,7 +1292,10 @@
         ]
       },
       "techniques": ["H51", "F91"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": ["axe:empty-table-header", "axe:td-has-header", "axe:th-has-data-cells", "data-table-no-headers"]
+      }
     },
     {
       "id": "5.7",
@@ -1231,7 +1342,10 @@
       "particularCases": [
         "Dans le cas de tableaux de données ayant des en-têtes sur une seule ligne ou une seule colonne, les en-têtes peuvent être structurés à l’aide de balise `<th>` sans attribut `scope`."
       ],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": ["axe:scope-attr-valid", "axe:td-headers-attr", "data-table-no-headers", "sortable-header-no-aria-sort"]
+      }
     },
     {
       "id": "5.8",
@@ -1250,7 +1364,10 @@
         ]
       },
       "techniques": ["F46"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": ["axe:table-fake-caption", "layout-table-data-markup"]
+      }
     },
     {
       "id": "6.1",
@@ -1299,7 +1416,10 @@
         "[object Object]",
         "Note : si l’étiquette visible représente une expression mathématique, les symboles mathématiques peuvent être repris littéralement pour servir d’étiquette au nom accessible (ex. : “A>B”). Il est laissé à l’utilisateur le soin d’opérer la correspondance entre l’expression et ce qu’il doit épeler compte tenu de la connaissance qu’il a du fonctionnement de son logiciel de saisie vocale (“A plus grand que B” ou “A supérieur à B”)."
       ],
-      "wcag": ["1.1.1", "2.4.4", "2.5.3"]
+      "wcag": ["1.1.1", "2.4.4", "2.5.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "6.2",
@@ -1317,7 +1437,10 @@
       "technicalNote": [
         "Une ancre n’est pas un lien même si pendant longtemps l’élément `<a>` a servi de support à cette technique. Elle n’est donc pas concernée par le présent critère."
       ],
-      "wcag": ["1.1.1", "2.4.4"]
+      "wcag": ["1.1.1", "2.4.4"],
+      "appliesTo": {
+        "ruleIds": ["axe:link-name", "icon-only-control-unnamed", "link-empty-name"]
+      }
     },
     {
       "id": "7.1",
@@ -1357,7 +1480,31 @@
         "[object Object]",
         "Note : si l’étiquette visible représente une expression mathématique, les symboles mathématiques peuvent être repris littéralement pour servir d’étiquette au nom accessible (ex. : “A>B”). Il est laissé à l’utilisateur le soin d’opérer la correspondance entre l’expression et ce qu’il doit épeler compte tenu de la connaissance qu’il a du fonctionnement de son logiciel de saisie vocale (“A plus grand que B” ou “A supérieur à B”)."
       ],
-      "wcag": ["2.5.3", "4.1.2"]
+      "wcag": ["2.5.3", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": [
+          "aria-hidden-focusable",
+          "aria-ref-missing-id",
+          "aria-required-children",
+          "axe:aria-allowed-attr",
+          "axe:aria-allowed-role",
+          "axe:aria-hidden-focus",
+          "axe:aria-required-attr",
+          "axe:aria-required-children",
+          "axe:aria-required-parent",
+          "axe:aria-roles",
+          "axe:aria-valid-attr",
+          "axe:aria-valid-attr-value",
+          "axe:nested-interactive",
+          "axe:presentation-role-conflict",
+          "cross-aria-forwarding",
+          "cross-aria-ref-cross-file",
+          "cross-prop-drilled-name-lost",
+          "invalid-aria-role",
+          "nested-interactive",
+          "redundant-aria"
+        ]
+      }
     },
     {
       "id": "7.2",
@@ -1384,7 +1531,10 @@
         ]
       },
       "techniques": ["G136", "F19", "F20"],
-      "wcag": ["1.1.1", "4.1.2"]
+      "wcag": ["1.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "7.3",
@@ -1407,7 +1557,10 @@
       "particularCases": [
         "Il existe une gestion de cas particuliers lorsque la fonctionnalité dépend de l’utilisation d’un gestionnaire d’événement sans équivalent universel ; par exemple, une application de dessin à main levée ne pourra pas être rendue contrôlable au clavier. Dans ces situations, le critère est non applicable."
       ],
-      "wcag": ["1.3.1", "2.1.1", "2.4.7"]
+      "wcag": ["1.3.1", "2.1.1", "2.4.7"],
+      "appliesTo": {
+        "ruleIds": ["clickable-noninteractive"]
+      }
     },
     {
       "id": "7.4",
@@ -1427,7 +1580,10 @@
         ]
       },
       "techniques": ["G13", "G76", "G80", "G107", "H32", "H84", "F9", "F22", "F36", "F37", "F41", "SCR19"],
-      "wcag": ["3.2.1", "3.2.2"]
+      "wcag": ["3.2.1", "3.2.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "7.5",
@@ -1455,7 +1611,10 @@
         "[object Object]",
         "C’est sous réserve que la nature du message de statut satisfasse bien à la correspondance implicitement établie. Dans le cas d’un message de statut indiquant la progression d’un processus et matérialisé graphiquement par une barre de progression, un rôle WAI-ARIA `progressbar` explicite est nécessaire."
       ],
-      "wcag": ["4.1.3"]
+      "wcag": ["4.1.3"],
+      "appliesTo": {
+        "ruleIds": ["live-region-conflict", "status-message-not-assertive"]
+      }
     },
     {
       "id": "8.1",
@@ -1474,7 +1633,10 @@
         ]
       },
       "techniques": ["G134", "G192"],
-      "wcag": ["4.1.1"]
+      "wcag": ["4.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "8.2",
@@ -1496,7 +1658,10 @@
         ]
       },
       "techniques": ["H74", "H93", "H94", "F70", "F77"],
-      "wcag": ["4.1.1", "4.1.2"]
+      "wcag": ["4.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:duplicate-id", "axe:duplicate-id-active", "axe:duplicate-id-aria", "duplicate-id"]
+      }
     },
     {
       "id": "8.3",
@@ -1515,7 +1680,10 @@
         ]
       },
       "techniques": ["H57"],
-      "wcag": ["3.1.1"]
+      "wcag": ["3.1.1"],
+      "appliesTo": {
+        "ruleIds": ["axe:html-has-lang", "axe:html-xml-lang-mismatch", "cross-page-lang", "html-lang-missing"]
+      }
     },
     {
       "id": "8.4",
@@ -1534,7 +1702,10 @@
         ]
       },
       "techniques": ["H57"],
-      "wcag": ["3.1.1"]
+      "wcag": ["3.1.1"],
+      "appliesTo": {
+        "ruleIds": ["axe:html-lang-valid", "lang-invalid"]
+      }
     },
     {
       "id": "8.5",
@@ -1549,7 +1720,10 @@
         "1": ["Chaque page web a-t-elle un [titre de page](#titre-de-page) (balise `<title>`) ?"]
       },
       "techniques": ["G88", "G127", "H25"],
-      "wcag": ["2.4.2"]
+      "wcag": ["2.4.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:document-title", "title-missing-empty"]
+      }
     },
     {
       "id": "8.6",
@@ -1564,7 +1738,10 @@
         "1": ["Pour chaque page web ayant un [titre de page](#titre-de-page) (balise `<title>`), le contenu de cette balise est-il pertinent ?"]
       },
       "techniques": ["G88", "G127", "H25"],
-      "wcag": ["2.4.2"]
+      "wcag": ["2.4.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "8.7",
@@ -1589,7 +1766,10 @@
         "Note 1 : le dictionnaire officiel est celui recommandé par l’académie en charge de la langue en question. Pour la France, par exemple, le lien vers le dictionnaire officiel se trouve sur le site de l’Académie française à l’adresse suivante : http://www.academie-francaise.fr/le-dictionnaire/la-9e-edition. Pour toute demande auprès du service du dictionnaire de l’Académie française, utiliser le formulaire de contact du service du dictionnaire.",
         "Note 2 : pour les noms communs de langue étrangère, absents dans le dictionnaire officiel de la langue par défaut de la page web, et qui sont passés dans le langage commun (exemple : newsletter) : le critère est applicable, uniquement lorsque l’absence d’indication de langue peut provoquer une incompréhension pour la restitution."
       ],
-      "wcag": ["3.1.2"]
+      "wcag": ["3.1.2"],
+      "appliesTo": {
+        "ruleIds": ["inline-lang-change-missing"]
+      }
     },
     {
       "id": "8.8",
@@ -1608,7 +1788,10 @@
         ]
       },
       "techniques": ["H58"],
-      "wcag": ["3.1.2"]
+      "wcag": ["3.1.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:valid-lang", "lang-invalid"]
+      }
     },
     {
       "id": "8.9",
@@ -1625,7 +1808,10 @@
         ]
       },
       "techniques": ["G115", "H88", "F43", "F92"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "8.10",
@@ -1647,7 +1833,10 @@
         ]
       },
       "techniques": ["H56"],
-      "wcag": ["1.3.2"]
+      "wcag": ["1.3.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "9.1",
@@ -1673,7 +1862,19 @@
       "technicalNote": [
         "WAI-ARIA permet de définir des titres via le rôle `heading` et l’attribut `aria-level` (indication du niveau de titre). Bien qu’il soit préférable d’utiliser l’élément de titre natif en HTML `<hx>`, l’utilisation du rôle WAI-ARIA `heading` est compatible avec l’accessibilité."
       ],
-      "wcag": ["1.3.1", "2.4.1", "2.4.6", "4.1.2"]
+      "wcag": ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": [
+          "axe:empty-heading",
+          "axe:heading-order",
+          "axe:page-has-heading-one",
+          "cross-name-ref-cross-file",
+          "empty-heading",
+          "h1-missing",
+          "h1-multiple",
+          "heading-order-skip"
+        ]
+      }
     },
     {
       "id": "9.2",
@@ -1700,7 +1901,10 @@
         "La balise `<main>` peut être utilisée plusieurs fois dans le même document HTML. Néanmoins, il ne peut y avoir en permanence qu’une seule balise visible et lisible par les technologies d’assistances, les autres devant disposer d’un attribut `hidden` ou d’un style permettant de les masquer aux technologies d’assistances. À noter cependant que l’utilisation d’un style seul restera insuffisante pour assurer l’unicité d’une balise `<main>` visible en cas de désactivation des feuilles de styles."
       ],
       "particularCases": ["Lorsque le doctype déclaré dans la page n’est pas le doctype HTML5, ce critère est non applicable."],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": ["missing-main-landmark", "multiple-main-landmark"]
+      }
     },
     {
       "id": "9.3",
@@ -1731,7 +1935,10 @@
         "Les attributs WAI-ARIA `role=\"list\"` et `role=\"listitem\"` peuvent nécessiter l’utilisation des attributs WAI-ARIA `aria-setsize` et `aria-posinset` dans le cas où l’ensemble de la liste n’est pas disponible via le DOM généré au moment de la consultation.",
         "Les attributs WAI-ARIA `role=\"tree\"`, `role=\"tablist\"`, `role=\"menu\"`, `role=\"combobox\"` et `role=\"listbox\"` ne sont pas équivalents à une liste HTML `<ul>` ou `<ol>`."
       ],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": ["axe:definition-list", "axe:dlitem", "axe:list", "axe:listitem", "list-structure"]
+      }
     },
     {
       "id": "9.4",
@@ -1747,7 +1954,10 @@
         "2": ["Dans chaque page web, chaque bloc de citation utilise-t-il une balise `<blockquote>` ?"]
       },
       "techniques": ["G115", "H49", "F2"],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.1",
@@ -1773,7 +1983,10 @@
         ]
       },
       "techniques": ["G140", "F32", "F33", "F34", "F48", "C6", "C8", "C18", "C22"],
-      "wcag": ["1.3.1", "1.3.2"]
+      "wcag": ["1.3.1", "1.3.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.2",
@@ -1788,7 +2001,10 @@
         "1": ["Dans chaque page web, l’information reste-t-elle présente lorsque les [feuilles de styles](#feuille-de-style) sont désactivées ?"]
       },
       "techniques": ["G140", "F3", "F87"],
-      "wcag": ["1.1.1", "1.3.1"]
+      "wcag": ["1.1.1", "1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.3",
@@ -1805,7 +2021,10 @@
         ]
       },
       "techniques": ["G59", "G140", "F1"],
-      "wcag": ["1.3.2", "2.4.3"]
+      "wcag": ["1.3.2", "2.4.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.4",
@@ -1835,7 +2054,10 @@
         "Font exception à ce critère, les contenus pour lesquels l’utilisateur n’a pas de possibilité de personnalisation :",
         "[object Object]"
       ],
-      "wcag": ["1.4.4"]
+      "wcag": ["1.4.4"],
+      "appliesTo": {
+        "ruleIds": ["axe:meta-viewport", "axe:meta-viewport-large", "dyn-reflow-zoom", "meta-viewport-zoom-block"]
+      }
     },
     {
       "id": "10.5",
@@ -1858,7 +2080,10 @@
         ]
       },
       "techniques": ["F24"],
-      "wcag": ["1.4.3"]
+      "wcag": ["1.4.3"],
+      "appliesTo": {
+        "ruleIds": ["axe:color-contrast", "axe:color-contrast-enhanced", "contrast-literal"]
+      }
     },
     {
       "id": "10.6",
@@ -1878,7 +2103,10 @@
         ]
       },
       "techniques": ["G183", "F73"],
-      "wcag": ["1.4.1"]
+      "wcag": ["1.4.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.7",
@@ -1897,7 +2125,10 @@
         ]
       },
       "techniques": ["G149", "G165", "G183", "G195", "F73", "F78", "SCR31", "C15"],
-      "wcag": ["1.4.1", "2.4.7"]
+      "wcag": ["1.4.1", "2.4.7"],
+      "appliesTo": {
+        "ruleIds": ["dyn-focus-visible"]
+      }
     },
     {
       "id": "10.8",
@@ -1922,7 +2153,10 @@
         "La spécification HTML5 propose un attribut `hidden` qui permet de rendre indisponible (quand l’attribut `hidden` est présent) un contenu dans le DOM généré (de manière similaire au `type=\"hidden\"` sur un contrôle de formulaire).",
         "Il est possible d’avoir des situations où un contenu contrôlé par `hidden` ou `aria-hidden` se trouve momentanément dans un état incohérent avec le statut affiché ou masqué du contenu, par exemple si l’on désire rendre disponible un élément, mais que son affichage à l’écran reste dépendant d’une action ultérieure. Dans ce cas, c’est l’état final du contenu qui doit être considéré."
       ],
-      "wcag": ["1.3.2", "4.1.2"]
+      "wcag": ["1.3.2", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.9",
@@ -1948,7 +2182,10 @@
         ]
       },
       "techniques": ["G96", "G140", "F14", "F26"],
-      "wcag": ["1.3.3", "1.4.1"]
+      "wcag": ["1.3.3", "1.4.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.10",
@@ -1974,7 +2211,10 @@
         ]
       },
       "techniques": ["G96", "G140", "F14", "F26"],
-      "wcag": ["1.3.3", "1.4.1"]
+      "wcag": ["1.3.3", "1.4.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "10.11",
@@ -2001,7 +2241,10 @@
         "[object Object]",
         "Note : la majorité des navigateurs sur les systèmes d'exploitation sur mobile (Android, iOS) ne gère pas correctement la redistribution en cas de zoom. Dans ce contexte, le critère sera considéré comme non applicable sur ces environnements."
       ],
-      "wcag": ["1.4.10"]
+      "wcag": ["1.4.10"],
+      "appliesTo": {
+        "ruleIds": ["dyn-reflow"]
+      }
     },
     {
       "id": "10.12",
@@ -2026,7 +2269,10 @@
         "Font exception à ce critère, les contenus pour lesquels l’utilisateur n’a pas de possibilité de personnalisation :",
         "[object Object]"
       ],
-      "wcag": ["1.4.12"]
+      "wcag": ["1.4.12"],
+      "appliesTo": {
+        "ruleIds": ["dyn-text-spacing"]
+      }
     },
     {
       "id": "10.13",
@@ -2056,7 +2302,10 @@
         "Lorsque le contenu additionnel est contrôlé par l’agent utilisateur (par exemple, attribut `title` ou validation native de formulaire) ou correspond à une fenêtre modale conforme au [motif de conception](#motif-de-conception) WAI-ARIA `dialog`, le critère 10.13 est non applicable.",
         "Lorsque le contenu additionnel ne masque ou ne remplace aucun contenu porteur d’information, le test 10.13.1 est non applicable."
       ],
-      "wcag": ["1.4.13"]
+      "wcag": ["1.4.13"],
+      "appliesTo": {
+        "ruleIds": ["dyn-hover"]
+      }
     },
     {
       "id": "10.14",
@@ -2082,7 +2331,10 @@
         ]
       },
       "techniques": ["G202"],
-      "wcag": ["2.1.1"]
+      "wcag": ["2.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.1",
@@ -2115,7 +2367,22 @@
         ]
       },
       "techniques": ["G82", "G131", "H44", "H65", "F68", "F82", "F86", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
-      "wcag": ["1.3.1", "2.4.6", "3.3.2", "4.1.2"]
+      "wcag": ["1.3.1", "2.4.6", "3.3.2", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": [
+          "axe:form-field-multiple-labels",
+          "axe:label",
+          "axe:label-title-only",
+          "axe:select-name",
+          "control-label-missing",
+          "control-name-title-only",
+          "field-purpose-incomplete",
+          "form-field-multiple-labels",
+          "label-for-dangling",
+          "placeholder-as-label",
+          "select-has-option"
+        ]
+      }
     },
     {
       "id": "11.2",
@@ -2157,7 +2424,10 @@
         "Note : si l’étiquette visible représente une expression mathématique, les symboles mathématiques peuvent être repris littéralement pour servir d’étiquette au nom accessible (ex. : “A>B”). Il est laissé à l’utilisateur le soin d’opérer la correspondance entre l’expression et ce qu’il doit épeler compte tenu de la connaissance qu’il a du fonctionnement de son logiciel de saisie vocale (“A plus grand que B” ou “A supérieur à B”).",
         "Ce cas particulier s’applique également au test 11.9.2."
       ],
-      "wcag": ["2.4.6", "2.5.3", "3.3.2"]
+      "wcag": ["2.4.6", "2.5.3", "3.3.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.3",
@@ -2177,7 +2447,10 @@
         ]
       },
       "techniques": ["F31"],
-      "wcag": ["3.2.4"]
+      "wcag": ["3.2.4"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.4",
@@ -2205,7 +2478,10 @@
       },
       "techniques": ["G162"],
       "particularCases": ["Les tests 11.4.2 et 11.4.3 seront considérés comme non applicables :", "[object Object]"],
-      "wcag": ["3.3.2"]
+      "wcag": ["3.3.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.5",
@@ -2225,7 +2501,10 @@
         ]
       },
       "techniques": ["H71", "ARIA17"],
-      "wcag": ["1.3.1", "3.3.2"]
+      "wcag": ["1.3.1", "3.3.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.6",
@@ -2240,7 +2519,10 @@
         "1": ["Chaque regroupement de [champs de même nature](#champs-de-meme-nature) possède-t-il une [légende](#legende) ?"]
       },
       "techniques": ["H71", "ARIA17"],
-      "wcag": ["1.3.1", "3.3.2"]
+      "wcag": ["1.3.1", "3.3.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:fieldset", "fieldset-legend-missing"]
+      }
     },
     {
       "id": "11.7",
@@ -2255,7 +2537,10 @@
         "1": ["Chaque [légende](#legende) associée à un regroupement de [champs de même nature](#champs-de-meme-nature) est-elle pertinente ?"]
       },
       "techniques": ["H71", "ARIA17"],
-      "wcag": ["1.3.1", "3.3.2"]
+      "wcag": ["1.3.1", "3.3.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.8",
@@ -2277,7 +2562,10 @@
       "technicalNote": [
         "Il est possible d’utiliser une balise ayant un attribut WAI-ARIA `role=\"listbox\"` en remplacement d’une balise `<select>`. En revanche, il est impossible de créer des groupes d’options via l’utilisation de WAI-ARIA. De ce fait, une liste nécessitant un regroupement d’options structurée à l’aide d’une balise ayant un attribut WAI-ARIA `role=\"listbox\"` sera considérée comme non conforme au critère 11.8."
       ],
-      "wcag": ["1.3.1"]
+      "wcag": ["1.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.9",
@@ -2310,7 +2598,10 @@
       },
       "techniques": ["H36", "H91", "ARIA6", "ARIA9", "ARIA14", "ARIA16"],
       "particularCases": ["Pour le test 11.9.2, voir cas particuliers critère 11.2."],
-      "wcag": ["2.5.3", "4.1.2"]
+      "wcag": ["2.5.3", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:button-name", "axe:input-button-name", "button-empty-name", "cross-icon-only-unnamed", "icon-only-control-unnamed"]
+      }
     },
     {
       "id": "11.10",
@@ -2387,7 +2678,10 @@
         "[object Object]",
         "Dans le cas où l’ensemble des champs d’un formulaire sont obligatoires, les tests 11.10.1 et 11.10.2 restent applicables."
       ],
-      "wcag": ["3.3.1", "3.3.2"]
+      "wcag": ["3.3.1", "3.3.2"],
+      "appliesTo": {
+        "ruleIds": ["aria-invalid-no-description", "error-not-associated"]
+      }
     },
     {
       "id": "11.11",
@@ -2406,7 +2700,10 @@
       "technicalNote": [
         "Certains types de contrôles en HTML5 proposent des messages d’aide à la saisie automatique : par exemple le type `email` affiche un message du type « veuillez saisir une adresse e-mail valide » dans le cas où l’adresse e-mail saisie ne correspond pas au format attendu. Ces messages sont personnalisables via l’API Constraint Validation, ce qui permet de personnaliser les messages d’erreur et de valider le critère. L’attribut `pattern` permet d’effectuer automatiquement des contrôles de format (via des expressions régulières) et affiche un message d’aide personnalisable via l’attribut `title` : ce dispositif valide également le critère."
       ],
-      "wcag": ["3.3.3"]
+      "wcag": ["3.3.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.12",
@@ -2431,7 +2728,10 @@
         ]
       },
       "techniques": ["G98", "G99", "G155", "G164", "G168"],
-      "wcag": ["3.3.4"]
+      "wcag": ["3.3.4"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "11.13",
@@ -2455,7 +2755,10 @@
         "La [liste des valeurs possibles pour l’attribut `autocomplete`](#liste-des-valeurs-possibles-pour-l-attribut-autocomplete) repose sur la liste des valeurs présentes dans la spécification WCAG2.1 qui reprend elle-même la liste des valeurs de type “field name” de la spécification HTML5.2. Le critère WCAG demande à ce que l’une de ces valeurs soit présente pour qualifier un champ de saisie concernant l’utilisateur.",
         "Ce que le critère WCAG laisse implicite, ce sont les différentes règles de construction possibles pour obtenir une valeur (simple ou composée) pour l’attribut `autocomplete`. C’est cependant l’affaire du développeur de fournir à l’attribut `autocomplete` une valeur ou un ensemble de valeurs valides au regard des exigences de l’algorithme fourni par la spécification HTML5.2. Ainsi, un attribut `autocomplete` ne peut contenir qu’une seule valeur de type `“field name”`, comme `\"name\"` ou `\"street-address\"`. On peut avoir également un ensemble composé de différentes valeurs comme, par exemple, `autocomplete=\"shipping name\"` ou `autocomplete=\"section-software shipping street-address\"` : `\"section-software\"` renvoie à une valeur de type <span lang=\"en\">“scope”</span> et `\"shipping\"` à une valeur de type <span lang=\"en\">“hint set”</span>, mais toujours une seule valeur de type <span lang=\"en\">“field name”</span>."
       ],
-      "wcag": ["1.3.5"]
+      "wcag": ["1.3.5"],
+      "appliesTo": {
+        "ruleIds": ["axe:autocomplete-valid", "field-purpose-incomplete"]
+      }
     },
     {
       "id": "12.1",
@@ -2480,7 +2783,10 @@
         "Le critère est également non applicable pour les pages d’un ensemble de pages qui sont le résultat ou une partie d’un processus (un processus de paiement ou de prise de commande, par exemple).",
         "Note : l’appréciation d’un nombre très limité de pages devrait être réservé à un site dont l’ensemble des pages sont atteignables depuis la page d’accueil."
       ],
-      "wcag": ["2.4.5"]
+      "wcag": ["2.4.5"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.2",
@@ -2500,7 +2806,10 @@
       },
       "techniques": ["G61", "F66"],
       "particularCases": ["Il existe une gestion de cas particuliers lorsque :", "[object Object]", "Dans ces situations, le critère est non applicable."],
-      "wcag": ["3.2.3"]
+      "wcag": ["3.2.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.3",
@@ -2517,7 +2826,10 @@
         "3": ["Les liens du [plan du site](#page-plan-du-site) renvoient-ils bien vers les pages indiquées par l’intitulé ?"]
       },
       "techniques": ["G63"],
-      "wcag": ["2.4.5"]
+      "wcag": ["2.4.5"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.4",
@@ -2540,7 +2852,10 @@
         ]
       },
       "techniques": ["G61", "G63"],
-      "wcag": ["2.4.5", "3.2.3"]
+      "wcag": ["2.4.5", "3.2.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.5",
@@ -2563,7 +2878,10 @@
         ]
       },
       "techniques": ["G61", "F66"],
-      "wcag": ["3.2.3"]
+      "wcag": ["3.2.3"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.6",
@@ -2585,7 +2903,10 @@
         ]
       },
       "techniques": ["H69", "G115", "ARIA4", "ARIA11"],
-      "wcag": ["1.3.1", "2.4.1", "4.1.2"]
+      "wcag": ["1.3.1", "2.4.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": ["axe:landmark-one-main", "missing-main-landmark", "multiple-main-landmark"]
+      }
     },
     {
       "id": "12.7",
@@ -2613,7 +2934,10 @@
         "Il existe une gestion de cas particuliers lorsque le site web est constitué d’une seule page.",
         "Dans ce cas de figure, l’obligation de la présence d’un lien d’accès rapide est liée au contexte de la page : présence ou absence de navigation ou de contenus additionnels, par exemple. Le critère peut être considéré comme non applicable lorsqu’il est avéré qu’un lien d’accès rapide est inutile."
       ],
-      "wcag": ["2.4.1", "2.4.3", "3.2.3"]
+      "wcag": ["2.4.1", "2.4.3", "3.2.3"],
+      "appliesTo": {
+        "ruleIds": ["axe:bypass", "axe:skip-link", "cross-skip-link-target", "skip-link-target-missing"]
+      }
     },
     {
       "id": "12.8",
@@ -2631,7 +2955,10 @@
         ]
       },
       "techniques": ["G59", "H4", "F44", "F85", "SCR26", "SCR27", "SCR37", "C27"],
-      "wcag": ["2.4.3"]
+      "wcag": ["2.4.3"],
+      "appliesTo": {
+        "ruleIds": ["axe:tabindex", "positive-tabindex"]
+      }
     },
     {
       "id": "12.9",
@@ -2650,7 +2977,10 @@
         ]
       },
       "techniques": ["G21", "H91", "F10"],
-      "wcag": ["2.1.1", "2.1.2"]
+      "wcag": ["2.1.1", "2.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.10",
@@ -2670,7 +3000,10 @@
         ]
       },
       "techniques": ["F99", "G217"],
-      "wcag": ["2.1.4"]
+      "wcag": ["2.1.4"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "12.11",
@@ -2690,7 +3023,10 @@
       "technicalNote": [
         "Ce critère adresse les situations où un contenu additionnel contient des [composants d’interface](#composant-d-interface) avec lesquels il doit être possible d’interagir au clavier. Par exemple, une infobulle personnalisée qui propose un lien dans son contenu."
       ],
-      "wcag": ["2.1.1"]
+      "wcag": ["2.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.1",
@@ -2729,7 +3065,10 @@
         "Il existe une gestion de cas particuliers lorsque la limite de temps est essentielle, notamment lorsqu’elle ne pourrait pas être supprimée sans changer fondamentalement le contenu ou les fonctionnalités liées au contenu.",
         "Dans ces situations, le critère est non applicable. Par exemple, le rafraîchissement d’un flux RSS dans une page n’est pas une limite de temps essentielle ; le critère est applicable. En revanche, une redirection automatique qui amène vers la nouvelle version d’une page à partir d’une URL obsolète est essentielle ; le critère est non applicable."
       ],
-      "wcag": ["2.2.1", "2.2.2"]
+      "wcag": ["2.2.1", "2.2.2"],
+      "appliesTo": {
+        "ruleIds": ["meta-refresh-redirect"]
+      }
     },
     {
       "id": "13.2",
@@ -2746,7 +3085,10 @@
         ]
       },
       "techniques": ["F55", "G107"],
-      "wcag": ["3.2.1"]
+      "wcag": ["3.2.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.3",
@@ -2767,7 +3109,10 @@
       },
       "techniques": ["F15", "G10", "G135"],
       "particularCases": ["Il existe une gestion de cas particuliers :", "[object Object]", "Dans cette situation, le critère est non applicable."],
-      "wcag": ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"]
+      "wcag": ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.4",
@@ -2786,7 +3131,10 @@
         ]
       },
       "techniques": ["F15", "G10", "G135"],
-      "wcag": ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"]
+      "wcag": ["1.1.1", "1.3.1", "1.3.2", "2.4.1", "2.4.3", "3.1.1", "4.1.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.5",
@@ -2805,7 +3153,10 @@
         ]
       },
       "techniques": ["F71", "F70", "G135", "H86"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.6",
@@ -2824,7 +3175,10 @@
         ]
       },
       "techniques": ["F71", "F72", "H86"],
-      "wcag": ["1.1.1"]
+      "wcag": ["1.1.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.7",
@@ -2853,7 +3207,10 @@
         ]
       },
       "techniques": ["G15", "G19", "G176"],
-      "wcag": ["2.3.1"]
+      "wcag": ["2.3.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.8",
@@ -2881,7 +3238,10 @@
         ]
       },
       "techniques": ["F4", "F7", "F16", "F47", "F50", "G4", "G11", "G152", "G186", "G187", "G191", "SCR22", "SCR33", "SCR36", "SM11", "SM12"],
-      "wcag": ["2.2.1", "2.2.2"]
+      "wcag": ["2.2.1", "2.2.2"],
+      "appliesTo": {
+        "ruleIds": ["autoplay-media", "axe:blink", "axe:marquee", "blink-marquee"]
+      }
     },
     {
       "id": "13.9",
@@ -2905,7 +3265,10 @@
         "Dans ces situations, le critère est non applicable. Il peut s’agir d’interfaces de jeu, de piano, de dépôt de chèques bancaires, etc.",
         "Si l’interface est le seul moyen d’accéder au service proposé, une alternative devrait être mise en place pour pallier cette carence."
       ],
-      "wcag": ["1.3.4"]
+      "wcag": ["1.3.4"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.10",
@@ -2926,7 +3289,10 @@
       },
       "techniques": ["G215", "G216"],
       "particularCases": ["Il existe une gestion de cas particuliers dans deux types de situation :", "[object Object]"],
-      "wcag": ["2.5.1"]
+      "wcag": ["2.5.1"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.11",
@@ -2953,7 +3319,10 @@
       "particularCases": [
         "Il existe une gestion de cas particulier lorsque la fonctionnalité nécessite que le comportement attendu soit réalisé lors d’un événement descendant, par exemple, un émulateur de clavier dont les touches doivent s’activer à la pression comme sur un clavier physique. Dans ces situations, le critère est non applicable."
       ],
-      "wcag": ["2.5.2"]
+      "wcag": ["2.5.2"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     },
     {
       "id": "13.12",
@@ -2977,7 +3346,10 @@
       },
       "techniques": [],
       "particularCases": ["Il existe une gestion de cas particulier lorsque :", "[object Object]"],
-      "wcag": ["2.5.4"]
+      "wcag": ["2.5.4"],
+      "appliesTo": {
+        "ruleIds": []
+      }
     }
   ]
 }

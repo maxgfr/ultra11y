@@ -51,7 +51,7 @@ Usage:
   ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
-  ultra11y check    --report <md> [--standard <pack>] [--semantic [--verdicts <file>]] [--quiet] [--json]
+  ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
@@ -894,7 +894,26 @@ function cmdCheck(p: ParsedArgs): number {
   const lang = resolveLang(p.flags, { standard });
   const md = readInputFile(rep, "check", "--report");
   if (md === null) return 2;
-  const res = checkReport(md, standard, lang);
+  // --in <audit.json>: enable the pack applicability gate (R1) — re-derive from the audit
+  // and fail on any NC criterion the report over-/under-projects.
+  let audit: AuditResult | undefined;
+  const inFlag = p.flags.in;
+  if (typeof inFlag === "string" && inFlag) {
+    let rawAudit: string;
+    try {
+      rawAudit = readText(inFlag);
+    } catch {
+      console.error(`ultra11y check: --in file not found: ${inFlag}.`);
+      return 2;
+    }
+    try {
+      audit = JSON.parse(rawAudit) as AuditResult;
+    } catch {
+      console.error("ultra11y check: --in file is not valid JSON.");
+      return 2;
+    }
+  }
+  const res = checkReport(md, standard, lang, { audit });
   // --semantic: the support-level gate ON TOP of the structural check. Fails closed —
   // a green exit must always mean the gate engaged (family P0: never green-but-inactive).
   const sem =

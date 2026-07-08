@@ -7,9 +7,9 @@
 // so the version token "WCAG 2.2 —" can never be mistaken for a criterion.
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { Lang } from "./types.js";
+import type { AuditResult, Lang } from "./types.js";
 import { hasSC } from "./wcag.js";
-import { type StandardId, isCore, loadPack, hasId, idCaptureSource } from "./standards/index.js";
+import { type StandardId, isCore, loadPack, hasId, idCaptureSource, derivePackResults } from "./standards/index.js";
 import { buildWorklist, applyVerdicts, type VerifyItem } from "./verify.js";
 import { groundItems } from "./grounding.js";
 
@@ -25,6 +25,8 @@ const M = {
     na: (id: string) => `Critère NA sans justification : ${id}.`,
     rateMissing: "Taux de réussite absent de l'en-tête du rapport.",
     rateRange: (v: string) => `Taux de réussite hors bornes (0–100) : ${v}%.`,
+    overProject: (id: string) => `Critère sur-projeté : ${id} est marqué non conforme dans le rapport mais l'audit ne le dérive pas comme NC (élément hors périmètre du critère).`,
+    underProject: (id: string) => `Critère absent : l'audit dérive ${id} comme non conforme mais le rapport ne le présente pas.`,
     semanticMissing: (p: string) =>
       `Gate sémantique : aucun artefact de verdicts trouvé (${p}). Générez la worklist (\`verify --report <md>\`), statuez, puis relancez — ou passez \`--verdicts <fichier>\`.`,
     semanticUnreadable: (p: string) => `Gate sémantique : artefact de verdicts illisible ou JSON invalide : ${p}.`,
@@ -37,6 +39,8 @@ const M = {
     na: (id: string) => `NA criterion without a justification: ${id}.`,
     rateMissing: "Pass rate missing from the report header.",
     rateRange: (v: string) => `Pass rate out of range (0–100): ${v}%.`,
+    overProject: (id: string) => `Over-projected criterion: ${id} is marked non-conformant in the report but the audit does not derive it as NC (element outside the criterion's scope).`,
+    underProject: (id: string) => `Missing criterion: the audit derives ${id} as non-conformant but the report does not present it.`,
     semanticMissing: (p: string) =>
       `Semantic gate: no verdicts artifact found (${p}). Generate the worklist (\`verify --report <md>\`), adjudicate it, then re-run — or pass \`--verdicts <file>\`.`,
     semanticUnreadable: (p: string) => `Semantic gate: verdicts artifact unreadable or invalid JSON: ${p}.`,
@@ -45,7 +49,13 @@ const M = {
   },
 } as const;
 
-export function checkReport(md: string, standard: StandardId = "wcag", lang: Lang = "en"): CheckResult {
+export interface CheckOpts {
+  /** When given (with a pack standard), the applicability gate (R1) re-derives the pack
+   *  view from this audit and fails on any NC criterion the report over- or under-projects. */
+  audit?: AuditResult;
+}
+
+export function checkReport(md: string, standard: StandardId = "wcag", lang: Lang = "en", opts: CheckOpts = {}): CheckResult {
   const issues: string[] = [];
   const s = M[lang];
   const core = isCore(standard);
@@ -106,7 +116,30 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
     if (pct < 0 || pct > 100) issues.push(s.rateRange(rateM[1]!));
   }
 
+  // 5. applicability gate (pack + --in audit): the report's non-conformant criteria set
+  // must EQUAL what the audit derives with applicability (src/standards/derive.ts). Catches
+  // a hand-edited report that over-projects an NC onto an inapplicable criterion (RGAA R1),
+  // or drops a real one. Only runs for a pack standard with an audit in hand.
+  if (!core && pack && opts.audit) {
+    const derivedNc = new Set(derivePackResults(opts.audit, standard).filter((r) => r.status === "NC").map((r) => r.id));
+    const reportNc = packReportNcIds(md, idCaptureSource(pack));
+    for (const id of reportNc) if (!derivedNc.has(id)) issues.push(s.overProject(id));
+    for (const id of derivedNc) if (!reportNc.has(id)) issues.push(s.underProject(id));
+  }
+
   return { ok: issues.length === 0, issues };
+}
+
+/** The set of criterion ids the report presents as non-conformant — parsed from the
+ *  section-2 auditor blocks' "**<criterion>** : <id> — …" lines (the theme line "8." can't
+ *  match the 2-segment id grammar, so it's never mistaken for a criterion). */
+function packReportNcIds(md: string, idGrammar: string): Set<string> {
+  const body = sectionBody(md, 2);
+  const re = new RegExp(`^\\*\\*[^*\\n]+\\*\\*\\s*:\\s*(${idGrammar})\\s*—`, "gm");
+  const ids = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body))) ids.add(m[1]!);
+  return ids;
 }
 
 export interface SemanticOptions {

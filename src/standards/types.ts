@@ -26,6 +26,17 @@ export interface PackCriterion {
   technicalNote?: string[];
   particularCases?: string[];
   wcag: string[]; // bare WCAG SC ids this criterion maps to, e.g. ["1.1.1", "4.1.2"]
+  // Per-criterion APPLICABILITY: the engine rule ids whose findings this criterion can
+  // actually be non-conformant on. A single WCAG SC maps to MANY pack criteria (RGAA
+  // 1.1.1 → 19 criteria: informative-image, CAPTCHA, detailed-description, layout
+  // tables, downloadable documents…), so an `img-alt-missing` failure must attach ONLY
+  // to the informative-image criterion, not fan out to CAPTCHA/description/etc. A finding
+  // collected via a mapped SC attaches iff its `ruleId` matches one of these (exact, or a
+  // "prefix:*" wildcard for `axe:*`/`dyn-*`/`agent:*`). An empty list means "no engine
+  // rule can evidence this criterion" (it stays manual/NA, never NC from a sibling's
+  // failure). Optional/additive: a pack WITHOUT `appliesTo` keeps the legacy fan-out
+  // (every mapped SC's findings attach) so third-party packs are unaffected.
+  appliesTo?: { ruleIds: string[] };
 }
 
 // The localized DISPLAY vocabulary a standard uses when its audit is rendered for an

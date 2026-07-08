@@ -77,3 +77,21 @@ describe("runPackCheck", () => {
     expect(runPackCheck(packPath(), g).ok).toBe(false);
   });
 });
+
+describe("runPackCheck — appliesTo ruleId sanity", () => {
+  const packWith = (appliesTo: unknown) => {
+    const scaffold = JSON.parse(packScaffold()) as Record<string, unknown>;
+    (scaffold.criteria as Record<string, unknown>[])[0]!.appliesTo = appliesTo;
+    return write("applies.json", scaffold);
+  };
+  it("accepts real engine ruleIds and axe:/dyn:/agent: prefixed ids", () => {
+    const p = packWith({ ruleIds: ["img-alt-missing", "axe:image-alt", "dyn-reflow", "agent:1.1.1"] });
+    expect(runPackCheck(p, undefined).ok).toBe(true);
+  });
+  it("warns (not errors) on a ruleId unknown to the engine registry", () => {
+    const p = packWith({ ruleIds: ["totally-made-up-rule"] });
+    const r = runPackCheck(p, undefined);
+    expect(r.ok).toBe(true); // advisory only — a pack may target a future/renamed rule
+    expect(r.warnings.some((w) => w.includes("totally-made-up-rule"))).toBe(true);
+  });
+});

@@ -26657,7 +26657,8 @@ function validatePack(raw, opts = {}) {
         err(`criteria[${i}].appliesTo`, `criterion "${String(id)}" appliesTo must be an object { ruleIds: string[] }`);
       } else {
         ruleIds2.forEach((r, k) => {
-          if (typeof r !== "string" || r.trim() === "") err(`criteria[${i}].appliesTo.ruleIds[${k}]`, `criterion "${String(id)}" appliesTo.ruleIds must be non-empty strings`);
+          if (typeof r !== "string" || r.trim() === "")
+            err(`criteria[${i}].appliesTo.ruleIds[${k}]`, `criterion "${String(id)}" appliesTo.ruleIds must be non-empty strings`);
         });
       }
     }
@@ -30701,7 +30702,9 @@ function checkReport(md, standard = "wcag", lang = "en", opts = {}) {
     if (pct < 0 || pct > 100) issues.push(s.rateRange(rateM[1]));
   }
   if (!core && pack && opts.audit) {
-    const derivedNc = new Set(derivePackResults(opts.audit, standard).filter((r) => r.status === "NC").map((r) => r.id));
+    const derivedNc = new Set(
+      derivePackResults(opts.audit, standard).filter((r) => r.status === "NC").map((r) => r.id)
+    );
     const reportNc = packReportNcIds(md, idCaptureSource(pack));
     for (const id of reportNc) if (!derivedNc.has(id)) issues.push(s.overProject(id));
     for (const id of derivedNc) if (!reportNc.has(id)) issues.push(s.underProject(id));
@@ -30792,18 +30795,26 @@ var HARVESTERS = {
     })
   ),
   // 2.4.6 Headings and Labels — the heading + label text to judge for descriptiveness
-  "2.4.6": (docs) => docs.flatMap((d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`))),
+  "2.4.6": (docs) => docs.flatMap(
+    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`))
+  ),
   // 3.3.2 Labels or Instructions — controls + their associated labels/placeholders
   "3.3.2": (docs) => docs.flatMap(
     (d) => elementsByTag(d, "input", "select", "textarea").map((e) => {
       const id = attr(e, "id");
       const lbl = id ? elementsByTag(d, "label").find((l) => attr(l, "for") === id) : void 0;
-      return ev(d, e, `label="${lbl ? textContent(lbl).trim().slice(0, 40) : ""}" placeholder="${attr(e, "placeholder") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`);
+      return ev(
+        d,
+        e,
+        `label="${lbl ? textContent(lbl).trim().slice(0, 40) : ""}" placeholder="${attr(e, "placeholder") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`
+      );
     })
   ),
   // 1.3.1 Info and Relationships — heading outline + tables (structure to judge)
   "1.3.1": (docs) => docs.flatMap(
-    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map((e) => ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`))
+    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map(
+      (e) => ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`)
+    )
   ),
   // 4.1.2 Name, Role, Value — elements carrying a role or ARIA state
   "4.1.2": (docs) => docs.flatMap(
@@ -30863,7 +30874,8 @@ function applyAdjudication(audit, adj, opts = {}) {
       if (!it.findings || it.findings.length === 0) issues.push(`criterion ${it.criteriaId}: an NC verdict requires at least one groundable finding`);
       for (const f of it.findings ?? []) groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
     } else if (v === "manual") {
-      if (!it.reason || !MANUAL_REASONS.has(it.reason)) issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason \u2208 {needs-rendered-dom, undecidable}`);
+      if (!it.reason || !MANUAL_REASONS.has(it.reason))
+        issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason \u2208 {needs-rendered-dom, undecidable}`);
     } else {
       issues.push(`criterion ${it.criteriaId}: unknown verdict "${String(v)}"`);
     }
@@ -30893,7 +30905,7 @@ function applyAdjudication(audit, adj, opts = {}) {
     c.decidedBy = "agent";
     if (it.verdict === "C" || it.verdict === "NA") c.justification = it.justification.trim();
     if (it.verdict === "NC") {
-      const fs = it.findings.map((f) => agentFinding(it.criteriaId, c.guideline, f));
+      const fs = it.findings.map((f) => agentFinding(it.criteriaId, f));
       c.findings = fs;
       newFindings.push(...fs);
       delete c.justification;
@@ -30905,7 +30917,7 @@ function applyAdjudication(audit, adj, opts = {}) {
   next.adjudicated = { date: adj.auditDate, applied, stillManual };
   return { ok: true, audit: next, issues: [], applied, stillManual, grounding };
 }
-function agentFinding(criteriaId, guideline, f) {
+function agentFinding(criteriaId, f) {
   return {
     ruleId: `agent:${criteriaId}`,
     criteriaId,
@@ -30979,7 +30991,14 @@ function writeAdjudication(items, outDir, opts) {
   mkdirSync4(outDir, { recursive: true });
   const todoPath = join9(outDir, "ADJUDICATE.todo.json");
   const mdPath = join9(outDir, "ADJUDICATE.md");
-  const file = { tool: "ultra11y", kind: "adjudication", schemaVersion: SCHEMA_VERSION, standard: opts.standard, auditDate: opts.auditDate, items };
+  const file = {
+    tool: "ultra11y",
+    kind: "adjudication",
+    schemaVersion: SCHEMA_VERSION,
+    standard: opts.standard,
+    auditDate: opts.auditDate,
+    items
+  };
   writeFileSync4(todoPath, JSON.stringify(file, null, 2) + "\n");
   writeFileSync4(mdPath, formatAdjudication(items, opts.lang ?? "en"));
   return { todoPath, mdPath, count: items.length };
@@ -33341,7 +33360,9 @@ function cmdVerify(p) {
     const expected = buildWorklist(repMd2, standard2, Number.POSITIVE_INFINITY);
     const r = applyVerdicts(items2, expected);
     const passing = items2.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
-    const grounding = groundItems(passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: it.snippet })));
+    const grounding = groundItems(
+      passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: it.snippet }))
+    );
     const ok = r.ok && grounding.failed === 0;
     if (p.flags.json) console.log(JSON.stringify({ ...r, ok, grounding }, null, 2));
     else if (ok)
@@ -33435,9 +33456,7 @@ function applyAdjudicationFile(p, adj, lang) {
   if (!r.ok) {
     if (p.flags.json) console.log(JSON.stringify(r, null, 2));
     else {
-      console.error(
-        lang === "fr" ? `\u2717 Adjudication rejet\xE9e (${r.issues.length} probl\xE8me(s)) :` : `\u2717 Adjudication rejected (${r.issues.length} issue(s)):`
-      );
+      console.error(lang === "fr" ? `\u2717 Adjudication rejet\xE9e (${r.issues.length} probl\xE8me(s)) :` : `\u2717 Adjudication rejected (${r.issues.length} issue(s)):`);
       for (const i of r.issues) console.error(`  \u2717 ${i}`);
     }
     return 1;

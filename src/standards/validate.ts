@@ -157,7 +157,8 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
         err(`criteria[${i}].appliesTo`, `criterion "${String(id)}" appliesTo must be an object { ruleIds: string[] }`);
       } else {
         (ruleIds as unknown[]).forEach((r, k) => {
-          if (typeof r !== "string" || r.trim() === "") err(`criteria[${i}].appliesTo.ruleIds[${k}]`, `criterion "${String(id)}" appliesTo.ruleIds must be non-empty strings`);
+          if (typeof r !== "string" || r.trim() === "")
+            err(`criteria[${i}].appliesTo.ruleIds[${k}]`, `criterion "${String(id)}" appliesTo.ruleIds must be non-empty strings`);
         });
       }
     }

@@ -16,6 +16,8 @@ export const FIX = {
   good: join(FIXTURES, "conforming", "good.html"),
   bad: join(FIXTURES, "non-conforming", "bad.html"),
   lowContrast: join(FIXTURES, "dynamic", "low-contrast.html"),
+  contrastOverGradient: join(FIXTURES, "dynamic", "contrast-over-gradient.html"),
+  fixedWidthReflow: join(FIXTURES, "dynamic", "fixed-width-reflow.html"),
   loginForm: join(FIXTURES, "realworld", "LoginForm.tsx"),
   landing: join(FIXTURES, "realworld", "landing.html"),
 };

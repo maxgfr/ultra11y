@@ -203,7 +203,7 @@ describe("checkSemantic", () => {
     const { dir, reportPath, md } = tmpReport();
     const items = buildWorklist(md, "wcag", Number.POSITIVE_INFINITY).map((it) => ({ ...it, verdict: "supported" }));
     // Corrupt one citation: point it at a selector/element that exists nowhere in the file.
-    items[0] = { ...items[0]!, selector: "video#does-not-exist", snippet: "<video id=\"does-not-exist\">" } as never;
+    items[0] = { ...items[0]!, selector: "video#does-not-exist", snippet: '<video id="does-not-exist">' } as never;
     wf(join(dir, "VERIFY.todo.json"), JSON.stringify(items));
     const r = checkSemantic(md, { reportPath });
     expect(r.ok).toBe(false);
@@ -232,7 +232,6 @@ describe("checkSemantic", () => {
 });
 
 // ---- check --standard rgaa --in <audit.json>: applicability gate (R1) ----
-import { derivePackResults } from "../src/standards/index.js";
 import { renderPackReport as rpr } from "../src/report.js";
 
 describe("checkReport --in (pack applicability gate)", () => {

@@ -40,7 +40,8 @@ const L = {
     cTitle: "3. Critères conformes (C)",
     naTitle: "4. Critères non applicables (NA)",
     manualTitle: "5. Critères à adjuger (jugement / rendu) — non décidés par le moteur statique",
-    manualWarn: "Adjugez-les avec `verify --manual` (l'agent décide depuis la source, de façon gatée) ; les critères de rendu passent par `scan`. Aucun ne doit être marqué « conforme » sans justification enregistrée et gatée.",
+    manualWarn:
+      "Adjugez-les avec `verify --manual` (l'agent décide depuis la source, de façon gatée) ; les critères de rendu passent par `scan`. Aucun ne doit être marqué « conforme » sans justification enregistrée et gatée.",
     outOfScope: "Hors périmètre moteur — mappé sur des SC hors WCAG 2.2 AA ; vérification manuelle.",
     scopedOut: "Les non-conformités WCAG relevées concernent des éléments hors du périmètre de ce critère — à évaluer séparément.",
     nothing: "Aucun.",
@@ -81,7 +82,8 @@ const L = {
     cTitle: "3. Conforming criteria (C)",
     naTitle: "4. Not-applicable criteria (NA)",
     manualTitle: "5. Criteria to adjudicate (judgment / rendering) — not decided by the static engine",
-    manualWarn: "Adjudicate these with `verify --manual` (the agent decides from source, gated); rendering criteria go to `scan`. None may be marked “conforming” without a recorded, gated justification.",
+    manualWarn:
+      "Adjudicate these with `verify --manual` (the agent decides from source, gated); rendering criteria go to `scan`. None may be marked “conforming” without a recorded, gated justification.",
     outOfScope: "Out of engine scope — mapped to SCs outside WCAG 2.2 AA; manual verification.",
     scopedOut: "The WCAG failures found concern elements outside this criterion's scope — assess separately.",
     nothing: "None.",

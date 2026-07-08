@@ -1009,7 +1009,9 @@ function cmdVerify(p: ParsedArgs): number {
     // Content-level grounding of every verdict that passed adjudication: the cited
     // file/line/snippet must still exist and match the source (see src/grounding.ts).
     const passing = items.filter((it) => typeof it.verdict === "string" && ["supported", "partial"].includes(it.verdict.trim().toLowerCase()));
-    const grounding = groundItems(passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: (it as { snippet?: string }).snippet })));
+    const grounding = groundItems(
+      passing.map((it) => ({ file: it.file, line: it.line, selector: it.selector, snippet: (it as { snippet?: string }).snippet })),
+    );
     const ok = r.ok && grounding.failed === 0;
     if (p.flags.json) console.log(JSON.stringify({ ...r, ok, grounding }, null, 2));
     else if (ok)
@@ -1068,9 +1070,7 @@ function cmdVerify(p: ParsedArgs): number {
     if (p.flags.json) console.log(JSON.stringify({ mdPath: w.mdPath, todoPath: w.todoPath, count: w.count, items: adjItems }, null, 2));
     else
       console.log(
-        lang === "fr"
-          ? `${w.count} critère(s) à adjuger → ${w.mdPath}, ${w.todoPath}`
-          : `${w.count} criterion(ia) to adjudicate → ${w.mdPath}, ${w.todoPath}`,
+        lang === "fr" ? `${w.count} critère(s) à adjuger → ${w.mdPath}, ${w.todoPath}` : `${w.count} criterion(ia) to adjudicate → ${w.mdPath}, ${w.todoPath}`,
       );
     return 0;
   }
@@ -1127,11 +1127,7 @@ function applyAdjudicationFile(p: ParsedArgs, adj: AdjudicationFile, lang: Lang)
   if (!r.ok) {
     if (p.flags.json) console.log(JSON.stringify(r, null, 2));
     else {
-      console.error(
-        lang === "fr"
-          ? `✗ Adjudication rejetée (${r.issues.length} problème(s)) :`
-          : `✗ Adjudication rejected (${r.issues.length} issue(s)):`,
-      );
+      console.error(lang === "fr" ? `✗ Adjudication rejetée (${r.issues.length} problème(s)) :` : `✗ Adjudication rejected (${r.issues.length} issue(s)):`);
       for (const i of r.issues) console.error(`  ✗ ${i}`);
     }
     return 1;

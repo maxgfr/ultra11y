@@ -5,7 +5,14 @@ import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { renderReport } from "../src/report.js";
 import { buildWorklist } from "../src/verify.js";
-import { buildAdjudicationWorklist, applyAdjudication, writeAdjudication, ADJUDICATE_MAX_EVIDENCE, type AdjudicationFile, type AdjudicationItem } from "../src/adjudicate.js";
+import {
+  buildAdjudicationWorklist,
+  applyAdjudication,
+  writeAdjudication,
+  ADJUDICATE_MAX_EVIDENCE,
+  type AdjudicationFile,
+  type AdjudicationItem,
+} from "../src/adjudicate.js";
 
 const dir = mkdtempSync(join(tmpdir(), "u11y-adj-"));
 function fixture(name: string, html: string): string {
@@ -76,7 +83,10 @@ describe("buildAdjudicationWorklist", () => {
   });
 
   it("caps evidence per criterion and records the truncation honestly", () => {
-    const many = fixture("many.html", `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>h</h1>${Array.from({ length: 50 }, (_, i) => `<a href="/l${i}">link ${i}</a>`).join("")}</main></body></html>`);
+    const many = fixture(
+      "many.html",
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>h</h1>${Array.from({ length: 50 }, (_, i) => `<a href="/l${i}">link ${i}</a>`).join("")}</main></body></html>`,
+    );
     const a = runAudit({ inputs: [many] });
     const c = buildAdjudicationWorklist(a).find((i) => i.criteriaId === "2.4.4")!;
     expect(c.evidence.length).toBe(ADJUDICATE_MAX_EVIDENCE);
@@ -89,7 +99,9 @@ describe("applyAdjudication — updates the audit + records provenance", () => {
   it("applies a C verdict with justification and records decidedBy:agent", () => {
     const audit = auditPage();
     const items = buildAdjudicationWorklist(audit).map((i) =>
-      i.criteriaId === "2.4.4" ? { ...i, verdict: "C" as const, justification: "Every link text is self-describing in context." } : { ...i, verdict: "manual" as const, reason: "undecidable" },
+      i.criteriaId === "2.4.4"
+        ? { ...i, verdict: "C" as const, justification: "Every link text is self-describing in context." }
+        : { ...i, verdict: "manual" as const, reason: "undecidable" },
     );
     const r = applyAdjudication(audit, file(items));
     expect(r.ok).toBe(true);
@@ -103,7 +115,13 @@ describe("applyAdjudication — updates the audit + records provenance", () => {
     const audit = auditPage();
     const items = buildAdjudicationWorklist(audit).map((i) =>
       i.criteriaId === "1.1.1"
-        ? { ...i, verdict: "NC" as const, findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is not descriptive', snippet: 'alt="chart"', severity: "majeur" as const }] }
+        ? {
+            ...i,
+            verdict: "NC" as const,
+            findings: [
+              { file: PAGE, line: 9, selector: "img", message: 'alt="chart" is not descriptive', snippet: 'alt="chart"', severity: "majeur" as const },
+            ],
+          }
         : { ...i, verdict: "manual" as const, reason: "undecidable" },
     );
     const r = applyAdjudication(audit, file(items));
@@ -127,7 +145,9 @@ describe("applyAdjudication — updates the audit + records provenance", () => {
 
   it("§5 shrinks to only still-manual items and keeps the '## 5.' heading", () => {
     const audit = auditPage();
-    const items = buildAdjudicationWorklist(audit).map((i, idx) => (idx === 0 ? { ...i, verdict: "manual" as const, reason: "needs-rendered-dom" } : { ...i, verdict: "C" as const, justification: "assessed from source" }));
+    const items = buildAdjudicationWorklist(audit).map((i, idx) =>
+      idx === 0 ? { ...i, verdict: "manual" as const, reason: "needs-rendered-dom" } : { ...i, verdict: "C" as const, justification: "assessed from source" },
+    );
     const r = applyAdjudication(audit, file(items));
     const report = renderReport(r.audit, "en");
     expect(report).toContain("## 5.");
@@ -139,7 +159,11 @@ describe("applyAdjudication — updates the audit + records provenance", () => {
 describe("applyAdjudication — fail-closed validation", () => {
   const baseItems = () => buildAdjudicationWorklist(auditPage());
   const decideAll = (over: Partial<AdjudicationItem>, only?: string) =>
-    baseItems().map((i) => (only && i.criteriaId !== only ? { ...i, verdict: "manual" as const, reason: "undecidable" } : { ...i, verdict: "manual" as const, reason: "undecidable", ...over }));
+    baseItems().map((i) =>
+      only && i.criteriaId !== only
+        ? { ...i, verdict: "manual" as const, reason: "undecidable" }
+        : { ...i, verdict: "manual" as const, reason: "undecidable", ...over },
+    );
 
   it("fails on a null verdict (unadjudicated criterion)", () => {
     const items = baseItems(); // all verdict null

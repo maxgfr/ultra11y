@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fixed-width layout — reflow failure at 320px</title>
+  </head>
+  <body>
+    <main>
+      <h1>Dynamic-only reflow</h1>
+      <!-- A fixed 1200px-wide container forces horizontal scrolling at a 320px
+           viewport: a WCAG 1.4.10 (reflow) failure the static engine cannot decide
+           (it needs a rendered viewport). The dynamic 320px reflow probe observes the
+           horizontal scroll and upgrades 1.4.10 to NC. -->
+      <div style="width: 1200px">
+        <p>
+          This paragraph lives inside a fixed 1200-pixel-wide container, so at a
+          320-pixel viewport the page scrolls horizontally instead of reflowing.
+        </p>
+      </div>
+      <a href="/">Home</a>
+    </main>
+  </body>
+</html>

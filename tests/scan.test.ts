@@ -163,12 +163,15 @@ describe("mergeDynamic", () => {
 });
 
 // ---- R3: host-source anchoring of dynamic findings ----
-import { readFileSync, writeFileSync as wf, mkdtempSync as mkd } from "node:fs";
+import { writeFileSync as wf, mkdtempSync as mkd } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 describe("toDynamicResult — host-source anchoring (R3)", () => {
   it("maps the container mount (/work/input.html) back to the host target path", () => {
-    const out = { url: "/work/input.html", violations: [{ id: "image-alt", impact: "critical", help: "Images must have alt", nodes: [{ target: ["img"], html: "<img src=x>" }] }] };
+    const out = {
+      url: "/work/input.html",
+      violations: [{ id: "image-alt", impact: "critical", help: "Images must have alt", nodes: [{ target: ["img"], html: "<img src=x>" }] }],
+    };
     const dyn = toDynamicResult(out as never, "/repo/site/index.html");
     expect(dyn.findings[0]!.page).toBe("/repo/site/index.html");
     expect(dyn.findings[0]!.page).not.toContain("/work/input.html");
@@ -192,8 +195,23 @@ describe("mergeDynamic — resolves an axe snippet to a real host file:line (R3)
   it("anchors the finding at the line where the cited outerHTML actually sits, with a source range", () => {
     const audit = runAudit({ inputs: [page] });
     const dyn = {
-      tool: "ultra11y" as const, engine: "axe", target: page, date: "2026-07-08",
-      findings: [{ criteriaId: "1.1.1", axeRule: "image-alt", impact: "critical", severity: "bloquant" as const, message: "Images must have alternate text (axe: image-alt)", selector: "img", snippet: '<img src="hero.png">', engine: "axe" as const, page }],
+      tool: "ultra11y" as const,
+      engine: "axe",
+      target: page,
+      date: "2026-07-08",
+      findings: [
+        {
+          criteriaId: "1.1.1",
+          axeRule: "image-alt",
+          impact: "critical",
+          severity: "bloquant" as const,
+          message: "Images must have alternate text (axe: image-alt)",
+          selector: "img",
+          snippet: '<img src="hero.png">',
+          engine: "axe" as const,
+          page,
+        },
+      ],
     };
     const merged = mergeDynamic(audit, dyn);
     const f = merged.findings.find((x) => x.ruleId === "axe:image-alt")!;
@@ -207,8 +225,23 @@ describe("mergeDynamic — resolves an axe snippet to a real host file:line (R3)
   it("keeps selector + snippet and line 0 when the snippet resolves nowhere — never a fabricated line", () => {
     const audit = runAudit({ inputs: [page] });
     const dyn = {
-      tool: "ultra11y" as const, engine: "axe", target: page, date: "2026-07-08",
-      findings: [{ criteriaId: "1.4.3", axeRule: "color-contrast", impact: "serious", severity: "majeur" as const, message: "contrast", selector: "span.ghost", snippet: "<span class='ghost'>nowhere</span>", engine: "axe" as const, page }],
+      tool: "ultra11y" as const,
+      engine: "axe",
+      target: page,
+      date: "2026-07-08",
+      findings: [
+        {
+          criteriaId: "1.4.3",
+          axeRule: "color-contrast",
+          impact: "serious",
+          severity: "majeur" as const,
+          message: "contrast",
+          selector: "span.ghost",
+          snippet: "<span class='ghost'>nowhere</span>",
+          engine: "axe" as const,
+          page,
+        },
+      ],
     };
     const merged = mergeDynamic(audit, dyn);
     const f = merged.findings.find((x) => x.ruleId === "axe:color-contrast")!;

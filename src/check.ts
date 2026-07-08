@@ -25,7 +25,8 @@ const M = {
     na: (id: string) => `Critère NA sans justification : ${id}.`,
     rateMissing: "Taux de réussite absent de l'en-tête du rapport.",
     rateRange: (v: string) => `Taux de réussite hors bornes (0–100) : ${v}%.`,
-    overProject: (id: string) => `Critère sur-projeté : ${id} est marqué non conforme dans le rapport mais l'audit ne le dérive pas comme NC (élément hors périmètre du critère).`,
+    overProject: (id: string) =>
+      `Critère sur-projeté : ${id} est marqué non conforme dans le rapport mais l'audit ne le dérive pas comme NC (élément hors périmètre du critère).`,
     underProject: (id: string) => `Critère absent : l'audit dérive ${id} comme non conforme mais le rapport ne le présente pas.`,
     semanticMissing: (p: string) =>
       `Gate sémantique : aucun artefact de verdicts trouvé (${p}). Générez la worklist (\`verify --report <md>\`), statuez, puis relancez — ou passez \`--verdicts <fichier>\`.`,
@@ -39,7 +40,8 @@ const M = {
     na: (id: string) => `NA criterion without a justification: ${id}.`,
     rateMissing: "Pass rate missing from the report header.",
     rateRange: (v: string) => `Pass rate out of range (0–100): ${v}%.`,
-    overProject: (id: string) => `Over-projected criterion: ${id} is marked non-conformant in the report but the audit does not derive it as NC (element outside the criterion's scope).`,
+    overProject: (id: string) =>
+      `Over-projected criterion: ${id} is marked non-conformant in the report but the audit does not derive it as NC (element outside the criterion's scope).`,
     underProject: (id: string) => `Missing criterion: the audit derives ${id} as non-conformant but the report does not present it.`,
     semanticMissing: (p: string) =>
       `Semantic gate: no verdicts artifact found (${p}). Generate the worklist (\`verify --report <md>\`), adjudicate it, then re-run — or pass \`--verdicts <file>\`.`,
@@ -121,7 +123,11 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
   // a hand-edited report that over-projects an NC onto an inapplicable criterion (RGAA R1),
   // or drops a real one. Only runs for a pack standard with an audit in hand.
   if (!core && pack && opts.audit) {
-    const derivedNc = new Set(derivePackResults(opts.audit, standard).filter((r) => r.status === "NC").map((r) => r.id));
+    const derivedNc = new Set(
+      derivePackResults(opts.audit, standard)
+        .filter((r) => r.status === "NC")
+        .map((r) => r.id),
+    );
     const reportNc = packReportNcIds(md, idCaptureSource(pack));
     for (const id of reportNc) if (!derivedNc.has(id)) issues.push(s.overProject(id));
     for (const id of derivedNc) if (!reportNc.has(id)) issues.push(s.underProject(id));

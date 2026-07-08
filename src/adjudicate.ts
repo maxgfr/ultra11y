@@ -11,12 +11,12 @@
 // decisions are the AGENT's, statically, gated — not a deferral to a human.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AuditResult, Automatability, CriterionResult, Finding, Lang, ResidualRisk, Severity, Status } from "./types.js";
+import type { AuditResult, Automatability, Finding, Lang, ResidualRisk, Severity, Status } from "./types.js";
 import { SCHEMA_VERSION } from "./types.js";
 import { discover } from "./discover.js";
 import { readText } from "./util.js";
 import { parseSource } from "./parse/source.js";
-import { type Doc, type El, elementsByTag, attr, textContent, snippet as elSnippet, closest } from "./parse/html.js";
+import { type Doc, type El, elementsByTag, attr, textContent, snippet as elSnippet } from "./parse/html.js";
 import { parseInlineStyle } from "./color.js";
 import { scTitle, getSC } from "./wcag.js";
 import { groundItems, type GroundingSummary } from "./grounding.js";
@@ -127,20 +127,28 @@ const HARVESTERS: Record<string, Harvester> = {
     ),
   // 2.4.6 Headings and Labels — the heading + label text to judge for descriptiveness
   "2.4.6": (docs) =>
-    docs.flatMap((d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`))),
+    docs.flatMap((d) =>
+      elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`)),
+    ),
   // 3.3.2 Labels or Instructions — controls + their associated labels/placeholders
   "3.3.2": (docs) =>
     docs.flatMap((d) =>
       elementsByTag(d, "input", "select", "textarea").map((e) => {
         const id = attr(e, "id");
         const lbl = id ? elementsByTag(d, "label").find((l) => attr(l, "for") === id) : undefined;
-        return ev(d, e, `label="${lbl ? textContent(lbl).trim().slice(0, 40) : ""}" placeholder="${attr(e, "placeholder") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`);
+        return ev(
+          d,
+          e,
+          `label="${lbl ? textContent(lbl).trim().slice(0, 40) : ""}" placeholder="${attr(e, "placeholder") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`,
+        );
       }),
     ),
   // 1.3.1 Info and Relationships — heading outline + tables (structure to judge)
   "1.3.1": (docs) =>
     docs.flatMap((d) =>
-      elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map((e) => ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`)),
+      elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map((e) =>
+        ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`),
+      ),
     ),
   // 4.1.2 Name, Role, Value — elements carrying a role or ARIA state
   "4.1.2": (docs) =>
@@ -150,8 +158,7 @@ const HARVESTERS: Record<string, Harvester> = {
         .map((e) => ev(d, e, `role="${attr(e, "role") ?? ""}"`)),
     ),
   // 2.4.3 Focus Order — explicit tabindex values in DOM order
-  "2.4.3": (docs) =>
-    docs.flatMap((d) => d.elements.filter((e) => attr(e, "tabindex") !== undefined).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`))),
+  "2.4.3": (docs) => docs.flatMap((d) => d.elements.filter((e) => attr(e, "tabindex") !== undefined).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`))),
   // 3.1.2 Language of Parts — element-level lang overrides (not the root <html lang>)
   "3.1.2": (docs) =>
     docs.flatMap((d) => d.elements.filter((e) => e.tag !== "html" && attr(e, "lang") !== undefined).map((e) => ev(d, e, `lang="${attr(e, "lang")}"`))),
@@ -231,7 +238,8 @@ export function applyAdjudication(audit: AuditResult, adj: AdjudicationFile, opt
       if (!it.findings || it.findings.length === 0) issues.push(`criterion ${it.criteriaId}: an NC verdict requires at least one groundable finding`);
       for (const f of it.findings ?? []) groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
     } else if (v === "manual") {
-      if (!it.reason || !MANUAL_REASONS.has(it.reason)) issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason ∈ {needs-rendered-dom, undecidable}`);
+      if (!it.reason || !MANUAL_REASONS.has(it.reason))
+        issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason ∈ {needs-rendered-dom, undecidable}`);
     } else {
       issues.push(`criterion ${it.criteriaId}: unknown verdict "${String(v)}"`);
     }
@@ -267,7 +275,7 @@ export function applyAdjudication(audit: AuditResult, adj: AdjudicationFile, opt
     c.decidedBy = "agent";
     if (it.verdict === "C" || it.verdict === "NA") c.justification = it.justification.trim();
     if (it.verdict === "NC") {
-      const fs: Finding[] = it.findings.map((f) => agentFinding(it.criteriaId, c.guideline, f));
+      const fs: Finding[] = it.findings.map((f) => agentFinding(it.criteriaId, f));
       c.findings = fs;
       newFindings.push(...fs);
       delete c.justification;
@@ -282,7 +290,7 @@ export function applyAdjudication(audit: AuditResult, adj: AdjudicationFile, opt
   return { ok: true, audit: next, issues: [], applied, stillManual, grounding };
 }
 
-function agentFinding(criteriaId: string, guideline: string, f: AgentFinding): Finding {
+function agentFinding(criteriaId: string, f: AgentFinding): Finding {
   return {
     ruleId: `agent:${criteriaId}`,
     criteriaId,
@@ -367,11 +375,22 @@ export interface WriteAdjudicationResult {
   count: number;
 }
 
-export function writeAdjudication(items: AdjudicationItem[], outDir: string, opts: { standard: StandardId; auditDate: string; lang?: Lang }): WriteAdjudicationResult {
+export function writeAdjudication(
+  items: AdjudicationItem[],
+  outDir: string,
+  opts: { standard: StandardId; auditDate: string; lang?: Lang },
+): WriteAdjudicationResult {
   mkdirSync(outDir, { recursive: true });
   const todoPath = join(outDir, "ADJUDICATE.todo.json");
   const mdPath = join(outDir, "ADJUDICATE.md");
-  const file: AdjudicationFile = { tool: "ultra11y", kind: "adjudication", schemaVersion: SCHEMA_VERSION, standard: opts.standard, auditDate: opts.auditDate, items };
+  const file: AdjudicationFile = {
+    tool: "ultra11y",
+    kind: "adjudication",
+    schemaVersion: SCHEMA_VERSION,
+    standard: opts.standard,
+    auditDate: opts.auditDate,
+    items,
+  };
   writeFileSync(todoPath, JSON.stringify(file, null, 2) + "\n");
   writeFileSync(mdPath, formatAdjudication(items, opts.lang ?? "en"));
   return { todoPath, mdPath, count: items.length };

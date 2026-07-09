@@ -96,6 +96,11 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   lang-of-parts); the AI agent fills each `verdict` — `C`/`NA` (with a `justification`), `NC`
   (with a groundable finding), or `manual` (with a `reason`) — then `verify --apply … --in
   audit.json` folds them back FAIL-CLOSED; read **`references/judgment.md`**.
+- **"Many items to adjudicate/verify (fan the judgment out to subagents)"** →
+  `orchestrate --run <dir>` emits, from the run's CURRENT worklists, one launchable
+  multi-agent workflow per ready phase + the `agents/<role>.md` dispatch contracts +
+  a sequential `RUNBOOK.md` — the default execution path on a subagent-capable harness;
+  see **Orchestration — route by harness** below.
 - **"Focus, keyboard & interaction logic (the interaction-logic part)"** → the engine marks
   focus order/visible/trap and on-focus/on-input criteria as residual risks; the AI agent reads
   the full component source and adjudicates the keyboard/focus behaviour (visible-focus and the
@@ -125,6 +130,30 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   content-on-hover (1.4.13) (target size 2.5.8 via axe), and takes `--storage-state` for
   authenticated pages; see **`references/dynamic.md`**.
 
+## Orchestration — route by harness
+
+The judgment phases fan out: `ADJUDICATE.todo.json` (one item per residual criterion) and
+`VERIFY.todo.json` (one entry per NC claim) are independent per-item worklists. The engine
+manages the fan-out — `orchestrate` emits the orchestration from the CURRENT worklists,
+with absolute paths and the real item ids baked in:
+
+```
+node scripts/ultra11y.mjs orchestrate --run <dir> [--phase adjudicate|verify-report] [--eco] [--list]
+```
+
+| Your harness | How to run each judgment phase |
+|---|---|
+| Has the Workflow tool | `orchestrate --run <RUN> --phase <p>`, then `Workflow({ scriptPath: "<RUN>/orchestration/<p>.workflow.mjs" })`. Subagents RETURN verdict fragments; fold them into the worklist yourself, then `verify --apply` as usual. |
+| Subagents but no Workflow tool | Same `orchestrate`; dispatch one subagent per batch following `<RUN>/orchestration/agents/<role>.md` (the workflow script shows batches + prompts). One writer: you fold results in. |
+| Eco mode, or no subagents | `orchestrate --run <RUN> --eco` → follow `<RUN>/orchestration/RUNBOOK.md` sequentially, playing each role yourself. Correctness-identical; only wall-clock differs. |
+
+Fan-out is an optimization, never a requirement — the gates (`check`, `verify --apply`)
+are harness-independent and every phase has a sequential fallback with identical
+artifacts. Subagents never write: the emitted contracts end with the one-writer rule,
+and `--apply` (the fail-closed fold) always stays with you, the orchestrator. Re-run
+`orchestrate` whenever a worklist changes (emission is deterministic and idempotent);
+`--phase <p>` before its worklist exists fails and names the command that produces it.
+
 ## Command cheat sheet
 
 ```
@@ -147,6 +176,8 @@ node scripts/ultra11y.mjs criteria --list                   # all SCs grouped by
 node scripts/ultra11y.mjs criteria --standard rgaa --theme 8   # a pack theme
 node scripts/ultra11y.mjs check  --report audits/wcag-YYYY-MM-DD.md
 node scripts/ultra11y.mjs verify --report audits/wcag-YYYY-MM-DD.md --semantic
+node scripts/ultra11y.mjs orchestrate --run audits              # emit multi-agent workflows + contracts + RUNBOOK from the current worklists
+node scripts/ultra11y.mjs orchestrate --run audits --eco        # sequential low-token path (RUNBOOK + contracts only)
 node scripts/ultra11y.mjs render                            # build→audit recipe (or --scaffold SSR)
 node scripts/ultra11y.mjs render --setup                    # install the zero-touch capture harvester (tests → .ultra11y/captures)
 node scripts/ultra11y.mjs render --coverage                 # which components have a rendered capture vs blind spots
@@ -183,6 +214,8 @@ drive the judgment and content stages:
    includes **focus & interaction logic** (read the full component source: keyboard
    operability, focus order/visibility, traps, on-focus/on-input changes; see
    `references/focus-and-logic.md`) and the per-rule traps in `references/false-positives.md`.
+   Both worklists fan out (`orchestrate --run <dir> --phase adjudicate|verify-report` —
+   see **Orchestration — route by harness**); the `--apply` fold always stays with you.
 3. **Fix** by priority: `fix --write --iterate` for the mechanical part (anti-regression
    gate), then hand-apply the judgment/content fixes (alt, labels, structure) guided by
    `references/correction.md`.

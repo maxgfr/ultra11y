@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync8, mkdirSync as mkdirSync6, existsSync as existsSync10, readFileSync as readFileSync6, appendFileSync } from "fs";
-import { join as join13, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
+import { realpathSync, writeFileSync as writeFileSync9, mkdirSync as mkdirSync7, existsSync as existsSync11, readFileSync as readFileSync7, appendFileSync } from "fs";
+import { join as join15, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
 import { fileURLToPath as fileURLToPath2, pathToFileURL } from "url";
 
 // src/types.ts
-var VERSION = "2.10.1";
+var VERSION = "2.11.0";
 var SCHEMA_VERSION = 2;
 
 // src/audit.ts
@@ -32559,6 +32559,318 @@ ${g.errors.map((e) => `  \u2717 ${e}`).join("\n")}`);
   result.loadedGuidance.push(path);
 }
 
+// src/orchestrate.ts
+import { existsSync as existsSync10, mkdirSync as mkdirSync6, readFileSync as readFileSync6, writeFileSync as writeFileSync8 } from "fs";
+import { join as join14, resolve as resolve5 } from "path";
+
+// src/orchestrate-templates.ts
+import { join as join13 } from "path";
+var ONE_WRITER_FOOTER = `
+## Return, don't write
+
+Return ONLY the structured output specified above. Do NOT write, edit, or delete any file; do NOT run any engine command that writes (\`verify --apply\`, \`fix --write\`, \`audit --out\`, \`init\`). The orchestrator is the sole writer \u2014 it folds your verdicts into the worklist itself and runs the apply gate. Exception: if a justification is prose too large to return, write ONLY to \`<RUN>/orchestration/out/<role>-<batch>.md\` (a file namespaced to you alone) and return its path.
+`;
+var ADJUDICATE_SCHEMA = {
+  type: "object",
+  required: ["verdicts"],
+  properties: {
+    verdicts: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["criteriaId", "verdict"],
+        properties: {
+          criteriaId: { type: "string" },
+          verdict: { enum: ["C", "NC", "NA", "manual"] },
+          justification: { type: "string", description: "REQUIRED for C and NA" },
+          reason: { enum: ["needs-rendered-dom", "undecidable", null], description: "REQUIRED for a still-manual verdict" },
+          findings: {
+            type: "array",
+            description: "REQUIRED (>=1, groundable) for NC",
+            items: {
+              type: "object",
+              required: ["file", "line", "message"],
+              properties: {
+                file: { type: "string" },
+                line: { type: "integer" },
+                selector: { type: "string" },
+                message: { type: "string" },
+                snippet: { type: "string" },
+                severity: { enum: ["bloquant", "majeur", "mineur"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+var VERIFY_SCHEMA = {
+  type: "object",
+  required: ["verdicts"],
+  properties: {
+    verdicts: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["n", "verdict", "note"],
+        properties: {
+          n: { type: "integer" },
+          verdict: { enum: ["supported", "partial", "refuted", "unsupported"] },
+          note: { type: "string", description: "one line grounded in the source you read" }
+        }
+      }
+    }
+  }
+};
+var PHASE_SPECS = {
+  adjudicate: {
+    role: "adjudicator",
+    title: "Adjudicate",
+    schema: ADJUDICATE_SCHEMA,
+    description: (n) => `Adjudicate the ${n} residual judgment criterion(ia) of an ultra11y audit (fan-out, fail-closed fold)`,
+    applyHint: (engine, worklist, run) => `node ${engine} verify --apply ${worklist} --in ${join13(run, "audit-latest.json")} --out ${run}`
+  },
+  "verify-report": {
+    role: "refuter",
+    title: "Verify",
+    schema: VERIFY_SCHEMA,
+    description: (n) => `Adversarially verify the ${n} non-conformity claim(s) of an ultra11y report (skeptic fan-out)`,
+    applyHint: (engine, worklist) => `node ${engine} verify --apply ${worklist} --report <report.md>`
+  }
+};
+function phaseSpec(name) {
+  const spec = PHASE_SPECS[name];
+  if (!spec) throw new Error(`no phase spec for "${name}"`);
+  return spec;
+}
+function toBatches(ids, batchSize) {
+  const out = [];
+  for (let i = 0; i < ids.length; i += batchSize) out.push(ids.slice(i, i + batchSize));
+  return out;
+}
+function phaseWorkflowScript(ph, runAbs, engineAbs, batchSize) {
+  const spec = phaseSpec(ph.name);
+  const scriptPath = join13(runAbs, "orchestration", `${ph.name}.workflow.mjs`);
+  const meta2 = { name: `ultra11y-${ph.name}`, description: spec.description(ph.items), phases: [{ title: spec.title }] };
+  return [
+    `export const meta = ${JSON.stringify(meta2)}`,
+    ``,
+    `// NOT a plain Node script: launch via the Workflow tool \u2014 Workflow({ scriptPath: ${JSON.stringify(scriptPath)} }).`,
+    `// Emitted by \`ultra11y orchestrate\` from the CURRENT worklist. The worklist is the source`,
+    `// of truth: if it changes, re-run \`orchestrate --phase ${ph.name}\` before launching.`,
+    ``,
+    `// Constants for THIS run (injected at emit time; no Date.now/Math.random in this harness).`,
+    `const RUN = ${JSON.stringify(runAbs)}`,
+    `const ENGINE = ${JSON.stringify(engineAbs)}`,
+    `const WORKLIST = ${JSON.stringify(ph.worklist)}`,
+    `const AGENTS = RUN + '/orchestration/agents'`,
+    `const BATCHES = ${JSON.stringify(toBatches(ph.ids, batchSize))}`,
+    `const SCHEMA = ${JSON.stringify(spec.schema)}`,
+    ``,
+    `function contract(name, extra) {`,
+    `  return 'Read and follow the dispatch contract at ' + AGENTS + '/' + name + '.md VERBATIM.\\n'`,
+    `    + 'Constants: RUN=' + RUN + '  ENGINE=' + ENGINE + '  WORKLIST=' + WORKLIST + '.\\n'`,
+    `    + 'Invoke the engine only by its ABSOLUTE path: node ' + ENGINE + ' <cmd> \u2014 read-only commands only.'`,
+    `    + (extra ? '\\n' + extra : '')`,
+    `}`,
+    ``,
+    `log('ultra11y ${ph.name}: ' + ${JSON.stringify(String(ph.items))} + ' item(s) across ' + BATCHES.length + ' agent(s)')`,
+    ``,
+    `phase(${JSON.stringify(spec.title)})`,
+    `const results = await pipeline(BATCHES, (batch, _item, i) =>`,
+    `  agent(contract('${spec.role}', 'ITEMS=' + batch.join(',')), { label: '${ph.name}:' + (i + 1), phase: ${JSON.stringify(spec.title)}, agentType: 'general-purpose', schema: SCHEMA }))`,
+    ``,
+    `// One-writer rule: this workflow only COLLECTS verdict fragments. The main agent folds`,
+    `// them into WORKLIST (fill each item's fields from the matching fragment), then runs:`,
+    `//   ${spec.applyHint(engineAbs, ph.worklist, runAbs)}`,
+    `return { phase: ${JSON.stringify(ph.name)}, worklist: WORKLIST, results: results.filter(Boolean) }`,
+    ``
+  ].join("\n");
+}
+function agentContracts(runAbs, engineAbs) {
+  const footer = ONE_WRITER_FOOTER.replaceAll("<RUN>", runAbs);
+  return {
+    adjudicator: `# Contract: adjudicator
+
+You adjudicate residual judgment criteria of an ultra11y WCAG audit \u2014 the success criteria the deterministic engine could not decide (alt-text relevance, link purpose in context, reading order\u2026).
+
+Worklist: \`${join13(runAbs, "ADJUDICATE.todo.json")}\` (an object with \`kind: "adjudication"\` and \`items[]\`). Handle ONLY the criteria whose \`criteriaId\` is named in your prompt (\`ITEMS=<id,\u2026>\`).
+
+For EACH of your criteria:
+
+1. Read its worklist entry. \`evidence[]\` holds source-anchored excerpts (\`file\`, \`line\`, \`selector\`, \`snippet\`) harvested from the audited code \u2014 open the cited files at the cited lines whenever the snippet alone cannot decide.
+2. Rule it (the apply gate is FAIL-CLOSED \u2014 a verdict missing its required field does not fold):
+   - \`C\` (conforming) \u2014 REQUIRES \`justification\` explaining why the evidence satisfies the criterion.
+   - \`NC\` (non-conforming) \u2014 REQUIRES \`findings\`: at least one groundable \`{ file, line, selector?, message, snippet?, severity? }\` pointing at REAL source. The fold re-grounds every finding; an invented file:line is rejected.
+   - \`NA\` (not applicable) \u2014 REQUIRES \`justification\`.
+   - \`manual\` (still undecidable) \u2014 REQUIRES \`reason\`: \`needs-rendered-dom\` (only a rendered DOM can decide, e.g. computed contrast) or \`undecidable\` (the evidence cannot settle it either way).
+3. Never guess. A criterion you cannot decide from real evidence stays \`manual\` with a reason \u2014 that is a valid, honest verdict; the scan tier or a human picks it up.
+
+Return (structured output): \`{ "verdicts": [{ "criteriaId", "verdict", "justification", "reason", "findings" }] }\` \u2014 your ITEMS only, every field grounded in what you actually read.
+${footer}`,
+    refuter: `# Contract: refuter
+
+You are an adversarial skeptic verifying the non-conformities of an ultra11y report. Your job is to try to REFUTE each claim: assume it is wrong until the source proves it.
+
+Worklist: \`${join13(runAbs, "VERIFY.todo.json")}\` (a JSON array; each entry has \`n\`, \`criteriaId\`, \`file\`, \`line\`, \`selector\`, \`claim\`). Handle ONLY the entries whose \`n\` is named in your prompt (\`ITEMS=<n,\u2026>\`).
+
+For EACH of your entries:
+
+1. Open \`file\` at \`line\` and read the cited element (\`selector\`) in its real context.
+2. Judge the claim against the source:
+   - \`supported\` \u2014 the cited code violates the criterion exactly as claimed.
+   - \`partial\` \u2014 a real issue, but the claim overstates it (wrong element, wrong scope, exaggerated count).
+   - \`unsupported\` \u2014 the source does not establish the claim.
+   - \`refuted\` \u2014 the source contradicts the claim.
+   When unsure, choose the HARSHER verdict \u2014 a false pass is worse than a false fail.
+3. \`note\` is REQUIRED \u2014 one line grounded in what you read (quote or paraphrase the decisive code).
+
+Return (structured output): \`{ "verdicts": [{ "n", "verdict", "note" }] }\` \u2014 your ITEMS only.
+${footer}`
+  };
+}
+function runbookMd(phases, runAbs, engineAbs) {
+  const status = phases.map((p) => `| ${p.name} | \`${p.worklist}\` | ${p.ready ? `ready (${p.items} item(s))` : "not ready"} | \`${p.prerequisite}\` |`).join("\n");
+  const engine = `node ${engineAbs}`;
+  return `# ultra11y \u2014 sequential RUNBOOK (eco / no-subagent fallback)
+
+Run: \`${runAbs}\` \xB7 Engine: \`${engine}\`
+
+Generated by \`ultra11y orchestrate\` from the CURRENT run state. This sequential path is
+correctness-identical to the multi-agent workflows \u2014 same worklists, same contracts, same
+fail-closed gates; only wall-clock differs. Fan-out is an optimization, not a requirement.
+
+## Phase status
+
+| Phase | Worklist | Status | Produce it with |
+|---|---|---|---|
+${status}
+
+## The loop (play every role yourself, one item at a time)
+
+1. **Audit** (if not done): \`${engine} audit "<globs>" --graph --out ${runAbs}\` \u2192 \`${join13(runAbs, "audit-latest.json")}\`.
+2. **Adjudicate the residual criteria** \u2014 \`${engine} verify --manual --in ${join13(runAbs, "audit-latest.json")} --out ${runAbs}\` writes \`${join13(runAbs, "ADJUDICATE.todo.json")}\`. For EVERY item, apply \`${join13(runAbs, "orchestration", "agents", "adjudicator.md")}\` yourself (read the evidence, rule C/NC/NA/manual, fill the required justification/findings/reason IN the todo file). Then fold, fail-closed: \`${engine} verify --apply ${join13(runAbs, "ADJUDICATE.todo.json")} --in ${join13(runAbs, "audit-latest.json")} --out ${runAbs}\`.
+3. **Report**: \`${engine} report --in ${join13(runAbs, "audit-latest.json")} --out ${runAbs}\`.
+4. **Verify the report's claims** \u2014 \`${engine} verify --report <the report .md> --out ${runAbs}\` writes \`${join13(runAbs, "VERIFY.todo.json")}\`. For EVERY entry, apply \`${join13(runAbs, "orchestration", "agents", "refuter.md")}\` yourself (open file:line, verdict supported/partial/refuted/unsupported + note IN the todo file). Then: \`${engine} verify --apply ${join13(runAbs, "VERIFY.todo.json")} --report <the report .md>\`.
+5. **Gate**: \`${engine} check --report <the report .md> --semantic\` must exit 0 before presenting anything.
+6. **Fix & re-audit**: \`${engine} fix <globs> --write --iterate\`, hand-apply the judgment fixes, then loop from step 1 until the gate stays green.
+
+With subagents available, prefer the emitted workflows instead: \`orchestrate --run ${runAbs} --phase <p>\` then \`Workflow({ scriptPath: "${join13(runAbs, "orchestration", "<p>.workflow.mjs")}" })\` \u2014 you stay the sole writer either way.
+`;
+}
+
+// src/orchestrate.ts
+var PHASES = ["adjudicate", "verify-report"];
+var SMALL_WORKLIST = 3;
+var BATCH_SIZE = 8;
+function listPhases(runDir, engineAbs) {
+  const run = resolve5(runDir);
+  const adjPath = join14(run, "ADJUDICATE.todo.json");
+  let adjIds = [];
+  let adjReady = false;
+  if (existsSync10(adjPath)) {
+    try {
+      const f = JSON.parse(readFileSync6(adjPath, "utf8"));
+      if (f && f.kind === "adjudication" && Array.isArray(f.items)) {
+        adjReady = true;
+        adjIds = f.items.map((i) => i.criteriaId);
+      }
+    } catch {
+    }
+  }
+  const verPath = join14(run, "VERIFY.todo.json");
+  let verIds = [];
+  let verReady = false;
+  if (existsSync10(verPath)) {
+    try {
+      const items = JSON.parse(readFileSync6(verPath, "utf8"));
+      if (Array.isArray(items)) {
+        verReady = true;
+        verIds = items.map((i) => String(i.n));
+      }
+    } catch {
+    }
+  }
+  return [
+    {
+      name: "adjudicate",
+      ready: adjReady,
+      worklist: adjPath,
+      items: adjIds.length,
+      ids: adjIds,
+      prerequisite: `node ${engineAbs} verify --manual --in ${join14(run, "audit-latest.json")} --out ${run}`
+    },
+    {
+      name: "verify-report",
+      ready: verReady,
+      worklist: verPath,
+      items: verIds.length,
+      ids: verIds,
+      prerequisite: `node ${engineAbs} verify --report <report.md> --out ${run}`
+    }
+  ];
+}
+function orchestrateRun(runDir, engineAbs, opts = {}) {
+  const run = resolve5(runDir);
+  if (!existsSync10(run)) {
+    return { exitCode: 2, written: [], notices: [], errors: [`run dir not found: ${run}`], phases: [] };
+  }
+  const phases = listPhases(run, engineAbs);
+  let selected = phases.filter((p) => p.ready);
+  if (opts.phase !== void 0) {
+    const ph = phases.find((p) => p.name === opts.phase);
+    if (!ph) {
+      return {
+        exitCode: 2,
+        written: [],
+        notices: [],
+        errors: [`unknown phase "${opts.phase}" \u2014 expected one of: ${PHASES.join(", ")}.`],
+        phases
+      };
+    }
+    if (!ph.ready) {
+      return {
+        exitCode: 2,
+        written: [],
+        notices: [],
+        errors: [`phase "${ph.name}" is not ready \u2014 its worklist ${ph.worklist} does not exist yet. Produce it first: ${ph.prerequisite}`],
+        phases
+      };
+    }
+    selected = [ph];
+  }
+  const orchDir = join14(run, "orchestration");
+  const agentsDir = join14(orchDir, "agents");
+  mkdirSync6(join14(orchDir, "out"), { recursive: true });
+  mkdirSync6(agentsDir, { recursive: true });
+  const written = [];
+  const notices = [];
+  for (const [name, content] of Object.entries(agentContracts(run, engineAbs))) {
+    const p = join14(agentsDir, `${name}.md`);
+    writeFileSync8(p, content);
+    written.push(p);
+  }
+  if (!opts.eco) {
+    for (const ph of selected) {
+      if (ph.items === 0) {
+        notices.push(`phase "${ph.name}": worklist is empty \u2014 nothing to orchestrate.`);
+        continue;
+      }
+      if (ph.items <= SMALL_WORKLIST) {
+        notices.push(`phase "${ph.name}": only ${ph.items} item(s) \u2014 the sequential --eco path is equivalent and cheaper.`);
+      }
+      const p = join14(orchDir, `${ph.name}.workflow.mjs`);
+      writeFileSync8(p, phaseWorkflowScript(ph, run, engineAbs, BATCH_SIZE));
+      written.push(p);
+    }
+  }
+  const rb = join14(orchDir, "RUNBOOK.md");
+  writeFileSync8(rb, runbookMd(phases, run, engineAbs));
+  written.push(rb);
+  return { exitCode: 0, written, notices, errors: [], phases };
+}
+
 // src/cli.ts
 var HELP = `ultra11y v${VERSION}
 Audit HTML/CSS/JSX against WCAG 2.2 AA and produce a dated compliance report, or
@@ -32579,6 +32891,7 @@ Usage:
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y verify   --report <md> --in <audit.json> --manual [--out <dir>] [--json]   (adjudicate the manual criteria)
   ultra11y verify   --apply <adjudication.json> --in <audit.json> [--out <dir>]        (fold the adjudication into the audit)
+  ultra11y orchestrate --run <dir> [--phase adjudicate|verify-report] [--eco] [--list] [--lang auto|en|fr]
   ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
@@ -32626,6 +32939,16 @@ Commands:
              --standard tells it which id grammar/registry to validate against.
   verify     Adversarial claim\u2194criterion worklist for the report's non-conformities,
              then (--apply) gate on refuted/unsupported findings.
+  orchestrate  Emit the run's multi-agent orchestration from its CURRENT worklists:
+             one launchable Workflow script per ready phase (adjudicate over
+             ADJUDICATE.todo.json, verify-report over VERIFY.todo.json), the
+             agents/<role>.md dispatch contracts they reference, and a sequential
+             RUNBOOK.md fallback \u2014 absolute paths and the real worklist ids baked
+             in. Subagents only RETURN verdict fragments; you (the caller) stay
+             the sole writer and fold them via verify --apply. --eco emits only
+             the RUNBOOK + contracts (the explicit low-token path); --list prints
+             the phases and their readiness as JSON. Re-run after a worklist
+             changes \u2014 emission is deterministic and idempotent.
   fix        Put the fixes in place (hybrid, native-first): apply deterministic
              codemods (tabindex, redundant role, viewport zoom), insert fill-in
              placeholders (alt/lang/title TODO) for the agent to complete, and list
@@ -32715,6 +33038,12 @@ Options:
   --max-verify <n>   verify: cap the worklist size; 0 = no cap           (default: 40)
   --verdicts <file>  check --semantic: the adjudicated verdicts artifact
                      (default: VERIFY.todo.json next to the report)
+  --run <dir>        orchestrate: the run dir holding the worklists (ADJUDICATE.todo.json,
+                     VERIFY.todo.json); artifacts land under <dir>/orchestration/
+  --phase <name>     orchestrate: emit one phase only \u2014 adjudicate | verify-report
+                     (exit 2 with the producing command if its worklist is missing)
+  --eco              orchestrate: emit only RUNBOOK.md + agents/*.md \u2014 the explicit
+                     sequential low-token path (also what a no-subagent harness follows)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --sitemap <url>    scan: scan every URL listed in a sitemap.xml
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
@@ -32744,7 +33073,7 @@ Options:
   -v, --version      print version
 
 Data: WCAG 2.2 \xA9 W3C (W3C Document License). RGAA 4.1.2 pack \xA9 DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
-var COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack"];
+var COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack", "orchestrate"];
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
@@ -32779,7 +33108,9 @@ var VALUE_FLAGS = /* @__PURE__ */ new Set([
   "runtime",
   "cwd",
   "storage-state",
-  "captures"
+  "captures",
+  "run",
+  "phase"
 ]);
 var INIT_VALUE_FLAGS = new Set([...VALUE_FLAGS].filter((f) => f !== "baseline"));
 function valueFlagsFor(command) {
@@ -32816,6 +33147,7 @@ var BOOLEAN_FLAGS = /* @__PURE__ */ new Set([
   "local",
   "docker",
   "clean",
+  "eco",
   "help",
   "version"
 ]);
@@ -32912,7 +33244,7 @@ async function cmdAudit(p) {
   const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
   const capturesDir = capturesFlag ?? ".ultra11y/captures";
   const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== void 0;
-  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync10(capturesDir));
+  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync11(capturesDir));
   const useCaptures = capturesWanted && !scopedToDiff && !inputs.includes(capturesDir);
   const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
   if (useCaptures)
@@ -32942,10 +33274,10 @@ async function cmdAudit(p) {
   if (typeof p.flags.out === "string") {
     const out = p.flags.out;
     const asFile = out.toLowerCase().endsWith(".json");
-    const target = asFile ? out : join13(out, "audit-latest.json");
+    const target = asFile ? out : join15(out, "audit-latest.json");
     try {
-      mkdirSync6(asFile ? dirname5(out) : out, { recursive: true });
-      writeFileSync8(target, JSON.stringify(result, null, 2) + "\n");
+      mkdirSync7(asFile ? dirname5(out) : out, { recursive: true });
+      writeFileSync9(target, JSON.stringify(result, null, 2) + "\n");
       console.error(lang === "fr" ? `\u2192 audit \xE9crit dans ${target}` : `\u2192 audit written to ${target}`);
     } catch {
     }
@@ -32959,7 +33291,7 @@ async function cmdAudit(p) {
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
-    if (existsSync10(baselineFlag)) {
+    if (existsSync11(baselineFlag)) {
       try {
         const parsed = JSON.parse(readText(baselineFlag));
         if (isCurrentAudit(parsed)) baseline = parsed;
@@ -33021,9 +33353,9 @@ function cmdInit(p) {
   if (want.baseline) {
     const inputs = p.positionals.length ? p.positionals : ["."];
     const result = runAudit({ inputs, onWarn: (m) => console.error(m) });
-    mkdirSync6(join13(root, "audits"), { recursive: true });
-    const bp = join13(root, "audits", "baseline.json");
-    writeFileSync8(bp, JSON.stringify(result, null, 2) + "\n");
+    mkdirSync7(join15(root, "audits"), { recursive: true });
+    const bp = join15(root, "audits", "baseline.json");
+    writeFileSync9(bp, JSON.stringify(result, null, 2) + "\n");
     wrote.push(bp);
   }
   if (want.hook) wrote.push(writeHook(root, engineRel, failOn, legacy ? "baseline" : "staged"));
@@ -33140,7 +33472,7 @@ function cmdRender(p) {
   if (p.flags.scaffold === true) {
     const out = typeof p.flags.out === "string" && p.flags.out ? p.flags.out : "ultra11y-render.tsx";
     try {
-      writeFileSync8(out, ssrHarness());
+      writeFileSync9(out, ssrHarness());
     } catch (e) {
       console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
       return 1;
@@ -33154,29 +33486,29 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.setup === true) {
     const rel = ".ultra11y/capture-setup.mjs";
-    const out = join13(root, rel);
+    const out = join15(root, rel);
     try {
-      mkdirSync6(dirname5(out), { recursive: true });
-      writeFileSync8(out, captureSetup());
+      mkdirSync7(dirname5(out), { recursive: true });
+      writeFileSync9(out, captureSetup());
     } catch (e) {
       console.error(`ultra11y render: could not write ${out}: ${e instanceof Error ? e.message : String(e)}`);
       return 1;
     }
     let setupDeps = {};
-    const setupPkg = join13(root, "package.json");
-    if (existsSync10(setupPkg)) {
+    const setupPkg = join15(root, "package.json");
+    if (existsSync11(setupPkg)) {
       try {
         const pkg = JSON.parse(readText(setupPkg));
         setupDeps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
       } catch {
       }
     }
-    const tr = detectTestRunner(setupDeps, (f) => existsSync10(join13(root, f)));
+    const tr = detectTestRunner(setupDeps, (f) => existsSync11(join15(root, f)));
     console.log(captureSetupPlan(tr, rel, lang));
     const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
-    const gaPath = join13(root, ".gitattributes");
+    const gaPath = join15(root, ".gitattributes");
     try {
-      const existing = existsSync10(gaPath) ? readFileSync6(gaPath, "utf8") : "";
+      const existing = existsSync11(gaPath) ? readFileSync7(gaPath, "utf8") : "";
       if (!existing.includes(".ultra11y/captures/")) {
         appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
         console.log(lang === "fr" ? `.gitattributes : ajout\xE9 \xAB ${gaLine} \xBB` : `.gitattributes: added "${gaLine}"`);
@@ -33184,8 +33516,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     } catch {
     }
     try {
-      const giPath = join13(root, ".gitignore");
-      if (existsSync10(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync6(giPath, "utf8")))
+      const giPath = join15(root, ".gitignore");
+      if (existsSync11(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync7(giPath, "utf8")))
         console.error(
           lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
         );
@@ -33195,8 +33527,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.storybook === true || typeof p.flags.storybook === "string") {
     const sbDir = p.positionals[0] ?? "storybook-static";
-    const indexPath = existsSync10(join13(sbDir, "index.json")) ? join13(sbDir, "index.json") : join13(sbDir, "stories.json");
-    if (!existsSync10(indexPath)) {
+    const indexPath = existsSync11(join15(sbDir, "index.json")) ? join15(sbDir, "index.json") : join15(sbDir, "stories.json");
+    if (!existsSync11(indexPath)) {
       console.error(
         lang === "fr" ? `ultra11y render : aucun index Storybook (index.json/stories.json) dans ${sbDir}.` : `ultra11y render: no Storybook index (index.json/stories.json) in ${sbDir}.`
       );
@@ -33206,7 +33538,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     const provById = new Map(stories.map((s) => [s.id, storyProvenance(s)]));
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
     const htmlDir = capturesFlag ?? sbDir;
-    const htmlFiles = existsSync10(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
+    const htmlFiles = existsSync11(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
     const outDir = ".ultra11y/captures";
     let attributed = 0;
     let skipped = 0;
@@ -33228,8 +33560,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
         continue;
       }
       try {
-        mkdirSync6(outDir, { recursive: true });
-        writeFileSync8(join13(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
+        mkdirSync7(outDir, { recursive: true });
+        writeFileSync9(join15(outDir, `${hitId}.html`), `${formatCaptureComment(prov)}
 ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
         attributed++;
       } catch {
@@ -33251,11 +33583,11 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
   }
   if (p.flags.coverage === true) {
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
-    const capturesDir = capturesFlag ?? join13(root, ".ultra11y/captures");
+    const capturesDir = capturesFlag ?? join15(root, ".ultra11y/captures");
     const graphExt = [...GRAPH_ONLY_EXT, ...asList(p.flags.ext) ?? []];
     const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: graphExt }).files;
     const graph = buildGraphStreaming(sourceFiles);
-    const capFiles = existsSync10(capturesDir) ? discover([capturesDir]).files : [];
+    const capFiles = existsSync11(capturesDir) ? discover([capturesDir]).files : [];
     const entries = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));
     const cov = computeCaptureCoverage(graph, entries);
     if (p.flags.json) console.log(JSON.stringify(cov, null, 2));
@@ -33263,15 +33595,15 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
     return 0;
   }
   let deps = {};
-  const pkgPath = join13(root, "package.json");
-  if (existsSync10(pkgPath)) {
+  const pkgPath = join15(root, "package.json");
+  if (existsSync11(pkgPath)) {
     try {
       const pkg = JSON.parse(readText(pkgPath));
       deps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
     } catch {
     }
   }
-  const detection = detectFrameworks(deps, (f) => existsSync10(join13(root, f)));
+  const detection = detectFrameworks(deps, (f) => existsSync11(join15(root, f)));
   if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
   else console.log(renderPlan(detection, lang));
   return 0;
@@ -33470,9 +33802,9 @@ function applyAdjudicationFile(p, adj, lang) {
     return 1;
   }
   const out = typeof p.flags.out === "string" ? p.flags.out : ".";
-  mkdirSync6(out, { recursive: true });
-  const auditPath = join13(out, "audit-latest.json");
-  writeFileSync8(auditPath, JSON.stringify(r.audit, null, 2) + "\n");
+  mkdirSync7(out, { recursive: true });
+  const auditPath = join15(out, "audit-latest.json");
+  writeFileSync9(auditPath, JSON.stringify(r.audit, null, 2) + "\n");
   if (p.flags.json) console.log(JSON.stringify({ ok: true, auditPath, applied: r.applied, stillManual: r.stillManual, grounding: r.grounding }, null, 2));
   else
     console.log(
@@ -33610,12 +33942,12 @@ async function cmdScan(p) {
       audit = parsed;
     }
     const merged = mergeDynamic(audit, dynamic, lang);
-    mkdirSync6(out, { recursive: true });
-    writeFileSync8(join13(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
+    mkdirSync7(out, { recursive: true });
+    writeFileSync9(join15(out, "audit-latest.json"), JSON.stringify(merged, null, 2) + "\n");
     if (p.flags.json) console.log(JSON.stringify(merged, null, 2));
     else
       console.log(
-        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join13(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join13(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
+        lang === "fr" ? `Audit statique + dynamique fusionn\xE9 \u2192 ${join15(out, "audit-latest.json")} (${merged.conformancePct}% r\xE9ussite, ${merged.findings.length} findings).` : `Static + dynamic audit merged \u2192 ${join15(out, "audit-latest.json")} (${merged.conformancePct}% pass rate, ${merged.findings.length} findings).`
       );
     return 0;
   }
@@ -33654,6 +33986,52 @@ function cmdPack(p) {
   }
   console.error("ultra11y pack: expected `pack check <pack.json> [--guidance <g.json>]` or `pack scaffold`.");
   return 2;
+}
+function cmdOrchestrate(p) {
+  const lang = resolveLang(p.flags, {});
+  const runFlag = p.flags.run;
+  if (typeof runFlag !== "string" || !runFlag) {
+    console.error(
+      lang === "fr" ? "ultra11y orchestrate : --run <dir> est requis (le dossier du run contenant les worklists)." : "ultra11y orchestrate: --run <dir> is required (the run dir holding the worklists)."
+    );
+    return 2;
+  }
+  const engineAbs = realpathSync(fileURLToPath2(import.meta.url));
+  if (p.flags.list === true) {
+    if (!existsSync11(runFlag)) {
+      console.error(`ultra11y orchestrate: run dir not found: ${runFlag}.`);
+      return 2;
+    }
+    console.log(JSON.stringify({ phases: listPhases(runFlag, engineAbs) }, null, 2));
+    return 0;
+  }
+  const res = orchestrateRun(runFlag, engineAbs, {
+    phase: typeof p.flags.phase === "string" && p.flags.phase ? p.flags.phase : void 0,
+    eco: p.flags.eco === true
+  });
+  if (res.exitCode !== 0) {
+    for (const e of res.errors) console.error(`ultra11y orchestrate: ${e}`);
+    return res.exitCode;
+  }
+  console.log(lang === "fr" ? "ultra11y orchestrate : g\xE9n\xE9r\xE9" : "ultra11y orchestrate: generated");
+  for (const w of res.written) console.log(`  ${w}`);
+  for (const n of res.notices) console.error(`ultra11y orchestrate: note \u2014 ${n}`);
+  const workflows = res.written.filter((w) => w.endsWith(".workflow.mjs"));
+  if (workflows.length) {
+    console.log("");
+    for (const w of workflows) console.log(`Launch: Workflow({ scriptPath: ${JSON.stringify(w)} })`);
+    console.log(
+      lang === "fr" ? "Puis fusionnez les fragments retourn\xE9s dans la worklist et lancez le `verify --apply` indiqu\xE9 en fin de workflow (vous restez le seul \xE9crivain)." : "Then fold the returned fragments into the worklist and run the `verify --apply` shown at the end of each workflow (you stay the sole writer)."
+    );
+  } else {
+    console.log(
+      lang === "fr" ? `Suivez ${join15(runFlag, "orchestration", "RUNBOOK.md")} s\xE9quentiellement (chemin \xE9co).` : `Follow ${join15(runFlag, "orchestration", "RUNBOOK.md")} sequentially (the eco path).`
+    );
+  }
+  if (p.flags.phase === void 0 && workflows.length === 0 && p.flags.eco !== true) {
+    console.error(`ultra11y orchestrate: no ready phase \u2014 phases are ${PHASES.join(", ")} (see --list).`);
+  }
+  return 0;
 }
 async function main(argv) {
   const first = argv[0];
@@ -33716,6 +34094,8 @@ async function main(argv) {
       return cmdInit(p);
     case "pack":
       return cmdPack(p);
+    case "orchestrate":
+      return cmdOrchestrate(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

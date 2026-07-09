@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.12.0](https://github.com/maxgfr/ultra11y/compare/v2.11.0...v2.12.0) (2026-07-09)
+
+
+### Features
+
+* **orchestrate:** engine-managed multi-agent orchestration (family round) ([#6](https://github.com/maxgfr/ultra11y/issues/6)) ([495465f](https://github.com/maxgfr/ultra11y/commit/495465ff45377c590f90009b95a8b4cf0fa9a0c3))
+
 # [2.11.0](https://github.com/maxgfr/ultra11y/compare/v2.10.1...v2.11.0) (2026-07-08)
 
 

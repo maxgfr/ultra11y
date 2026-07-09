@@ -23,9 +23,11 @@
           "package.json",
           "src/types.ts",
           "skills/ultra11y/SKILL.md",
+          "skills/review-a11y/SKILL.md",
           "CHANGELOG.md",
           "scripts/ultra11y.mjs",
-          "skills/ultra11y/scripts/ultra11y.mjs"
+          "skills/ultra11y/scripts/ultra11y.mjs",
+          "skills/review-a11y/scripts/ultra11y.mjs"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

@@ -32560,7 +32560,7 @@ ${g.errors.map((e) => `  \u2717 ${e}`).join("\n")}`);
 }
 
 // src/orchestrate.ts
-import { existsSync as existsSync10, mkdirSync as mkdirSync6, readFileSync as readFileSync6, writeFileSync as writeFileSync8 } from "fs";
+import { existsSync as existsSync10, mkdirSync as mkdirSync6, readFileSync as readFileSync6, rmSync as rmSync2, writeFileSync as writeFileSync8 } from "fs";
 import { join as join14, resolve as resolve5 } from "path";
 
 // src/orchestrate-templates.ts
@@ -32583,7 +32583,7 @@ var ADJUDICATE_SCHEMA = {
           criteriaId: { type: "string" },
           verdict: { enum: ["C", "NC", "NA", "manual"] },
           justification: { type: "string", description: "REQUIRED for C and NA" },
-          reason: { enum: ["needs-rendered-dom", "undecidable", null], description: "REQUIRED for a still-manual verdict" },
+          reason: { type: ["string", "null"], enum: ["needs-rendered-dom", "undecidable", null], description: "REQUIRED for a still-manual verdict" },
           findings: {
             type: "array",
             description: "REQUIRED (>=1, groundable) for NC",
@@ -32850,6 +32850,15 @@ function orchestrateRun(runDir, engineAbs, opts = {}) {
     const p = join14(agentsDir, `${name}.md`);
     writeFileSync8(p, content);
     written.push(p);
+  }
+  const emitted = new Set(opts.eco ? [] : selected.filter((p) => p.items > 0).map((p) => p.name));
+  for (const ph of phases) {
+    if (emitted.has(ph.name)) continue;
+    const stale = join14(orchDir, `${ph.name}.workflow.mjs`);
+    if (existsSync10(stale)) {
+      rmSync2(stale, { force: true });
+      notices.push(`phase "${ph.name}": stale workflow removed \u2014 its worklist ${ph.ready ? "is now empty" : "no longer exists"}.`);
+    }
   }
   if (!opts.eco) {
     for (const ph of selected) {
@@ -34029,7 +34038,10 @@ function cmdOrchestrate(p) {
     );
   }
   if (p.flags.phase === void 0 && workflows.length === 0 && p.flags.eco !== true) {
-    console.error(`ultra11y orchestrate: no ready phase \u2014 phases are ${PHASES.join(", ")} (see --list).`);
+    const anyReady = res.phases.some((ph) => ph.ready);
+    console.error(
+      anyReady ? "ultra11y orchestrate: every ready phase has an empty worklist \u2014 nothing to fan out (see --list)." : `ultra11y orchestrate: no ready phase \u2014 phases are ${PHASES.join(", ")} (see --list).`
+    );
   }
   return 0;
 }

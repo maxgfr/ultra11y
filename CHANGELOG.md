@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [2.12.1](https://github.com/maxgfr/ultra11y/compare/v2.12.0...v2.12.1) (2026-07-09)
+
+
+### Bug Fixes
+
+* **orchestrate:** reconcile stale workflows on re-emit + review polish ([#7](https://github.com/maxgfr/ultra11y/issues/7)) ([8a18a70](https://github.com/maxgfr/ultra11y/commit/8a18a705fa0665ddc539892a9566fe8eeb03d969))
+
 # [2.12.0](https://github.com/maxgfr/ultra11y/compare/v2.11.0...v2.12.0) (2026-07-09)
 
 

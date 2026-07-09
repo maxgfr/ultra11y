@@ -34,7 +34,7 @@ const ADJUDICATE_SCHEMA = {
           criteriaId: { type: "string" },
           verdict: { enum: ["C", "NC", "NA", "manual"] },
           justification: { type: "string", description: "REQUIRED for C and NA" },
-          reason: { enum: ["needs-rendered-dom", "undecidable", null], description: "REQUIRED for a still-manual verdict" },
+          reason: { type: ["string", "null"], enum: ["needs-rendered-dom", "undecidable", null], description: "REQUIRED for a still-manual verdict" },
           findings: {
             type: "array",
             description: "REQUIRED (>=1, groundable) for NC",

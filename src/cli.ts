@@ -1456,7 +1456,12 @@ function cmdOrchestrate(p: ParsedArgs): number {
   }
   // Surface the valid phase names once, so a scripted caller can discover them without --help.
   if (p.flags.phase === undefined && workflows.length === 0 && p.flags.eco !== true) {
-    console.error(`ultra11y orchestrate: no ready phase — phases are ${PHASES.join(", ")} (see --list).`);
+    const anyReady = res.phases.some((ph) => ph.ready);
+    console.error(
+      anyReady
+        ? "ultra11y orchestrate: every ready phase has an empty worklist — nothing to fan out (see --list)."
+        : `ultra11y orchestrate: no ready phase — phases are ${PHASES.join(", ")} (see --list).`,
+    );
   }
   return 0;
 }

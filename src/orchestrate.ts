@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { AdjudicationFile } from "./adjudicate.js";
 import { agentContracts, phaseWorkflowScript, runbookMd } from "./orchestrate-templates.js";
@@ -147,6 +147,20 @@ export function orchestrateRun(runDir: string, engineAbs: string, opts: Orchestr
     const p = join(agentsDir, `${name}.md`);
     writeFileSync(p, content);
     written.push(p);
+  }
+
+  // Reconcile before emitting: a workflow script left behind by an earlier
+  // emission whose worklist has since emptied or disappeared is a launchable
+  // fan-out over ids that no longer exist — "deterministic and idempotent"
+  // means the orchestration dir always mirrors the CURRENT run state.
+  const emitted = new Set(opts.eco ? [] : selected.filter((p) => p.items > 0).map((p) => p.name));
+  for (const ph of phases) {
+    if (emitted.has(ph.name)) continue;
+    const stale = join(orchDir, `${ph.name}.workflow.mjs`);
+    if (existsSync(stale)) {
+      rmSync(stale, { force: true });
+      notices.push(`phase "${ph.name}": stale workflow removed — its worklist ${ph.ready ? "is now empty" : "no longer exists"}.`);
+    }
   }
 
   if (!opts.eco) {

@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import { Script } from "node:vm";
@@ -300,5 +300,36 @@ describe("orchestrate — CLI wiring", () => {
 
   it("orchestrate --run <missing dir> exits 2", async () => {
     expect(await main(["orchestrate", "--run", join(tmpdir(), "u11y-does-not-exist-xyz")])).toBe(2);
+  });
+});
+
+describe("orchestrate — stale artifact reconciliation", () => {
+  it("removes a previously emitted workflow when its worklist empties on re-emit", () => {
+    const run = makeRun({ adjudicate: 4, verify: 2 });
+    orchestrateRun(run, ENGINE);
+    expect(existsSync(wf(run, "adjudicate"))).toBe(true);
+    // The worklist is regenerated empty (e.g. every criterion got adjudicated).
+    writeAdjudication([], run, { standard: "wcag", auditDate: "2026-07-09" });
+    const res = orchestrateRun(run, ENGINE);
+    expect(res.exitCode).toBe(0);
+    expect(existsSync(wf(run, "adjudicate"))).toBe(false);
+    expect(existsSync(wf(run, "verify-report"))).toBe(true);
+    expect(res.notices.some((n) => n.includes("adjudicate") && n.includes("removed"))).toBe(true);
+  });
+
+  it("removes a previously emitted workflow when its worklist disappears entirely", () => {
+    const run = makeRun({ verify: 5 });
+    orchestrateRun(run, ENGINE);
+    expect(existsSync(wf(run, "verify-report"))).toBe(true);
+    rmSync(join(run, "VERIFY.todo.json"));
+    orchestrateRun(run, ENGINE);
+    expect(existsSync(wf(run, "verify-report"))).toBe(false);
+  });
+
+  it("--eco also clears stale workflow scripts (the run is switching to the sequential path)", () => {
+    const run = makeRun({ adjudicate: 4 });
+    orchestrateRun(run, ENGINE);
+    orchestrateRun(run, ENGINE, { eco: true });
+    expect(existsSync(wf(run, "adjudicate"))).toBe(false);
   });
 });

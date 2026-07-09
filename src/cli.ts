@@ -35,6 +35,7 @@ import { auditSummary, captureCoverageSummary } from "./output.js";
 import { resolveStandard, getPack, type StandardId } from "./standards/index.js";
 import { loadRuntimeStandards } from "./config.js";
 import { runPackCheck, packScaffold } from "./pack.js";
+import { listPhases, orchestrateRun, PHASES } from "./orchestrate.js";
 import { readStdin, readText } from "./util.js";
 
 const HELP = `ultra11y v${VERSION}
@@ -56,6 +57,7 @@ Usage:
   ultra11y verify   --report <md> [--standard <pack>] [--semantic] [--apply <verdicts.json>] [--max-verify <n>] [--out <dir>] [--json]
   ultra11y verify   --report <md> --in <audit.json> --manual [--out <dir>] [--json]   (adjudicate the manual criteria)
   ultra11y verify   --apply <adjudication.json> --in <audit.json> [--out <dir>]        (fold the adjudication into the audit)
+  ultra11y orchestrate --run <dir> [--phase adjudicate|verify-report] [--eco] [--list] [--lang auto|en|fr]
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
@@ -103,6 +105,16 @@ Commands:
              --standard tells it which id grammar/registry to validate against.
   verify     Adversarial claim↔criterion worklist for the report's non-conformities,
              then (--apply) gate on refuted/unsupported findings.
+  orchestrate  Emit the run's multi-agent orchestration from its CURRENT worklists:
+             one launchable Workflow script per ready phase (adjudicate over
+             ADJUDICATE.todo.json, verify-report over VERIFY.todo.json), the
+             agents/<role>.md dispatch contracts they reference, and a sequential
+             RUNBOOK.md fallback — absolute paths and the real worklist ids baked
+             in. Subagents only RETURN verdict fragments; you (the caller) stay
+             the sole writer and fold them via verify --apply. --eco emits only
+             the RUNBOOK + contracts (the explicit low-token path); --list prints
+             the phases and their readiness as JSON. Re-run after a worklist
+             changes — emission is deterministic and idempotent.
   fix        Put the fixes in place (hybrid, native-first): apply deterministic
              codemods (tabindex, redundant role, viewport zoom), insert fill-in
              placeholders (alt/lang/title TODO) for the agent to complete, and list
@@ -192,6 +204,12 @@ Options:
   --max-verify <n>   verify: cap the worklist size; 0 = no cap           (default: 40)
   --verdicts <file>  check --semantic: the adjudicated verdicts artifact
                      (default: VERIFY.todo.json next to the report)
+  --run <dir>        orchestrate: the run dir holding the worklists (ADJUDICATE.todo.json,
+                     VERIFY.todo.json); artifacts land under <dir>/orchestration/
+  --phase <name>     orchestrate: emit one phase only — adjudicate | verify-report
+                     (exit 2 with the producing command if its worklist is missing)
+  --eco              orchestrate: emit only RUNBOOK.md + agents/*.md — the explicit
+                     sequential low-token path (also what a no-subagent harness follows)
   --merge <file>     scan: fold dynamic findings into this AuditResult JSON
   --sitemap <url>    scan: scan every URL listed in a sitemap.xml
   --crawl <url>      scan: BFS same-origin links from a start URL (served HTML)
@@ -222,7 +240,7 @@ Options:
 
 Data: WCAG 2.2 © W3C (W3C Document License). RGAA 4.1.2 pack © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
 
-const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack"] as const;
+const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack", "orchestrate"] as const;
 type Command = (typeof COMMANDS)[number];
 
 function isCommand(s: string | undefined): s is Command {
@@ -261,6 +279,8 @@ const VALUE_FLAGS = new Set([
   "cwd",
   "storage-state",
   "captures",
+  "run",
+  "phase",
 ]);
 // `init` treats --baseline as a boolean selector ("write the baseline"), not a
 // path, so it must NOT consume the following token. audit/fix keep it as a value
@@ -306,6 +326,7 @@ const BOOLEAN_FLAGS = new Set([
   "local",
   "docker",
   "clean",
+  "eco",
   "help",
   "version",
 ]);
@@ -1386,6 +1407,60 @@ function cmdPack(p: ParsedArgs): number {
   return 2;
 }
 
+function cmdOrchestrate(p: ParsedArgs): number {
+  const lang = resolveLang(p.flags, {});
+  const runFlag = p.flags.run;
+  if (typeof runFlag !== "string" || !runFlag) {
+    console.error(
+      lang === "fr"
+        ? "ultra11y orchestrate : --run <dir> est requis (le dossier du run contenant les worklists)."
+        : "ultra11y orchestrate: --run <dir> is required (the run dir holding the worklists).",
+    );
+    return 2;
+  }
+  const engineAbs = realpathSync(fileURLToPath(import.meta.url));
+  if (p.flags.list === true) {
+    if (!existsSync(runFlag)) {
+      console.error(`ultra11y orchestrate: run dir not found: ${runFlag}.`);
+      return 2;
+    }
+    console.log(JSON.stringify({ phases: listPhases(runFlag, engineAbs) }, null, 2));
+    return 0;
+  }
+  const res = orchestrateRun(runFlag, engineAbs, {
+    phase: typeof p.flags.phase === "string" && p.flags.phase ? p.flags.phase : undefined,
+    eco: p.flags.eco === true,
+  });
+  if (res.exitCode !== 0) {
+    for (const e of res.errors) console.error(`ultra11y orchestrate: ${e}`);
+    return res.exitCode;
+  }
+  console.log(lang === "fr" ? "ultra11y orchestrate : généré" : "ultra11y orchestrate: generated");
+  for (const w of res.written) console.log(`  ${w}`);
+  for (const n of res.notices) console.error(`ultra11y orchestrate: note — ${n}`);
+  const workflows = res.written.filter((w) => w.endsWith(".workflow.mjs"));
+  if (workflows.length) {
+    console.log("");
+    for (const w of workflows) console.log(`Launch: Workflow({ scriptPath: ${JSON.stringify(w)} })`);
+    console.log(
+      lang === "fr"
+        ? "Puis fusionnez les fragments retournés dans la worklist et lancez le `verify --apply` indiqué en fin de workflow (vous restez le seul écrivain)."
+        : "Then fold the returned fragments into the worklist and run the `verify --apply` shown at the end of each workflow (you stay the sole writer).",
+    );
+  } else {
+    console.log(
+      lang === "fr"
+        ? `Suivez ${join(runFlag, "orchestration", "RUNBOOK.md")} séquentiellement (chemin éco).`
+        : `Follow ${join(runFlag, "orchestration", "RUNBOOK.md")} sequentially (the eco path).`,
+    );
+  }
+  // Surface the valid phase names once, so a scripted caller can discover them without --help.
+  if (p.flags.phase === undefined && workflows.length === 0 && p.flags.eco !== true) {
+    console.error(`ultra11y orchestrate: no ready phase — phases are ${PHASES.join(", ")} (see --list).`);
+  }
+  return 0;
+}
+
 export async function main(argv: string[]): Promise<number> {
   const first = argv[0];
 
@@ -1468,6 +1543,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdInit(p);
     case "pack":
       return cmdPack(p);
+    case "orchestrate":
+      return cmdOrchestrate(p);
     default:
       console.error(`ultra11y: "${p.command}" is not implemented yet`);
       return 1;

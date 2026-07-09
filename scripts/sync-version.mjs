@@ -32,9 +32,12 @@ edit("package.json", (s) => s.replace(/("version":\s*")[^"]+(")/, `$1${version}$
 // src/types.ts — the VERSION constant the CLI/bundle reports.
 edit("src/types.ts", (s) => s.replace(/(export const VERSION = ")[^"]+(";)/, `$1${version}$2`));
 
-// The skill's SKILL.md — the indented `version:` under the `metadata:` block.
+// Each skill's SKILL.md — the indented `version:` under the `metadata:` block.
+// BOTH skills ship from this repo; forgetting one leaves its published
+// frontmatter (and, without the matching .releaserc asset, its bundle) stale.
 edit("skills/ultra11y/SKILL.md", setVersionField);
+edit("skills/review-a11y/SKILL.md", setVersionField);
 
 console.log(
-  `sync-version: set ${version} in package.json, src/types.ts, skills/ultra11y/SKILL.md`,
+  `sync-version: set ${version} in package.json, src/types.ts, skills/ultra11y/SKILL.md, skills/review-a11y/SKILL.md`,
 );

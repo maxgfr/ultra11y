@@ -33,7 +33,24 @@ function standardTag(standard: StandardId): { label: string; tag: string } {
 }
 
 function gh(args: string[], input?: string): string {
-  return execFileSync("gh", args, { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"], ...(input !== undefined ? { input } : {}) });
+  // Capture stderr (pipe, not ignore) so a failed `gh` call carries a surfaceable reason
+  // on the thrown error instead of vanishing.
+  return execFileSync("gh", args, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...(input !== undefined ? { input } : {}) });
+}
+
+/** Extract a concise, single-line failure reason from a thrown `gh` error — the first
+ *  meaningful stderr line (where `gh` prints the API/auth error), else the error message. */
+function ghErrorReason(err: unknown): string | undefined {
+  if (!err || typeof err !== "object") return undefined;
+  const e = err as { stderr?: unknown; message?: unknown };
+  const stderr = typeof e.stderr === "string" ? e.stderr : Buffer.isBuffer(e.stderr) ? e.stderr.toString("utf8") : "";
+  const line = stderr
+    .split("\n")
+    .map((l) => l.trim())
+    .find(Boolean);
+  if (line) return line;
+  if (typeof e.message === "string" && e.message) return e.message.split("\n")[0]!.trim() || undefined;
+  return undefined;
 }
 
 /** Is the `gh` CLI installed AND authenticated here? */
@@ -77,19 +94,27 @@ export function issueBody(unit: PrdUnit, lang: Lang, standard: StandardId = "wca
   return lines.join("\n");
 }
 
+export interface CreateResult {
+  ok: boolean;
+  /** Concise `gh` stderr reason when the creation failed (both attempts). */
+  reason?: string;
+}
+
 /** Create one issue. Retries without labels if the labelled call fails (labels may
- *  not exist in the repo). Returns true on success. */
-export function createIssue(title: string, body: string, labels: string[]): boolean {
+ *  not exist in the repo). On failure, carries `gh`'s stderr reason so the caller can
+ *  surface WHY it failed instead of silently swallowing it. */
+export function createIssue(title: string, body: string, labels: string[]): CreateResult {
   const base = ["issue", "create", "--title", title, "--body-file", "-"];
   try {
     gh([...base, "--label", labels.join(",")], body);
-    return true;
-  } catch {
+    return { ok: true };
+  } catch (labelledErr) {
     try {
       gh(base, body);
-      return true;
-    } catch {
-      return false;
+      return { ok: true };
+    } catch (err) {
+      // Prefer the un-labelled attempt's reason (the real one); fall back to the labelled one.
+      return { ok: false, reason: ghErrorReason(err) ?? ghErrorReason(labelledErr) };
     }
   }
 }
@@ -99,25 +124,34 @@ export interface PushResult {
   skipped: number; // already existed (by title)
   failed: number;
   createdTitles: string[];
+  /** Concise, de-duplicated `gh` failure reasons (empty when nothing failed). */
+  errors: string[];
+}
+
+/** Record a creation failure, keeping distinct `gh` reasons (deduped) for surfacing. */
+function recordFailure(result: PushResult, reason?: string): void {
+  result.failed++;
+  if (reason && !result.errors.includes(reason)) result.errors.push(reason);
 }
 
 /** Create a GitHub issue per unit, skipping titles that already exist. */
 export function pushIssues(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag", format: IssueFormat = "audit"): PushResult {
   const { label, tag } = standardTag(standard);
   const existing = existingIssueTitles();
-  const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
+  const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [], errors: [] };
   for (const u of units) {
     const title = issueTitle(u, label);
     if (existing.has(title)) {
       result.skipped++;
       continue;
     }
-    if (createIssue(title, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity])) {
+    const r = createIssue(title, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity]);
+    if (r.ok) {
       result.created++;
       result.createdTitles.push(title);
       existing.add(title); // guard against duplicate units in one run
     } else {
-      result.failed++;
+      recordFailure(result, r.reason);
     }
   }
   return result;
@@ -153,7 +187,7 @@ export function singleIssueBody(units: PrdUnit[], lang: Lang, standard: Standard
  *  labelled by the most severe criterion. Mirrors pushIssues' best-effort/skip semantics. */
 export function pushSingleIssue(units: PrdUnit[], lang: Lang, standard: StandardId = "wcag", format: IssueFormat = "audit"): PushResult {
   const { label, tag } = standardTag(standard);
-  const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
+  const result: PushResult = { created: 0, skipped: 0, failed: 0, createdTitles: [], errors: [] };
   if (!units.length) return result;
   const title = singleIssueTitle(label);
   if (existingIssueTitles().has(title)) {
@@ -161,11 +195,12 @@ export function pushSingleIssue(units: PrdUnit[], lang: Lang, standard: Standard
     return result;
   }
   const severity = [...units].sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])[0]!.severity;
-  if (createIssue(title, singleIssueBody(units, lang, standard, format), ["accessibility", tag, severity])) {
+  const r = createIssue(title, singleIssueBody(units, lang, standard, format), ["accessibility", tag, severity]);
+  if (r.ok) {
     result.created = 1;
     result.createdTitles.push(title);
   } else {
-    result.failed = 1;
+    recordFailure(result, r.reason);
   }
   return result;
 }

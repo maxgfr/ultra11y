@@ -725,7 +725,7 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   // GitHub: always-written markdown above; issues are opt-in + best-effort.
   // --gh-single → one consolidated issue; --gh-issues → one issue per criterion.
   const ghMode: "single" | "per-criterion" | null = p.flags["gh-single"] === true ? "single" : p.flags["gh-issues"] === true ? "per-criterion" : null;
-  let gh: { created: number; skipped: number; failed: number } | undefined;
+  let gh: { created: number; skipped: number; failed: number; errors: string[] } | undefined;
   if (ghMode) {
     const flag = ghMode === "single" ? "--gh-single" : "--gh-issues";
     const units = prdUnits(result, standard, lang);
@@ -743,10 +743,19 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
             ? `ultra11y prd : issues GitHub — ${gh.created} créée(s), ${gh.skipped} déjà existante(s)${gh.failed ? `, ${gh.failed} en échec` : ""}.`
             : `ultra11y prd: GitHub issues — ${gh.created} created, ${gh.skipped} already existed${gh.failed ? `, ${gh.failed} failed` : ""}.`,
         );
+      // Surface WHY gh failed (its stderr, previously swallowed) — always, even in --json
+      // mode the reasons ride along in the payload; here we print them for humans.
+      if (gh.failed && !json) {
+        if (gh.errors.length) for (const e of gh.errors) console.error(lang === "fr" ? `ultra11y prd : gh a échoué — ${e}` : `ultra11y prd: gh failed — ${e}`);
+        else console.error(lang === "fr" ? `ultra11y prd : gh a échoué sans message d'erreur.` : `ultra11y prd: gh failed with no error output.`);
+      }
     }
   }
   if (json) console.log(JSON.stringify({ paths, units: prdUnits(result, standard, lang), ...(gh ? { gh } : {}) }, null, 2));
-  return 0;
+  // Markdown was written above regardless; but if issue creation was attempted and had
+  // any failures, exit non-zero so a CI step / caller sees the GitHub push did not fully
+  // succeed (a total failure previously exited 0 and looked green).
+  return gh && gh.failed > 0 ? 1 : 0;
 }
 
 function cmdRender(p: ParsedArgs): number {

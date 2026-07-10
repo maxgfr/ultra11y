@@ -94,7 +94,7 @@ describe("gh helpers", () => {
 
   it("createIssue passes labels, and retries without them if the labelled call fails", () => {
     mock.mockReturnValueOnce(""); // labelled call succeeds
-    expect(createIssue("t", "b", ["accessibility", "wcag", "bloquant"])).toBe(true);
+    expect(createIssue("t", "b", ["accessibility", "wcag", "bloquant"]).ok).toBe(true);
     expect(argv(mock.mock.calls[0]!)).toContain("--label");
 
     mock.mockReset();
@@ -102,7 +102,7 @@ describe("gh helpers", () => {
       throw new Error("label not found");
     });
     mock.mockReturnValueOnce(""); // retry without labels succeeds
-    expect(createIssue("t", "b", ["accessibility"])).toBe(true);
+    expect(createIssue("t", "b", ["accessibility"]).ok).toBe(true);
     expect(mock).toHaveBeenCalledTimes(2);
     expect(argv(mock.mock.calls[1]!)).not.toContain("--label");
   });

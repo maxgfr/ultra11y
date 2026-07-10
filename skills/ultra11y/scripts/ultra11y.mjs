@@ -29900,7 +29900,16 @@ function standardTag(standard) {
   })();
 }
 function gh(args, input) {
-  return execFileSync2("gh", args, { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"], ...input !== void 0 ? { input } : {} });
+  return execFileSync2("gh", args, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], ...input !== void 0 ? { input } : {} });
+}
+function ghErrorReason(err) {
+  if (!err || typeof err !== "object") return void 0;
+  const e = err;
+  const stderr = typeof e.stderr === "string" ? e.stderr : Buffer.isBuffer(e.stderr) ? e.stderr.toString("utf8") : "";
+  const line = stderr.split("\n").map((l) => l.trim()).find(Boolean);
+  if (line) return line;
+  if (typeof e.message === "string" && e.message) return e.message.split("\n")[0].trim() || void 0;
+  return void 0;
 }
 function ghAvailable() {
   try {
@@ -29939,32 +29948,37 @@ function createIssue(title2, body, labels) {
   const base = ["issue", "create", "--title", title2, "--body-file", "-"];
   try {
     gh([...base, "--label", labels.join(",")], body);
-    return true;
-  } catch {
+    return { ok: true };
+  } catch (labelledErr) {
     try {
       gh(base, body);
-      return true;
-    } catch {
-      return false;
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, reason: ghErrorReason(err) ?? ghErrorReason(labelledErr) };
     }
   }
+}
+function recordFailure(result, reason) {
+  result.failed++;
+  if (reason && !result.errors.includes(reason)) result.errors.push(reason);
 }
 function pushIssues(units, lang, standard = "wcag", format = "audit") {
   const { label, tag } = standardTag(standard);
   const existing = existingIssueTitles();
-  const result = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
+  const result = { created: 0, skipped: 0, failed: 0, createdTitles: [], errors: [] };
   for (const u of units) {
     const title2 = issueTitle(u, label);
     if (existing.has(title2)) {
       result.skipped++;
       continue;
     }
-    if (createIssue(title2, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity])) {
+    const r = createIssue(title2, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity]);
+    if (r.ok) {
       result.created++;
       result.createdTitles.push(title2);
       existing.add(title2);
     } else {
-      result.failed++;
+      recordFailure(result, r.reason);
     }
   }
   return result;
@@ -29989,7 +30003,7 @@ function singleIssueBody(units, lang, standard = "wcag", format = "audit") {
 }
 function pushSingleIssue(units, lang, standard = "wcag", format = "audit") {
   const { label, tag } = standardTag(standard);
-  const result = { created: 0, skipped: 0, failed: 0, createdTitles: [] };
+  const result = { created: 0, skipped: 0, failed: 0, createdTitles: [], errors: [] };
   if (!units.length) return result;
   const title2 = singleIssueTitle(label);
   if (existingIssueTitles().has(title2)) {
@@ -29997,11 +30011,12 @@ function pushSingleIssue(units, lang, standard = "wcag", format = "audit") {
     return result;
   }
   const severity = [...units].sort((a, b) => SEV_RANK2[a.severity] - SEV_RANK2[b.severity])[0].severity;
-  if (createIssue(title2, singleIssueBody(units, lang, standard, format), ["accessibility", tag, severity])) {
+  const r = createIssue(title2, singleIssueBody(units, lang, standard, format), ["accessibility", tag, severity]);
+  if (r.ok) {
     result.created = 1;
     result.createdTitles.push(title2);
   } else {
-    result.failed = 1;
+    recordFailure(result, r.reason);
   }
   return result;
 }
@@ -33474,10 +33489,14 @@ async function cmdPrd(p) {
         console.log(
           lang === "fr" ? `ultra11y prd : issues GitHub \u2014 ${gh2.created} cr\xE9\xE9e(s), ${gh2.skipped} d\xE9j\xE0 existante(s)${gh2.failed ? `, ${gh2.failed} en \xE9chec` : ""}.` : `ultra11y prd: GitHub issues \u2014 ${gh2.created} created, ${gh2.skipped} already existed${gh2.failed ? `, ${gh2.failed} failed` : ""}.`
         );
+      if (gh2.failed && !json) {
+        if (gh2.errors.length) for (const e of gh2.errors) console.error(lang === "fr" ? `ultra11y prd : gh a \xE9chou\xE9 \u2014 ${e}` : `ultra11y prd: gh failed \u2014 ${e}`);
+        else console.error(lang === "fr" ? `ultra11y prd : gh a \xE9chou\xE9 sans message d'erreur.` : `ultra11y prd: gh failed with no error output.`);
+      }
     }
   }
   if (json) console.log(JSON.stringify({ paths, units: prdUnits(result, standard, lang), ...gh2 ? { gh: gh2 } : {} }, null, 2));
-  return 0;
+  return gh2 && gh2.failed > 0 ? 1 : 0;
 }
 function cmdRender(p) {
   const root = p.positionals[0] ?? ".";

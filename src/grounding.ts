@@ -37,17 +37,26 @@ const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 /** Streams/aggregates have no on-disk source to re-open. */
 const isUnresolvable = (file: string) => !file || file === "-" || file === "<stdin>" || file === "stdin";
 
-/** Tokens a CSS selector implies about the markup: tags probe as `<tag`, ids/classes/attrs
- *  as bare names. Combinators and pseudo-classes are ignored — this is a fuzzy anchor,
- *  not a DOM query. */
-function selectorProbes(selector: string): string[] {
-  const probes: string[] = [];
+/** A markup token a selector implies. `ci` = case-INSENSITIVE (HTML tag & attribute
+ *  names, which the HTML spec treats case-insensitively — `<IMG>` ≡ `<img>`); `cs` =
+ *  case-SENSITIVE (CSS ids & classes, which ARE case-sensitive). `text` is already
+ *  lowercased for ci probes so they match a lowercased haystack. */
+interface Probe {
+  text: string;
+  ci: boolean;
+}
+
+/** Tokens a CSS selector implies about the markup: tags probe as `<tag` (case-insensitive),
+ *  attribute names as bare names (case-insensitive), ids/classes as bare names (case-SENSITIVE).
+ *  Combinators and pseudo-classes are ignored — this is a fuzzy anchor, not a DOM query. */
+function selectorProbes(selector: string): Probe[] {
+  const probes: Probe[] = [];
   for (const simple of selector.split(/[\s>+~,]+/)) {
     if (!simple || simple === "—") continue;
     const tag = /^([a-zA-Z][\w-]*)/.exec(simple);
-    if (tag) probes.push(`<${tag[1]!.toLowerCase()}`);
-    for (const m of simple.matchAll(/[#.]([\w-]+)/g)) probes.push(m[1]!);
-    for (const m of simple.matchAll(/\[([\w-]+)/g)) probes.push(m[1]!);
+    if (tag) probes.push({ text: `<${tag[1]!.toLowerCase()}`, ci: true }); // HTML tag name
+    for (const m of simple.matchAll(/[#.]([\w-]+)/g)) probes.push({ text: m[1]!, ci: false }); // CSS id/class — case-sensitive
+    for (const m of simple.matchAll(/\[([\w-]+)/g)) probes.push({ text: m[1]!.toLowerCase(), ci: true }); // HTML attribute name
   }
   return probes;
 }
@@ -82,8 +91,15 @@ export function groundFinding(g: GroundingInput, opts: { cwd?: string } = {}): G
 
   const probes = selectorProbes(g.selector ?? "");
   if (!probes.length) return { ok: true, moved: false }; // nothing beyond file+line is checkable
-  if (probes.some((p) => windowText.includes(p))) return { ok: true, moved: false };
-  if (probes.some((p) => fileText.includes(p))) return { ok: true, moved: true };
+  // ci probes (HTML tag/attribute names) test a lowercased haystack — `<img` matches `<IMG`
+  // — while cs probes (CSS ids/classes) test the verbatim haystack, so a wrong-case id
+  // (`#Foo` vs source `#foo`) is NOT loosened into a false match.
+  const hit = (hay: string) => {
+    const hayLc = hay.toLowerCase();
+    return probes.some((p) => (p.ci ? hayLc : hay).includes(p.text));
+  };
+  if (hit(windowText)) return { ok: true, moved: false };
+  if (hit(fileText)) return { ok: true, moved: true };
   return { ok: false, moved: false, issue: `cited selector "${g.selector}" not found in ${g.file}:${g.line}` };
 }
 

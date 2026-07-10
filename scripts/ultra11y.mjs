@@ -30582,9 +30582,9 @@ function selectorProbes(selector) {
   for (const simple of selector.split(/[\s>+~,]+/)) {
     if (!simple || simple === "\u2014") continue;
     const tag = /^([a-zA-Z][\w-]*)/.exec(simple);
-    if (tag) probes.push(`<${tag[1].toLowerCase()}`);
-    for (const m of simple.matchAll(/[#.]([\w-]+)/g)) probes.push(m[1]);
-    for (const m of simple.matchAll(/\[([\w-]+)/g)) probes.push(m[1]);
+    if (tag) probes.push({ text: `<${tag[1].toLowerCase()}`, ci: true });
+    for (const m of simple.matchAll(/[#.]([\w-]+)/g)) probes.push({ text: m[1], ci: false });
+    for (const m of simple.matchAll(/\[([\w-]+)/g)) probes.push({ text: m[1].toLowerCase(), ci: true });
   }
   return probes;
 }
@@ -30613,8 +30613,12 @@ function groundFinding(g, opts = {}) {
   }
   const probes = selectorProbes(g.selector ?? "");
   if (!probes.length) return { ok: true, moved: false };
-  if (probes.some((p) => windowText.includes(p))) return { ok: true, moved: false };
-  if (probes.some((p) => fileText.includes(p))) return { ok: true, moved: true };
+  const hit = (hay) => {
+    const hayLc = hay.toLowerCase();
+    return probes.some((p) => (p.ci ? hayLc : hay).includes(p.text));
+  };
+  if (hit(windowText)) return { ok: true, moved: false };
+  if (hit(fileText)) return { ok: true, moved: true };
   return { ok: false, moved: false, issue: `cited selector "${g.selector}" not found in ${g.file}:${g.line}` };
 }
 function groundItems(items, opts = {}) {

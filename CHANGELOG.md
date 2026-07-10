@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+## [2.12.2](https://github.com/maxgfr/ultra11y/compare/v2.12.1...v2.12.2) (2026-07-10)
+
+
+### Bug Fixes
+
+* **check:** fail when the header pass rate contradicts the synthesis totals ([2199f25](https://github.com/maxgfr/ultra11y/commit/2199f256d83b4719f9cbb601535dabc155543380))
+* **gh:** exit non-zero and surface gh stderr when issue creation fails ([7492d08](https://github.com/maxgfr/ultra11y/commit/7492d08e7fcba1e62676abc173100b5423ebfadb))
+* **grounding:** match HTML tag/attr names case-insensitively in the grounding gate ([0fcdd5e](https://github.com/maxgfr/ultra11y/commit/0fcdd5e70f9e2e05dbec6aba479b57577d7c0a86))
+
 ## [2.12.1](https://github.com/maxgfr/ultra11y/compare/v2.12.0...v2.12.1) (2026-07-09)
 
 

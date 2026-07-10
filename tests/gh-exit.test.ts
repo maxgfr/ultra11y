@@ -37,7 +37,20 @@ function unit(criteriaId: string, title: string): PrdUnit {
     label: `${criteriaId} — ${title}`,
     refs: ["1.1.1"],
     severity: "bloquant",
-    findings: [{ ruleId: "r", criteriaId, file: "a.html", line: 1, col: 1, selectorHint: "img", severity: "bloquant", message: "m", remediation: "fix", snippet: "<img>" }],
+    findings: [
+      {
+        ruleId: "r",
+        criteriaId,
+        file: "a.html",
+        line: 1,
+        col: 1,
+        selectorHint: "img",
+        severity: "bloquant",
+        message: "m",
+        remediation: "fix",
+        snippet: "<img>",
+      },
+    ],
   };
 }
 

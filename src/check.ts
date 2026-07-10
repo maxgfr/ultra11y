@@ -25,6 +25,8 @@ const M = {
     na: (id: string) => `Critère NA sans justification : ${id}.`,
     rateMissing: "Taux de réussite absent de l'en-tête du rapport.",
     rateRange: (v: string) => `Taux de réussite hors bornes (0–100) : ${v}%.`,
+    rateInconsistent: (v: string, expected: number, c: number, nc: number) =>
+      `Taux de réussite incohérent avec la synthèse : l'en-tête indique ${v}% alors que C ÷ (C+NC) = ${c} ÷ ${c + nc} = ${expected}%.`,
     overProject: (id: string) =>
       `Critère sur-projeté : ${id} est marqué non conforme dans le rapport mais l'audit ne le dérive pas comme NC (élément hors périmètre du critère).`,
     underProject: (id: string) => `Critère absent : l'audit dérive ${id} comme non conforme mais le rapport ne le présente pas.`,
@@ -40,6 +42,8 @@ const M = {
     na: (id: string) => `NA criterion without a justification: ${id}.`,
     rateMissing: "Pass rate missing from the report header.",
     rateRange: (v: string) => `Pass rate out of range (0–100): ${v}%.`,
+    rateInconsistent: (v: string, expected: number, c: number, nc: number) =>
+      `Pass rate inconsistent with the synthesis table: header says ${v}% but C ÷ (C+NC) = ${c} ÷ ${c + nc} = ${expected}%.`,
     overProject: (id: string) =>
       `Over-projected criterion: ${id} is marked non-conformant in the report but the audit does not derive it as NC (element outside the criterion's scope).`,
     underProject: (id: string) => `Missing criterion: the audit derives ${id} as non-conformant but the report does not present it.`,
@@ -109,13 +113,26 @@ export function checkReport(md: string, standard: StandardId = "wcag", lang: Lan
     if (item && !line.includes("_")) issues.push(s.na(item[1]!));
   }
 
-  // 4. a pass rate must be present in a header bullet AND be a sane 0–100 value
+  // 4. a pass rate must be present in a header bullet, be a sane 0–100 value, AND be
+  // arithmetically consistent with the report's own C/NC synthesis totals (a report that
+  // claims 99% while its table implies 17% is lying). The rate is defined as C ÷ (C + NC),
+  // rounded — mirroring src/audit.ts's conformancePct — so we recompute it from the Total
+  // row and fail on a material disagreement (±1 for rounding). Core (WCAG) only: a pack
+  // report's header rate is the WCAG-derived pct, not its own theme table's C/NC.
   const rateM = /^-\s+\*\*[^*\n]*\*\*\s*:\s*(\d+(?:[.,]\d+)?)\s*%/m.exec(md);
   if (!rateM) {
     issues.push(s.rateMissing);
   } else {
     const pct = parseFloat(rateM[1]!.replace(",", "."));
     if (pct < 0 || pct > 100) issues.push(s.rateRange(rateM[1]!));
+    else if (core) {
+      const totals = synthesisTotals(md);
+      if (totals) {
+        const { c, nc } = totals;
+        const expected = c + nc === 0 ? 100 : Math.round((c / (c + nc)) * 100);
+        if (Math.abs(pct - expected) > 1) issues.push(s.rateInconsistent(rateM[1]!, expected, c, nc));
+      }
+    }
   }
 
   // 5. applicability gate (pack + --in audit): the report's non-conformant criteria set
@@ -204,6 +221,16 @@ export function checkSemantic(md: string, opts: SemanticOptions): SemanticResult
   for (const issue of grounding.issues) issues.push(s.semanticGround(issue));
 
   return { ok: issues.length === 0, issues, total: gate.total, grounded: grounding.grounded, moved: grounding.moved, failed: grounding.failed };
+}
+
+/** The Conforming/Non-conforming counts from the synthesis table's bold Total row —
+ *  `| **Total** | **C** | **NC** | **NA** | **To assess** |` (label is localized but
+ *  always bold; the data rows' numeric cells are NOT bold, so only the Total row matches).
+ *  null when no such row is present (nothing to cross-check against). */
+function synthesisTotals(md: string): { c: number; nc: number } | null {
+  const m = /^\|\s*\*\*[^|*]+\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|/m.exec(md);
+  if (!m) return null;
+  return { c: Number.parseInt(m[1]!, 10), nc: Number.parseInt(m[2]!, 10) };
 }
 
 /** The body of section N (between "## N." and the next "## "). */

@@ -30659,6 +30659,7 @@ var M = {
     na: (id) => `Crit\xE8re NA sans justification : ${id}.`,
     rateMissing: "Taux de r\xE9ussite absent de l'en-t\xEAte du rapport.",
     rateRange: (v) => `Taux de r\xE9ussite hors bornes (0\u2013100) : ${v}%.`,
+    rateInconsistent: (v, expected, c, nc) => `Taux de r\xE9ussite incoh\xE9rent avec la synth\xE8se : l'en-t\xEAte indique ${v}% alors que C \xF7 (C+NC) = ${c} \xF7 ${c + nc} = ${expected}%.`,
     overProject: (id) => `Crit\xE8re sur-projet\xE9 : ${id} est marqu\xE9 non conforme dans le rapport mais l'audit ne le d\xE9rive pas comme NC (\xE9l\xE9ment hors p\xE9rim\xE8tre du crit\xE8re).`,
     underProject: (id) => `Crit\xE8re absent : l'audit d\xE9rive ${id} comme non conforme mais le rapport ne le pr\xE9sente pas.`,
     semanticMissing: (p) => `Gate s\xE9mantique : aucun artefact de verdicts trouv\xE9 (${p}). G\xE9n\xE9rez la worklist (\`verify --report <md>\`), statuez, puis relancez \u2014 ou passez \`--verdicts <fichier>\`.`,
@@ -30672,6 +30673,7 @@ var M = {
     na: (id) => `NA criterion without a justification: ${id}.`,
     rateMissing: "Pass rate missing from the report header.",
     rateRange: (v) => `Pass rate out of range (0\u2013100): ${v}%.`,
+    rateInconsistent: (v, expected, c, nc) => `Pass rate inconsistent with the synthesis table: header says ${v}% but C \xF7 (C+NC) = ${c} \xF7 ${c + nc} = ${expected}%.`,
     overProject: (id) => `Over-projected criterion: ${id} is marked non-conformant in the report but the audit does not derive it as NC (element outside the criterion's scope).`,
     underProject: (id) => `Missing criterion: the audit derives ${id} as non-conformant but the report does not present it.`,
     semanticMissing: (p) => `Semantic gate: no verdicts artifact found (${p}). Generate the worklist (\`verify --report <md>\`), adjudicate it, then re-run \u2014 or pass \`--verdicts <file>\`.`,
@@ -30722,6 +30724,14 @@ function checkReport(md, standard = "wcag", lang = "en", opts = {}) {
   } else {
     const pct = parseFloat(rateM[1].replace(",", "."));
     if (pct < 0 || pct > 100) issues.push(s.rateRange(rateM[1]));
+    else if (core) {
+      const totals = synthesisTotals(md);
+      if (totals) {
+        const { c, nc } = totals;
+        const expected = c + nc === 0 ? 100 : Math.round(c / (c + nc) * 100);
+        if (Math.abs(pct - expected) > 1) issues.push(s.rateInconsistent(rateM[1], expected, c, nc));
+      }
+    }
   }
   if (!core && pack && opts.audit) {
     const derivedNc = new Set(
@@ -30767,6 +30777,11 @@ function checkSemantic(md, opts) {
   );
   for (const issue of grounding.issues) issues.push(s.semanticGround(issue));
   return { ok: issues.length === 0, issues, total: gate.total, grounded: grounding.grounded, moved: grounding.moved, failed: grounding.failed };
+}
+function synthesisTotals(md) {
+  const m = /^\|\s*\*\*[^|*]+\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|/m.exec(md);
+  if (!m) return null;
+  return { c: Number.parseInt(m[1], 10), nc: Number.parseInt(m[2], 10) };
 }
 function sectionBody(md, n) {
   const start = new RegExp(`^##\\s+${n}\\.`, "m").exec(md);

@@ -114,6 +114,43 @@ x
     expect(r.issues.some((i) => i.includes("999") || i.toLowerCase().includes("range") || i.toLowerCase().includes("born"))).toBe(true);
   });
 
+  // A header rate must be ARITHMETICALLY consistent with the report's own C/NC synthesis
+  // Total row — not just present and in-range. A report that claims "99%" while its table
+  // implies 1 ÷ (1 + 5) = 17% is lying, and `check` must catch it.
+  const RATE_REPORT = (headerPct: number) => `# Accessibility audit report — WCAG 2.2 Level AA
+- **Automatic static-check pass rate** : ${headerPct}% (machine-decidable subset: C ÷ (C + NC))
+
+## 1. Synthesis by WCAG guideline
+| WCAG guideline | C | NC | NA | To assess |
+|---|---|---|---|---|
+| 1. Perceivable | 1 | 5 | 0 | 0 |
+| **Total** | **1** | **5** | **0** | **0** |
+
+## 2. Non-conformities (by priority)
+No non-conformity detected by the static engine.
+
+## 3. Conforming criteria (C)
+- 1.1.1 — Non-text Content
+
+## 4. Not-applicable criteria (NA)
+None.
+
+## 5. Criteria to adjudicate
+None.
+`;
+
+  it("fails when the header pass rate contradicts its own C/NC synthesis totals", () => {
+    const r = checkReport(RATE_REPORT(99), "wcag", "en"); // table implies 17%, header says 99%
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.toLowerCase().includes("rate") && (i.includes("99") || i.includes("17")))).toBe(true);
+  });
+
+  it("passes when the header pass rate matches the synthesis totals (17%)", () => {
+    const r = checkReport(RATE_REPORT(17), "wcag", "en"); // 1 ÷ 6 = 17%
+    expect(r.ok).toBe(true);
+    expect(r.issues).toHaveLength(0);
+  });
+
   it("gates a derived pack report against the pack's own 2-segment ids", () => {
     const rgaaReport = `# Rapport — RGAA 4.1.2
 - **Taux** : 50%

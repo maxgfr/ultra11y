@@ -16,8 +16,9 @@ import { SCHEMA_VERSION } from "./types.js";
 import { discover } from "./discover.js";
 import { readText } from "./util.js";
 import { parseSource } from "./parse/source.js";
-import { type Doc, type El, elementsByTag, attr, textContent, snippet as elSnippet } from "./parse/html.js";
+import { type Doc, type El, elementsByTag, attr, textContent, ancestors, snippet as elSnippet } from "./parse/html.js";
 import { parseInlineStyle } from "./color.js";
+import manualQuestionsJson from "./data/manual-questions.json";
 import { scTitle, getSC, hasSC } from "./wcag.js";
 import { groundItems, type GroundingSummary } from "./grounding.js";
 import { type StandardId, isCore, loadPack, hasId, getCriterion } from "./standards/index.js";
@@ -104,6 +105,58 @@ function nearestHeading(doc: Doc, el: El): string | undefined {
   return h ? textContent(h).trim().slice(0, 80) : undefined;
 }
 
+// Key/value display patterns (RGAA 8.9 div-presented fields / 9.3 <dl> semantics): a
+// <dt>→<dd> pair, or a "label"-classed element immediately followed by a "value"-classed
+// sibling (the "Mon profil" recap pattern). Surfaced so the agent can judge whether the
+// relationship is only visual — never asserted an NC statically.
+const LABEL_LIKE = /(^|[-_ ])(field-label|field-key|label|key|term)([-_ ]|$)/i;
+const VALUE_LIKE = /(^|[-_ ])(field-value|field-data|value|data)([-_ ]|$)/i;
+function keyValuePairs(doc: Doc): { key: El; label: string; value: string }[] {
+  const out: { key: El; label: string; value: string }[] = [];
+  for (const el of doc.elements) {
+    const isDt = el.tag === "dt";
+    const isLabelDiv = el.tag !== "label" && el.tag !== "dt" && LABEL_LIKE.test(attr(el, "class") ?? "");
+    if (!isDt && !isLabelDiv) continue;
+    const parent = el.parent;
+    if (!parent) continue;
+    const sibs = parent.children.filter((c): c is El => c.type === "element");
+    const next = sibs[sibs.indexOf(el) + 1];
+    if (!next) continue;
+    const paired = isDt ? next.tag === "dd" : VALUE_LIKE.test(attr(next, "class") ?? "");
+    if (!paired) continue;
+    out.push({ key: el, label: textContent(el).trim().slice(0, 40), value: textContent(next).trim().slice(0, 40) });
+  }
+  return out;
+}
+
+// Download links whose destination is a document (RGAA 6.1): naming the format "(PDF)" is
+// a RECOMMENDATION, not an NC — the harvester note says so explicitly.
+const DOWNLOAD_HREF = /\.(pdf|docx?|xlsx?)(?:[?#]|$)/i;
+
+// SPA signals feeding the RGAA 12.8 questions (page title / focus restitution on partial
+// reload): a client-router import in the source. One synthetic evidence per doc, at the
+// import line (no El to anchor on — these are source-level signals).
+const ROUTER_IMPORT =
+  /['"](?:react-router(?:-dom)?|next\/(?:router|navigation)|vue-router|@remix-run\/[\w-]+|@tanstack\/[\w-]*router|@sveltejs\/kit|\$app\/(?:navigation|stores))['"]/;
+function routerImportEvidence(doc: Doc): Evidence[] {
+  const m = ROUTER_IMPORT.exec(doc.source);
+  if (!m) return [];
+  const line = doc.source.slice(0, m.index).split("\n").length;
+  return [
+    {
+      file: doc.file,
+      line,
+      selector: "import",
+      snippet: (doc.source.split("\n")[line - 1] ?? "").trim().slice(0, 120),
+      note: "client-router import — verify page title + focus are restored on partial (SPA) navigation",
+    },
+  ];
+}
+
+// Status-message signal near a form: a status-ish class inside a <form> (dynamic feedback
+// text feeding the RGAA 7.5 / WCAG 4.1.3 question).
+const STATUS_CLASS = /(error|status|message|alert|notif|toast|feedback|live)/i;
+
 type Harvester = (docs: Doc[]) => Evidence[];
 
 const HARVESTERS: Record<string, Harvester> = {
@@ -115,12 +168,19 @@ const HARVESTERS: Record<string, Harvester> = {
         .filter((e, i, a) => a.indexOf(e) === i)
         .map((e) => ev(d, e, `alt="${attr(e, "alt") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`)),
     ),
-  // 2.4.4 Link Purpose (In Context) — link text + destination + nearest heading
+  // 2.4.4 Link Purpose (In Context) — link text + destination + nearest heading. A
+  // document-download link's format mention "(PDF)" (RGAA 6.1) is a RECOMMENDATION, not an
+  // NC — the note says so, so the agent never files an NC for a missing format hint.
   "2.4.4": (docs) =>
     docs.flatMap((d) =>
       elementsByTag(d, "a")
         .filter((e) => attr(e, "href") !== undefined)
-        .map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}" href="${attr(e, "href")}" under="${nearestHeading(d, e) ?? ""}"`)),
+        .map((e) => {
+          const href = attr(e, "href") ?? "";
+          const dl = DOWNLOAD_HREF.exec(href);
+          const note = dl ? ` download-format=${dl[1]!.toLowerCase()} (naming the format, e.g. "(PDF)", is a recommendation — not an NC)` : "";
+          return ev(d, e, `text="${textContent(e).trim().slice(0, 60)}" href="${href}" under="${nearestHeading(d, e) ?? ""}"${note}`);
+        }),
     ),
   // 1.4.3 Contrast (Minimum) — literal inline colour pairs (the ones statically visible)
   "1.4.3": (docs) =>
@@ -135,10 +195,13 @@ const HARVESTERS: Record<string, Harvester> = {
           return ev(d, e, `color=${st.get("color") ?? "?"} background=${st.get("background-color") ?? st.get("background") ?? "?"}`);
         }),
     ),
-  // 2.4.6 Headings and Labels — the heading + label text to judge for descriptiveness
+  // 2.4.6 Headings and Labels — heading + label + <caption> text to judge for
+  // descriptiveness/concision (captions feed the RGAA 5.5 title-concision question).
   "2.4.6": (docs) =>
     docs.flatMap((d) =>
-      elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`)),
+      elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend", "caption").map((e) =>
+        ev(d, e, `<${e.tag}> text="${textContent(e).trim().slice(0, 60)}"`),
+      ),
     ),
   // 3.3.2 Labels or Instructions — controls + their associated labels/placeholders
   "3.3.2": (docs) =>
@@ -153,13 +216,35 @@ const HARVESTERS: Record<string, Harvester> = {
         );
       }),
     ),
-  // 1.3.1 Info and Relationships — heading outline + tables (structure to judge)
+  // 1.3.1 Info and Relationships — heading outline + tables/lists (structure to judge for
+  // technique consistency), PLUS div-presented key/value pairs (RGAA 8.9 read-only fields /
+  // 9.3 <dl> semantics) so the "Mon profil" recap pattern is never silently conforming.
   "1.3.1": (docs) =>
-    docs.flatMap((d) =>
-      elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map((e) =>
+    docs.flatMap((d) => [
+      ...elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map((e) =>
         ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`),
       ),
-    ),
+      ...keyValuePairs(d).map((p) =>
+        ev(d, p.key, `key/value pair — label="${p.label}" value="${p.value}" (div-presented field? verify the relationship isn't only visual — RGAA 8.9/9.3)`),
+      ),
+    ]),
+  // 4.1.3 Status Messages (RGAA 7.4/7.5) — live regions + status-ish text near a form
+  "4.1.3": (docs) =>
+    docs.flatMap((d) => {
+      const isRegion = (e: El) => attr(e, "aria-live") !== undefined || ["status", "alert", "log"].includes((attr(e, "role") ?? "").trim().toLowerCase());
+      const regions = d.elements.filter(isRegion);
+      const nearForm = d.elements.filter((e) => !isRegion(e) && STATUS_CLASS.test(attr(e, "class") ?? "") && ancestors(e).some((a) => a.tag === "form"));
+      return [
+        ...regions.map((e) => ev(d, e, `aria-live="${attr(e, "aria-live") ?? ""}" role="${attr(e, "role") ?? ""}"`)),
+        ...nearForm.map((e) =>
+          ev(
+            d,
+            e,
+            `status-like class="${(attr(e, "class") ?? "").slice(0, 40)}" in a form — verify async feedback is announced (role=status/alert or aria-live)`,
+          ),
+        ),
+      ];
+    }),
   // 4.1.2 Name, Role, Value — elements carrying a role or ARIA state
   "4.1.2": (docs) =>
     docs.flatMap((d) =>
@@ -167,8 +252,15 @@ const HARVESTERS: Record<string, Harvester> = {
         .filter((e) => attr(e, "role") !== undefined || Object.keys(e.attribs).some((k) => k.startsWith("aria-")))
         .map((e) => ev(d, e, `role="${attr(e, "role") ?? ""}"`)),
     ),
-  // 2.4.3 Focus Order — explicit tabindex values in DOM order
-  "2.4.3": (docs) => docs.flatMap((d) => d.elements.filter((e) => attr(e, "tabindex") !== undefined).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`))),
+  // 2.4.3 Focus Order — explicit tabindex values in DOM order, PLUS SPA focus signals
+  // (RGAA 12.8): <dialog> usage and client-router imports (verify focus is moved on route
+  // change / dialog open, and a mobile menu's target receives focus).
+  "2.4.3": (docs) =>
+    docs.flatMap((d) => [
+      ...d.elements.filter((e) => attr(e, "tabindex") !== undefined).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`)),
+      ...elementsByTag(d, "dialog").map((e) => ev(d, e, `<dialog> — verify focus moves in on open and is restored to the trigger on close`)),
+      ...routerImportEvidence(d),
+    ]),
   // 3.1.2 Language of Parts — element-level lang overrides (not the root <html lang>)
   "3.1.2": (docs) =>
     docs.flatMap((d) => d.elements.filter((e) => e.tag !== "html" && attr(e, "lang") !== undefined).map((e) => ev(d, e, `lang="${attr(e, "lang")}"`))),
@@ -395,6 +487,7 @@ const T = {
     then: "Puis : `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (échoue si un verdict manque une justification/finding/reason).",
     evidence: "Évidences",
     none: "(aucune évidence automatique — décidez depuis la source, ou laissez `manual` avec une raison)",
+    questions: "À vérifier manuellement",
   },
   en: {
     title: "# Criteria adjudication (ultra11y)",
@@ -409,8 +502,13 @@ const T = {
     then: "Then: `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (fails if any verdict lacks its justification/finding/reason).",
     evidence: "Evidence",
     none: "(no automatic evidence — decide from source, or leave `manual` with a reason)",
+    questions: "To verify manually",
   },
 } as const;
+
+// SC-keyed curated question bank (src/data/manual-questions.json): the checks static
+// analysis cannot decide, rendered per residual item by `formatAdjudication` in both langs.
+const MANUAL_QUESTIONS = manualQuestionsJson as Record<string, { fr: string; en: string }[]>;
 
 export function formatAdjudication(items: AdjudicationItem[], lang: Lang = "en"): string {
   const s = T[lang];
@@ -421,6 +519,12 @@ export function formatAdjudication(items: AdjudicationItem[], lang: Lang = "en")
     if (!it.evidence.length) out.push(s.none, "");
     else {
       for (const e of it.evidence) out.push(`- \`${e.file}:${e.line}\` (\`${e.selector}\`)${e.note ? ` — ${e.note}` : ""}`);
+      out.push("");
+    }
+    const questions = MANUAL_QUESTIONS[it.criteriaId];
+    if (questions?.length) {
+      out.push(`> ${s.questions}:`, "");
+      for (const q of questions) out.push(`- ${q[lang]}`);
       out.push("");
     }
   }

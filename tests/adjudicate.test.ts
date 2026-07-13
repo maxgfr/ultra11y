@@ -9,6 +9,7 @@ import {
   buildAdjudicationWorklist,
   applyAdjudication,
   writeAdjudication,
+  formatAdjudication,
   ADJUDICATE_MAX_EVIDENCE,
   type AdjudicationFile,
   type AdjudicationItem,
@@ -342,6 +343,64 @@ describe("applyAdjudication — recommendations fold as advisory (status-neutral
     const r = applyAdjudication(audit, file(items));
     expect(r.ok).toBe(false);
     expect(r.grounding.failed).toBeGreaterThan(0);
+  });
+});
+
+// Task 3 — judgment-tier strengthening: the new evidence harvesters + the SC-keyed
+// manual-questions bank rendered by formatAdjudication.
+describe("Task-3 harvesters + manual-question bank", () => {
+  const RICH = fixture(
+    "judgment.html",
+    `<!doctype html>
+<html lang="en">
+<head><title>Profile</title></head>
+<body>
+<main>
+<h1>Profile</h1>
+<div class="field"><div class="field-label">Name</div><div class="field-value">Ada</div></div>
+<a href="/pricing">Pricing</a>
+<a href="/guide.pdf">Download the guide</a>
+<div aria-live="polite" role="status" class="status">Saved</div>
+<dialog><p>Details</p></dialog>
+<button tabindex="0">ok</button>
+</main>
+</body>
+</html>`,
+  );
+  const items = buildAdjudicationWorklist(runAudit({ inputs: [RICH] }));
+  const evOf = (sc: string) => JSON.stringify(items.find((i) => i.criteriaId === sc)?.evidence ?? []);
+
+  it("1.3.1 harvests div-presented key/value pairs (RGAA 8.9/9.3)", () => {
+    const blob = evOf("1.3.1");
+    expect(blob).toContain("key/value pair");
+    expect(blob).toContain("Name");
+    expect(blob).toContain("Ada");
+  });
+
+  it("2.4.4 flags a document-download link's format as a recommendation, not an NC (RGAA 6.1)", () => {
+    const blob = evOf("2.4.4");
+    expect(blob).toContain("guide.pdf");
+    expect(blob).toMatch(/download-format=pdf/);
+    expect(blob).toMatch(/recommendation/);
+  });
+
+  it("4.1.3 harvests live regions (RGAA 7.5)", () => {
+    expect(evOf("4.1.3")).toMatch(/aria-live/);
+  });
+
+  it("2.4.3 harvests SPA focus signals — <dialog> + tabindex (RGAA 12.8)", () => {
+    const blob = evOf("2.4.3");
+    expect(blob).toMatch(/dialog/);
+    expect(blob).toMatch(/tabindex/);
+  });
+
+  it("formatAdjudication renders the SC-keyed questions for a residual criterion in both languages", () => {
+    const en = formatAdjudication(items, "en");
+    const fr = formatAdjudication(items, "fr");
+    expect(en).toContain("To verify manually");
+    expect(en).toMatch(/Div-presented fields \(RGAA 8\.9\)/);
+    expect(fr).toContain("À vérifier manuellement");
+    expect(fr).toMatch(/Champs présentés en div \(RGAA 8\.9\)/);
   });
 });
 

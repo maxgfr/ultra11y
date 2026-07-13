@@ -176,6 +176,14 @@ export interface Finding {
   // render the human page name + auth flag under « Pages / URLs impactées » and the notes
   // under « Contexte de reproduction ». Optional/additive (no SCHEMA_VERSION bump).
   sample?: { page?: string; authRequired?: boolean; notes?: string };
+  // Localized message/remediation PAIR carried on the finding itself — the runtime channel
+  // `resolveMessage`/`resolveRemediation` read BEFORE the static MSG_CATALOG. Declarative
+  // pack rules (src/standards/pack-rules.ts) are loaded at runtime and cannot register into
+  // the compiled MSG_CATALOG, so a `pack:<key>:<id>` finding attaches its rule's `{en,fr}`
+  // strings here; a renderer at `--lang fr` then picks the French text instead of falling
+  // back to the English `message` bake. Keyed by the UI frame's `Lang` (fr|en). Optional/
+  // additive (no SCHEMA_VERSION bump) — absent ⇒ resolve via `msg`/baked strings as before.
+  i18n?: { message: Partial<Record<Lang, string>>; remediation: Partial<Record<Lang, string>> };
 }
 
 export interface CriterionResult {

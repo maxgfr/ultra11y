@@ -828,15 +828,27 @@ function entryFor(id: string | undefined): MsgEntry | undefined {
   return id === undefined ? undefined : MSG_CATALOG[id];
 }
 
-/** Resolve a finding's message by lang: catalog template when `f.msg` is present and
- *  known, else the baked `f.message` (back-compat with old JSON / unknown ids). */
-export function resolveMessage(f: { message: string; msg?: { id: string; params?: MsgParams } }, lang: Lang): string {
+/** Resolve a finding's message by lang: the finding's own localized `i18n` pair first
+ *  (declarative pack rules, which cannot register into the compiled catalog), then the
+ *  catalog template when `f.msg` is present and known, else the baked `f.message`
+ *  (back-compat with old JSON / unknown ids). */
+export function resolveMessage(
+  f: { message: string; msg?: { id: string; params?: MsgParams }; i18n?: { message: Partial<Record<Lang, string>> } },
+  lang: Lang,
+): string {
+  const localized = f.i18n?.message?.[lang];
+  if (localized) return localized;
   const entry = entryFor(f.msg?.id);
   return entry ? entry.message[lang](f.msg?.params ?? {}) : f.message;
 }
 
 /** Resolve a finding's remediation by lang — mirrors resolveMessage. */
-export function resolveRemediation(f: { remediation: string; msg?: { id: string; params?: MsgParams } }, lang: Lang): string {
+export function resolveRemediation(
+  f: { remediation: string; msg?: { id: string; params?: MsgParams }; i18n?: { remediation: Partial<Record<Lang, string>> } },
+  lang: Lang,
+): string {
+  const localized = f.i18n?.remediation?.[lang];
+  if (localized) return localized;
   const entry = entryFor(f.msg?.id);
   return entry ? entry.remediation[lang](f.msg?.params ?? {}) : f.remediation;
 }

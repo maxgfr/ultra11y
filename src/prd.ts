@@ -7,11 +7,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity } from "./types.js";
 import { getSC, guidelineTitle, scTitle, techniques as scTechniques } from "./wcag.js";
-import { resolveMessage, resolveRemediation, resolveNote } from "./messages.js";
+import { resolveRemediation } from "./messages.js";
 import { type StandardId, isCore, loadPack, derivePackResults, standardLabel, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
 import { guidanceForWcag, guidanceForCriterion } from "./guidance/index.js";
 import type { GuidanceEntry } from "./guidance/types.js";
-import { renderAuditorBacklog, renderAuditorPerCriterion } from "./auditor.js";
+import { renderAuditorBacklog, renderAuditorPerCriterion, occurrenceLine, relatedLine } from "./auditor.js";
 
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
 const SEV_RANK: Record<Severity, number> = { bloquant: 0, majeur: 1, mineur: 2 };
@@ -215,8 +215,8 @@ function unitBlock(unit: PrdUnit, lang: Lang, heading: string, standard: Standar
   out.push(...guidanceExampleBlock(guidanceFor(unit, standard), lang));
   out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
   }
   out.push("");
   return out;
@@ -339,8 +339,8 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
       if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
-        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-        if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\``);
+        out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+        if (f.related) out.push(relatedLine(f.related, lang, { selector: false }));
       }
       out.push("");
     }

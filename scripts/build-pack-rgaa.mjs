@@ -238,6 +238,45 @@ async function main() {
   }
   for (const c of criteria) c.appliesTo = { ruleIds: [...(critRules[c.id] ?? [])].sort() };
 
+  // ---- Declarative pack RULE (usage proof): an RGAA-only ADVISORY recommendation, run by
+  // the bounded interpreter (src/standards/pack-rules.ts) AFTER the core engine rules. It
+  // flags a download link (`a[href$=".pdf"]` & co) whose VISIBLE TEXT states neither the
+  // file format nor its weight — the DSFR/RGAA auditor recommendation under criterion 6.1
+  // (link explicitness, WCAG 2.4.4). ADVISORY: it surfaces as a recommendation in the RGAA
+  // projection and NEVER makes 6.1 non-conformant. This proves a pack ships its OWN
+  // detection without forking the engine (see skills/ultra11y/references/packs.md).
+  const DOWNLOAD_EXT = "pdf|docx?|pptx?|xlsx?|odt|ods|odp|rtf|csv|zip|rar|7z|gz|epub|mp3|mp4|avi|mov";
+  const rules = [
+    {
+      id: "download-link-format",
+      criterion: "6.1",
+      wcag: ["2.4.4"],
+      severity: "mineur",
+      advisory: true,
+      match: {
+        tag: "a",
+        attrs: [{ name: "href", op: "matches", value: `\\.(${DOWNLOAD_EXT})(\\?|#|$)` }],
+        text: { op: "lacks", value: `(${DOWNLOAD_EXT}|\\d+\\s*(ko|mo|go|kb|mb|gb|octets?|bytes?))` },
+      },
+      message: {
+        en: "Download link whose visible text states neither the file format nor its size.",
+        fr: "Lien de téléchargement dont l’intitulé ne précise ni le format ni le poids du fichier.",
+      },
+      remediation: {
+        en: "State the file format and size in the link text, e.g. “Annual report (PDF, 2 MB)”.",
+        fr: "Indiquez le format et le poids du fichier dans l’intitulé du lien, par exemple « Rapport annuel (PDF, 2 Mo) ».",
+      },
+    },
+  ];
+  // Wire each rule's namespaced id (`pack:rgaa:<id>`) into the criterion it reports under,
+  // so derivePackResults routes its finding onto that criterion through the same
+  // appliesTo/ruleMatches machinery as engine findings (6.1 evidences no engine rule).
+  for (const rule of rules) {
+    const c = criteria.find((x) => x.id === rule.criterion);
+    if (!c) throw new Error(`build-pack-rgaa: rule "${rule.id}" reports under unknown criterion "${rule.criterion}"`);
+    c.appliesTo = { ruleIds: [...new Set([...c.appliesTo.ruleIds, `pack:rgaa:${rule.id}`])].sort() };
+  }
+
   const pack = {
     key: "rgaa",
     name: "RGAA",
@@ -300,6 +339,7 @@ async function main() {
         },
       ],
     },
+    rules,
     themes,
     criteria,
   };

@@ -12,7 +12,7 @@ import {
   type PackCriterionResult,
 } from "../src/standards/index.js";
 import { toDynamicResult, mergeDynamic } from "../src/scan.js";
-import type { Status } from "../src/types.js";
+import type { AuditResult, Finding, Status } from "../src/types.js";
 
 const dir = mkdtempSync(join(tmpdir(), "u11y-derive-"));
 function auditHtml(html: string) {
@@ -219,6 +219,70 @@ describe("secondary crosswalk mappings — generic, opt-in projection (Task 13)"
     // The copy-on-write tag never mutates the core finding.
     expect(audit.findings.find((f) => f.ruleId === "img-alt-missing")?.secondary).toBeUndefined();
     expect(statusOf(rows, "1.2")).toBe("NC"); // SC-faithful home STILL NC
+  });
+});
+
+describe("RGAA 7.4 secondary mapping — live regions, disabled by default (Task 13)", () => {
+  // A synthetic 4.1.3 (status messages) result carrying the live-region probe finding plus
+  // its two static SC-siblings — so the EXACT-ruleId cross-over guarantee is testable. 7.5
+  // is 4.1.3's WCAG-faithful RGAA home; 7.4 (change of context, 3.2.1/3.2.2) is the opt-in
+  // secondary target. A fresh audit per call avoids any secondary-tag bleed across cases.
+  const mkFinding = (ruleId: string): Finding => ({
+    ruleId,
+    criteriaId: "4.1.3",
+    file: "page.html",
+    line: 1,
+    col: 1,
+    selectorHint: "div.toast",
+    severity: "majeur",
+    message: "live region",
+    remediation: "fix",
+    snippet: "<div>",
+  });
+  const synthAudit = (): AuditResult => {
+    const findings = [mkFinding("dyn-live-region"), mkFinding("status-message-not-assertive"), mkFinding("live-region-conflict")];
+    return {
+      tool: "ultra11y",
+      standard: "wcag",
+      version: "0",
+      schemaVersion: 2,
+      date: "2026-07-13",
+      scope: { inputs: ["page.html"], files: 1 },
+      guidelines: [],
+      criteria: [{ id: "4.1.3", guideline: "4.1", status: "NC", findings: [...findings] }],
+      findings: [...findings],
+      residualRisks: [],
+      conformancePct: 0,
+    };
+  };
+
+  it("DISABLED (out-of-box): 7.4 is not NC and carries no dyn-live-region; 7.5 (WCAG-faithful) is NC", () => {
+    const rows = derivePackResults(synthAudit(), "rgaa");
+    const c74 = rows.find((r) => r.id === "7.4")!;
+    expect(c74.status).not.toBe("NC");
+    expect(c74.findings.some((f) => f.ruleId === "dyn-live-region")).toBe(false);
+    expect(statusOf(rows, "7.5")).toBe("NC");
+  });
+
+  it("ENABLED: 7.4 becomes NC carrying dyn-live-region tagged `secondary`; the two static 4.1.3 siblings never cross over; 7.5 STILL NC", () => {
+    const pack = loadPack("rgaa");
+    const mapping = pack.secondaryMappings!.find((m) => m.ruleId === "dyn-live-region" && m.criterion === "7.4")!;
+    const wasEnabled = mapping.enabled;
+    try {
+      enableSecondaryMapping("rgaa", { ruleId: "dyn-live-region", criterion: "7.4" });
+      const rows = derivePackResults(synthAudit(), "rgaa");
+      const c74 = rows.find((r) => r.id === "7.4")!;
+      expect(c74.status).toBe("NC");
+      const crossed = c74.findings.find((f) => f.ruleId === "dyn-live-region");
+      expect(crossed?.secondary).toBeDefined();
+      expect(crossed?.secondary?.note).toContain("7.4"); // the fr deviation note (pack default locale)
+      // EXACT match: the sibling 4.1.3 rules are NOT dragged onto 7.4.
+      expect(c74.findings.some((f) => f.ruleId === "status-message-not-assertive")).toBe(false);
+      expect(c74.findings.some((f) => f.ruleId === "live-region-conflict")).toBe(false);
+      expect(statusOf(rows, "7.5")).toBe("NC"); // WCAG-faithful home unchanged
+    } finally {
+      mapping.enabled = wasEnabled; // restore the shipped-disabled default for other tests
+    }
   });
 });
 

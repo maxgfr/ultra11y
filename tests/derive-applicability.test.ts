@@ -128,6 +128,30 @@ describe("RGAA applicability — the stateful scan probes project onto the right
   });
 });
 
+describe("RGAA declarative rule — download-link-format (advisory, criterion 6.1)", () => {
+  const page = (link: string) => `<!doctype html><html lang="fr"><head><title>t</title></head><body><main><h1>H</h1>${link}</main></body></html>`;
+
+  it("a download link whose text omits format/weight raises a namespaced pack finding kept OUT of the core result", () => {
+    const audit = auditHtml(page(`<a href="rapport.pdf">Rapport annuel</a>`));
+    // The finding rides in packFindings only — the core WCAG findings/criteria are untouched.
+    expect(audit.packFindings?.some((f) => f.ruleId === "pack:rgaa:download-link-format")).toBe(true);
+    expect(audit.findings.some((f) => f.ruleId.startsWith("pack:"))).toBe(false);
+    expect(audit.criteria.every((c) => c.findings.every((f) => !f.ruleId.startsWith("pack:")))).toBe(true);
+  });
+
+  it("projects onto RGAA 6.1 as an ADVISORY recommendation and NEVER makes 6.1 NC", () => {
+    const rows = derivePackResults(auditHtml(page(`<a href="rapport.pdf">Rapport annuel</a>`)), "rgaa");
+    const c61 = rows.find((r) => r.id === "6.1")!;
+    expect(c61.findings.some((f) => f.ruleId === "pack:rgaa:download-link-format" && f.advisory === true)).toBe(true);
+    expect(c61.status).not.toBe("NC");
+  });
+
+  it("does not fire when the link text already states the format and weight", () => {
+    const audit = auditHtml(page(`<a href="rapport.pdf">Rapport annuel (PDF, 2 Mo)</a>`));
+    expect(audit.packFindings?.some((f) => f.ruleId === "pack:rgaa:download-link-format") ?? false).toBe(false);
+  });
+});
+
 describe("the built RGAA pack carries applicability data", () => {
   it("every RGAA criterion declares an explicit appliesTo (so no SC-sibling can leak a foreign finding)", () => {
     const pack = loadPack("rgaa");

@@ -102,6 +102,37 @@
       }
     ]
   },
+  "rules": [
+    {
+      "id": "download-link-format",
+      "criterion": "6.1",
+      "wcag": ["2.4.4"],
+      "severity": "mineur",
+      "advisory": true,
+      "match": {
+        "tag": "a",
+        "attrs": [
+          {
+            "name": "href",
+            "op": "matches",
+            "value": "\\.(pdf|docx?|pptx?|xlsx?|odt|ods|odp|rtf|csv|zip|rar|7z|gz|epub|mp3|mp4|avi|mov)(\\?|#|$)"
+          }
+        ],
+        "text": {
+          "op": "lacks",
+          "value": "(pdf|docx?|pptx?|xlsx?|odt|ods|odp|rtf|csv|zip|rar|7z|gz|epub|mp3|mp4|avi|mov|\\d+\\s*(ko|mo|go|kb|mb|gb|octets?|bytes?))"
+        }
+      },
+      "message": {
+        "en": "Download link whose visible text states neither the file format nor its size.",
+        "fr": "Lien de téléchargement dont l’intitulé ne précise ni le format ni le poids du fichier."
+      },
+      "remediation": {
+        "en": "State the file format and size in the link text, e.g. “Annual report (PDF, 2 MB)”.",
+        "fr": "Indiquez le format et le poids du fichier dans l’intitulé du lien, par exemple « Rapport annuel (PDF, 2 Mo) »."
+      }
+    }
+  ],
   "themes": [
     {
       "number": 1,
@@ -1485,7 +1516,7 @@
       ],
       "wcag": ["1.1.1", "2.4.4", "2.5.3"],
       "appliesTo": {
-        "ruleIds": []
+        "ruleIds": ["pack:rgaa:download-link-format"]
       }
     },
     {

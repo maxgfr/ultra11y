@@ -157,14 +157,18 @@ export function scForAxeRule(ruleId: string): string {
 // any axe rule with no `wcag<digits>` tag as best-practice-only (advisory). But this
 // engine ALSO has a static counterpart for several of these rules (src/rules/*.ts) that
 // we ship as NORMATIVE — the same defect must not be a definite NC when found statically
-// (`audit`) yet a mere recommendation when found dynamically (`scan`/axe). Every key
-// below is pinned `false` (always normative) because its static twin is registered and
-// normative; the twin ids are documented inline and cross-checked by
-// tests/axe-map.test.ts against the live registry. The test guard is two-directional for
-// EXACT-id matches only: an AXE_WCAG key that is also a registered normative static rule
-// id must be pinned here or listed in AXE_EXACT_TWIN_EXEMPT below. Near-twins whose ids
-// differ (heading-order vs heading-order-skip…) are still curated by hand — a future
-// differently-named twin is caught at review time, not by the test.
+// (`audit`) yet a mere recommendation when found dynamically (`scan`/axe). The pin is a
+// statement of INTENT, not a snapshot of axe's tagging: this defect has a normative
+// static twin, so it must stay normative cross-channel REGARDLESS of how axe currently
+// tags the rule. That drift-proofs the decision — the docker runner installs axe-core
+// from a caret range ("^4.10.0"), so the tag set a user's build ships can change with no
+// repo change; a pin can't be silently downgraded by such a re-tag, whereas relying on
+// the tags could. The twin ids are documented inline and cross-checked by
+// tests/axe-map.test.ts against the live registry; that guard is two-directional for
+// EXACT-id matches (an AXE_WCAG key that is also a registered normative static rule id
+// MUST be pinned). Near-twins whose ids differ (heading-order vs heading-order-skip…)
+// are still curated by hand — a future differently-named twin is caught at review time,
+// not by the test.
 //   - heading-order        → static twin heading-order-skip        (src/rules/headings.ts)
 //   - tabindex              → static twin positive-tabindex          (src/rules/navigation.ts)
 //   - skip-link             → static twin skip-link-target-missing   (src/rules/navigation.ts)
@@ -173,6 +177,13 @@ export function scForAxeRule(ruleId: string): string {
 //                             multiple-main-landmark                 (src/rules/navigation.ts)
 //   - empty-heading         → static twin empty-heading              (src/rules/headings.ts,
 //                             identical rule id; the axe rule is best-practice-only tagged)
+//   - duplicate-id          → static twin duplicate-id               (src/rules/mandatory.ts,
+//                             identical rule id; deprecated by axe-core ≥ 4.10 — harmless
+//                             pin if the installed axe never fires it)
+//   - nested-interactive    → static twin nested-interactive         (src/rules/scripts-aria.ts,
+//                             identical rule id)
+//   - form-field-multiple-labels → static twin of the same id        (src/rules/forms.ts)
+//   - aria-required-children → static twin of the same id            (src/rules/scripts-aria.ts)
 // Deliberately NOT pinned (stay advisory, tag-based decision applies): empty-table-header,
 // page-has-heading-one (consistent with h1-missing/h1-multiple now being advisory — see
 // src/rules/headings.ts), region, accesskeys, image-redundant-alt — none of these has a
@@ -180,8 +191,7 @@ export function scForAxeRule(ruleId: string): string {
 // pinned): td-has-header / table-fake-caption vs the static data-table-no-headers /
 // table-caption-missing — a data cell missing its per-cell header association vs a table
 // with no headers at all, and a caption faked with styled markup vs a caption missing
-// entirely. duplicate-id (an exact-id static twin, deprecated by axe-core ≥ 4.10) is
-// handled via AXE_EXACT_TWIN_EXEMPT below, not a pin.
+// entirely.
 export const AXE_ADVISORY_EXCEPTIONS: Record<string, boolean> = {
   "heading-order": false,
   tabindex: false,
@@ -189,6 +199,10 @@ export const AXE_ADVISORY_EXCEPTIONS: Record<string, boolean> = {
   "label-title-only": false,
   "landmark-one-main": false,
   "empty-heading": false,
+  "duplicate-id": false,
+  "nested-interactive": false,
+  "form-field-multiple-labels": false,
+  "aria-required-children": false,
 };
 
 // Data companion to AXE_ADVISORY_EXCEPTIONS: which static rule id(s) (src/rules/*.ts,
@@ -203,18 +217,11 @@ export const AXE_STATIC_TWIN: Record<string, string[]> = {
   "label-title-only": ["control-name-title-only"],
   "landmark-one-main": ["missing-main-landmark", "multiple-main-landmark"],
   "empty-heading": ["empty-heading"],
+  "duplicate-id": ["duplicate-id"],
+  "nested-interactive": ["nested-interactive"],
+  "form-field-multiple-labels": ["form-field-multiple-labels"],
+  "aria-required-children": ["aria-required-children"],
 };
-
-// AXE_WCAG keys that EXACTLY match a registered NORMATIVE static rule id but are
-// deliberately NOT pinned: axe natively tags each with a real `wcag<digits>` SC tag
-// (aria-required-children → wcag131, nested-interactive → wcag412,
-// form-field-multiple-labels → wcag332, duplicate-id → wcag411 — the latter deprecated by
-// axe-core ≥ 4.10 anyway), so the tag-based `axeAdvisory` already resolves them normative
-// and a pin would be redundant. The two-way consistency test (tests/axe-map.test.ts)
-// requires every exact-id match to be pinned OR listed here, so a future same-id rule
-// cannot slip through unexamined — adding an entry here is the documented, reviewed way
-// to say "the native tags already keep it normative".
-export const AXE_EXACT_TWIN_EXEMPT: Set<string> = new Set(["aria-required-children", "nested-interactive", "form-field-multiple-labels", "duplicate-id"]);
 
 /** A best-practice-only axe violation carries tags but NO `wcag<digits>` SC tag (only
  *  umbrellas like `wcag2aa`/`best-practice`/`cat.*`) — it evidences no testable WCAG

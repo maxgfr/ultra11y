@@ -1,15 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  scForAxe,
-  scFromWcagTags,
-  scForAxeRule,
-  FALLBACK_SC,
-  AXE_WCAG,
-  AXE_ADVISORY_EXCEPTIONS,
-  AXE_STATIC_TWIN,
-  AXE_EXACT_TWIN_EXEMPT,
-  isAxeAdvisory,
-} from "../src/axe-map.js";
+import { scForAxe, scFromWcagTags, scForAxeRule, FALLBACK_SC, AXE_WCAG, AXE_ADVISORY_EXCEPTIONS, AXE_STATIC_TWIN, isAxeAdvisory } from "../src/axe-map.js";
 import { ruleById } from "../src/rules/registry.js";
 
 describe("scFromWcagTags", () => {
@@ -97,6 +87,13 @@ describe("AXE_ADVISORY_EXCEPTIONS — cross-channel normativity consistency", ()
     expect(isAxeAdvisory("label-title-only", ["best-practice"])).toBe(false);
     expect(isAxeAdvisory("landmark-one-main", ["cat.semantics", "best-practice"])).toBe(false);
     expect(isAxeAdvisory("empty-heading", ["cat.name-role-value", "best-practice"])).toBe(false);
+    // Exact-id twins pinned for drift-proofing: axe tags these with real wcag<digits> tags
+    // TODAY, but the docker runner installs axe-core from a caret range, so a future
+    // re-tag must not silently demote them — the pin, not the tags, decides.
+    expect(isAxeAdvisory("duplicate-id", ["cat.parsing", "best-practice"])).toBe(false);
+    expect(isAxeAdvisory("nested-interactive", ["cat.keyboard", "best-practice"])).toBe(false);
+    expect(isAxeAdvisory("form-field-multiple-labels", ["cat.forms", "best-practice"])).toBe(false);
+    expect(isAxeAdvisory("aria-required-children", ["cat.aria", "best-practice"])).toBe(false);
   });
 
   it("isAxeAdvisory: a non-pinned best-practice-only rule stays advisory", () => {
@@ -106,29 +103,18 @@ describe("AXE_ADVISORY_EXCEPTIONS — cross-channel normativity consistency", ()
   // COMPLETENESS direction: the tests above guard pinned → twin (every pin is backed by a
   // registered normative twin); this guards the reverse for EXACT-id matches — an AXE_WCAG
   // key that IS a registered normative static rule id must be pinned (same defect, must
-  // stay normative cross-channel) or listed in AXE_EXACT_TWIN_EXEMPT (axe's native
-  // wcag<digits> tags already keep it normative — a documented, reviewed decision). This
+  // stay normative cross-channel regardless of axe's current tagging — the docker runner's
+  // caret-ranged axe-core means tag sets drift per user build with no repo change). This
   // makes the guard two-directional for exact-id matches only; near-twins with DIFFERENT
   // ids (heading-order vs heading-order-skip…) remain hand-curated and are not derivable.
-  it("completeness: every AXE_WCAG key exactly matching a registered normative static rule id is pinned or exempt", () => {
+  it("completeness: every AXE_WCAG key exactly matching a registered normative static rule id is pinned", () => {
     for (const axeRuleId of Object.keys(AXE_WCAG)) {
       const twin = ruleById(axeRuleId);
       if (!twin || twin.advisory === true) continue; // no exact-id normative static twin
-      const handled = axeRuleId in AXE_ADVISORY_EXCEPTIONS || AXE_EXACT_TWIN_EXEMPT.has(axeRuleId);
       expect(
-        handled,
-        `AXE_WCAG key "${axeRuleId}" exactly matches a registered normative static rule — pin it in AXE_ADVISORY_EXCEPTIONS or document it in AXE_EXACT_TWIN_EXEMPT`,
+        axeRuleId in AXE_ADVISORY_EXCEPTIONS,
+        `AXE_WCAG key "${axeRuleId}" exactly matches a registered normative static rule — pin it in AXE_ADVISORY_EXCEPTIONS`,
       ).toBe(true);
-    }
-  });
-
-  it("AXE_EXACT_TWIN_EXEMPT hygiene: every entry is a live exact-id match, and never also pinned", () => {
-    for (const axeRuleId of AXE_EXACT_TWIN_EXEMPT) {
-      expect(AXE_WCAG[axeRuleId], `exempt entry "${axeRuleId}" is not an AXE_WCAG key (stale?)`).toBeDefined();
-      const twin = ruleById(axeRuleId);
-      expect(twin, `exempt entry "${axeRuleId}" has no registered static rule of the same id (stale?)`).toBeDefined();
-      expect(twin!.advisory, `exempt entry "${axeRuleId}"'s static twin is advisory — the exemption is moot, remove it`).not.toBe(true);
-      expect(axeRuleId in AXE_ADVISORY_EXCEPTIONS, `"${axeRuleId}" is both pinned and exempt — pick one`).toBe(false);
     }
   });
 });

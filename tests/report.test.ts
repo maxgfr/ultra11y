@@ -7,7 +7,7 @@ import { renderReport, renderPackReport, writeReport, untestedNeedsRendering } f
 import { mergeDynamic } from "../src/scan.js";
 import { prdUnits } from "../src/prd.js";
 import { loadPack } from "../src/standards/index.js";
-import type { DynamicResult } from "../src/types.js";
+import type { AuditResult, DynamicResult, Finding } from "../src/types.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
@@ -202,6 +202,72 @@ describe("renderPackReport (derived RGAA view)", () => {
     expect(ncSection).toContain("**Thématique** : 8.");
     expect(ncSection).toMatch(/\*\*Critère\*\* : 8\.3 —/);
     expect(ncSection).not.toContain("RGAA 8.1"); // out-of-scope — §5 only, never a fake NC block
+  });
+});
+
+// Task #11: the per-page section speaks the active standard's own criteria (RGAA), not
+// the raw WCAG SC id — via the new `packCriteriaForFinding` helper (src/standards/derive.ts),
+// reusing the same wcag/appliesTo/ruleMatches projection `derivePackResults` already uses.
+describe("per-page section renders RGAA criteria, not raw WCAG SC ids (Task #11)", () => {
+  const page = (ruleId: string, criteriaId: string, selectorHint: string): Finding => ({
+    ruleId,
+    criteriaId,
+    file: "https://example.fr/",
+    line: 0,
+    col: 0,
+    selectorHint,
+    severity: "majeur",
+    message: "sample finding",
+    remediation: "sample remediation",
+    snippet: "",
+    sample: { page: "Accueil" },
+  });
+
+  function auditWithSamplePage(base: AuditResult, findings: Finding[]): AuditResult {
+    const merged: AuditResult = JSON.parse(JSON.stringify(base));
+    merged.scope.sample = { pages: [{ id: "accueil", name: "Accueil", url: "https://example.fr/" }] };
+    merged.findings.push(...findings);
+    return merged;
+  }
+
+  const findings = [
+    page("dyn-live-region", "4.1.3", "div[role=status]"), // one-to-one: RGAA 7.5
+    page("contrast-literal", "1.4.3", "p.intro"), // one-to-many: RGAA 3.2 + 10.5
+    page("axe:image-alt", "1.4.3", "img.hero"), // same SC, unmatched ruleId → no pack criterion
+  ];
+
+  it("shows the RGAA criterion for a one-to-one mapping (dyn-live-region → 7.5)", () => {
+    const md = renderPackReport(auditWithSamplePage(good, findings), loadPack("rgaa"), "fr");
+    expect(md).toContain("  - [7.5] `div[role=status]` — sample finding");
+  });
+
+  it("shows every mapped RGAA criterion for a one-to-many finding (contrast-literal → 3.2, 10.5)", () => {
+    const md = renderPackReport(auditWithSamplePage(good, findings), loadPack("rgaa"), "fr");
+    expect(md).toContain("  - [3.2, 10.5] `p.intro` — sample finding");
+  });
+
+  it("falls back to the WCAG SC id when the finding's ruleId matches no pack criterion's appliesTo", () => {
+    const md = renderPackReport(auditWithSamplePage(good, findings), loadPack("rgaa"), "fr");
+    expect(md).toContain("  - [1.4.3] `img.hero` — sample finding");
+  });
+
+  it("core (non-pack) report is unchanged — always the raw WCAG SC id, never an RGAA criterion", () => {
+    const md = renderReport(auditWithSamplePage(good, findings), "fr");
+    expect(md).toContain("  - [4.1.3] `div[role=status]` — sample finding");
+    expect(md).toContain("  - [1.4.3] `p.intro` — sample finding");
+    expect(md).toContain("  - [1.4.3] `img.hero` — sample finding");
+    expect(md).not.toContain("[7.5]");
+    expect(md).not.toContain("[3.2, 10.5]");
+  });
+
+  it("the per-page line stays worklist-inert regardless of the label shown (2-space indent, no checkbox)", () => {
+    const md = renderPackReport(auditWithSamplePage(good, findings), loadPack("rgaa"), "fr");
+    for (const line of md.split("\n")) {
+      if (line.includes("`div[role=status]`") || line.includes("`p.intro`") || line.includes("`img.hero`")) {
+        expect(line).not.toMatch(/^-\s\[ \]/); // AUDITOR_OCCURRENCE shape (checkbox) — must never match
+        expect(line.startsWith("  - [")).toBe(true);
+      }
+    }
   });
 });
 

@@ -26,6 +26,7 @@ const sampleDynamic: DynamicResult = {
     ],
     transverse: ["En-tête", "Navigation", "Pied de page"],
   },
+  testedScs: ["1.4.4", "1.4.10", "1.4.12", "2.4.7", "1.4.13", "4.1.3"], // full local coverage
   findings: [
     {
       criteriaId: "1.4.10",
@@ -63,6 +64,10 @@ describe("mergeDynamic keeps per-sample-page provenance", () => {
     expect(JSON.stringify(merged.scope.sample)).not.toContain("storageState");
     expect(merged.criteria.find((c) => c.id === "1.4.10")?.status).toBe("NC");
     expect(merged.criteria.find((c) => c.id === "1.4.4")?.status).toBe("NC");
+  });
+
+  it("records the scan's needs-rendering coverage on scope.scan (sorted union)", () => {
+    expect(merged.scope.scan?.testedScs).toEqual(["1.4.10", "1.4.12", "1.4.13", "1.4.4", "2.4.7", "4.1.3"]);
   });
 
   it("carries the page name / auth / notes onto each merged Finding", () => {

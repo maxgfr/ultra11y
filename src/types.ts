@@ -246,6 +246,13 @@ export interface AuditResult {
     // tier was run over (name/url/auth/notes per page, storageState paths dropped). Drives
     // the report's « Constats par page » section. Optional/additive.
     sample?: SampleScope;
+    // Set when dynamic scan results were merged in: which needs-rendering SCs the scan's
+    // engines/probes actually MEASURED (verdict coverage — independent of whether anything
+    // was found). Docker runner: 320px reflow only; the local runtime adds zoom / text
+    // spacing / focus / hover (+ live regions when interactions are on). Union across
+    // merges. Drives the partial-audit advisory (src/report.ts untestedNeedsRendering) so
+    // the banner never claims a probe ran when it did not. Optional/additive.
+    scan?: { testedScs: string[] };
   };
   guidelines: GuidelineTally[];
   criteria: CriterionResult[];
@@ -316,4 +323,9 @@ export interface DynamicResult {
   // Set by a `scan --sample` run: the normative page sample scanned (recorded onto the
   // merged AuditResult's scope.sample). Optional/additive — absent for a plain scan.
   sample?: SampleScope;
+  // Which needs-rendering SCs this run's engines/probes actually MEASURED (verdict
+  // coverage — independent of whether anything was found). Docker: 320px reflow only;
+  // local: + zoom / text spacing / focus / hover (+ live regions when interactions are
+  // on). Merged into AuditResult.scope.scan by mergeDynamic. Optional/additive.
+  testedScs?: string[];
 }

@@ -51,6 +51,46 @@ describe("lintSample — which required page kinds a sample lacks (fuzzy, accent
     const ml = methodology.requiredKinds.find((k) => k.id === "mentions-legales")!;
     expect(kindLabel(ml, "fr")).toBe("Mentions légales");
   });
+
+  // Fix round 1 — lint precision: short keywords match whole words only, and the ambiguous
+  // generic words ("plan", "support") are no longer keywords at all.
+  it('does NOT credit plan-du-site for "Plan de formation" nor aide for "Support RH"', () => {
+    const sample: SampleConfig = {
+      pages: [
+        { id: "pf", name: "Plan de formation", url: "https://example.fr/formation" },
+        { id: "rh", name: "Support RH", url: "https://example.fr/rh" },
+      ],
+    };
+    const missingIds = lintSample(sample, methodology).missing.map((k) => k.id);
+    expect(missingIds).toContain("plan-du-site");
+    expect(missingIds).toContain("aide");
+  });
+
+  it('short keywords are whole-word: "plaide" does not credit aide, "Page d\'aide" does', () => {
+    const noAide: SampleConfig = { pages: [{ id: "x", name: "Il plaide coupable", url: "https://example.fr/x" }] };
+    expect(lintSample(noAide, methodology).missing.map((k) => k.id)).toContain("aide");
+    const withAide: SampleConfig = { pages: [{ id: "x", name: "Page d'aide", url: "https://example.fr/x" }] };
+    expect(lintSample(withAide, methodology).missing.map((k) => k.id)).not.toContain("aide");
+  });
+
+  it('"Plan du site" still credits plan-du-site (canonical multi-word phrase)', () => {
+    const sample: SampleConfig = { pages: [{ id: "plan", name: "Plan du site", url: "https://example.fr/plan-site" }] };
+    expect(lintSample(sample, methodology).missing.map((k) => k.id)).not.toContain("plan-du-site");
+  });
+
+  // Fix round 1 — a multi-page sample de facto carries representative pages (documented
+  // heuristic: ≥ 2 pages credit the kind), so it stops being a constant false nag.
+  it("credits pages-representatives once the sample holds ≥ 2 pages, not for a single page", () => {
+    const one: SampleConfig = { pages: [{ id: "a", name: "Accueil", url: "https://example.fr/" }] };
+    expect(lintSample(one, methodology).missing.map((k) => k.id)).toContain("pages-representatives");
+    const two: SampleConfig = {
+      pages: [
+        { id: "a", name: "Accueil", url: "https://example.fr/" },
+        { id: "b", name: "Contact", url: "https://example.fr/contact" },
+      ],
+    };
+    expect(lintSample(two, methodology).missing.map((k) => k.id)).not.toContain("pages-representatives");
+  });
 });
 
 describe("sampleScope — the recorded shape drops the storageState PATH (never persisted)", () => {

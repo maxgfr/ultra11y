@@ -18,6 +18,17 @@ import { today } from "./util.js";
 
 export const LOCAL_ENGINE = "axe-core@playwright (local)";
 
+// The needs-rendering SCs the LOCAL runtime's probes actually MEASURE on every run: 200%
+// zoom (1.4.4), 320px reflow (1.4.10), text spacing (1.4.12), focus visibility (2.4.7),
+// content on hover (1.4.13). Live regions (4.1.3) are measured only when the STATEFUL
+// interactions are on (`--no-interact` skips that probe). Stamped on every local
+// DynamicResult so the partial-audit advisory reflects real coverage — the Docker subset
+// lives in scan.ts (DOCKER_TESTED_SCS).
+const LOCAL_TESTED_SCS: readonly string[] = ["1.4.4", "1.4.10", "1.4.12", "2.4.7", "1.4.13"];
+export function localTestedScs(interact: boolean): string[] {
+  return interact ? [...LOCAL_TESTED_SCS, "4.1.3"] : [...LOCAL_TESTED_SCS];
+}
+
 // Playwright + AxeBuilder are resolved at runtime (never typed deps of this package),
 // so they cross the boundary untyped. biome's noExplicitAny is off for this repo.
 type Any = any;
@@ -770,7 +781,7 @@ export async function runScanLocal(opts: LocalScanOpts): Promise<DynamicResult> 
       allowClicks: clicksAllowed(opts.storageState, opts.interactClicks),
       lang,
     });
-    return toDynamicResult(out, opts.target, lang, LOCAL_ENGINE);
+    return { ...toDynamicResult(out, opts.target, lang, LOCAL_ENGINE), testedScs: localTestedScs(interact) };
   } finally {
     await browser.close();
   }
@@ -804,7 +815,7 @@ export async function runScanManyLocal(urls: string[], opts: LocalManyOpts): Pro
   } finally {
     await browser.close();
   }
-  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${urls.length} page(s)`, date: today(), findings };
+  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${urls.length} page(s)`, date: today(), findings, testedScs: localTestedScs(interact) };
 }
 
 /** Run the local dynamic tier over a NORMATIVE page SAMPLE (one browser, one context per
@@ -834,7 +845,15 @@ export async function runSampleScanLocal(pages: SamplePage[], opts: LocalManyOpt
   } finally {
     await browser.close();
   }
-  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${pages.length} page(s) (échantillon)`, date: today(), findings, sample: sampleScope({ pages }) };
+  return {
+    tool: "ultra11y",
+    engine: LOCAL_ENGINE,
+    target: `${pages.length} page(s) (échantillon)`,
+    date: today(),
+    findings,
+    sample: sampleScope({ pages }),
+    testedScs: localTestedScs(interact),
+  };
 }
 
 /** Discover URLs (sitemap/crawl) then scan them all through the local dynamic tier. */

@@ -267,7 +267,10 @@ async function main() {
     // cover — its representative sample. Standard-agnostic sample MECHANICS live in the core
     // (src/sample.ts + Ultra11yConfig.sample); this carries only RGAA's own required-kinds
     // list. Drives the advisory `sample check` / `scan --sample` lint (fuzzy match on a
-    // page's name/notes/url), never a hard gate. Keywords are accent-insensitive, fr + en.
+    // page's name/notes/url — short keywords match whole words only), never a hard gate.
+    // Keywords are accent-insensitive, fr + en. Ambiguous single words are deliberately NOT
+    // keywords ("plan" alone credited "Plan de formation" to plan-du-site; "support"
+    // credited "Support RH" to aide) — the multi-word canonical phrases carry those kinds.
     sampleMethodology: {
       requiredKinds: [
         { id: "accueil", label: { fr: "Page d’accueil" }, keywords: ["accueil", "home", "index", "racine", "homepage"] },
@@ -278,12 +281,12 @@ async function main() {
           label: { fr: "Déclaration d’accessibilité" },
           keywords: ["declaration d accessibilite", "declaration accessibilite", "accessibilite", "accessibility statement", "accessibility"],
         },
-        { id: "plan-du-site", label: { fr: "Plan du site" }, keywords: ["plan du site", "plan", "sitemap", "site map"] },
-        { id: "aide", label: { fr: "Aide" }, keywords: ["aide", "help", "faq", "assistance", "support"] },
+        { id: "plan-du-site", label: { fr: "Plan du site" }, keywords: ["plan du site", "sitemap", "site map"] },
+        { id: "aide", label: { fr: "Aide" }, keywords: ["aide", "help", "faq", "assistance"] },
         {
           id: "authentification",
           label: { fr: "Authentification" },
-          keywords: ["authentification", "connexion", "identification", "login", "log in", "sign in", "se connecter", "auth"],
+          keywords: ["authentification", "authentication", "connexion", "identification", "login", "log in", "sign in", "se connecter", "auth"],
         },
         {
           id: "pages-representatives",

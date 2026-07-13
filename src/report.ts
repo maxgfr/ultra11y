@@ -62,8 +62,9 @@ const L = {
     blindSpots: (n: number) =>
       `${n} composant(s) sans capture rendue (angles morts) — audités sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`,
     // Task 5 — partial-audit advisory (owner decision: scan stays opt-in but strongly advised).
-    partialAudit:
-      "Audit partiel — les critères « à restituer » (zoom 200 %, reflow 320 px, espacement du texte, visibilité du focus, régions live) n'ont pas été testés. Lancez `ultra11y scan --sample` (Playwright + axe + sondes) sur l'échantillon, puis fusionnez avec `scan --merge`.",
+    // The list names ONLY the needs-rendering criteria still untested (real coverage).
+    partialAudit: (list: string) =>
+      `Audit partiel — les critères « à restituer » (${list}) n'ont pas été testés. Lancez \`ultra11y scan --sample\` (Playwright + axe + sondes) sur l'échantillon, puis fusionnez avec \`scan --merge\`.`,
     // Task 5 — « Constats par page » (Ara-style per-sample-page synthesis).
     perPageTitle: "Constats par page",
     perPageNote: "Constats regroupés par page de l'échantillon audité (rendu dynamique).",
@@ -117,8 +118,9 @@ const L = {
     blindSpots: (n: number) =>
       `${n} component(s) without a rendered capture (blind spots) — audited from opaque source only; audit their rendered DOM (\`render --setup\`).`,
     // Task 5 — partial-audit advisory (owner decision: scan stays opt-in but strongly advised).
-    partialAudit:
-      "Partial audit — the needs-rendering criteria (200% zoom, 320px reflow, text spacing, focus visibility, live regions) were not tested. Run `ultra11y scan --sample` (Playwright + axe + probes) on the sample, then merge with `scan --merge`.",
+    // The list names ONLY the needs-rendering criteria still untested (real coverage).
+    partialAudit: (list: string) =>
+      `Partial audit — the needs-rendering criteria (${list}) were not tested. Run \`ultra11y scan --sample\` (Playwright + axe + probes) on the sample, then merge with \`scan --merge\`.`,
     // Task 5 — « Findings per page » (Ara-style per-sample-page synthesis).
     perPageTitle: "Findings per page",
     perPageNote: "Findings grouped by the audited sample page (dynamic rendering).",
@@ -130,19 +132,37 @@ const L = {
   },
 } as const;
 
-/** The partial-audit advisory text (no leading `> `) — shared by the report banner and the
- *  CLI warning (src/cli.ts cmdReport) so the two can never drift. */
-export function partialAuditBanner(lang: Lang): string {
-  return L[lang].partialAudit;
+// The needs-rendering criteria the scan tier decides, with the labels the partial-audit
+// banner names them by. Coverage comes from scope.scan.testedScs (stamped by mergeDynamic:
+// Docker measures 1.4.10 only; the local runtime adds zoom / spacing / focus / hover, and
+// live regions when interactions are on) — so the banner only ever names criteria that
+// genuinely lack a dynamic verdict, and drops only when every one of them is covered.
+const NEEDS_RENDERING: readonly { sc: string; label: Record<Lang, string> }[] = [
+  { sc: "1.4.4", label: { fr: "zoom 200 %", en: "200% zoom" } },
+  { sc: "1.4.10", label: { fr: "reflow 320 px", en: "320px reflow" } },
+  { sc: "1.4.12", label: { fr: "espacement du texte", en: "text spacing" } },
+  { sc: "2.4.7", label: { fr: "visibilité du focus", en: "focus visibility" } },
+  { sc: "1.4.13", label: { fr: "contenu au survol", en: "content on hover" } },
+  { sc: "4.1.3", label: { fr: "régions live", en: "live regions" } },
+];
+
+/** The scan-tier needs-rendering SCs this audit has NO dynamic verdict for. Coverage =
+ *  scope.scan.testedScs (the merge-time stamp); back-compat: a dyn-* probe finding proves
+ *  its SC was measured even on an audit merged before the stamp existed. Non-empty ⇒ the
+ *  partial-audit advisory shows, naming exactly these criteria. */
+export function untestedNeedsRendering(r: AuditResult): string[] {
+  const tested = new Set(r.scope.scan?.testedScs ?? []);
+  for (const f of r.findings) if (f.ruleId.startsWith("dyn-")) tested.add(f.criteriaId);
+  return NEEDS_RENDERING.filter((c) => !tested.has(c.sc)).map((c) => c.sc);
 }
 
-/** Did a `scan` tier feed into this audit? True once a dynamic finding (axe:* / dyn-*) or a
- *  scan-decided criterion is present, or a page sample was merged. Drives the partial-audit
- *  advisory (a pack audit with NO scan results is flagged partial in the CLI + report). */
-export function hasScanResults(r: AuditResult): boolean {
-  if (r.scope.sample) return true;
-  if (r.criteria.some((c) => c.decidedBy === "scan")) return true;
-  return r.findings.some((f) => /^(axe:|dyn-)/.test(f.ruleId));
+/** The partial-audit advisory text (no leading `> `) — shared by the report banner and the
+ *  CLI warning (src/cli.ts cmdReport) so the two can never drift. Names ONLY the criteria
+ *  in `untested` (default: all of them — the no-scan-at-all case). */
+export function partialAuditBanner(lang: Lang, untested: string[] = NEEDS_RENDERING.map((c) => c.sc)): string {
+  const set = new Set(untested);
+  const labels = NEEDS_RENDERING.filter((c) => set.has(c.sc)).map((c) => c.label[lang]);
+  return L[lang].partialAudit(labels.join(", "));
 }
 
 // A normalized row the renderer is agnostic about: one labelled criterion + its status/findings.
@@ -166,7 +186,7 @@ interface Group {
 function render(
   r: AuditResult,
   lang: Lang,
-  opts: { std: string; groupHead: string; groups: Group[]; standard: StandardId; derivedOf?: string; partialAudit?: boolean },
+  opts: { std: string; groupHead: string; groups: Group[]; standard: StandardId; derivedOf?: string; partialAudit?: string[] },
 ): string {
   const s = L[lang];
   const out: string[] = [];
@@ -177,10 +197,12 @@ function render(
   out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> ⚠️ ${s.warn}`, "");
-  // Partial-audit advisory banner (owner decision) — a pack audit with NO merged scan
-  // results has not tested the needs-rendering criteria. Placed in the header, before the
-  // derived-view note. No criterion-shaped token, so the `check` structural gate accepts it.
-  if (opts.partialAudit) out.push(`> 🚨 ${s.partialAudit}`, "");
+  // Partial-audit advisory banner (owner decision) — a pack audit whose scan coverage
+  // leaves needs-rendering criteria untested. Names EXACTLY the untested ones (a Docker
+  // run — reflow only — keeps the banner for the local-only probes it never ran). Placed
+  // in the header, before the derived-view note. Labels only — no criterion-shaped token,
+  // so the `check` structural gate accepts it.
+  if (opts.partialAudit?.length) out.push(`> 🚨 ${partialAuditBanner(lang, opts.partialAudit)}`, "");
   if (opts.derivedOf) out.push(`> ↪️ ${s.derived(opts.derivedOf)}`, "");
   if (r.scope.truncated) out.push(`> ✂️ ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> 🧩 ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
@@ -317,10 +339,11 @@ export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang 
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)!).push(row);
   }
   const groups: Group[] = pack.themes.map((t) => ({ key: `${t.number}.`, title: themeName(pack, t.number, lang) ?? "", rows: byTheme.get(t.number) ?? [] }));
-  // Owner decision: a pack (RGAA) report is flagged PARTIAL when no scan tier fed the audit
-  // — the needs-rendering criteria were never tested. The core WCAG report carries its own
-  // §5 manual worklist and is not flagged here.
-  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std, standard: pack.key, partialAudit: !hasScanResults(r) });
+  // Owner decision: a pack (RGAA) report is flagged PARTIAL while any needs-rendering
+  // criterion lacks a dynamic verdict — the banner names exactly which ones (a Docker-only
+  // scan covers reflow but not the local probes). The core WCAG report carries its own §5
+  // manual worklist and is not flagged here.
+  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std, standard: pack.key, partialAudit: untestedNeedsRendering(r) });
 }
 
 export interface ReportOpts {

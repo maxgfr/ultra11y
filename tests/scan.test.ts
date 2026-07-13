@@ -133,6 +133,44 @@ describe("mergeDynamic", () => {
     expect(merged.residualRisks.some((r) => r.criteriaId === "1.3.1")).toBe(true);
   });
 
+  // Cross-channel normativity consistency (AXE_ADVISORY_EXCEPTIONS, src/axe-map.ts):
+  // heading-order's static twin (heading-order-skip, src/rules/headings.ts) is normative,
+  // so heading-order is pinned to stay normative too — even though axe tags it
+  // best-practice-only (no wcag<digits> tag), same as empty-table-header. The pin must
+  // still let empty-table-header (not pinned) fold as advisory in the very same merge.
+  it("a pinned best-practice-tagged violation (heading-order) still flips to NC, while an unpinned one (empty-table-header) stays advisory", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    const out = {
+      url: "https://exemple.fr",
+      violations: [
+        {
+          id: "heading-order",
+          impact: "moderate",
+          help: "Heading levels should only increase by one",
+          tags: ["cat.semantics", "best-practice"],
+          nodes: [{ target: ["h3"], html: "<h3>Skip</h3>" }],
+        },
+        {
+          id: "empty-table-header",
+          impact: "minor",
+          help: "Table header text should not be empty",
+          tags: ["cat.name-role-value", "best-practice"],
+          nodes: [{ target: ["th"], html: "<th></th>" }],
+        },
+      ],
+      reflow: { horizontalScroll: false },
+    };
+    const dyn = toDynamicResult(out, "https://exemple.fr");
+    expect(dyn.findings.find((f) => f.axeRule === "heading-order")?.advisory).toBeUndefined();
+    expect(dyn.findings.find((f) => f.axeRule === "empty-table-header")?.advisory).toBe(true);
+    const merged = mergeDynamic(audit, dyn);
+    // Both map to 1.3.1 (AXE_WCAG) — the pinned normative heading-order finding must be
+    // enough on its own to flip the criterion, regardless of the advisory sibling.
+    expect(merged.criteria.find((c) => c.id === "1.3.1")?.status).toBe("NC");
+    expect(merged.findings.find((f) => f.ruleId === "axe:heading-order")?.advisory).toBeUndefined();
+    expect(merged.findings.find((f) => f.ruleId === "axe:empty-table-header")?.advisory).toBe(true);
+  });
+
   it("a normative violation (curated map, wcag tag) still flips its criterion to NC", () => {
     const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
     const normativeOut = {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { scForAxe, scFromWcagTags, scForAxeRule, FALLBACK_SC } from "../src/axe-map.js";
+import { scForAxe, scFromWcagTags, scForAxeRule, FALLBACK_SC, AXE_ADVISORY_EXCEPTIONS, AXE_STATIC_TWIN, isAxeAdvisory } from "../src/axe-map.js";
+import { ruleById } from "../src/rules/registry.js";
 
 describe("scFromWcagTags", () => {
   it("parses axe's native wcag tag into a success-criterion id", () => {
@@ -39,5 +40,55 @@ describe("scForAxe", () => {
     expect(scForAxeRule("button-name")).toBe("4.1.2");
     expect(scForAxeRule("label")).toBe("4.1.2");
     expect(scForAxeRule("link-name")).toBe("2.4.4");
+  });
+});
+
+// Cross-channel normativity consistency: a rule ultra11y ships as NORMATIVE statically
+// must not silently become advisory when the same defect is found dynamically (axe/scan).
+// These assertions are DERIVED from the registry rather than hardcoded, so the check
+// fails the moment AXE_ADVISORY_EXCEPTIONS/AXE_STATIC_TWIN drifts from src/rules/*.ts
+// (a twin gets renamed, removed, or is (re)marked advisory).
+describe("AXE_ADVISORY_EXCEPTIONS — cross-channel normativity consistency", () => {
+  it("pins every exception to false (always normative) — no advisory pin exists today", () => {
+    for (const [ruleId, advisory] of Object.entries(AXE_ADVISORY_EXCEPTIONS)) {
+      expect(advisory, `${ruleId} is pinned advisory (true) — was this intended?`).toBe(false);
+    }
+  });
+
+  it("declares a static twin for every pinned axe rule", () => {
+    for (const ruleId of Object.keys(AXE_ADVISORY_EXCEPTIONS)) {
+      expect(AXE_STATIC_TWIN[ruleId], `no AXE_STATIC_TWIN entry for pinned axe rule "${ruleId}"`).toBeDefined();
+      expect(AXE_STATIC_TWIN[ruleId]!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("every declared static twin is registered in src/rules/registry.ts AND normative", () => {
+    for (const [axeRuleId, twinIds] of Object.entries(AXE_STATIC_TWIN)) {
+      for (const twinId of twinIds) {
+        const rule = ruleById(twinId);
+        expect(rule, `static twin "${twinId}" (for axe rule "${axeRuleId}") is not registered in ALL_RULES`).toBeDefined();
+        expect(rule!.advisory, `static twin "${twinId}" (for axe rule "${axeRuleId}") must be normative (advisory !== true)`).not.toBe(true);
+      }
+    }
+  });
+
+  it("deliberately-advisory rules (best-practice only, no normative twin) are NOT pinned", () => {
+    // page-has-heading-one stays advisory consistent with h1-missing/h1-multiple
+    // (src/rules/headings.ts) being advisory; the others have no static twin at all.
+    for (const stillAdvisory of ["empty-table-header", "page-has-heading-one", "region", "accesskeys", "image-redundant-alt"]) {
+      expect(AXE_ADVISORY_EXCEPTIONS[stillAdvisory], `${stillAdvisory} unexpectedly pinned`).toBeUndefined();
+    }
+  });
+
+  it("isAxeAdvisory: a pinned rule stays normative even with best-practice-only tags", () => {
+    expect(isAxeAdvisory("heading-order", ["cat.semantics", "best-practice"])).toBe(false);
+    expect(isAxeAdvisory("tabindex", ["best-practice"])).toBe(false);
+    expect(isAxeAdvisory("skip-link", ["best-practice"])).toBe(false);
+    expect(isAxeAdvisory("label-title-only", ["best-practice"])).toBe(false);
+    expect(isAxeAdvisory("landmark-one-main", ["cat.semantics", "best-practice"])).toBe(false);
+  });
+
+  it("isAxeAdvisory: a non-pinned best-practice-only rule stays advisory", () => {
+    expect(isAxeAdvisory("empty-table-header", ["cat.name-role-value", "best-practice"])).toBe(true);
   });
 });

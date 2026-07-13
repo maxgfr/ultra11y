@@ -132,6 +132,7 @@ const T = {
     checklist: [
       "- [ ] Chaque entrée porte un verdict (aucun `null`).",
       "- [ ] Aucune non-conformité inventée : chaque verdict `supported` cite un élément réel à la ligne indiquée.",
+      "- [ ] Non-conformité UNIQUEMENT si un test précis du référentiel actif échoue — citez-le. Une bonne pratique sans test normatif est une recommandation ; une simple préoccupation UX n'est ni l'un ni l'autre.",
       "- [ ] Les critères « à évaluer » (rendu / jugement) ont été adjugés par l'agent (`verify --manual` → `--apply`), ou laissés en risque résiduel explicite (rendu → `scan`).",
       "- [ ] Pour un code rendu par une bibliothèque (DSFR…), le verdict s'appuie sur le HTML **produit** (build / `scan`), pas sur la source JSX.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` repasse au vert.",
@@ -152,6 +153,7 @@ const T = {
     checklist: [
       "- [ ] Every entry has a verdict (no `null`).",
       "- [ ] No invented non-conformity: every `supported` verdict cites a real element at the given line.",
+      "- [ ] Report NC ONLY if a precise test of the active standard fails — cite it. A good practice without a normative test is a recommendation; a purely UX concern is neither.",
       "- [ ] The “to assess” criteria (rendering / judgment) have been adjudicated by the agent (`verify --manual` → `--apply`), or left as an explicit residual risk (rendering → `scan`).",
       "- [ ] For component-library-rendered code (DSFR…), the verdict relies on the **produced** HTML (build / `scan`), not the JSX source.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` is green again.",

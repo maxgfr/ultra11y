@@ -18,9 +18,9 @@ import { readText } from "./util.js";
 import { parseSource } from "./parse/source.js";
 import { type Doc, type El, elementsByTag, attr, textContent, snippet as elSnippet } from "./parse/html.js";
 import { parseInlineStyle } from "./color.js";
-import { scTitle, getSC } from "./wcag.js";
+import { scTitle, getSC, hasSC } from "./wcag.js";
 import { groundItems, type GroundingSummary } from "./grounding.js";
-import type { StandardId } from "./standards/index.js";
+import { type StandardId, isCore, loadPack, hasId, getCriterion } from "./standards/index.js";
 
 /** Cap on evidence items harvested per criterion — bounded so a huge page can't produce an
  *  unreadable worklist; the honest overflow count is recorded in `evidenceTruncated`. */
@@ -44,6 +44,12 @@ export interface AgentFinding {
   message: string;
   snippet?: string;
   severity?: Severity;
+  // The precise normative test the agent cites for an NC verdict — a WCAG SC id for the
+  // core (e.g. "1.1.1"), or a pack criterion / test id when adjudicating a pack standard
+  // (e.g. "1.1" or "1.1.1"). REQUIRED for any NC finding: `applyAdjudication` fail-closes
+  // when it is absent or does not resolve against the active standard. A recommendation
+  // (advisory) needs none — a good practice has no normative test by definition.
+  normativeRef?: string;
 }
 
 export interface AdjudicationItem {
@@ -55,7 +61,11 @@ export interface AdjudicationItem {
   verdict: CriterionVerdict; // the agent fills this
   justification: string; // REQUIRED for C and NA
   reason: string | null; // REQUIRED for a still-`manual` verdict ("needs-rendered-dom" | "undecidable")
-  findings: AgentFinding[]; // REQUIRED (≥1, groundable) for NC
+  findings: AgentFinding[]; // REQUIRED (≥1, groundable, each with a normativeRef) for NC
+  // Non-normative good practices the agent noted on this criterion — folded back into the
+  // audit as ADVISORY findings (grounded exactly like an NC finding, but never affecting
+  // status: they cannot flip the criterion to NC nor enter conformancePct). Optional.
+  recommendations?: AgentFinding[];
   decidedBy: "agent";
 }
 
@@ -199,6 +209,7 @@ export function buildAdjudicationWorklist(audit: AuditResult, opts: { cwd?: stri
       justification: "",
       reason: null,
       findings: [],
+      recommendations: [],
       decidedBy: "agent" as const,
     };
   });
@@ -215,6 +226,23 @@ export interface ApplyAdjudicationResult {
 
 const NC_SEVERITY_DEFAULT: Severity = "majeur";
 const MANUAL_REASONS = new Set(["needs-rendered-dom", "undecidable"]);
+
+/** Does an NC finding's `normativeRef` resolve against the ACTIVE standard? For the WCAG
+ *  core, it must be a real success-criterion id (reuses `hasSC`). For a pack, it must be a
+ *  real pack criterion id, or a pack TEST id ("<criterionId>.<testKey>"). Fail-closed: an
+ *  absent/blank/unresolvable ref makes the whole adjudication fail (mirrors verify.ts). */
+function normativeRefResolves(ref: string | undefined, standard: StandardId): boolean {
+  const r = (ref ?? "").trim();
+  if (!r) return false;
+  if (isCore(standard)) return hasSC(r);
+  const pack = loadPack(standard);
+  if (hasId(pack, r)) return true; // a pack criterion id (e.g. RGAA "1.1")
+  // A pack test id "<criterionId>.<testKey>" (e.g. RGAA "1.1.1"): split at the last dot.
+  const dot = r.lastIndexOf(".");
+  if (dot <= 0) return false;
+  const crit = getCriterion(pack, r.slice(0, dot));
+  return !!crit?.tests && Object.hasOwn(crit.tests, r.slice(dot + 1));
+}
 
 /** Fold an adjudication file back into the audit. FAIL-CLOSED (see module header). Returns
  *  a NEW AuditResult with the decided statuses, agent findings, recomputed conformancePct,
@@ -236,16 +264,29 @@ export function applyAdjudication(audit: AuditResult, adj: AdjudicationFile, opt
       if (!it.justification || !it.justification.trim()) issues.push(`criterion ${it.criteriaId}: a ${v} verdict requires a justification`);
     } else if (v === "NC") {
       if (!it.findings || it.findings.length === 0) issues.push(`criterion ${it.criteriaId}: an NC verdict requires at least one groundable finding`);
-      for (const f of it.findings ?? []) groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
+      for (const f of it.findings ?? []) {
+        // FAIL-CLOSED: every NC finding must cite a precise, resolvable test of the active
+        // standard. A good practice with no normative test is a recommendation, not an NC.
+        if (!f.normativeRef || !f.normativeRef.trim()) {
+          issues.push(`criterion ${it.criteriaId}: an NC finding requires a normativeRef citing the failed test of the active standard`);
+        } else if (!normativeRefResolves(f.normativeRef, adj.standard)) {
+          issues.push(`criterion ${it.criteriaId}: normativeRef "${f.normativeRef}" does not resolve to a test of ${adj.standard} (fabricated?)`);
+        }
+        groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
+      }
     } else if (v === "manual") {
       if (!it.reason || !MANUAL_REASONS.has(it.reason))
         issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason ∈ {needs-rendered-dom, undecidable}`);
     } else {
       issues.push(`criterion ${it.criteriaId}: unknown verdict "${String(v)}"`);
     }
+    // Recommendations are independent of the verdict (a C criterion may still carry a good
+    // practice) and are grounded exactly like an NC finding — no normativeRef required, as
+    // a recommendation has no normative test by definition.
+    for (const rec of it.recommendations ?? []) groundInputs.push({ file: rec.file, line: rec.line, selector: rec.selector, snippet: rec.snippet });
   }
 
-  // Content-level grounding of every agent NC finding.
+  // Content-level grounding of every agent NC finding + every recommendation.
   const grounding = groundItems(groundInputs, { cwd: opts.cwd });
   for (const gi of grounding.issues) issues.push(gi);
 
@@ -282,6 +323,20 @@ export function applyAdjudication(audit: AuditResult, adj: AdjudicationFile, opt
     }
   }
 
+  // Fold recommendations as ADVISORY findings on their criterion — status-neutral (they
+  // ride alongside whatever verdict was applied, incl. C/NA/manual) and never enter NC or
+  // conformancePct. A separate pass so a `manual` item (which `continue`s above) still
+  // gets its recommendations, and an NC item's reset `c.findings` keeps them appended last.
+  for (const it of adj.items) {
+    const c = critById.get(it.criteriaId);
+    if (!c) continue;
+    for (const rec of it.recommendations ?? []) {
+      const f = agentFinding(it.criteriaId, rec, true);
+      c.findings.push(f);
+      newFindings.push(f);
+    }
+  }
+
   next.findings = [...next.findings, ...newFindings];
   // Residual set now holds only the still-manual criteria.
   next.residualRisks = next.residualRisks.filter((r) => byId.get(r.criteriaId)?.verdict === "manual");
@@ -290,7 +345,7 @@ export function applyAdjudication(audit: AuditResult, adj: AdjudicationFile, opt
   return { ok: true, audit: next, issues: [], applied, stillManual, grounding };
 }
 
-function agentFinding(criteriaId: string, f: AgentFinding): Finding {
+function agentFinding(criteriaId: string, f: AgentFinding, advisory = false): Finding {
   return {
     ruleId: `agent:${criteriaId}`,
     criteriaId,
@@ -298,10 +353,11 @@ function agentFinding(criteriaId: string, f: AgentFinding): Finding {
     line: f.line,
     col: 1,
     selectorHint: f.selector ?? "",
-    severity: f.severity ?? NC_SEVERITY_DEFAULT,
+    severity: f.severity ?? (advisory ? "mineur" : NC_SEVERITY_DEFAULT),
     message: f.message,
     remediation: getSC(criteriaId)?.understanding ? `See WCAG ${criteriaId}.` : "Address the reported non-conformity.",
     snippet: f.snippet ?? "",
+    ...(advisory ? { advisory: true } : {}),
   };
 }
 
@@ -331,10 +387,11 @@ const T = {
       "Pour CHAQUE critère, lisez les évidences ci-dessous (extraites de la source auditée) et attribuez un verdict dans `ADJUDICATE.todo.json` (champ `verdict`) :",
     verdicts: [
       "- `C` — conforme (renseignez `justification`) ;",
-      "- `NC` — non conforme (ajoutez au moins un `findings[]` : file/line/message, avec un `snippet` groundable) ;",
+      "- `NC` — non conforme (ajoutez au moins un `findings[]` : file/line/message, avec un `snippet` groundable ET un `normativeRef` citant le test précis échoué) ;",
       "- `NA` — non applicable (renseignez `justification`) ;",
       "- `manual` — indécidable statiquement (renseignez `reason` : `needs-rendered-dom` → `scan`, ou `undecidable`).",
     ],
+    rule: "> Ne signalez une NC que si un test précis du référentiel actif échoue — citez-le (`normativeRef`). Une bonne pratique sans test normatif est une recommandation (`recommendations[]`, non normative). Une simple préoccupation UX n'est ni l'un ni l'autre.",
     then: "Puis : `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (échoue si un verdict manque une justification/finding/reason).",
     evidence: "Évidences",
     none: "(aucune évidence automatique — décidez depuis la source, ou laissez `manual` avec une raison)",
@@ -344,10 +401,11 @@ const T = {
     intro: "For EACH criterion, read the evidence below (harvested from the audited source) and set a verdict in `ADJUDICATE.todo.json` (field `verdict`):",
     verdicts: [
       "- `C` — conformant (fill `justification`);",
-      "- `NC` — non-conformant (add at least one `findings[]`: file/line/message, with a groundable `snippet`);",
+      "- `NC` — non-conformant (add at least one `findings[]`: file/line/message, with a groundable `snippet` AND a `normativeRef` citing the precise failed test);",
       "- `NA` — not applicable (fill `justification`);",
       "- `manual` — not statically decidable (fill `reason`: `needs-rendered-dom` → `scan`, or `undecidable`).",
     ],
+    rule: "> Report NC only if a precise test of the active standard fails — cite it (`normativeRef`). A good practice without a normative test is a recommendation (`recommendations[]`, non-normative). A purely UX concern is neither.",
     then: "Then: `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (fails if any verdict lacks its justification/finding/reason).",
     evidence: "Evidence",
     none: "(no automatic evidence — decide from source, or leave `manual` with a reason)",
@@ -356,7 +414,7 @@ const T = {
 
 export function formatAdjudication(items: AdjudicationItem[], lang: Lang = "en"): string {
   const s = T[lang];
-  const out: string[] = [s.title, "", s.intro, "", ...s.verdicts, "", s.then, ""];
+  const out: string[] = [s.title, "", s.intro, "", ...s.verdicts, "", s.rule, "", s.then, ""];
   for (const it of items) {
     out.push(`## ${it.criteriaId}${it.title ? ` — ${it.title}` : ""}  _(${it.automatability})_`);
     out.push("", `> ${s.evidence} (${it.evidence.length}${it.evidenceTruncated ? ` / ${it.evidenceTruncated.total}` : ""}):`, "");

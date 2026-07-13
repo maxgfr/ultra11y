@@ -172,6 +172,16 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: () => `Add aria-sort="none|ascending|descending" on the sorted <th>, and hide the sort glyph (aria-hidden="true").`,
     },
   },
+  "table-empty-data-cell": {
+    message: {
+      fr: () => `Cellule de données vide (ou réduite à « - ») : restituée « vide » par les lecteurs d'écran.`,
+      en: () => `Empty data cell (or reduced to "-"): announced as "blank" by screen readers.`,
+    },
+    remediation: {
+      fr: () => `Ajoutez un texte masqué (classe sr-only) précisant l'absence de valeur, ex. « Non renseigné ».`,
+      en: () => `Insert hidden text (an sr-only class) stating the absence of a value, e.g. "Not provided".`,
+    },
+  },
 
   // ---- Theme 6/7 — Links & buttons (src/rules/links.ts) -----------------------
   "link-empty-name": {
@@ -465,6 +475,16 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: () => `Remove user-scalable=no and maximum-scale (or set maximum-scale ≥ 2) from the viewport content.`,
     },
   },
+  "css-generated-content-informative": {
+    message: {
+      fr: (p) => `Contenu généré en CSS porteur de texte (content: "${p.text}") : invisible pour les technologies d'assistance.`,
+      en: (p) => `CSS generated content carrying text (content: "${p.text}"): invisible to assistive technologies.`,
+    },
+    remediation: {
+      fr: () => `Déplacez ce texte informatif dans le DOM ; réservez content aux éléments purement décoratifs.`,
+      en: () => `Move this informative text into the DOM; keep content for purely decorative elements.`,
+    },
+  },
 
   // ---- Theme 11 — Forms (src/rules/forms.ts) ----------------------------------
   "control-label-missing": {
@@ -571,6 +591,46 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: () => `Add aria-required="true" on the required custom widget.`,
     },
   },
+  "disabled-context-content.fieldset": {
+    message: {
+      fr: () => `<fieldset disabled> encapsulant des champs en lecture seule — le contenu risque d'être ignoré par les technologies d'assistance.`,
+      en: () => `<fieldset disabled> wrapping read-only fields — the content may be ignored by assistive technologies.`,
+    },
+    remediation: {
+      fr: () => `Remplacez le conteneur désactivé par un <div> (ou aria-disabled="true" + gestion clavier en JS) afin que le contenu reste restitué.`,
+      en: () => `Replace the disabled container with a <div> (or aria-disabled="true" + JS keyboard handling) so the content stays exposed.`,
+    },
+  },
+  "disabled-context-content.inert": {
+    message: {
+      fr: () => `Conteneur [inert] encapsulant des champs de formulaire — leur contenu est retiré de l'arbre d'accessibilité.`,
+      en: () => `[inert] container wrapping form fields — their content is taken out of the accessibility tree.`,
+    },
+    remediation: {
+      fr: () => `Retirez [inert] du conteneur en lecture seule (ou aria-disabled="true" + JS) pour que le contenu reste restitué.`,
+      en: () => `Take [inert] off the read-only container (or use aria-disabled="true" + JS) so the content stays exposed.`,
+    },
+  },
+  "radio-checkbox-group-ungrouped": {
+    message: {
+      fr: (p) => `${p.count} champs ${p.type} partageant name="${p.name}" hors de tout <fieldset>/role="radiogroup"/role="group" — regroupement absent.`,
+      en: (p) => `${p.count} ${p.type} fields sharing name="${p.name}" outside any <fieldset>/role="radiogroup"/role="group" — grouping is missing.`,
+    },
+    remediation: {
+      fr: () => `Regroupez ces champs de même nature dans un <fieldset> avec <legend> (ou un role="radiogroup"/role="group" nommé).`,
+      en: () => `Group these same-nature fields in a <fieldset> with a <legend> (or a named role="radiogroup"/role="group").`,
+    },
+  },
+  "date-fields-ungrouped": {
+    message: {
+      fr: (p) => `${p.count} champs de date adjacents hors de tout <fieldset>/role="group" — champs de même nature non regroupés.`,
+      en: (p) => `${p.count} adjacent date fields outside any <fieldset>/role="group" — same-nature fields left ungrouped.`,
+    },
+    remediation: {
+      fr: () => `Regroupez les champs de date (jour/mois/année, début/fin) dans un <fieldset> avec une <legend> décrivant la période.`,
+      en: () => `Group the date fields (day/month/year, start/end) in a <fieldset> with a <legend> describing the period.`,
+    },
+  },
 
   // ---- Theme 12 — Navigation & landmarks (src/rules/navigation.ts) ------------
   "skip-link-target-missing": {
@@ -611,6 +671,26 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
     remediation: {
       fr: () => `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`,
       en: () => `Keep a single <main>/role="main"; structure the rest with <section>/<aside>.`,
+    },
+  },
+  "nav-landmark-missing": {
+    message: {
+      fr: (p) => `Groupe de ${p.count} liens de navigation dans <${p.region}> sans repère de navigation (<nav> ou role="navigation") dans la page.`,
+      en: (p) => `A cluster of ${p.count} navigation links in <${p.region}> with no navigation landmark (<nav> or role="navigation") in the page.`,
+    },
+    remediation: {
+      fr: () => `Encapsulez les liens de navigation dans un <nav> (ou role="navigation") pour exposer un repère de navigation.`,
+      en: () => `Wrap the navigation links in a <nav> (or role="navigation") to expose a navigation landmark.`,
+    },
+  },
+  "nav-landmark-unnamed": {
+    message: {
+      fr: () => `Plusieurs repères de navigation dans la page ; celui-ci n'a ni aria-label ni aria-labelledby pour le distinguer.`,
+      en: () => `Several navigation landmarks in the page; this one has neither aria-label nor aria-labelledby to tell them apart.`,
+    },
+    remediation: {
+      fr: () => `Donnez à chaque <nav> un aria-label (ou aria-labelledby) distinct, ex. « Menu principal » / « Fil d'Ariane ».`,
+      en: () => `Give each <nav> a distinct aria-label (or aria-labelledby), e.g. "Primary" / "Breadcrumb".`,
     },
   },
 

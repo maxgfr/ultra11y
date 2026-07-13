@@ -14,7 +14,7 @@ const FIX = `${FIX_ROOT}egapro-feedback/`;
 
 // Phases whose cases must pass TODAY. Each later phase adds its tag here as it lands —
 // the gated cases then run for real, with no rewrite needed.
-const IMPLEMENTED_PHASES = new Set<string>(["P0", "P1"]);
+const IMPLEMENTED_PHASES = new Set<string>(["P0", "P1", "P3"]);
 
 // `Finding.advisory` now exists (Phase 1) — filter to normative findings directly.
 const normative = (fs: Finding[]) => fs.filter((f) => !f.advisory);

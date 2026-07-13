@@ -1,6 +1,7 @@
 // Theme 5 — Data tables (+ layout-table heuristic to avoid false positives).
 import type { Doc, El } from "../parse/html.js";
-import { attr, hasAttr, hasBoundAttr, descendants, ancestors } from "../parse/html.js";
+import { attr, hasAttr, hasBoundAttr, descendants, ancestors, visibleText } from "../parse/html.js";
+import { mayInjectContent } from "../name.js";
 import type { Rule, RuleFinding } from "./rule.js";
 
 const declaredLayout = (t: El): boolean => ["presentation", "none"].includes((attr(t, "role") ?? "").trim());
@@ -152,4 +153,31 @@ const sortableHeaderNoAriaSort: Rule = {
   },
 };
 
-export const tablesRules: Rule[] = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup, sortableHeaderNoAriaSort];
+// ADVISORY (auditor recommendation, never an NC): an empty data cell — or one reduced to
+// a lone "-" — is announced as "blank" by screen readers. The recommendation is to add
+// sr-only text stating the absence of a value. Conservative: only bare <td>s in a data
+// table with no name, no element children, and no injected content.
+const tableEmptyDataCell: Rule = {
+  id: "table-empty-data-cell",
+  criteria: ["1.3.1"],
+  severity: "mineur",
+  advisory: true,
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const t of doc.elements) {
+      if (t.tag !== "table" || isLayoutTable(t)) continue;
+      for (const cell of descendants(t)) {
+        if (cell.tag !== "td") continue;
+        if (mayInjectContent(cell)) continue; // value supplied via slot/component/{expr}
+        if (cell.children.some((c) => c.type === "element")) continue; // holds an icon/img/control — not blank
+        if ((attr(cell, "aria-label") ?? "").trim() || hasAttr(cell, "aria-labelledby")) continue; // named another way
+        const txt = visibleText(cell);
+        if (txt !== "" && txt !== "-") continue;
+        out.push({ criteriaId: "1.3.1", el: cell, msgId: "table-empty-data-cell", advisory: true });
+      }
+    }
+    return out;
+  },
+};
+
+export const tablesRules: Rule[] = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup, sortableHeaderNoAriaSort, tableEmptyDataCell];

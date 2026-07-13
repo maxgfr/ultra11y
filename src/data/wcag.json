@@ -253,7 +253,12 @@
         "label-for-dangling",
         "missing-main-landmark",
         "multiple-main-landmark",
-        "sortable-header-no-aria-sort"
+        "sortable-header-no-aria-sort",
+        "nav-landmark-missing",
+        "nav-landmark-unnamed",
+        "radio-checkbox-group-ungrouped",
+        "table-empty-data-cell",
+        "css-generated-content-informative"
       ],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       "techniques": [
@@ -978,7 +983,7 @@
       "level": "A",
       "addedIn": "2.0",
       "automatability": "judgment",
-      "ruleIds": [],
+      "ruleIds": ["radio-checkbox-group-ungrouped", "date-fields-ungrouped"],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html",
       "techniques": [
         "ARIA1",
@@ -1087,7 +1092,8 @@
         "button-empty-name",
         "icon-only-control-unnamed",
         "control-name-title-only",
-        "field-purpose-incomplete"
+        "field-purpose-incomplete",
+        "disabled-context-content"
       ],
       "understanding": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
       "techniques": [

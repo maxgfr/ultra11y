@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Formulaire conforme — garde-fous de précision</title>
+  </head>
+  <body>
+    <!-- A single unnamed <nav> is fine: nothing to disambiguate (nav-landmark-unnamed
+         needs ≥2 landmarks; nav-landmark-missing never fires when a <nav> exists). -->
+    <nav>
+      <a href="/">Accueil</a>
+      <a href="/declarer">Déclarer</a>
+      <a href="/resultats">Résultats</a>
+      <a href="/aide">Aide</a>
+    </nav>
+    <main>
+      <h1>Déclaration</h1>
+
+      <h2>Période</h2>
+      <form>
+        <!-- DSFR-style properly grouped date fields: fieldset + legend ⇒ no date NC. -->
+        <fieldset>
+          <legend>Période de déclaration</legend>
+          <label for="date-debut">Date de début</label>
+          <input id="date-debut" type="date" />
+          <label for="date-fin">Date de fin</label>
+          <input id="date-fin" type="date" />
+        </fieldset>
+
+        <!-- Radios inside a named role="radiogroup" ⇒ no grouping NC. -->
+        <div role="radiogroup" aria-label="Avis du CSE">
+          <label><input type="radio" name="cse" value="oui" /> Oui</label>
+          <label><input type="radio" name="cse" value="non" /> Non</label>
+        </div>
+      </form>
+
+      <h2>Récapitulatif</h2>
+      <!-- Form momentarily locked while it posts: aria-busy + a submit control mean the
+           disabled fieldset is a transient submission guard, not a read-only recap. -->
+      <form aria-busy="true">
+        <fieldset disabled>
+          <legend>Informations de l'entreprise</legend>
+          <label for="siren">SIREN</label>
+          <input id="siren" type="text" value="123456789" />
+          <label for="raison">Raison sociale</label>
+          <input id="raison" type="text" value="Société Démo" />
+          <button type="submit" disabled>Envoi en cours…</button>
+        </fieldset>
+      </form>
+    </main>
+  </body>
+</html>

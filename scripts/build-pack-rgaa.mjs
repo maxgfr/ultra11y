@@ -94,6 +94,7 @@ const RULE_SC = {
   "aria-required-children": ["4.1.2"], "autoplay-media": ["1.4.2", "2.2.2"], "blink-marquee": ["2.2.2"],
   "button-empty-name": ["4.1.2"], "canvas-fallback-missing": ["1.1.1"], "chart-no-accessible-name": ["1.1.1"],
   "clickable-noninteractive": ["4.1.2", "2.1.1"], "contrast-literal": ["1.4.3"], "control-label-missing": ["4.1.2"],
+  "css-generated-content-informative": ["1.3.1"], "date-fields-ungrouped": ["3.3.2"], "disabled-context-content": ["4.1.2"],
   "control-name-title-only": ["4.1.2"], "cross-aria-forwarding": ["4.1.2"], "cross-aria-ref-cross-file": ["4.1.2"],
   "cross-icon-only-unnamed": ["4.1.2"], "cross-name-ref-cross-file": ["1.3.1"], "cross-page-lang": ["3.1.1"],
   "cross-prop-drilled-name-lost": ["4.1.2"], "cross-skip-link-target": ["2.4.1"], "data-table-no-headers": ["1.3.1"],
@@ -105,10 +106,11 @@ const RULE_SC = {
   "label-for-dangling": ["1.3.1"], "lang-invalid": ["3.1.1", "3.1.2"], "layout-table-data-markup": ["1.3.1"],
   "link-empty-name": ["2.4.4"], "list-structure": ["1.3.1"], "live-region-conflict": ["4.1.3"], "media-no-track": ["1.2.2"],
   "meta-refresh-redirect": ["2.2.1"], "meta-viewport-zoom-block": ["1.4.4"], "missing-main-landmark": ["1.3.1"],
-  "multiple-main-landmark": ["1.3.1"], "nested-interactive": ["4.1.2"], "object-embed-no-name": ["1.1.1"],
+  "multiple-main-landmark": ["1.3.1"], "nav-landmark-missing": ["1.3.1"], "nav-landmark-unnamed": ["1.3.1"],
+  "nested-interactive": ["4.1.2"], "object-embed-no-name": ["1.1.1"], "radio-checkbox-group-ungrouped": ["1.3.1", "3.3.2"],
   "placeholder-as-label": ["4.1.2"], "positive-tabindex": ["2.4.3"], "redundant-aria": ["4.1.2"], "select-has-option": ["4.1.2"],
   "skip-link-target-missing": ["2.4.1"], "sortable-header-no-aria-sort": ["1.3.1"], "status-message-not-assertive": ["4.1.3"],
-  "table-caption-missing": ["1.3.1"], "title-missing-empty": ["2.4.2"],
+  "table-caption-missing": ["1.3.1"], "table-empty-data-cell": ["1.3.1"], "title-missing-empty": ["2.4.2"],
 };
 
 // ruleId → RGAA criterion ids it evidences. Static rules + their axe:/dyn- equivalents so
@@ -128,6 +130,7 @@ const RULE_TO_CRITERIA = {
   "media-no-track": ["4.3"], "axe:audio-caption": ["4.3"], "axe:video-caption": ["4.3"],
   // Theme 5 — tables (5.4 title, 5.6/5.7 headers, 5.8 layout-table markup)
   "table-caption-missing": ["5.4"], "data-table-no-headers": ["5.6", "5.7"], "sortable-header-no-aria-sort": ["5.7"],
+  "table-empty-data-cell": ["5.7"],
   "layout-table-data-markup": ["5.8"], "axe:td-headers-attr": ["5.7"], "axe:th-has-data-cells": ["5.6"],
   "axe:scope-attr-valid": ["5.7"], "axe:td-has-header": ["5.6"], "axe:empty-table-header": ["5.6"], "axe:table-fake-caption": ["5.8"],
   // Theme 6 — links (6.2 link label)
@@ -138,6 +141,7 @@ const RULE_TO_CRITERIA = {
   "aria-hidden-focusable": ["7.1"], "redundant-aria": ["7.1"], "nested-interactive": ["7.1"],
   "cross-aria-forwarding": ["7.1"], "cross-aria-ref-cross-file": ["7.1"], "cross-prop-drilled-name-lost": ["7.1"],
   "clickable-noninteractive": ["7.3"], "live-region-conflict": ["7.5"], "status-message-not-assertive": ["7.5"],
+  "disabled-context-content": ["7.1", "10.8"],
   "axe:aria-allowed-attr": ["7.1"], "axe:aria-allowed-role": ["7.1"], "axe:aria-roles": ["7.1"],
   "axe:aria-required-attr": ["7.1"], "axe:aria-required-children": ["7.1"], "axe:aria-required-parent": ["7.1"],
   "axe:aria-valid-attr": ["7.1"], "axe:aria-valid-attr-value": ["7.1"], "axe:nested-interactive": ["7.1"],
@@ -151,13 +155,16 @@ const RULE_TO_CRITERIA = {
   "h1-missing": ["9.1"], "h1-multiple": ["9.1"], "heading-order-skip": ["9.1"], "empty-heading": ["9.1"],
   "cross-name-ref-cross-file": ["9.1"], "axe:heading-order": ["9.1"], "axe:empty-heading": ["9.1"], "axe:page-has-heading-one": ["9.1"],
   "missing-main-landmark": ["9.2", "12.6"], "multiple-main-landmark": ["9.2", "12.6"], "axe:landmark-one-main": ["12.6"],
+  "nav-landmark-missing": ["9.2", "12.6"], "nav-landmark-unnamed": ["12.6"],
   "list-structure": ["9.3"], "axe:list": ["9.3"], "axe:listitem": ["9.3"], "axe:definition-list": ["9.3"], "axe:dlitem": ["9.3"],
-  // Theme 10 — presentation (10.4 zoom, 10.7 focus, 10.11 reflow, 10.12 text-spacing)
+  // Theme 10 — presentation (10.2 CSS-off content, 10.4 zoom, 10.7 focus, 10.11 reflow, 10.12 text-spacing)
+  "css-generated-content-informative": ["10.2"],
   "meta-viewport-zoom-block": ["10.4"], "axe:meta-viewport": ["10.4"], "axe:meta-viewport-large": ["10.4"],
   "dyn-reflow": ["10.11"], "dyn-reflow-zoom": ["10.4"], "dyn-focus-visible": ["10.7"], "dyn-text-spacing": ["10.12"], "dyn-hover": ["10.13"],
-  // Theme 11 — forms (11.1 field label, 11.6 fieldset legend, 11.9 button label, 11.10 input control, 11.13 autocomplete)
+  // Theme 11 — forms (11.1 field label, 11.5 field grouping, 11.6 fieldset legend, 11.9 button label, 11.10 input control, 11.13 autocomplete)
   "control-label-missing": ["11.1"], "label-for-dangling": ["11.1"], "placeholder-as-label": ["11.1"],
   "form-field-multiple-labels": ["11.1"], "select-has-option": ["11.1"], "control-name-title-only": ["11.1"],
+  "radio-checkbox-group-ungrouped": ["11.5"], "date-fields-ungrouped": ["11.5"],
   "field-purpose-incomplete": ["11.1", "11.13"], "fieldset-legend-missing": ["11.6"], "button-empty-name": ["11.9"],
   "error-not-associated": ["11.10"], "aria-invalid-no-description": ["11.10"],
   "axe:label": ["11.1"], "axe:form-field-multiple-labels": ["11.1"], "axe:select-name": ["11.1"], "axe:label-title-only": ["11.1"],

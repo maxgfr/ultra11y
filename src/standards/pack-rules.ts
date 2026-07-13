@@ -67,8 +67,9 @@ function matchNode(el: El, node: MatchNode, depth: number): boolean {
 
 function toFinding(doc: Doc, el: El, rule: PackRule, packKey: string): Finding {
   // Canonical English bake per the Finding contract (message = AI-facing English); the
-  // validator guarantees both en + fr are present. Localized rendering beyond the baked
-  // string is a later concern (the pack projection is where these surface).
+  // validator guarantees both en + fr are present. The localized {en,fr} pair also rides
+  // on `i18n` so a renderer at `--lang fr` resolves the French text (src/messages.ts
+  // resolveMessage), rather than falling back to this English bake.
   const message = rule.message.en ?? rule.message.fr ?? rule.id;
   const remediation = rule.remediation.en ?? rule.remediation.fr ?? "";
   return {
@@ -84,6 +85,10 @@ function toFinding(doc: Doc, el: El, rule: PackRule, packKey: string): Finding {
     snippet: sourceSnippet(doc, el),
     sourceStart: el.start,
     sourceEnd: el.end,
+    i18n: {
+      message: { en: rule.message.en, fr: rule.message.fr },
+      remediation: { en: rule.remediation.en, fr: rule.remediation.fr },
+    },
     ...(rule.advisory ? { advisory: true } : {}),
   };
 }

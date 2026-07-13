@@ -22,6 +22,11 @@ const SEVERITIES = new Set(["bloquant", "majeur", "mineur"]);
 const MAX_MATCH_DEPTH = 3;
 const MATCH_OPS = new Set(["present", "absent", "equals", "matches"]);
 const TEXT_OPS = new Set(["matches", "lacks"]);
+// The recognized CONDITION keys of a match node (each constrains which elements fire); a
+// node must carry ≥1 so it can never fire on EVERY element. `scope` (top-node only) is an
+// applicability modifier, not a condition — a scope-only match is still empty.
+const MATCH_CONDITION_KEYS = ["tag", "attrs", "text", "has", "lacks"] as const;
+const MATCH_NODE_KEYS = new Set<string>(MATCH_CONDITION_KEYS);
 
 // Catastrophic-backtracking (ReDoS) SHAPES rejected in ANY pack-supplied regex (an
 // `idPattern`, an attr `matches`, or a `text` predicate). Untrusted packs are validated at
@@ -415,6 +420,21 @@ function validateMatch(node: unknown, path: string, depth: number, err: Emit, to
     return;
   }
   const n = node as Record<string, unknown>;
+  // Reject unknown keys — a typo like { tgo: "a" } would otherwise be silently ignored and
+  // the (now condition-less) match would fire on every element.
+  const allowedKeys = top ? new Set([...MATCH_NODE_KEYS, "scope"]) : MATCH_NODE_KEYS;
+  for (const k of Object.keys(n)) {
+    if (!allowedKeys.has(k)) err(`${path}.${k}`, `unknown match key "${k}" (allowed: ${[...allowedKeys].sort().join(", ")})`);
+  }
+  // Require ≥1 EFFECTIVE condition (an empty match — or one with only empty arrays / a bare
+  // scope — fires on every element, a footgun).
+  const hasCondition = MATCH_CONDITION_KEYS.some((k) => {
+    const v = n[k];
+    if (k === "tag") return typeof v === "string" && v !== "";
+    if (k === "text") return v !== undefined && v !== null;
+    return Array.isArray(v) && v.length > 0; // attrs / has / lacks
+  });
+  if (!hasCondition) err(path, "match must carry at least one condition (tag, attrs, text, has, or lacks) — an empty match fires on every element");
   if (n.tag !== undefined && (typeof n.tag !== "string" || n.tag === "")) err(`${path}.tag`, "match tag must be a non-empty string");
   if (top && n.scope !== undefined && n.scope !== "page" && n.scope !== "fragment") err(`${path}.scope`, 'match scope must be "page" or "fragment"');
   if (n.attrs !== undefined) {

@@ -50,6 +50,18 @@ describe("checkReport", () => {
     expect(r.issues).toHaveLength(0);
   });
 
+  // Task 5: an RGAA report with no merged scan carries the partial-audit banner in its
+  // header. The banner (a blockquote with no criterion-shaped token) must not trip the
+  // structural gate — the report still passes, in fr and en.
+  it("passes an RGAA report carrying the partial-audit banner", () => {
+    const fr = renderPackReport(bad, loadPack("rgaa"), "fr");
+    expect(fr).toContain("Audit partiel");
+    expect(checkReport(fr, "rgaa", "fr").ok).toBe(true);
+    const en = renderPackReport(bad, loadPack("rgaa"), "en");
+    expect(en).toContain("Partial audit");
+    expect(checkReport(en, "rgaa", "en").ok).toBe(true);
+  });
+
   // Task 2: the report's §2 now embeds the full ticket template (Priorité, Partie technique,
   // Contexte de reproduction). Those extra sections + a served-URL reproduction block must
   // NOT trip the structural gate (no fabricated criterion refs, sections 1–5 intact).

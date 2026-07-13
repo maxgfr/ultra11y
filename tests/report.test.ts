@@ -3,9 +3,11 @@ import { readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
-import { renderReport, renderPackReport, writeReport } from "../src/report.js";
+import { renderReport, renderPackReport, writeReport, hasScanResults } from "../src/report.js";
+import { mergeDynamic } from "../src/scan.js";
 import { prdUnits } from "../src/prd.js";
 import { loadPack } from "../src/standards/index.js";
+import type { DynamicResult } from "../src/types.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
@@ -88,6 +90,47 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
     const capResult = runAudit({ inputs: [`${FIX}captures/button-icon.html`] });
     const md = renderReport(capResult, "en");
     expect(md).toContain("- _rendered capture of `Button` — source `src/Button.tsx`_");
+  });
+});
+
+describe("partial-audit advisory banner (Task 5 — scan opt-in but strongly advised)", () => {
+  const scanned: DynamicResult = {
+    tool: "ultra11y",
+    engine: "axe-core@playwright (local)",
+    target: "https://example.fr",
+    date: "2026-07-13",
+    findings: [
+      {
+        criteriaId: "1.4.10",
+        axeRule: "reflow",
+        impact: "serious",
+        severity: "majeur",
+        message: "reflow",
+        selector: "document",
+        snippet: "",
+        engine: "reflow",
+        page: "https://example.fr",
+      },
+    ],
+  };
+
+  it("appears on an RGAA report with NO merged scan results", () => {
+    const md = renderPackReport(bad, loadPack("rgaa"), "fr");
+    expect(md).toContain("Audit partiel");
+    expect(md).toContain("scan --sample");
+    expect(renderPackReport(bad, loadPack("rgaa"), "en")).toContain("Partial audit");
+  });
+
+  it("does NOT appear on the core WCAG report", () => {
+    expect(renderReport(bad, "fr")).not.toContain("Audit partiel");
+    expect(renderReport(bad, "en")).not.toContain("Partial audit");
+  });
+
+  it("does NOT appear once a scan tier fed the audit (hasScanResults)", () => {
+    const merged = mergeDynamic(bad, scanned, "fr");
+    expect(hasScanResults(merged)).toBe(true);
+    expect(renderPackReport(merged, loadPack("rgaa"), "fr")).not.toContain("Audit partiel");
+    expect(hasScanResults(bad)).toBe(false);
   });
 });
 

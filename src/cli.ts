@@ -1,9 +1,9 @@
 import { realpathSync, writeFileSync, mkdirSync, existsSync, readFileSync, appendFileSync } from "node:fs";
 import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { VERSION, type Lang, type AuditResult, type DynamicResult } from "./types.js";
+import { VERSION, type Lang, type AuditResult, type DynamicResult, type SampleConfig } from "./types.js";
 import { runAudit } from "./audit.js";
-import { writeReport } from "./report.js";
+import { writeReport, hasScanResults, partialAuditBanner } from "./report.js";
 import { writePrd, prdUnits, type PrdFormat } from "./prd.js";
 import { ghAvailable, pushIssues, pushSingleIssue } from "./gh.js";
 import {
@@ -26,14 +26,15 @@ import { checkReport, checkSemantic } from "./check.js";
 import { buildWorklist, writeWorklist, applyVerdicts, VERIFY_MAX, type VerifyItem } from "./verify.js";
 import { groundItems } from "./grounding.js";
 import { buildAdjudicationWorklist, writeAdjudication, applyAdjudication, type AdjudicationFile } from "./adjudicate.js";
-import { runScan, runScanMany, runCrawlScan, mergeDynamic, cleanDynamic, dockerAvailable } from "./scan.js";
-import { runScanLocal, runScanManyLocal, runCrawlScanLocal, localAvailable } from "./scan-local.js";
+import { runScan, runScanMany, runCrawlScan, runSampleScan, mergeDynamic, cleanDynamic, dockerAvailable } from "./scan.js";
+import { runScanLocal, runScanManyLocal, runCrawlScanLocal, runSampleScanLocal, localAvailable } from "./scan-local.js";
+import { validateSample, lintSample, kindLabel } from "./sample.js";
 import { runFix, fixSummary } from "./fix.js";
 import { diffAgainstBaseline, baselineSummary, parseFailOn, findingsAtOrAbove } from "./baseline.js";
 import { repoRoot, writeHook, writeCi } from "./init.js";
 import { auditSummary, captureCoverageSummary } from "./output.js";
-import { resolveStandard, getPack, type StandardId } from "./standards/index.js";
-import { loadRuntimeStandards } from "./config.js";
+import { resolveStandard, getPack, isCore, type StandardId } from "./standards/index.js";
+import { loadRuntimeStandards, loadConfig } from "./config.js";
 import { runPackCheck, packScaffold } from "./pack.js";
 import { listPhases, orchestrateRun, PHASES } from "./orchestrate.js";
 import { readStdin, readText } from "./util.js";
@@ -62,8 +63,10 @@ Usage:
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
   ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--no-interact] [--interact-clicks] [--merge <audit.json>] [--out <dir>] [--json]
+  ultra11y scan     --sample [--runtime …] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--json]   (scan the .ultra11yrc.json page sample)
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--runtime …] [--cwd <dir>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
+  ultra11y sample   check [--standard <pack>] [--json]   (lint the .ultra11yrc.json page sample vs the standard's required page kinds)
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -153,6 +156,15 @@ Commands:
              AuditResult (manual → C/NC).
              --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
              links BFS-crawled from a start URL) and aggregate the findings.
+             --sample scans the NORMATIVE page sample declared in .ultra11yrc.json
+             (representative pages + transverse elements); each page's own
+             storage-state overrides --storage-state, and the report groups the
+             findings « Constats par page ».
+  sample     Normative page-sample (échantillon) helper. 'sample check' lints the
+             .ultra11yrc.json sample block against the active standard's required
+             page kinds (RGAA: accueil, contact, mentions légales, déclaration
+             d'accessibilité, plan du site, aide, authentification, pages
+             représentatives + éléments transverses) — advisory, never a gate.
 
 Options:
   --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
@@ -248,6 +260,9 @@ Options:
                      a server mutation (delete/send) invisible to the location.href
                      assertion. Unauthenticated scans keep clicks on regardless; the
                      destructive-name skip above applies in every case
+  --sample           scan: scan the NORMATIVE page sample from .ultra11yrc.json (its
+                     sample.pages), per-page storage-state overriding --storage-state,
+                     aggregating one result with per-page provenance for the report
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
                      check: engage the semantic gate — requires an adjudicated verdicts
@@ -265,7 +280,7 @@ Options:
 
 Data: WCAG 2.2 © W3C (W3C Document License). RGAA 4.1.2 pack © DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
 
-const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack", "orchestrate"] as const;
+const COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "sample", "fix", "init", "pack", "orchestrate"] as const;
 type Command = (typeof COMMANDS)[number];
 
 function isCommand(s: string | undefined): s is Command {
@@ -354,6 +369,7 @@ const BOOLEAN_FLAGS = new Set([
   "no-interact",
   "interact-clicks",
   "clean",
+  "sample",
   "eco",
   "help",
   "version",
@@ -708,11 +724,23 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
     return 2;
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
-  const path = writeReport(result, { out, lang: resolveLang(p.flags, { audit: result, standard }), standard });
+  const lang = resolveLang(p.flags, { audit: result, standard });
+  const path = writeReport(result, { out, lang, standard });
+  // Partial-audit advisory (owner decision): a pack (RGAA) report with NO merged scan
+  // results has not tested the needs-rendering criteria — warn prominently on the CLI
+  // (the report itself also carries a visible banner). Scan stays opt-in but strongly advised.
+  const partial = !isCore(standard) && !hasScanResults(result);
+  if (partial && !p.flags.json) console.error(`🚨 ${partialAuditBanner(lang)}`);
   if (p.flags.json)
     console.log(
       JSON.stringify(
-        { path, conformancePct: result.conformancePct, date: result.date, standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag" },
+        {
+          path,
+          conformancePct: result.conformancePct,
+          date: result.date,
+          standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag",
+          ...(partial ? { partialAudit: true } : {}),
+        },
         null,
         2,
       ),
@@ -1359,9 +1387,54 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
   const interactClicks = p.flags["interact-clicks"] === true;
   const sitemap = typeof p.flags.sitemap === "string" ? (p.flags.sitemap as string) : undefined;
   const crawl = typeof p.flags.crawl === "string" ? (p.flags.crawl as string) : undefined;
+
+  // --sample: iterate the NORMATIVE page sample from `.ultra11yrc.json` (per-page
+  // storageState overrides --storage-state). Loaded + validated here (hard error on a
+  // malformed sample). An authenticated page needs the local runtime — the Docker tier has
+  // no storageState mechanism, so a sample with any auth page + Docker is refused, not run
+  // unauthenticated. SECURITY: storageState is only ever a path — its content is never read.
+  const useSample = p.flags.sample === true;
+  let sampleConfig: SampleConfig | undefined;
+  if (useSample) {
+    let cfg: ReturnType<typeof loadConfig>;
+    try {
+      cfg = loadConfig(process.cwd());
+    } catch (e) {
+      console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
+      return 2;
+    }
+    if (!cfg?.sample) {
+      console.error(
+        lang === "fr"
+          ? "ultra11y scan : --sample exige un bloc `sample` dans .ultra11yrc.json (pages de l'échantillon). Voir `ultra11y sample check`."
+          : "ultra11y scan: --sample requires a `sample` block in .ultra11yrc.json (the sample pages). See `ultra11y sample check`.",
+      );
+      return 2;
+    }
+    const v = validateSample(cfg.sample);
+    if (!v.ok || !v.sample) {
+      console.error(lang === "fr" ? "ultra11y scan : bloc `sample` invalide :" : "ultra11y scan: invalid `sample` block:");
+      for (const i of v.issues) console.error(`  ✗ ${i.path ? `${i.path}: ` : ""}${i.message}`);
+      return 2;
+    }
+    sampleConfig = v.sample;
+    if (!useLocal && sampleConfig.pages.some((pg) => pg.storageState)) {
+      console.error(
+        lang === "fr"
+          ? "ultra11y scan : l'échantillon comporte des pages authentifiées (storageState), non prises en charge par le runtime Docker. Utilisez --runtime local --cwd <projet>."
+          : "ultra11y scan: the sample has authenticated pages (storageState), unsupported by the Docker runtime. Use --runtime local --cwd <project>.",
+      );
+      return 2;
+    }
+  }
+
   let dynamic: DynamicResult;
   try {
-    if (sitemap || crawl) {
+    if (useSample && sampleConfig) {
+      dynamic = useLocal
+        ? await runSampleScanLocal(sampleConfig.pages, { cwd, storageState, lang, interact, interactClicks })
+        : runSampleScan(sampleConfig.pages);
+    } else if (sitemap || crawl) {
       const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : undefined;
       const max = typeof p.flags.max === "string" ? Number(p.flags.max) : undefined;
       dynamic = useLocal
@@ -1385,6 +1458,28 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
   } catch (e) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
+  }
+  // Advisory sample-methodology lint: which normative page KINDS the configured sample
+  // lacks. Standard-agnostic mechanics + RGAA-specific required kinds; scan has no
+  // --standard, so we lint against the config's default standard (else RGAA if registered).
+  // Never a gate — a warning only.
+  if (useSample && sampleConfig) {
+    const lintKey = typeof p.flags.standard === "string" && p.flags.standard ? p.flags.standard : "rgaa";
+    try {
+      const pack = getPack(resolveStandard(lintKey));
+      const methodology = pack?.sampleMethodology;
+      if (methodology) {
+        const { missing } = lintSample(sampleConfig, methodology);
+        if (missing.length)
+          console.error(
+            (lang === "fr"
+              ? `⚠️ Échantillon incomplet — types de page requis absents (${pack.name}) : `
+              : `⚠️ Incomplete sample — required page kinds missing (${pack.name}): `) + missing.map((k) => kindLabel(k, pack.defaultLocale)).join(", "),
+          );
+      }
+    } catch {
+      /* unknown standard for lint — skip advisory */
+    }
   }
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const mergeIn = p.flags.merge;
@@ -1428,6 +1523,92 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     for (const f of dynamic.findings.slice(0, 30)) console.log(`  [${f.criteriaId}] ${f.selector} — ${f.message}`);
   }
   return 0;
+}
+
+/** `sample check` — advisory lint of the configured page sample (`.ultra11yrc.json`
+ *  `sample` block) against a standard's normative methodology: which REQUIRED page kinds it
+ *  lacks. A malformed sample is a hard error (exit 2); a merely-incomplete one is advisory
+ *  (exit 0) — the sample is opt-in and the missing kinds are guidance, not a gate. */
+function cmdSample(p: ParsedArgs): number {
+  const action = p.positionals[0];
+  // Default the lint standard to the config's default (copied to --standard in main) else
+  // RGAA (the standard that ships a sampleMethodology). WCAG core carries none.
+  const key = typeof p.flags.standard === "string" && p.flags.standard ? p.flags.standard : "rgaa";
+  let standard: StandardId;
+  try {
+    standard = resolveStandard(key);
+  } catch (e) {
+    console.error(`ultra11y sample: ${e instanceof Error ? e.message : String(e)}`);
+    return 2;
+  }
+  const lang = resolveLang(p.flags, { standard });
+  if (action !== "check") {
+    console.error("ultra11y sample: expected `sample check [--standard <pack>]`.");
+    return 2;
+  }
+  let cfg: ReturnType<typeof loadConfig>;
+  try {
+    cfg = loadConfig(process.cwd());
+  } catch (e) {
+    console.error(`ultra11y sample: ${e instanceof Error ? e.message : String(e)}`);
+    return 2;
+  }
+  if (!cfg?.sample) {
+    console.error(
+      lang === "fr"
+        ? "ultra11y sample : aucun bloc `sample` dans .ultra11yrc.json — ajoutez `sample.pages` (échantillon de pages représentatives)."
+        : "ultra11y sample: no `sample` block in .ultra11yrc.json — add `sample.pages` (the representative page sample).",
+    );
+    return 2;
+  }
+  const v = validateSample(cfg.sample);
+  if (!v.ok || !v.sample) {
+    if (p.flags.json) console.log(JSON.stringify({ ok: false, issues: v.issues }, null, 2));
+    else {
+      console.error(lang === "fr" ? "✗ Bloc `sample` invalide :" : "✗ Invalid `sample` block:");
+      for (const i of v.issues) console.error(`  ✗ ${i.path ? `${i.path}: ` : ""}${i.message}`);
+    }
+    return 2;
+  }
+  const pack = isCore(standard) ? null : getPack(standard);
+  const methodology = pack?.sampleMethodology;
+  if (!methodology) {
+    if (p.flags.json)
+      console.log(JSON.stringify({ ok: true, pages: v.sample.pages.length, missing: [], note: "no sample methodology for this standard" }, null, 2));
+    else
+      console.log(
+        lang === "fr"
+          ? `✓ Échantillon valide (${v.sample.pages.length} page(s)). Le référentiel actif (${standardLabelSafe(standard)}) ne définit pas de méthodologie d'échantillon — rien à vérifier.`
+          : `✓ Sample valid (${v.sample.pages.length} page(s)). The active standard (${standardLabelSafe(standard)}) defines no sample methodology — nothing to check.`,
+      );
+    return 0;
+  }
+  const { missing } = lintSample(v.sample, methodology);
+  const loc = pack?.defaultLocale ?? "fr";
+  if (p.flags.json) {
+    console.log(JSON.stringify({ ok: true, pages: v.sample.pages.length, missing: missing.map((k) => ({ id: k.id, label: kindLabel(k, loc) })) }, null, 2));
+    return 0;
+  }
+  if (missing.length === 0) {
+    console.log(
+      lang === "fr"
+        ? `✓ Échantillon complet (${v.sample.pages.length} page(s)) — tous les types de page requis par ${pack!.name} sont couverts.`
+        : `✓ Sample complete (${v.sample.pages.length} page(s)) — every page kind ${pack!.name} requires is covered.`,
+    );
+  } else {
+    console.log(
+      (lang === "fr"
+        ? `⚠️ Échantillon incomplet (${v.sample.pages.length} page(s)) — types de page requis absents (${pack!.name}) :`
+        : `⚠️ Incomplete sample (${v.sample.pages.length} page(s)) — required page kinds missing (${pack!.name}):`) +
+        ` ${missing.map((k) => kindLabel(k, loc)).join(", ")}`,
+    );
+  }
+  return 0;
+}
+
+/** standardLabel that never throws for the core (used in an advisory message). */
+function standardLabelSafe(standard: StandardId): string {
+  return isCore(standard) ? "WCAG 2.2 AA" : (getPack(standard)?.name ?? standard);
 }
 
 function cmdPack(p: ParsedArgs): number {
@@ -1593,6 +1774,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdVerify(p);
     case "scan":
       return cmdScan(p);
+    case "sample":
+      return cmdSample(p);
     case "fix":
       return cmdFix(p);
     case "init":

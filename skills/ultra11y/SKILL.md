@@ -122,7 +122,14 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   `criteria --standard rgaa 8.3`); see **`references/criteria.md`**.
 - **"Country standard (RGAA, Section 508, EN 301 549)"** → `--standard <pack>` on
   `report`/`prd`/`criteria`/`check`/`verify`; see **`references/standards.md`** and
-  **`references/methodology.md`**.
+  **`references/methodology.md`**. **For an RGAA audit, PROPOSE the scan by default**: a real
+  RGAA audit runs over a normative page **sample** (échantillon) — declare it in
+  `.ultra11yrc.json` under `sample.pages` (+ `transverse`), lint its coverage with the
+  `sample check` command, then scan that sample (Playwright + axe + probes; per-page
+  `storageState` for authenticated pages) and `--merge` the result into the audit. Without a
+  merged scan, `--standard rgaa` reports are marked **partial** (a CLI warning + a report
+  banner: the needs-rendering criteria were not tested) — say so instead of implying full
+  coverage.
 - **"High-assurance audit"** → `verify --report … --semantic`; see **`references/verify.md`**.
 - **"Check contrast / rendering (dynamic tier)"** → `scan <url> --merge …` (axe-core in a
   headless browser). `--runtime local` (default when Playwright resolves from `--cwd`, **no

@@ -3,7 +3,14 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
-import { derivePackResults, loadPack, packConformancePct, registerRuntimePack, type PackCriterionResult } from "../src/standards/index.js";
+import {
+  derivePackResults,
+  enableSecondaryMapping,
+  loadPack,
+  packConformancePct,
+  registerRuntimePack,
+  type PackCriterionResult,
+} from "../src/standards/index.js";
 import { toDynamicResult, mergeDynamic } from "../src/scan.js";
 import type { Status } from "../src/types.js";
 
@@ -150,6 +157,68 @@ describe("RGAA declarative rule — download-link-format (advisory, criterion 6.
   it("does not fire when the link text already states the format and weight", () => {
     const audit = auditHtml(page(`<a href="rapport.pdf">Rapport annuel (PDF, 2 Mo)</a>`));
     expect(audit.packFindings?.some((f) => f.ruleId === "pack:rgaa:download-link-format") ?? false).toBe(false);
+  });
+});
+
+describe("secondary crosswalk mappings — generic, opt-in projection (Task 13)", () => {
+  // A synthetic pack: criterion "1.2" is the SC-faithful home of image-alt failures (1.1.1),
+  // and "1.1" (change of context, 3.2.1) is an ADDITIONAL criterion the pack's body wants an
+  // img-alt failure to ALSO land on — a deviation the WCAG crosswalk (3.2.1) would never
+  // make. It ships the mapping DISABLED.
+  registerRuntimePack({
+    key: "sekmap",
+    name: "SecMapPack",
+    org: "O",
+    country: "XX",
+    baseVersion: "1",
+    wcagVersion: "2.2",
+    locales: ["en"],
+    defaultLocale: "en",
+    license: "x",
+    source: "x",
+    attribution: "x",
+    idPattern: "^\\d+\\.\\d+$",
+    themes: [{ number: 1, name: { en: "T" }, count: 2 }],
+    criteria: [
+      { id: "1.1", theme: 1, title: { en: "Change of context" }, titlePlain: { en: "Change of context" }, wcag: ["3.2.1"], appliesTo: { ruleIds: [] } },
+      {
+        id: "1.2",
+        theme: 1,
+        title: { en: "Image alt" },
+        titlePlain: { en: "Image alt" },
+        wcag: ["1.1.1"],
+        appliesTo: { ruleIds: ["img-alt-missing", "input-image-alt-missing"] },
+      },
+    ],
+    secondaryMappings: [{ ruleId: "img-alt-missing", criterion: "1.1", note: { en: "also 1.1 per pack body", fr: "aussi 1.1" }, enabled: false }],
+  });
+
+  // Two DIFFERENT 1.1.1 failures — an <img> and an <input type=image> — so the exact-ruleId
+  // guarantee (only img-alt-missing crosses over, never input-image-alt-missing) is testable.
+  const audit = auditHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>H</h1><img src="x"><input type="image" src="y"></main></body></html>`,
+  );
+
+  it("DISABLED (out-of-box): the secondary criterion is NOT NC and carries no crossed-over finding; the SC-faithful criterion is NC", () => {
+    const rows = derivePackResults(audit, "sekmap");
+    expect(statusOf(rows, "1.1")).not.toBe("NC");
+    expect(rows.find((r) => r.id === "1.1")!.findings.some((f) => f.ruleId === "img-alt-missing")).toBe(false);
+    expect(statusOf(rows, "1.2")).toBe("NC"); // SC-faithful home, unchanged
+  });
+
+  it("ENABLED: the secondary criterion becomes NC, carries ONLY the exact-ruleId finding tagged `secondary` (+ note), and the SC-faithful criterion stays NC", () => {
+    enableSecondaryMapping("sekmap", { ruleId: "img-alt-missing", criterion: "1.1" });
+    const rows = derivePackResults(audit, "sekmap");
+    const c11 = rows.find((r) => r.id === "1.1")!;
+    expect(c11.status).toBe("NC");
+    const crossed = c11.findings.find((f) => f.ruleId === "img-alt-missing");
+    expect(crossed?.secondary).toBeDefined();
+    expect(crossed?.secondary?.note).toBe("also 1.1 per pack body"); // resolved at the pack's defaultLocale
+    // EXACT match: a sibling 1.1.1 rule (input-image-alt-missing) is NOT pulled onto 1.1.
+    expect(c11.findings.some((f) => f.ruleId === "input-image-alt-missing")).toBe(false);
+    // The copy-on-write tag never mutates the core finding.
+    expect(audit.findings.find((f) => f.ruleId === "img-alt-missing")?.secondary).toBeUndefined();
+    expect(statusOf(rows, "1.2")).toBe("NC"); // SC-faithful home STILL NC
   });
 });
 

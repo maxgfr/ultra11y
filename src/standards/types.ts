@@ -147,6 +147,24 @@ export interface PackOverride {
   severity?: "bloquant" | "majeur" | "mineur";
 }
 
+// A GENERIC secondary crosswalk projection: it declares that a finding raised under
+// `ruleId` ALSO projects onto an ADDITIONAL pack criterion whose official WCAG crosswalk
+// does NOT contain the finding's SC. This is the explicit, opt-in DEVIATION from the
+// SC-faithful projection — the standard-agnostic mechanism a country pack (or a
+// `.ultra11yrc.json`) uses when its own body classifies a defect under a criterion the
+// WCAG mapping alone would never reach. Shipped DISABLED (`enabled` absent/false) so the
+// out-of-box projection stays WCAG-faithful; a config activates it (see src/config.ts +
+// registry.enableSecondaryMapping). Matching is by EXACT `ruleId` in `derivePackResults`,
+// bypassing BOTH the SC gate and the appliesTo/ruleMatches gate — so sibling rules on the
+// same SC are never pulled in. A tagged secondary finding DRIVES status (NC), like any
+// normative finding; there is no annotate-only variant.
+export interface SecondaryMapping {
+  ruleId: string; // an engine rule id (or a `pack:<key>:<id>` declarative rule) — EXACT match
+  criterion: string; // the ADDITIONAL pack criterion id this ruleId also projects onto (must exist)
+  note?: LocaleString; // optional localized note explaining the deviation, rendered on the finding
+  enabled?: boolean; // opt-in switch; absent/false ⇒ inert (WCAG-faithful default)
+}
+
 export interface StandardPack {
   key: string; // unique slug, e.g. "rgaa" (may not be the reserved core key "wcag")
   name: string; // short display name, e.g. "RGAA"
@@ -172,6 +190,13 @@ export interface StandardPack {
   // Per-pack normativity/severity overrides keyed by finding ruleId, applied only within
   // this pack's projection (derivePackResults) — the core result is never mutated.
   overrides?: Record<string, PackOverride>;
+  // Optional, opt-in secondary crosswalk projections (src/standards/types.ts
+  // SecondaryMapping). Each shipped DISABLED by default; a config flips one on. Applied in
+  // derivePackResults, keying by EXACT ruleId to project a finding onto an ADDITIONAL
+  // criterion whose WCAG mapping does not contain the finding's SC — the standard-agnostic
+  // "differs from the WCAG crosswalk on purpose" mechanism (RGAA 7.4 for live regions is
+  // the first consumer). The core WCAG result is never touched.
+  secondaryMappings?: SecondaryMapping[];
   themes: PackTheme[];
   criteria: PackCriterion[];
 }

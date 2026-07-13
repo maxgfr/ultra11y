@@ -121,6 +121,16 @@ describe("renderAuditorUnit", () => {
     expect(md).toContain("- _rendered capture of `src/a.tsx` — source `captures/storybook-dump.html`_");
   });
 
+  it("appends the deviation note for a finding projected via a secondary crosswalk mapping", () => {
+    const u = unit("1.1.1", "Non-text Content");
+    u.findings[0]!.secondary = { note: "Relève aussi de ce critère selon le référentiel." };
+    const md = renderAuditorUnit(u, "wcag", "en").join("\n");
+    // The note rides as an inert sub-bullet right after the occurrence checklist line.
+    expect(md).toContain("  - ↳ Relève aussi de ce critère selon le référentiel.");
+    // Still a parseable occurrence checklist line (the secondary note never replaces it).
+    expect(md).toContain("`src/a.tsx:3`");
+  });
+
   it("renders the localized (fr) origin-attribution line", () => {
     const u = unit("1.1.1", "Non-text Content");
     u.findings[0]!.origin = { capture: "captures/button-icon.html", sourceFile: "src/Button.tsx", component: "Button" };

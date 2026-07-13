@@ -208,6 +208,10 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
   out.push(`**${s.verification}** : ${s.verify}`, "");
   for (const f of normative) {
     out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    // A finding projected via an opt-in secondary crosswalk mapping carries a note
+    // explaining the deviation from the SC-faithful projection — appended as an inert
+    // (worklist-ignored) sub-bullet, mirroring the related-occurrence line shape.
+    if (f.secondary?.note) out.push(`  - ↳ ${f.secondary.note}`);
     if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
     if (f.origin) {
       const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;

@@ -4,7 +4,7 @@
 // so tsup inlines every pack into the single zero-dependency bundle — no runtime fs/glob).
 import rgaaPack from "../data/standards/rgaa.json";
 import rgaaGlossary from "../data/standards/rgaa.glossary.json";
-import type { StandardPack } from "./types.js";
+import type { LocaleString, StandardPack } from "./types.js";
 import type { Glossary } from "../types.js";
 import { validatePack, type PackValidation } from "./validate.js";
 
@@ -35,6 +35,26 @@ export function registerRuntimePack(raw: unknown, glossary: Glossary = {}, opts:
   const v = validatePack(raw, { knownKeys: new Set(listStandards()), allowOverride: opts.override });
   if (v.ok && v.pack) registry.set(v.pack.key, { pack: v.pack, glossary });
   return v;
+}
+
+/**
+ * Activate a SECONDARY crosswalk mapping on an already-registered pack (from
+ * `.ultra11yrc.json` — see src/config.ts `loadRuntimeStandards`). Flips `enabled: true` on
+ * a pack-shipped mapping matching the (ruleId, criterion) pair, or APPENDS a new enabled
+ * one when the pack ships none — the opt-in switch that lets a config activate the
+ * WCAG-crosswalk-bypassing projection out-of-box packs ship DISABLED. Throws on an unknown
+ * pack key (never a silent no-op). Mutates the registered pack in place, by design.
+ */
+export function enableSecondaryMapping(packKey: string, m: { ruleId: string; criterion: string; note?: LocaleString }): void {
+  const pack = loadPack(packKey); // throws on unknown key
+  const list = (pack.secondaryMappings ??= []);
+  const existing = list.find((x) => x.ruleId === m.ruleId && x.criterion === m.criterion);
+  if (existing) {
+    existing.enabled = true;
+    if (m.note) existing.note = m.note;
+  } else {
+    list.push({ ruleId: m.ruleId, criterion: m.criterion, ...(m.note ? { note: m.note } : {}), enabled: true });
+  }
 }
 
 export function isCore(key: string): boolean {

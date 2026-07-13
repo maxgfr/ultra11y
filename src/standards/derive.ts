@@ -5,7 +5,7 @@
 import type { AuditResult, CriterionResult, Status, Finding, Severity } from "../types.js";
 import { loadPack } from "./registry.js";
 import { knownScStatus } from "../wcag.js";
-import type { PackOverride, StandardPack } from "./types.js";
+import type { LocaleString, PackCriterion, PackOverride, SecondaryMapping, StandardPack } from "./types.js";
 
 export interface PackCriterionResult {
   id: string;
@@ -85,6 +85,44 @@ function overrideFinding(f: Finding, overrides: Record<string, PackOverride> | u
   return patched;
 }
 
+/** Resolve a mapping's localized note to a single display string at derive time (no lang in
+ *  scope): prefer the pack's default locale, then en/fr, then any present value. */
+function pickLocale(ls: LocaleString | undefined, preferred: string): string | undefined {
+  if (!ls) return undefined;
+  return ls[preferred] ?? ls.en ?? ls.fr ?? Object.values(ls).find((v): v is string => typeof v === "string");
+}
+
+/** Copy-tag a finding as projected via a secondary mapping (copy-on-write — the core
+ *  finding is never mutated, mirroring `overrideFinding`). Carries the resolved deviation
+ *  note so the auditor block can append it. */
+function tagSecondary(f: Finding, note: string | undefined): Finding {
+  return { ...f, secondary: note ? { note } : {} };
+}
+
+/** Apply a pack's ENABLED secondary crosswalk mappings to one criterion's base result. For
+ *  every enabled mapping targeting `pc`, gather source findings whose ruleId matches EXACTLY
+ *  (bypassing both the SC gate and the appliesTo/ruleMatches gate), copy-tag them, attach,
+ *  and let a normative one drive the criterion to NC (re-aggregation: NC dominates). A base
+ *  with no active/matching mapping is returned untouched. */
+function applySecondaryMappings(
+  base: PackCriterionResult,
+  pc: PackCriterion,
+  enabled: SecondaryMapping[],
+  sources: Finding[],
+  defaultLocale: string,
+): PackCriterionResult {
+  const active = enabled.filter((m) => m.criterion === pc.id);
+  if (!active.length) return base;
+  const added: Finding[] = [];
+  for (const m of active) for (const f of sources) if (f.ruleId === m.ruleId) added.push(tagSecondary(f, pickLocale(m.note, defaultLocale)));
+  if (!added.length) return base;
+  const findings = [...base.findings, ...added];
+  // A normative secondary finding drives NC (aggregate: NC dominates), and supersedes an
+  // out-of-scope/scoped-out base verdict; an advisory-only one just rides along for display.
+  if (added.some((f) => !f.advisory)) return { id: pc.id, theme: pc.theme, status: aggregate([base.status, "NC"]), findings, scs: base.scs };
+  return { ...base, findings };
+}
+
 export function derivePackResults(audit: AuditResult, packKey: string): PackCriterionResult[] {
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
@@ -94,7 +132,7 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
   // findings, keyed by the SC the rule declared.
   const myPackFindings = (audit.packFindings ?? []).filter((f) => f.ruleId.startsWith(`pack:${packKey}:`));
   const overrides = pack.overrides;
-  return pack.criteria.map((pc) => {
+  const deriveBase = (pc: PackCriterion): PackCriterionResult => {
     // A criterion whose WCAG mapping is ENTIRELY outside the engine's core (e.g. RGAA 8.1
     // → only the removed 4.1.1, or a hypothetical pack criterion citing only an AAA SC)
     // has no core SC the engine could ever audit — it's out of scope, not a silent NA.
@@ -143,5 +181,15 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
     // any advisory findings kept on the result so the pack view surfaces them.
     const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
     return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
+  };
+
+  // Secondary crosswalk projections (opt-in, config-enabled). Sourced from EVERY audit
+  // finding (core SC findings + this pack's declarative pack findings), matched by EXACT
+  // ruleId — so a sibling rule on the same SC is never pulled onto the secondary criterion.
+  const enabledSecondary = (pack.secondaryMappings ?? []).filter((m) => m.enabled === true);
+  const secondarySources = enabledSecondary.length ? [...audit.criteria.flatMap((c) => c.findings), ...myPackFindings] : [];
+  return pack.criteria.map((pc) => {
+    const base = deriveBase(pc);
+    return enabledSecondary.length ? applySecondaryMappings(base, pc, enabledSecondary, secondarySources, pack.defaultLocale) : base;
   });
 }

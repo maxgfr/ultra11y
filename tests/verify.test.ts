@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { renderReport, renderPackReport } from "../src/report.js";
-import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, type VerifyItem } from "../src/verify.js";
+import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, AUDITOR_OCCURRENCE, type VerifyItem } from "../src/verify.js";
 import { registerRuntimePack, loadPack, derivePackResults } from "../src/standards/index.js";
-import { renderAuditorUnit } from "../src/auditor.js";
+import { renderAuditorUnit, occurrenceLine } from "../src/auditor.js";
 import type { AuditResult, Finding } from "../src/types.js";
 import type { PrdUnit } from "../src/prd.js";
 
@@ -385,5 +385,32 @@ describe("writeWorklist", () => {
     expect(existsSync(mdPath)).toBe(true);
     expect(count).toBe(5);
     expect(readFileSync(mdPath, "utf8")).toContain("--semantic");
+  });
+});
+
+// Pins the shared renderer (src/auditor.ts `occurrenceLine`) directly to the parser it
+// must stay byte-compatible with (`AUDITOR_OCCURRENCE`, src/verify.ts:48) — the checkbox
+// marker line has to match, and the advisory `💡` line has to NOT match, so the two can
+// never drift apart across future edits to either side.
+describe("occurrenceLine ↔ AUDITOR_OCCURRENCE (renderer/parser coupling)", () => {
+  const sampleFinding: Finding = {
+    ruleId: "r",
+    criteriaId: "1.1.1",
+    file: "src/a.tsx",
+    line: 3,
+    col: 1,
+    selectorHint: "img",
+    severity: "bloquant",
+    message: "image sans alt",
+    remediation: "Corrigez l'élément cité",
+    snippet: "<img>",
+  };
+
+  it("the checkbox marker satisfies the worklist parser", () => {
+    expect(AUDITOR_OCCURRENCE.test(occurrenceLine(sampleFinding, "en", { marker: "checkbox" }))).toBe(true);
+  });
+
+  it("the advisory marker deliberately does NOT satisfy the worklist parser", () => {
+    expect(AUDITOR_OCCURRENCE.test(occurrenceLine(sampleFinding, "en", { marker: "advisory" }))).toBe(false);
   });
 });

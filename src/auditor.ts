@@ -137,6 +137,25 @@ function subHeading(heading?: string): string {
   return "#".repeat(Math.min((heading?.length ?? 2) + 1, 4));
 }
 
+const ADVISORY_ICON = "💡";
+
+/** The single renderer for a finding's occurrence line, shared by auditor.ts and prd.ts.
+ *  `checkbox` renders the EXACT parseable shape `verify.ts`'s `AUDITOR_OCCURRENCE` regex
+ *  (src/verify.ts:48) keys on; `advisory` renders the deliberately NON-parseable `💡` shape
+ *  (an advisory/recommendation must never enter the verify worklist as a claimed NC). Byte
+ *  shape is otherwise identical — only the leading marker differs. */
+export function occurrenceLine(f: Finding, lang: Lang, opts: { marker: "checkbox" | "advisory" }): string {
+  const marker = opts.marker === "checkbox" ? "[ ]" : ADVISORY_ICON;
+  return `- ${marker} \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`;
+}
+
+/** The `↳` related-occurrence sub-bullet, shared by auditor.ts and prd.ts. `selector: false`
+ *  omits the `` (`selectorHint`) `` segment (prd.ts's `renderPrdDoc` task list does this). */
+export function relatedLine(related: NonNullable<Finding["related"]>, lang: Lang, opts: { selector: boolean }): string {
+  const sel = opts.selector ? ` (\`${related.selectorHint}\`)` : "";
+  return `  - ↳ ${resolveNote(related, lang)} : \`${related.file}:${related.line}\`${sel}`;
+}
+
 /** The auditor block for ONE criterion (a PrdUnit), localized and rendered with the active
  *  standard's vocabulary. Emits the full owner-validated ticket structure: the criterion
  *  block + Priorité, the parseable occurrence checklist, then (unless `opts.technical` is
@@ -188,8 +207,8 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
   if (fixes.length) out.push(`**${s.expected} (${v.conformant})** : ${fixes.join(" ; ")}`);
   out.push(`**${s.verification}** : ${s.verify}`, "");
   for (const f of normative) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
     if (f.origin) {
       const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
       const srcFile = f.origin.sourceFile ?? f.origin.capture;
@@ -203,7 +222,7 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
   // the `- 💡` bullet deliberately avoids the `- [ ] \`file:line\`` checklist grammar.
   if (advisories.length) {
     out.push(`_${s.associatedRec}_`, "");
-    for (const f of advisories) out.push(`- ${ADVISORY_ICON} \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
+    for (const f of advisories) out.push(occurrenceLine(f, lang, { marker: "advisory" }));
     out.push("");
   }
 
@@ -290,8 +309,6 @@ function renderReproductionContext(normative: Finding[], lang: Lang): string[] {
   return out;
 }
 
-const ADVISORY_ICON = "💡";
-
 /** The auditor block for ONE advisory (non-normative recommendation) unit. Rendered with
  *  the « Recommandation (non normative) » vocabulary, NEVER the non-conformity wording.
  *  Crucially, the criterion reference deliberately AVOIDS the "**label** : <id>" colon
@@ -312,8 +329,8 @@ function renderAdvisoryUnit(unit: PrdUnit, standard: StandardId, lang: Lang, opt
   if (fixes.length) out.push(`**${s.suggestion}** : ${fixes.join(" ; ")}`);
   out.push("");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
   }
   out.push("");
   return out;

@@ -50,7 +50,7 @@ try {
 `;
 
 export const PKG = JSON.stringify(
-  { name: "ultra11y-dynamic", private: true, type: "module", dependencies: { playwright: "^1.49.0", "axe-core": "^4.10.0" } },
+  { name: "ultra11y-dynamic", private: true, type: "module", dependencies: { playwright: "^1.49.0", "axe-core": "4.12.1" } },
   null,
   2,
 );

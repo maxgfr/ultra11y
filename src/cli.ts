@@ -50,7 +50,7 @@ Usage:
   ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang auto|en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--no-technical] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
@@ -177,6 +177,8 @@ Options:
                      'doc' emits a product-requirements document (epics, user stories,
                      Given/When/Then); 'remediation' emits the legacy dev fix backlog
   --split <mode>     prd: split the backlog — currently only 'criterion' (one file per criterion)
+  --no-technical     prd (audit format): omit the technical ticket sections (Partie
+                     technique + Contexte de reproduction) for a pure-auditor block
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
@@ -320,6 +322,7 @@ const BOOLEAN_FLAGS = new Set([
   "generate",
   "semantic",
   "manual",
+  "no-technical",
   "gh-issues",
   "gh-single",
   "override",
@@ -718,7 +721,10 @@ async function cmdPrd(p: ParsedArgs): Promise<number> {
   const lang = resolveLang(p.flags, { audit: result, standard });
   const split = p.flags.split === "criterion" ? "criterion" : undefined;
   const format: PrdFormat = p.flags.format === "doc" ? "doc" : p.flags.format === "remediation" ? "remediation" : "audit";
-  const paths = writePrd(result, { out, lang, split, format, standard });
+  // Technical ticket sections (Partie technique + Contexte de reproduction) are ON by default;
+  // `--no-technical` suppresses them for a pure-auditor consumption of the audit block.
+  const technical = p.flags["no-technical"] !== true;
+  const paths = writePrd(result, { out, lang, split, format, standard, technical });
   const json = p.flags.json === true;
   if (!json) for (const path of paths) console.log(path);
 

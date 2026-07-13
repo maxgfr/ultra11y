@@ -149,6 +149,104 @@ describe("renderAuditorUnit", () => {
   });
 });
 
+// Task 2: the unified owner-validated ticket template — Priorité + Partie technique
+// (Fichiers / Pages / Changement attendu / Critères d'acceptation / Complexité) + Contexte
+// de reproduction — all native in renderAuditorUnit, shared by report/prd/gh.
+describe("renderAuditorUnit — unified ticket template (Task 2)", () => {
+  it("emits the explicit Priorité line from the severity icon + label", () => {
+    expect(renderAuditorUnit(unit("1.1.1", "Non-text Content"), "wcag", "fr").join("\n")).toContain("**Priorité** : 🔴 Bloquant");
+    expect(renderAuditorUnit(unit("1.1.1", "Non-text Content"), "wcag", "en").join("\n")).toContain("**Priority** : 🔴 Blocking");
+  });
+
+  it("emits Partie technique with impacted files, expected change, acceptance criteria and complexity", () => {
+    const md = renderAuditorUnit(unit("1.1.1", "Non-text Content"), "wcag", "fr", { heading: "###" }).join("\n");
+    expect(md).toContain("#### Partie technique"); // nested one level below the ### unit heading
+    expect(md).toContain("**Fichiers impactés**");
+    expect(md).toContain("- `src/a.tsx`");
+    expect(md).toContain("**Changement attendu**");
+    expect(md).toContain("**Critères d'acceptation**");
+    expect(md).toContain("- [ ] **Étant donné**"); // Given/When/Then checkbox, ported from renderPrdDoc
+    expect(md).toContain("(WCAG 1.1.1)");
+    expect(md).toContain("**Complexité** : S (3 pts)"); // shared effortOf heuristic
+  });
+
+  it("clamps the Partie technique heading to #### even under a #### unit heading (verify parser reset)", () => {
+    const md = renderAuditorUnit(unit("1.1.1", "Non-text Content"), "wcag", "en", { heading: "####" }).join("\n");
+    expect(md).toContain("#### Technical details");
+    expect(md).not.toContain("##### Technical details"); // a level-5 heading would not reset the parser
+  });
+
+  it("--no-technical (technical:false) suppresses Partie technique + Contexte de reproduction but keeps Priorité", () => {
+    const md = renderAuditorUnit(unit("1.1.1", "Non-text Content"), "wcag", "en", { heading: "###", technical: false }).join("\n");
+    expect(md).toContain("**Priority** :"); // section 1 stays
+    expect(md).toContain("- [ ] `src/a.tsx:3`"); // occurrence checklist stays
+    expect(md).not.toContain("Technical details");
+    expect(md).not.toContain("Reproduction context");
+  });
+
+  it("a mixed unit shows advisory findings in a distinct « Recommandations associées » sub-list, excluded from the NC count", () => {
+    const u = unit("1.1.1", "Non-text Content");
+    u.findings.push({
+      ruleId: "h1-missing",
+      criteriaId: "1.1.1",
+      file: "src/b.tsx",
+      line: 9,
+      col: 1,
+      selectorHint: "h1",
+      severity: "mineur",
+      message: "recommandation non normative",
+      remediation: "Ajoutez un h1",
+      snippet: "<h1>",
+      advisory: true,
+    });
+    const md = renderAuditorUnit(u, "wcag", "fr", { heading: "###" }).join("\n");
+    // The NC count reflects ONLY the normative occurrence.
+    expect(md).toContain("**Constat (Non conforme)** : 1 occurrence(s)");
+    // The advisory rides in a distinct sub-list with a non-checkbox bullet.
+    expect(md).toContain("_Recommandations associées (non normatives)_");
+    expect(md).toContain("- 💡 `src/b.tsx:9`");
+    // …and never in the parseable checklist.
+    expect(md).not.toContain("- [ ] `src/b.tsx:9`");
+  });
+
+  it("emits Contexte de reproduction for a served URL whose static anchor is unresolved (line 0)", () => {
+    const u: PrdUnit = {
+      criteriaId: "1.4.10",
+      title: "Reflow",
+      label: "1.4.10 — Reflow",
+      refs: [],
+      severity: "majeur",
+      findings: [
+        {
+          ruleId: "dyn-reflow",
+          criteriaId: "1.4.10",
+          file: "https://exemple.fr/profil",
+          line: 0,
+          col: 0,
+          selectorHint: "document",
+          severity: "majeur",
+          message: "reflow horizontal",
+          remediation: "Corrigez le reflow",
+          snippet: "",
+        },
+      ],
+    };
+    const md = renderAuditorUnit(u, "wcag", "en", { heading: "###" }).join("\n");
+    expect(md).toContain("**Impacted pages / URLs**");
+    expect(md).toContain("- `https://exemple.fr/profil`");
+    expect(md).toContain("**Reproduction context**");
+    expect(md).toContain("authentication required : unknown"); // no Task-5 sample metadata yet → graceful
+    expect(md).toContain("required state / steps to reproduce");
+    // A URL location is NOT listed under Fichiers impactés.
+    expect(md).not.toContain("**Impacted files**");
+  });
+
+  it("does NOT emit Contexte de reproduction for ordinary source-file findings (no URL / auth)", () => {
+    const md = renderAuditorUnit(unit("1.1.1", "Non-text Content"), "wcag", "en", { heading: "###" }).join("\n");
+    expect(md).not.toContain("Reproduction context");
+  });
+});
+
 describe("renderAuditorBacklog / renderAuditorPerCriterion", () => {
   it("titles the backlog with the standard's auditor heading and sections by severity", () => {
     const md = renderAuditorBacklog(AUDIT, "en", "wcag");

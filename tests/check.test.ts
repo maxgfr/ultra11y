@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { runAudit } from "../src/audit.js";
 import { renderReport, renderPackReport } from "../src/report.js";
+import { mergeDynamic } from "../src/scan.js";
 import { checkReport } from "../src/check.js";
 import { registerRuntimePack, loadPack } from "../src/standards/index.js";
 
@@ -47,6 +48,36 @@ describe("checkReport", () => {
     const r = checkReport(rgaaReport, "rgaa", "fr");
     expect(r.ok).toBe(true);
     expect(r.issues).toHaveLength(0);
+  });
+
+  // Task 2: the report's §2 now embeds the full ticket template (Priorité, Partie technique,
+  // Contexte de reproduction). Those extra sections + a served-URL reproduction block must
+  // NOT trip the structural gate (no fabricated criterion refs, sections 1–5 intact).
+  it("passes a report whose NC blocks carry the full ticket template, including a URL reproduction context", () => {
+    const dynAudit = mergeDynamic(runAudit({ inputs: [`${FIX}conforming/good.html`] }), {
+      tool: "ultra11y",
+      engine: "axe-core@playwright (docker)",
+      target: "https://exemple.fr",
+      date: bad.date,
+      findings: [
+        {
+          criteriaId: "1.4.10",
+          axeRule: "reflow",
+          impact: "serious",
+          severity: "majeur",
+          message: "Horizontal scrolling at 320px width",
+          selector: "document",
+          snippet: "",
+          engine: "reflow",
+          page: "https://exemple.fr/profil",
+        },
+      ],
+    });
+    const md = renderReport(dynAudit, "en");
+    expect(md).toContain("Technical details");
+    expect(md).toContain("Reproduction context");
+    const r = checkReport(md, "wcag", "en");
+    expect(r.ok, r.issues.join("\n")).toBe(true);
   });
 
   it("flags a missing section, an invented SC, and an unjustified NA", () => {

@@ -124,6 +124,11 @@ describe("main — command wiring", () => {
     expect(parseArgs(["prd", "--in", "a.json", "--gh-issues"]).flags["gh-issues"]).toBe(true);
     expect(parseArgs(["prd", "--in", "a.json", "--gh-single"]).flags["gh-single"]).toBe(true);
   });
+  it("parses prd --no-technical as a known boolean flag (not an unknown no-op)", () => {
+    const a = parseArgs(["prd", "--in", "a.json", "--no-technical"]);
+    expect(a.flags["no-technical"]).toBe(true);
+    expect(a.unknown).not.toContain("no-technical");
+  });
   it("parses --staged/--safe as boolean flags (not value flags)", () => {
     const a = parseArgs(["audit", "--staged", "--fail-on", "blocking"]);
     expect(a.flags.staged).toBe(true);

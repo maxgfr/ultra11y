@@ -156,8 +156,10 @@ export function partitionUnits(units: PrdUnit[]): { nc: PrdUnit[]; advisory: Prd
 
 const SEV_WEIGHT: Record<Severity, number> = { bloquant: 3, majeur: 2, mineur: 1 };
 
-/** Deterministic effort heuristic: Σ severity weights over the occurrences, bucketed. */
-function effortOf(unit: PrdUnit): { bucket: "S" | "M" | "L"; points: number } {
+/** Deterministic effort heuristic: Σ severity weights over the occurrences, bucketed.
+ *  Exported so the auditor block (src/auditor.ts) renders the same t-shirt size + points
+ *  as the remediation backlog — one heuristic, never two that can drift. */
+export function effortOf(unit: PrdUnit): { bucket: "S" | "M" | "L"; points: number } {
   const points = unit.findings.reduce((sum, f) => sum + SEV_WEIGHT[f.severity], 0);
   return { bucket: points <= 4 ? "S" : points <= 12 ? "M" : "L", points };
 }
@@ -183,8 +185,10 @@ export function guidanceFor(unit: PrdUnit, standard: StandardId): GuidanceEntry[
   return out;
 }
 
-/** The first guidance example (before/after) for a unit, rendered as fenced code. */
-function guidanceExampleBlock(entries: GuidanceEntry[], lang: Lang): string[] {
+/** The first guidance example (before/after) for a unit, rendered as fenced code.
+ *  Exported so the auditor block's "Changement attendu" reuses this exact renderer
+ *  instead of duplicating the before/after formatting. */
+export function guidanceExampleBlock(entries: GuidanceEntry[], lang: Lang): string[] {
   const s = L[lang];
   for (const e of entries) {
     const ex = (e.examples ?? []).find((x) => x.bad || x.good);
@@ -297,6 +301,22 @@ function epicsOf(units: PrdUnit[], standard: StandardId, lang: Lang): DocEpic[] 
   return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
 }
 
+/** The Given/When/Then acceptance-criteria lines for a unit — one per WCAG ref of the
+ *  criterion (core: the SC itself; pack: its mapped WCAG refs), each anchored to the real
+ *  WCAG success-criterion title. Shared by `renderPrdDoc` (plain bullets) and the auditor
+ *  block's technical section (checkbox list via `opts.checkbox`) so the generator lives in
+ *  exactly one place. */
+export function acceptanceCriteria(unit: PrdUnit, standard: StandardId, lang: Lang, opts: { checkbox?: boolean } = {}): string[] {
+  const s = L[lang];
+  const prefix = opts.checkbox ? "- [ ] " : "- ";
+  const hints = [...new Set(unit.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "—";
+  const scs = isCore(standard) ? [unit.criteriaId] : unit.refs;
+  return scs.map((sc) => {
+    const req = scTitle(sc, lang) ?? sc;
+    return `${prefix}**${s.given}** ${s.givenElements(hints)} · **${s.when}** ${s.acWhen} · **${s.then}** « ${req} » (WCAG ${sc}).`;
+  });
+}
+
 /** A product-requirements document: epics by theme, one user story per criterion, with
  *  Given/When/Then acceptance criteria anchored to the real WCAG SC titles + the task list. */
 export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): string {
@@ -313,13 +333,8 @@ export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: Standa
       const refs = u.refs.length ? `  ·  WCAG ${u.refs.join(", ")}` : "";
       out.push(`### ${ICON[u.severity]} ${s.story} — ${u.label}${refs}`, "");
       out.push(`> ${s.asUser}, ${s.iNeed(u.title)}.`, "");
-      const hints = [...new Set(u.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "—";
       out.push(`**${s.ac}**`, "");
-      const scs = isCore(standard) ? [u.criteriaId] : u.refs;
-      for (const sc of scs) {
-        const req = scTitle(sc, lang) ?? sc;
-        out.push(`- **${s.given}** ${s.givenElements(hints)} · **${s.when}** ${s.acWhen} · **${s.then}** « ${req} » (WCAG ${sc}).`);
-      }
+      out.push(...acceptanceCriteria(u, standard, lang));
       const techs = isCore(standard) ? scTechniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => scTechniques(sc)))];
       if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
@@ -343,6 +358,10 @@ export interface PrdOpts {
   split?: "criterion";
   format?: PrdFormat;
   standard: StandardId;
+  /** Auditor formats only: emit the technical ticket sections (Partie technique +
+   *  Contexte de reproduction). Default true; `prd --no-technical` sets it false for a
+   *  pure-auditor consumption of the block. */
+  technical?: boolean;
 }
 
 /** Render and write the PRD markdown; returns the written path(s). */
@@ -354,11 +373,11 @@ export function writePrd(r: AuditResult, opts: PrdOpts): string[] {
     return [p];
   }
   const remediation = opts.format === "remediation";
-  const perCriterion = remediation ? renderPerCriterion : renderAuditorPerCriterion;
-  const backlog = remediation ? renderBacklog : renderAuditorBacklog;
+  const technical = opts.technical ?? true;
   if (opts.split === "criterion") {
+    const files = remediation ? renderPerCriterion(r, opts.lang, opts.standard) : renderAuditorPerCriterion(r, opts.lang, opts.standard, { technical });
     const paths: string[] = [];
-    for (const f of perCriterion(r, opts.lang, opts.standard)) {
+    for (const f of files) {
       const p = join(opts.out, f.name);
       writeFileSync(p, f.content);
       paths.push(p);
@@ -366,6 +385,6 @@ export function writePrd(r: AuditResult, opts: PrdOpts): string[] {
     return paths;
   }
   const p = join(opts.out, `prd-${r.date}.md`);
-  writeFileSync(p, backlog(r, opts.lang, opts.standard));
+  writeFileSync(p, remediation ? renderBacklog(r, opts.lang, opts.standard) : renderAuditorBacklog(r, opts.lang, opts.standard, { technical }));
   return [p];
 }

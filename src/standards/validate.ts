@@ -23,18 +23,39 @@ const MAX_MATCH_DEPTH = 3;
 const MATCH_OPS = new Set(["present", "absent", "equals", "matches"]);
 const TEXT_OPS = new Set(["matches", "lacks"]);
 
-// Classic catastrophic-backtracking (ReDoS) shape: a group whose body is a SINGLE
-// quantified atom, itself quantified — (a+)+ / (a*)* / (\d+)+ / (.*)+ . The inner and
-// outer quantifiers then match overlapping input. A group with a required prefix (e.g.
-// (\.\d+)*, the normal "E205.4" criterion grammar) is NOT flagged — each outer iteration
-// is anchored by the literal, so there is no exponential blowup. Shared by `idPattern` and
-// every declarative pack-rule regex (attrs `matches`, `text`).
-const REDOS_SHAPE = /\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/;
+// Catastrophic-backtracking (ReDoS) SHAPES rejected in ANY pack-supplied regex (an
+// `idPattern`, an attr `matches`, or a `text` predicate). Untrusted packs are validated at
+// load, so we reject conservatively via three complementary red flags — none of which the
+// legitimate criterion-id grammar `(\.\d+)*` or the non-quantified download-extension
+// alternations `(pdf|docx?|…)` trip:
+//
+//  1. SINGLE quantified atom, itself quantified — (a+)+ / (a*)* / (\d+)+ / (.*)+ . The
+//     classic evil regex; the inner and outer quantifiers match overlapping input.
+//  2. An ALTERNATION under a quantifier — (a|a)* / (a|b|c)+ . Overlapping branches let a
+//     single input char be matched N ways per iteration → exponential. A NON-quantified
+//     alternation (the (pdf|docx?|…) download list, whose group is followed by `(`/end,
+//     not by `*`/`+`) is untouched.
+//  3. A NESTED quantifier over a GROUP that is itself quantified — (ab+)+ . Defensive:
+//     star-height ≥ 2 over a group is a red flag even when a specific instance is linear.
+//     The one legitimate star-height-2 shape — the dotted criterion grammar (\.\d+)*, where
+//     the escaped-literal prefix anchors every outer iteration so there is no blow-up — is
+//     carved out via the leading-backslash negative lookahead.
+// Shared by `idPattern` and every declarative pack-rule regex (attrs `matches`, `text`).
+const REDOS_SINGLE_ATOM = /\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/;
+const REDOS_ALT_QUANTIFIED = /\([^()]*\|[^()]*\)[*+]/;
+const REDOS_NESTED_QUANT_GROUP = /\((?![\\])[^()|]*[*+][^()|]*\)[*+]/;
 
-/** Validate a regex STRING for a pack: reject the ReDoS shape and non-compiling patterns.
+/** True iff a regex STRING trips any catastrophic-backtracking red flag. Reused by both the
+ *  `idPattern` guard and the pack-rule regex guard (single shared helper). */
+function isRedosShape(pattern: string): boolean {
+  return REDOS_SINGLE_ATOM.test(pattern) || REDOS_ALT_QUANTIFIED.test(pattern) || REDOS_NESTED_QUANT_GROUP.test(pattern);
+}
+
+/** Validate a regex STRING for a pack: reject the ReDoS shapes and non-compiling patterns.
  *  Returns a human message (to append to a field-specific prefix) or null when safe. */
 function regexIssue(pattern: string): string | null {
-  if (REDOS_SHAPE.test(pattern)) return "has a nested quantifier (e.g. (a+)+) — a catastrophic-backtracking (ReDoS) shape; simplify it";
+  if (isRedosShape(pattern))
+    return "has a nested quantifier or an ambiguous alternation (e.g. (a+)+, (a|a)*, (ab+)+) — a catastrophic-backtracking (ReDoS) shape; simplify it";
   try {
     new RegExp(pattern);
   } catch (e) {

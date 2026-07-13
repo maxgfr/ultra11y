@@ -52,6 +52,28 @@ describe("gh helpers", () => {
     expect(issueTitle(unit("8.3", "Langue de page"), "RGAA")).toBe("[a11y] RGAA 8.3 — Langue de page");
   });
 
+  it("suffixes an advisory unit's title and issueBody renders it as a recommendation, not an NC", () => {
+    const u = { ...unit("1.3.1", "Info and Relationships"), advisory: true };
+    expect(issueTitle(u)).toBe("[a11y] WCAG 1.3.1 — Info and Relationships (recommendation)");
+    const body = issueBody(u, "en", "wcag");
+    expect(body).toContain("Recommendation (non-normative)");
+    expect(body).not.toContain("**Success criterion** : 1.3.1");
+  });
+
+  it("pushIssues adds the `recommendation` label for an advisory unit", () => {
+    const seen: string[][] = [];
+    mock.mockImplementation((...callArgs: unknown[]) => {
+      const args = (callArgs[1] as string[] | undefined) ?? [];
+      if (args.includes("list")) return JSON.stringify([]);
+      seen.push(args);
+      return "";
+    });
+    const advisory = { ...unit("1.3.1", "Info and Relationships"), advisory: true };
+    pushIssues([advisory], "en");
+    const labelArg = seen[0]![seen[0]!.indexOf("--label") + 1]!;
+    expect(labelArg).toContain("recommendation");
+  });
+
   it("issueBody renders the auditor block by default (finding, expected, occurrences, related site)", () => {
     const body = issueBody(unit("4.1.2", "X"), "fr", "wcag");
     expect(body).toContain("Constat"); // finding label (fr), not the dev "Correction"

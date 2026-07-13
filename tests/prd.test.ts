@@ -1,9 +1,12 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AuditResult } from "../src/types.js";
-import { prdUnits, renderBacklog, renderPerCriterion, renderPrdDoc, writePrd } from "../src/prd.js";
+import { prdUnits, partitionUnits, renderBacklog, renderPerCriterion, renderPrdDoc, writePrd } from "../src/prd.js";
+import { runAudit } from "../src/audit.js";
+
+const FIXTURES = new URL("./fixtures/", import.meta.url).pathname;
 
 const tmps: string[] = [];
 function tmp(): string {
@@ -82,6 +85,30 @@ describe("prdUnits", () => {
     const fr = prdUnits(AUDIT, "wcag", "fr").find((u) => u.criteriaId === "1.1.1")!;
     expect(fr.title).toBe("Contenu non textuel");
     expect(fr.label).toBe("1.1.1 — Contenu non textuel");
+  });
+
+  it("flags an all-advisory unit and partitionUnits routes it to the advisory channel", () => {
+    // two-h1.html: 1.3.1 has only the advisory h1-multiple finding → an advisory unit.
+    const audit = runAudit({ inputs: [`${FIXTURES}egapro-feedback/fp/two-h1.html`] });
+    const units = prdUnits(audit);
+    const u131 = units.find((u) => u.criteriaId === "1.3.1")!;
+    expect(u131.advisory).toBe(true);
+    const { nc, advisory } = partitionUnits(units);
+    expect(advisory.some((u) => u.criteriaId === "1.3.1")).toBe(true);
+    expect(nc.some((u) => u.criteriaId === "1.3.1")).toBe(false);
+  });
+
+  it("a mixed unit (normative + advisory findings) stays NC, not advisory", () => {
+    // Two <h1> (advisory) AND an img with no alt on 1.1.1 (normative NC on a DIFFERENT
+    // criterion). 1.3.1 stays advisory; 1.1.1 stays NC.
+    const dir = mkdtempSync(join(tmpdir(), "u11y-prd-mixed-"));
+    tmps.push(dir);
+    const f = join(dir, "mixed.html");
+    // A skip AND two h1 on 1.3.1: h1-multiple advisory + heading-order-skip normative → mixed.
+    writeFileSync(f, `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>A</h1><h1>B</h1><h2>x</h2><h4>y</h4></main></body></html>`);
+    const audit = runAudit({ inputs: [f] });
+    const u131 = prdUnits(audit).find((u) => u.criteriaId === "1.3.1")!;
+    expect(u131.advisory).toBe(false); // a normative heading-order-skip is present
   });
 });
 

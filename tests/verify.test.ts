@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { renderReport, renderPackReport } from "../src/report.js";
 import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, type VerifyItem } from "../src/verify.js";
 import { registerRuntimePack, loadPack, derivePackResults } from "../src/standards/index.js";
+import type { AuditResult } from "../src/types.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
@@ -26,6 +27,45 @@ describe("buildWorklist", () => {
 
   it("respects --max-verify", () => {
     expect(buildWorklist(report, "wcag", 2)).toHaveLength(2);
+  });
+
+  // Parser-twin: a report containing advisory (« Recommandation ») blocks must yield the
+  // EXACT same worklist as one without them — advisory blocks are deliberately rendered
+  // without the criterion-line grammar the worklist parser keys on (src/verify.ts
+  // auditorCriterionLine), so they never enter the non-conformity worklist.
+  it("advisory recommendation blocks do not enter the worklist (parser-twin)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "u11y-adv-"));
+    // 1.3.1 advisory-only (two <h1> → h1-multiple) + 1.1.1 normative NC (img with no alt).
+    const withAdvisory = join(dir, "mixed.html");
+    writeFileSync(
+      withAdvisory,
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>A</h1><h1>B</h1><img src="x.png"></main></body></html>`,
+    );
+    const audit = runAudit({ inputs: [withAdvisory] });
+    // Sanity: the audit really carries an advisory finding AND a normative one.
+    expect(audit.findings.some((f) => f.advisory)).toBe(true);
+    expect(audit.findings.some((f) => !f.advisory)).toBe(true);
+
+    const reportWithAdvisory = renderReport(audit, "en");
+    expect(reportWithAdvisory).toMatch(/Recommendations \(non-normative\)/);
+
+    // The twin: the same audit with every advisory finding stripped (so no advisory blocks
+    // render at all). The worklist must be identical.
+    const stripped: AuditResult = structuredClone(audit);
+    stripped.findings = stripped.findings.filter((f) => !f.advisory);
+    for (const c of stripped.criteria) c.findings = c.findings.filter((f) => !f.advisory);
+    const reportWithout = renderReport(stripped, "en");
+    expect(reportWithout).not.toMatch(/Recommendations \(non-normative\)/);
+
+    const twinKeys = (md: string) =>
+      buildWorklist(md, "wcag", Number.POSITIVE_INFINITY).map((i) => `${i.criteriaId}|${i.file}|${i.line}|${i.selector}|${i.claim}`);
+    const a = twinKeys(reportWithAdvisory);
+    const b = twinKeys(reportWithout);
+    expect(a).toEqual(b);
+    // And the advisory criterion (1.3.1) is NOT in the worklist.
+    expect(buildWorklist(reportWithAdvisory, "wcag", Number.POSITIVE_INFINITY).some((i) => i.criteriaId === "1.3.1")).toBe(false);
+    // …while the normative one (1.1.1) IS.
+    expect(a.some((k) => k.startsWith("1.1.1|"))).toBe(true);
   });
 
   it("parses a pack's NC header by the PACK'S OWN idPattern grammar, not a fixed 2-segment shape (e.g. Section 508 E205.4)", () => {

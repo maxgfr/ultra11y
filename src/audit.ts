@@ -164,6 +164,11 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
 
   for (const c of allSC()) {
     const fs = acc.byCriterion.get(c.sc) ?? [];
+    // ONLY normative findings drive status + conformancePct. Advisory findings (non-normative
+    // recommendations) stay attached to the criterion and in the flat list, but can never
+    // flip it to NC — a criterion whose findings are ALL advisory keeps its automatability-
+    // driven status (C/NA for static, manual for judgment/needs-rendering).
+    const normativeFs = fs.filter((f) => !f.advisory);
     let status: Status;
     let justification: string | undefined;
 
@@ -172,12 +177,12 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
       if (!applicable) {
         status = "NA";
         justification = "No element in scope is concerned by this success criterion.";
-      } else if (fs.length > 0) {
+      } else if (normativeFs.length > 0) {
         status = "NC";
       } else {
         status = "C";
       }
-    } else if (fs.length > 0) {
+    } else if (normativeFs.length > 0) {
       // a rule on a needs-rendering / judgment SC raised a DEFINITE failure
       status = "NC";
     } else {

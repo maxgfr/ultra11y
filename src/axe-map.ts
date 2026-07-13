@@ -160,24 +160,35 @@ export function scForAxeRule(ruleId: string): string {
 // (`audit`) yet a mere recommendation when found dynamically (`scan`/axe). Every key
 // below is pinned `false` (always normative) because its static twin is registered and
 // normative; the twin ids are documented inline and cross-checked by
-// tests/axe-map.test.ts against the live registry so this table can never silently drift
-// from src/rules/*.ts.
+// tests/axe-map.test.ts against the live registry. The test guard is two-directional for
+// EXACT-id matches only: an AXE_WCAG key that is also a registered normative static rule
+// id must be pinned here or listed in AXE_EXACT_TWIN_EXEMPT below. Near-twins whose ids
+// differ (heading-order vs heading-order-skip…) are still curated by hand — a future
+// differently-named twin is caught at review time, not by the test.
 //   - heading-order        → static twin heading-order-skip        (src/rules/headings.ts)
 //   - tabindex              → static twin positive-tabindex          (src/rules/navigation.ts)
 //   - skip-link             → static twin skip-link-target-missing   (src/rules/navigation.ts)
 //   - label-title-only      → static twin control-name-title-only    (src/rules/links.ts)
 //   - landmark-one-main     → static twins missing-main-landmark /
 //                             multiple-main-landmark                 (src/rules/navigation.ts)
+//   - empty-heading         → static twin empty-heading              (src/rules/headings.ts,
+//                             identical rule id; the axe rule is best-practice-only tagged)
 // Deliberately NOT pinned (stay advisory, tag-based decision applies): empty-table-header,
 // page-has-heading-one (consistent with h1-missing/h1-multiple now being advisory — see
 // src/rules/headings.ts), region, accesskeys, image-redundant-alt — none of these has a
-// normative static twin in this engine.
+// normative static twin in this engine. Near-twins judged DIFFERENT defects (also not
+// pinned): td-has-header / table-fake-caption vs the static data-table-no-headers /
+// table-caption-missing — a data cell missing its per-cell header association vs a table
+// with no headers at all, and a caption faked with styled markup vs a caption missing
+// entirely. duplicate-id (an exact-id static twin, deprecated by axe-core ≥ 4.10) is
+// handled via AXE_EXACT_TWIN_EXEMPT below, not a pin.
 export const AXE_ADVISORY_EXCEPTIONS: Record<string, boolean> = {
   "heading-order": false,
   tabindex: false,
   "skip-link": false,
   "label-title-only": false,
   "landmark-one-main": false,
+  "empty-heading": false,
 };
 
 // Data companion to AXE_ADVISORY_EXCEPTIONS: which static rule id(s) (src/rules/*.ts,
@@ -191,7 +202,19 @@ export const AXE_STATIC_TWIN: Record<string, string[]> = {
   "skip-link": ["skip-link-target-missing"],
   "label-title-only": ["control-name-title-only"],
   "landmark-one-main": ["missing-main-landmark", "multiple-main-landmark"],
+  "empty-heading": ["empty-heading"],
 };
+
+// AXE_WCAG keys that EXACTLY match a registered NORMATIVE static rule id but are
+// deliberately NOT pinned: axe natively tags each with a real `wcag<digits>` SC tag
+// (aria-required-children → wcag131, nested-interactive → wcag412,
+// form-field-multiple-labels → wcag332, duplicate-id → wcag411 — the latter deprecated by
+// axe-core ≥ 4.10 anyway), so the tag-based `axeAdvisory` already resolves them normative
+// and a pin would be redundant. The two-way consistency test (tests/axe-map.test.ts)
+// requires every exact-id match to be pinned OR listed here, so a future same-id rule
+// cannot slip through unexamined — adding an entry here is the documented, reviewed way
+// to say "the native tags already keep it normative".
+export const AXE_EXACT_TWIN_EXEMPT: Set<string> = new Set(["aria-required-children", "nested-interactive", "form-field-multiple-labels", "duplicate-id"]);
 
 /** A best-practice-only axe violation carries tags but NO `wcag<digits>` SC tag (only
  *  umbrellas like `wcag2aa`/`best-practice`/`cat.*`) — it evidences no testable WCAG

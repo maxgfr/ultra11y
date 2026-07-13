@@ -3,7 +3,7 @@ import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { VERSION, type Lang, type AuditResult, type DynamicResult, type SampleConfig } from "./types.js";
 import { runAudit } from "./audit.js";
-import { writeReport, hasScanResults, partialAuditBanner } from "./report.js";
+import { writeReport, untestedNeedsRendering, partialAuditBanner } from "./report.js";
 import { writePrd, prdUnits, type PrdFormat } from "./prd.js";
 import { ghAvailable, pushIssues, pushSingleIssue } from "./gh.js";
 import {
@@ -726,11 +726,13 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
   const out = typeof p.flags.out === "string" ? (p.flags.out as string) : "audits";
   const lang = resolveLang(p.flags, { audit: result, standard });
   const path = writeReport(result, { out, lang, standard });
-  // Partial-audit advisory (owner decision): a pack (RGAA) report with NO merged scan
-  // results has not tested the needs-rendering criteria — warn prominently on the CLI
-  // (the report itself also carries a visible banner). Scan stays opt-in but strongly advised.
-  const partial = !isCore(standard) && !hasScanResults(result);
-  if (partial && !p.flags.json) console.error(`🚨 ${partialAuditBanner(lang)}`);
+  // Partial-audit advisory (owner decision): a pack (RGAA) report whose scan coverage
+  // leaves needs-rendering criteria untested — warn prominently on the CLI, naming exactly
+  // which criteria lack a dynamic verdict (the report itself carries the matching banner).
+  // Scan stays opt-in but strongly advised.
+  const untested = isCore(standard) ? [] : untestedNeedsRendering(result);
+  const partial = untested.length > 0;
+  if (partial && !p.flags.json) console.error(`🚨 ${partialAuditBanner(lang, untested)}`);
   if (p.flags.json)
     console.log(
       JSON.stringify(
@@ -739,7 +741,7 @@ async function cmdReport(p: ParsedArgs): Promise<number> {
           conformancePct: result.conformancePct,
           date: result.date,
           standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag",
-          ...(partial ? { partialAudit: true } : {}),
+          ...(partial ? { partialAudit: true, untestedCriteria: untested } : {}),
         },
         null,
         2,
@@ -1412,6 +1414,7 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
       return 2;
     }
     const v = validateSample(cfg.sample);
+    for (const w of v.warnings) console.error(`⚠ ${w.path ? `${w.path}: ` : ""}${w.message}`);
     if (!v.ok || !v.sample) {
       console.error(lang === "fr" ? "ultra11y scan : bloc `sample` invalide :" : "ultra11y scan: invalid `sample` block:");
       for (const i of v.issues) console.error(`  ✗ ${i.path ? `${i.path}: ` : ""}${i.message}`);
@@ -1562,8 +1565,9 @@ function cmdSample(p: ParsedArgs): number {
     return 2;
   }
   const v = validateSample(cfg.sample);
+  if (!p.flags.json) for (const w of v.warnings) console.error(`⚠ ${w.path ? `${w.path}: ` : ""}${w.message}`);
   if (!v.ok || !v.sample) {
-    if (p.flags.json) console.log(JSON.stringify({ ok: false, issues: v.issues }, null, 2));
+    if (p.flags.json) console.log(JSON.stringify({ ok: false, issues: v.issues, warnings: v.warnings }, null, 2));
     else {
       console.error(lang === "fr" ? "✗ Bloc `sample` invalide :" : "✗ Invalid `sample` block:");
       for (const i of v.issues) console.error(`  ✗ ${i.path ? `${i.path}: ` : ""}${i.message}`);
@@ -1574,7 +1578,9 @@ function cmdSample(p: ParsedArgs): number {
   const methodology = pack?.sampleMethodology;
   if (!methodology) {
     if (p.flags.json)
-      console.log(JSON.stringify({ ok: true, pages: v.sample.pages.length, missing: [], note: "no sample methodology for this standard" }, null, 2));
+      console.log(
+        JSON.stringify({ ok: true, pages: v.sample.pages.length, missing: [], warnings: v.warnings, note: "no sample methodology for this standard" }, null, 2),
+      );
     else
       console.log(
         lang === "fr"
@@ -1586,7 +1592,13 @@ function cmdSample(p: ParsedArgs): number {
   const { missing } = lintSample(v.sample, methodology);
   const loc = pack?.defaultLocale ?? "fr";
   if (p.flags.json) {
-    console.log(JSON.stringify({ ok: true, pages: v.sample.pages.length, missing: missing.map((k) => ({ id: k.id, label: kindLabel(k, loc) })) }, null, 2));
+    console.log(
+      JSON.stringify(
+        { ok: true, pages: v.sample.pages.length, missing: missing.map((k) => ({ id: k.id, label: kindLabel(k, loc) })), warnings: v.warnings },
+        null,
+        2,
+      ),
+    );
     return 0;
   }
   if (missing.length === 0) {

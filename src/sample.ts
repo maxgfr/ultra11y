@@ -7,8 +7,10 @@
 //
 // SECURITY: `storageState` values are FILE PATHS (Playwright session files). Their CONTENT
 // is NEVER read here nor embedded in any output/finding/report — only the path is validated
-// as a non-empty string. The required-kinds LIST is standard-specific and lives in the pack
+// as a non-empty string (plus an existsSync advisory that cites the path, never the content).
+// The required-kinds LIST is standard-specific and lives in the pack
 // (src/standards/types.ts SampleMethodology), never in this core module.
+import { existsSync } from "node:fs";
 import type { SampleConfig, SamplePage, SampleScope } from "./types.js";
 import type { SampleMethodology, SampleRequiredKind } from "./standards/types.js";
 
@@ -20,6 +22,9 @@ export interface SampleIssue {
 export interface SampleValidation {
   ok: boolean;
   issues: SampleIssue[];
+  // Advisory only (never block): e.g. a storageState PATH that does not exist on disk.
+  // The message cites the path string only — the file's CONTENT is never read.
+  warnings: SampleIssue[];
   sample?: SampleConfig; // the normalized sample, present only when ok
 }
 
@@ -28,14 +33,18 @@ function looksLikeTarget(u: string): boolean {
   return /^https?:\/\//i.test(u) || /^(\.\.?[/\\]|[/\\])/.test(u) || /\.x?html?$/i.test(u);
 }
 
-/** Validate an untrusted `sample` config block. Any malformed entry is a hard error. */
+/** Validate an untrusted `sample` config block. Any malformed entry is a hard error; a
+ *  storageState path that does not exist on disk is a WARNING (advisory — the scan would
+ *  fail to load the session, but the config itself is well-formed). */
 export function validateSample(raw: unknown): SampleValidation {
   const issues: SampleIssue[] = [];
+  const warnings: SampleIssue[] = [];
   const err = (path: string, message: string) => issues.push({ path, message });
+  const warn = (path: string, message: string) => warnings.push({ path, message });
 
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     err("sample", "sample must be an object { pages: [...], transverse?: [...] }");
-    return { ok: false, issues };
+    return { ok: false, issues, warnings };
   }
   const s = raw as Record<string, unknown>;
   const pages = Array.isArray(s.pages) ? (s.pages as unknown[]) : null;
@@ -58,8 +67,15 @@ export function validateSample(raw: unknown): SampleValidation {
     if (typeof p.url !== "string" || p.url.trim() === "") err(`sample.pages[${i}].url`, "page url must be a non-empty string");
     else if (!looksLikeTarget(p.url)) err(`sample.pages[${i}].url`, `malformed url "${p.url}" (expected an http(s):// URL or an HTML file path)`);
     if (p.auth !== undefined && typeof p.auth !== "boolean") err(`sample.pages[${i}].auth`, "auth must be a boolean");
-    if (p.storageState !== undefined && (typeof p.storageState !== "string" || p.storageState.trim() === ""))
+    if (p.storageState !== undefined && (typeof p.storageState !== "string" || p.storageState.trim() === "")) {
       err(`sample.pages[${i}].storageState`, "storageState must be a non-empty file path string");
+    } else if (typeof p.storageState === "string" && p.storageState.trim() !== "" && !existsSync(p.storageState)) {
+      // Path string only in the message — the file's content is never read here or anywhere.
+      warn(
+        `sample.pages[${i}].storageState`,
+        `storageState path not found: "${p.storageState}" (resolved from the current directory) — the scan will not be able to load this session`,
+      );
+    }
     if (p.notes !== undefined && typeof p.notes !== "string") err(`sample.pages[${i}].notes`, "notes must be a string");
   });
 
@@ -74,7 +90,7 @@ export function validateSample(raw: unknown): SampleValidation {
   }
 
   const ok = issues.length === 0;
-  return { ok, issues, sample: ok ? normalizeSample(s) : undefined };
+  return { ok, issues, warnings, sample: ok ? normalizeSample(s) : undefined };
 }
 
 function normalizeSample(s: Record<string, unknown>): SampleConfig {
@@ -110,17 +126,31 @@ export interface SampleLint {
 }
 
 // Accent-insensitive, case-folded normalization for fuzzy matching (RGAA labels carry
-// diacritics; a user's page names rarely match verbatim).
+// diacritics and apostrophes; a user's page names rarely match verbatim).
 const norm = (s: string): string =>
   s
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
+    .replace(/['’]/g, " ")
     .toLowerCase();
+
+// SHORT keywords (≤ 5 chars: aide, plan, faq, help, menu, home, index…) must match as a
+// WHOLE WORD — bare substring matching over-credited ("plaide" → aide, "planning" → plan).
+// Longer keywords keep substring matching so a stem still hits ("contact" → "contactez-nous").
+const SHORT_KEYWORD = 5;
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function keywordMatches(haystack: string, keyword: string): boolean {
+  if (keyword.length > SHORT_KEYWORD) return haystack.includes(keyword);
+  return new RegExp(`(^|[^a-z0-9])${escapeRe(keyword)}($|[^a-z0-9])`).test(haystack);
+}
 
 /** Lint a configured sample against a standard's normative methodology: which required page
  *  KINDS does no configured page cover? Fuzzy — matches a kind's keywords against each
- *  page's name/notes/url/id (accent-insensitive), and treats the "transverse" kind as
- *  covered when the sample declares any transverse element. Advisory output, never a gate. */
+ *  page's name/notes/url/id (accent-insensitive; whole-word for short keywords). Two
+ *  documented heuristic credits: the "transverse" kind is covered when the sample declares
+ *  any transverse element, and the "representative pages" kind is covered when the sample
+ *  holds ≥ 2 pages (any multi-page sample de facto carries representative pages beyond a
+ *  single entry point — this stops a constant false nag). Advisory output, never a gate. */
 export function lintSample(sample: SampleConfig, methodology: SampleMethodology): SampleLint {
   const haystacks = sample.pages.map((p) => norm([p.name, p.notes ?? "", p.url, p.id].join(" ")));
   const transverseHay = norm((sample.transverse ?? []).join(" "));
@@ -129,9 +159,10 @@ export function lintSample(sample: SampleConfig, methodology: SampleMethodology)
   for (const kind of methodology.requiredKinds) {
     const kws = kind.keywords.map(norm).filter(Boolean);
     const covered =
-      haystacks.some((h) => kws.some((k) => h.includes(k))) ||
-      (transverseHay !== "" && kws.some((k) => transverseHay.includes(k))) ||
-      (hasTransverse && /transverse/.test(kind.id));
+      haystacks.some((h) => kws.some((k) => keywordMatches(h, k))) ||
+      (transverseHay !== "" && kws.some((k) => keywordMatches(transverseHay, k))) ||
+      (hasTransverse && /transverse/.test(kind.id)) ||
+      (/representative|representatif/.test(kind.id) && sample.pages.length >= 2);
     if (!covered) missing.push(kind);
   }
   return { missing };

@@ -269,6 +269,14 @@ export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = 
   return { tool: "ultra11y", engine, target, date: today(), findings };
 }
 
+// The needs-rendering SCs the DOCKER runner actually MEASURES: axe + the 320px reflow
+// probe only — the local-only probes (200% zoom, text spacing, focus visibility, content
+// on hover, live regions) never run in the container. Stamped on every Docker
+// DynamicResult so the partial-audit advisory (src/report.ts untestedNeedsRendering)
+// never claims a probe ran when it did not. The local superset: scan-local.ts
+// `localTestedScs`.
+export const DOCKER_TESTED_SCS: readonly string[] = ["1.4.10"];
+
 export interface ScanOpts {
   target: string;
   tag?: string;
@@ -290,7 +298,7 @@ export function runScan(opts: ScanOpts): DynamicResult {
   if (!imageExists(tag)) buildImage(tag);
   const isFile = !isUrl && existsSync(opts.target) && statSync(opts.target).isFile();
   const out = runRunner(opts.target, isFile, tag);
-  return toDynamicResult(out, opts.target);
+  return { ...toDynamicResult(out, opts.target), testedScs: [...DOCKER_TESTED_SCS] };
 }
 
 /** Fetch a URL's served HTML (zero-dep, Node global fetch). Empty string on error. */
@@ -336,7 +344,14 @@ export function runScanMany(urls: string[], tag = IMAGE_TAG): DynamicResult {
     const out = runRunner(url, false, tag);
     findings.push(...toDynamicResult(out, url).findings);
   }
-  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target: `${urls.length} page(s)`, date: today(), findings };
+  return {
+    tool: "ultra11y",
+    engine: "axe-core@playwright (docker)",
+    target: `${urls.length} page(s)`,
+    date: today(),
+    findings,
+    testedScs: [...DOCKER_TESTED_SCS],
+  };
 }
 
 /** Stamp each dynamic finding with its originating sample page's provenance (id/name/auth/
@@ -370,6 +385,7 @@ export function runSampleScan(pages: SamplePage[], tag = IMAGE_TAG): DynamicResu
     date: today(),
     findings,
     sample: sampleScope({ pages }),
+    testedScs: [...DOCKER_TESTED_SCS],
   };
 }
 
@@ -435,6 +451,13 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
   // Record the normative page sample the dynamic tier ran over (Task 5) — drives the
   // report's « Constats par page » section. Storage-state paths were already dropped upstream.
   if (dynamic.sample) merged.scope.sample = dynamic.sample;
+  // Record which needs-rendering SCs this scan actually MEASURED (union across merges) —
+  // the partial-audit advisory keys on this, so a Docker run (reflow only) never silently
+  // suppresses the banner for the local-only probes it did not run.
+  if (dynamic.testedScs?.length) {
+    const tested = new Set([...(merged.scope.scan?.testedScs ?? []), ...dynamic.testedScs]);
+    merged.scope.scan = { testedScs: [...tested].sort() };
+  }
   const byId = new Map(merged.criteria.map((c) => [c.id, c]));
   const remediation =
     lang === "fr" ? "Vérifié au rendu par axe-core ; corrigez l'élément cité." : "Verified at render time by axe-core; fix the cited element.";

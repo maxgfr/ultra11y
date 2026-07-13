@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
-import { renderReport, renderPackReport, writeReport, hasScanResults } from "../src/report.js";
+import { renderReport, renderPackReport, writeReport, untestedNeedsRendering } from "../src/report.js";
 import { mergeDynamic } from "../src/scan.js";
 import { prdUnits } from "../src/prd.js";
 import { loadPack } from "../src/standards/index.js";
@@ -93,32 +93,46 @@ describe("renderReport (WCAG 2.2 AA markdown)", () => {
   });
 });
 
-describe("partial-audit advisory banner (Task 5 — scan opt-in but strongly advised)", () => {
-  const scanned: DynamicResult = {
+describe("partial-audit advisory banner (Task 5 — needs-rendering-aware coverage)", () => {
+  const reflowFinding = {
+    criteriaId: "1.4.10",
+    axeRule: "reflow",
+    impact: "serious",
+    severity: "majeur",
+    message: "reflow",
+    selector: "document",
+    snippet: "",
+    engine: "reflow",
+    page: "https://example.fr",
+  } as const;
+  // A Docker run measures axe + the 320px reflow probe ONLY (testedScs stamped by runScan*).
+  const dockerScan: DynamicResult = {
+    tool: "ultra11y",
+    engine: "axe-core@playwright (docker)",
+    target: "https://example.fr",
+    date: "2026-07-13",
+    findings: [reflowFinding],
+    testedScs: ["1.4.10"],
+  };
+  // A local run with interactions measures the full needs-rendering set.
+  const localScan: DynamicResult = {
     tool: "ultra11y",
     engine: "axe-core@playwright (local)",
     target: "https://example.fr",
     date: "2026-07-13",
-    findings: [
-      {
-        criteriaId: "1.4.10",
-        axeRule: "reflow",
-        impact: "serious",
-        severity: "majeur",
-        message: "reflow",
-        selector: "document",
-        snippet: "",
-        engine: "reflow",
-        page: "https://example.fr",
-      },
-    ],
+    findings: [reflowFinding],
+    testedScs: ["1.4.4", "1.4.10", "1.4.12", "2.4.7", "1.4.13", "4.1.3"],
   };
 
-  it("appears on an RGAA report with NO merged scan results", () => {
+  it("appears on an RGAA report with NO merged scan results, naming every needs-rendering criterion", () => {
     const md = renderPackReport(bad, loadPack("rgaa"), "fr");
     expect(md).toContain("Audit partiel");
+    expect(md).toContain("zoom 200 %");
+    expect(md).toContain("reflow 320 px");
+    expect(md).toContain("visibilité du focus");
     expect(md).toContain("scan --sample");
     expect(renderPackReport(bad, loadPack("rgaa"), "en")).toContain("Partial audit");
+    expect(untestedNeedsRendering(bad)).toEqual(["1.4.4", "1.4.10", "1.4.12", "2.4.7", "1.4.13", "4.1.3"]);
   });
 
   it("does NOT appear on the core WCAG report", () => {
@@ -126,11 +140,34 @@ describe("partial-audit advisory banner (Task 5 — scan opt-in but strongly adv
     expect(renderReport(bad, "en")).not.toContain("Partial audit");
   });
 
-  it("does NOT appear once a scan tier fed the audit (hasScanResults)", () => {
-    const merged = mergeDynamic(bad, scanned, "fr");
-    expect(hasScanResults(merged)).toBe(true);
+  it("PERSISTS after a Docker-only scan (reflow measured, local probes never ran) — naming exactly the untested ones", () => {
+    const merged = mergeDynamic(bad, dockerScan, "fr");
+    expect(untestedNeedsRendering(merged)).toEqual(["1.4.4", "1.4.12", "2.4.7", "1.4.13", "4.1.3"]);
+    const md = renderPackReport(merged, loadPack("rgaa"), "fr");
+    expect(md).toContain("Audit partiel");
+    // Names the local-only probes that never ran…
+    expect(md).toContain("zoom 200 %");
+    expect(md).toContain("espacement du texte");
+    expect(md).toContain("visibilité du focus");
+    expect(md).toContain("contenu au survol");
+    expect(md).toContain("régions live");
+    // …but NOT the reflow the Docker runner DID measure.
+    expect(md).not.toContain("reflow 320 px");
+  });
+
+  it("is GONE after a full local scan (every needs-rendering criterion measured)", () => {
+    const merged = mergeDynamic(bad, localScan, "fr");
+    expect(untestedNeedsRendering(merged)).toEqual([]);
     expect(renderPackReport(merged, loadPack("rgaa"), "fr")).not.toContain("Audit partiel");
-    expect(hasScanResults(bad)).toBe(false);
+    expect(renderPackReport(merged, loadPack("rgaa"), "en")).not.toContain("Partial audit");
+  });
+
+  it("back-compat: an audit merged before the coverage stamp counts a dyn-* finding as coverage of its SC", () => {
+    const noStamp: DynamicResult = { ...dockerScan, testedScs: undefined };
+    const merged = mergeDynamic(bad, noStamp, "fr");
+    expect(merged.scope.scan).toBeUndefined();
+    expect(untestedNeedsRendering(merged)).not.toContain("1.4.10"); // dyn-reflow finding proves it ran
+    expect(untestedNeedsRendering(merged)).toContain("2.4.7"); // no evidence the focus probe ran
   });
 });
 

@@ -86,6 +86,26 @@ describe("validateSample (normative page sample — Task 5)", () => {
     expect(dup.ok).toBe(false);
     expect(dup.issues.some((i) => /duplicate/.test(i.message))).toBe(true);
   });
+
+  // Fix round 1: a storageState PATH that does not exist on disk is a WARNING (advisory),
+  // never a hard error — and the message cites the path only, never file content.
+  it("warns (not errors) on a storageState path missing from disk; no warning when it exists", () => {
+    const missing = validateSample({ pages: [{ ...validPage, storageState: "does/not/exist.json" }] });
+    expect(missing.ok).toBe(true);
+    expect(missing.issues).toEqual([]);
+    expect(missing.warnings.some((w) => w.path === "sample.pages[0].storageState" && w.message.includes("does/not/exist.json"))).toBe(true);
+
+    const d = tmp();
+    try {
+      const ss = join(d, "session.json");
+      writeFileSync(ss, "{}");
+      const ok = validateSample({ pages: [{ ...validPage, storageState: ss }] });
+      expect(ok.ok).toBe(true);
+      expect(ok.warnings).toEqual([]);
+    } finally {
+      rmSync(d, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("loadRuntimeStandards", () => {

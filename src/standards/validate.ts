@@ -399,6 +399,47 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
     }
   }
 
+  // ---- Secondary crosswalk MAPPINGS (src/standards/types.ts SecondaryMapping). Optional
+  // array; each entry projects a ruleId onto an ADDITIONAL pack criterion whose WCAG
+  // crosswalk does NOT contain the finding's SC — a DELIBERATE, opt-in deviation. Shape:
+  // non-empty `ruleId`; a `criterion` that MUST exist in this pack (like a declarative
+  // rule's reporting criterion); an optional localized `note`; an optional boolean
+  // `enabled`. We DELIBERATELY do NOT require the finding's SC to be in the criterion's
+  // `wcag` — that bypass is the whole point — so every well-formed entry gets a `warn`
+  // documenting the intentional deviation. Runs for built-in AND runtime packs.
+  if (p.secondaryMappings !== undefined) {
+    if (!Array.isArray(p.secondaryMappings)) {
+      err("secondaryMappings", "secondaryMappings must be an array");
+    } else {
+      (p.secondaryMappings as unknown[]).forEach((raw, i) => {
+        const at = `secondaryMappings[${i}]`;
+        if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+          err(at, "each secondary mapping must be an object { ruleId, criterion, note?, enabled? }");
+          return;
+        }
+        const m = raw as Record<string, unknown>;
+        if (typeof m.ruleId !== "string" || m.ruleId.trim() === "") err(`${at}.ruleId`, "secondary mapping ruleId must be a non-empty string");
+        if (typeof m.criterion !== "string" || m.criterion === "") {
+          err(`${at}.criterion`, "secondary mapping criterion must be a non-empty string");
+        } else if (!ids.has(m.criterion)) {
+          err(`${at}.criterion`, `secondary mapping projects onto criterion "${m.criterion}" which does not exist in this pack`);
+        }
+        if (m.enabled !== undefined && typeof m.enabled !== "boolean") err(`${at}.enabled`, "secondary mapping enabled must be a boolean");
+        if (m.note !== undefined) {
+          if (typeof m.note !== "object" || m.note === null || Array.isArray(m.note)) {
+            err(`${at}.note`, `secondary mapping note must be a localized object (e.g. { "${loc}": "…" })`);
+          } else if (typeof (m.note as Record<string, unknown>)[loc] !== "string") {
+            warn(`${at}.note`, `secondary mapping note has no string for the default locale "${loc}"`);
+          }
+        }
+        // Only a well-formed entry (ruleId present, criterion exists) documents the deviation.
+        if (typeof m.ruleId === "string" && m.ruleId.trim() !== "" && typeof m.criterion === "string" && ids.has(m.criterion)) {
+          warn(at, `secondary mapping bypasses the SC crosswalk — intentional deviation (ruleId "${m.ruleId}" → criterion "${m.criterion}")`);
+        }
+      });
+    }
+  }
+
   return done();
 }
 

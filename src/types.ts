@@ -184,6 +184,15 @@ export interface Finding {
   // back to the English `message` bake. Keyed by the UI frame's `Lang` (fr|en). Optional/
   // additive (no SCHEMA_VERSION bump) — absent ⇒ resolve via `msg`/baked strings as before.
   i18n?: { message: Partial<Record<Lang, string>>; remediation: Partial<Record<Lang, string>> };
+  // Set when this finding was projected onto a pack criterion via an opt-in SECONDARY
+  // crosswalk mapping (src/standards/types.ts SecondaryMapping) — an additional criterion
+  // whose official WCAG mapping does NOT contain the finding's SC, an explicit,
+  // config-enabled deviation. Carried ONLY on the copy attached to the secondary criterion
+  // in a pack projection (`derivePackResults`); the core finding is never mutated. `note`
+  // is the resolved localized explanation of the deviation, appended by the auditor block
+  // (src/auditor.ts). Optional/additive (no SCHEMA_VERSION bump) — absent ⇒ ordinary
+  // SC-faithful projection, following the `advisory`/`preliminary`/`origin` pattern.
+  secondary?: { note?: string };
 }
 
 export interface CriterionResult {

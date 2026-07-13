@@ -9,11 +9,12 @@
 import { existsSync, statSync } from "node:fs";
 import { join, isAbsolute } from "node:path";
 import { readText } from "./util.js";
-import { registerRuntimePack, getPack } from "./standards/registry.js";
+import { registerRuntimePack, getPack, enableSecondaryMapping } from "./standards/registry.js";
 import { formatIssues } from "./standards/validate.js";
 import { checkGuidance } from "./pack.js";
 import { registerRuntimeGuidance, hasGuidance } from "./guidance/index.js";
 import type { GuidanceDataset } from "./guidance/types.js";
+import type { LocaleString } from "./standards/types.js";
 import type { Glossary, SampleConfig } from "./types.js";
 
 export interface Ultra11yConfig {
@@ -24,6 +25,12 @@ export interface Ultra11yConfig {
   // `validateSample` (src/sample.ts) when a `scan --sample` / `sample check` reads it; NOT
   // validated at pack-load time (an audit with no sample block is the common case).
   sample?: SampleConfig;
+  // Opt-in SECONDARY crosswalk mappings to activate (see src/standards/types.ts
+  // SecondaryMapping). Each entry names a registered `standard` (pack key), a `ruleId`, and
+  // the additional `criterion` it should also project onto, with an optional localized
+  // `note`. Applied AFTER packs are registered (registry.enableSecondaryMapping): a pack
+  // ships the mapping DISABLED; this flips it on (or appends a new enabled one).
+  secondaryMappings?: Array<{ standard: string; ruleId: string; criterion: string; note?: LocaleString }>;
 }
 
 export interface LoadResult {
@@ -115,6 +122,21 @@ export function loadRuntimeStandards(cwd: string, packFlags: string[], onWarn: (
   }
 
   for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join(cwd, g), result, onWarn);
+
+  // Activate any opt-in secondary crosswalk mappings — AFTER every pack is registered, so a
+  // mapping can target a built-in (rgaa) OR a just-loaded runtime pack. An unknown standard
+  // (or the WCAG core, which has no pack criteria) is a hard error, never a silent skip.
+  for (const sm of config?.secondaryMappings ?? []) {
+    if (!sm || typeof sm.standard !== "string" || typeof sm.ruleId !== "string" || typeof sm.criterion !== "string") {
+      result.errors.push("secondaryMappings: each entry must be { standard, ruleId, criterion, note? }");
+      continue;
+    }
+    if (!getPack(sm.standard)) {
+      result.errors.push(`secondaryMappings: unknown standard "${sm.standard}" (register its pack first; the WCAG core has no pack criteria)`);
+      continue;
+    }
+    enableSecondaryMapping(sm.standard, { ruleId: sm.ruleId, criterion: sm.criterion, note: sm.note });
+  }
 
   return result;
 }

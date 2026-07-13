@@ -303,6 +303,37 @@ describe("validatePack — normativity/severity overrides", () => {
   });
 });
 
+describe("validatePack — secondary crosswalk mappings", () => {
+  const withSecondary = (secondaryMappings: unknown) => ({ ...base(), secondaryMappings });
+
+  it("accepts a well-formed mapping onto an existing criterion, WITH the intentional-deviation warn", () => {
+    const r = validatePack(withSecondary([{ ruleId: "dyn-live-region", criterion: "1.1", note: { en: "also 1.1" }, enabled: false }]));
+    expect(r.ok).toBe(true);
+    // The deviation is documented (it bypasses the SC crosswalk on purpose).
+    expect(warns(r).some((w) => /bypasses the SC crosswalk|intentional deviation/.test(w.message))).toBe(true);
+  });
+
+  it("errors when the target criterion does not exist in the pack", () => {
+    const r = validatePack(withSecondary([{ ruleId: "dyn-live-region", criterion: "9.9" }]));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /does not exist/.test(e.message))).toBe(true);
+  });
+
+  it("errors on a bad shape: non-array, non-object entry, empty ruleId, non-boolean enabled, non-object note", () => {
+    expect(validatePack(withSecondary({})).ok).toBe(false);
+    expect(validatePack(withSecondary(["nope"])).ok).toBe(false);
+    expect(validatePack(withSecondary([{ ruleId: "", criterion: "1.1" }])).ok).toBe(false);
+    expect(validatePack(withSecondary([{ ruleId: "r", criterion: "1.1", enabled: "yes" }])).ok).toBe(false);
+    expect(validatePack(withSecondary([{ ruleId: "r", criterion: "1.1", note: "flat" }])).ok).toBe(false);
+  });
+
+  it("does NOT require the ruleId's SC to be in the criterion's wcag mapping (that bypass is the whole point)", () => {
+    // dyn-live-region keys on WCAG 4.1.3; criterion 1.1 maps to 1.1.1 — no shared SC, yet valid.
+    const r = validatePack(withSecondary([{ ruleId: "dyn-live-region", criterion: "1.1", enabled: true }]));
+    expect(r.ok).toBe(true);
+  });
+});
+
 describe("validatePack — appliesTo (per-criterion applicability)", () => {
   const withApplies = (appliesTo: unknown) => {
     const b = base();

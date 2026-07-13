@@ -331,10 +331,11 @@ const RESTORE_INPUTS_STEP = `(() => {
 // active stress. A single-line <input> never wraps, so a long value always makes
 // scrollWidth > clientWidth — that alone is normal (the field scrolls), NOT a failure. The
 // real defect the auditor confirmed is a field squeezed so NARROW (a fixed-width or
-// table-cell input at 320px / 200% zoom / text-spacing) that only a character or two of the
-// typed value is visible. So we require clipping AND an unusably narrow visible box: fewer
-// than ~4 characters fit at the current font size (font-relative, so the 200%-zoom case is
-// caught naturally as the character width doubles), or the box collapsed near zero. The SC +
+// table-cell input at 320px / 200% zoom / text-spacing) that only a few characters of the
+// typed value are visible. So we require clipping AND an unusably narrow visible box: fewer
+// than MIN_VISIBLE_CHARS characters fit at the current font size (font-relative, so the
+// 200%-zoom case is caught naturally as the character width doubles), or the box collapsed
+// near zero. Calibrated on the fixtures: the clip case shows 3.3 chars, the clean one 22. The SC +
 // wording differ per stress; the "input inside a table cell" note is appended for a td/th.
 const MIN_VISIBLE_CHARS = 6;
 function inputOverflowScan(detail: string, cellSuffix: string): string {
@@ -462,8 +463,48 @@ async function probeDialogs(page: Any): Promise<ProbeHit[]> {
 // a text update whose nearest ancestor is NOT a live region (aria-live / role=status|alert
 // |log) — it was likely never announced to assistive tech. location.href is asserted after
 // each interaction (abort + restore on any change). Interactions and hits are bounded.
-function liveRegionExpr(detail: string): string {
+//
+// HEURISTIC HONESTY: an EXPECTED context change (a dialog opening, an accordion panel
+// expanding after its toggle) also mutates non-live text and can fire this probe — such
+// updates don't necessarily need a live region. That is why the finding is `mineur` with
+// "likely/probablement" framing, deliberately: it points the auditor at the update, it does
+// not claim certainty.
+//
+// CLICK SAFETY (authenticated scans): even a `button[type="button"]` click can trigger a
+// server MUTATION (delete a row, send a message) that the location.href assertion cannot
+// see. So the click loop is emitted ONLY when `allowClicks` is true — the caller disables
+// it by default whenever a storageState (authenticated session) is in use, re-enabled via
+// `scan --interact-clicks`; unauthenticated scans keep clicks on. Defense-in-depth on top:
+// even when clicks are on, a button whose accessible name matches a destructive/submitting
+// verb (fr/en: supprimer, retirer, effacer, envoyer, valider, confirmer, payer, delete,
+// remove, send, submit, confirm, pay, …) is never clicked. Fill/toggle interactions always
+// run (they are the confirmed real-world need) and are restored.
+const DESTRUCTIVE_NAME_RE = "\\b(supprim|retir|effac|envoy|valid|confirm|pay|achet|command|delete|remove|eras|clear|send|submit|buy|order)";
+function liveRegionExpr(detail: string, allowClicks: boolean): string {
   const d = JSON.stringify(detail);
+  const clickLoop = allowClicks
+    ? `
+  // click button[type=button] only (never a submit/link), skipping destructive names
+  const dangerous = new RegExp(${JSON.stringify(DESTRUCTIVE_NAME_RE)}, 'i');
+  const nameOf = (b) => {
+    let n = (b.getAttribute('aria-label') || '') + ' ' + (b.textContent || '') + ' ' + (b.getAttribute('title') || '');
+    const lb = (b.getAttribute('aria-labelledby') || '').split(/\\s+/)[0];
+    if (lb) { const t = document.getElementById(lb); if (t) n += ' ' + (t.textContent || ''); }
+    return n;
+  };
+  for (const b of Array.from(document.querySelectorAll('button[type="button"]'))) {
+    if (count >= 20 || hits.length >= 10) break;
+    if (b.disabled || !__vis(b)) continue;
+    if (dangerous.test(nameOf(b))) continue; // defense-in-depth: never click a destructive-named button
+    const before = location.href;
+    try { b.click(); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    count++;
+  }`
+    : `
+  // click interactions disabled (authenticated scan without --interact-clicks)`;
   return `(async () => { ${PRELUDE}
   const isLive = (node) => {
     let el = node && node.nodeType === 1 ? node : (node ? node.parentElement : null);
@@ -497,18 +538,7 @@ function liveRegionExpr(detail: string): string {
       }
     }
   };
-  let count = 0;
-  // click button[type=button] only (never a submit/link)
-  for (const b of Array.from(document.querySelectorAll('button[type="button"]'))) {
-    if (count >= 20 || hits.length >= 10) break;
-    if (b.disabled || !__vis(b)) continue;
-    const before = location.href;
-    try { b.click(); } catch (_) {}
-    await settle();
-    if (location.href !== before) { obs.disconnect(); return hits; }
-    drain();
-    count++;
-  }
+  let count = 0;${clickLoop}
   // toggle checkbox/radio, then restore
   for (const t of Array.from(document.querySelectorAll('input[type="checkbox"], input[type="radio"]'))) {
     if (count >= 40 || hits.length >= 10) break;
@@ -544,9 +574,17 @@ const LIVE_REGION_DETAIL = {
   en: "Content update triggered by an interaction outside any live region (aria-live / role=status|alert|log) — likely not announced to assistive technology (4.1.3).",
 };
 
-async function probeLiveRegion(page: Any, lang: Lang): Promise<ProbeHit[]> {
+/** Should the live-region probe CLICK buttons? Never by default on an authenticated scan
+ *  (a storageState session is loaded — a click could trigger a server mutation the
+ *  location.href assertion cannot see); `scan --interact-clicks` re-enables explicitly.
+ *  Unauthenticated scans keep clicks on. Exported for the browser-free policy test. */
+export function clicksAllowed(storageState: string | undefined, interactClicks: boolean | undefined): boolean {
+  return interactClicks === true || !storageState;
+}
+
+async function probeLiveRegion(page: Any, lang: Lang, allowClicks: boolean): Promise<ProbeHit[]> {
   const detail = LIVE_REGION_DETAIL[lang] ?? LIVE_REGION_DETAIL.en;
-  return (await page.evaluate(liveRegionExpr(detail)).catch(() => [])) as ProbeHit[];
+  return (await page.evaluate(liveRegionExpr(detail, allowClicks)).catch(() => [])) as ProbeHit[];
 }
 
 async function probeHover(page: Any): Promise<ProbeHit[]> {
@@ -577,6 +615,37 @@ async function probeHover(page: Any): Promise<ProbeHit[]> {
   return hits;
 }
 
+// ---- CI probe-string guard ------------------------------------------------------------
+/** EVERY string-evaluated browser expression this runtime ships — the constants plus the
+ *  parameterized builders instantiated with representative arguments. Exported ONLY for
+ *  the browser-free CI smoke test (tests/probe-syntax.test.ts), which syntax-validates
+ *  each via `new Function` (compiled, never called) — a probe-string typo fails CI
+ *  instead of exploding (and being swallowed by a `.catch`) at scan time.
+ *  Add every NEW probe/step/builder here when extending the runtime. */
+export function probeSources(): Record<string, string> {
+  return {
+    PRELUDE: `(() => { ${PRELUDE} return true; })()`,
+    REFLOW_PROBE,
+    REFLOW_ZOOM_PROBE,
+    TEXT_SPACING_PROBE,
+    "focusSetupExpr(document)": focusSetupExpr(),
+    "focusSetupExpr(scoped)": focusSetupExpr('[data-u11y-dialog="dl0"]'),
+    FOCUS_CHECK_PROBE,
+    HOVER_SETUP_PROBE,
+    "hoverVisibleExpr(shown)": hoverVisibleExpr("tip-1"),
+    "hoverVisibleExpr(hidden)": hoverVisibleExpr("tip-1", true),
+    FILL_INPUTS_STEP,
+    RESTORE_INPUTS_STEP,
+    "inputOverflowExpr(reflow,en)": inputOverflowExpr(INPUT_OVERFLOW_DETAIL.reflow.en, CELL_SUFFIX.en),
+    "inputOverflowExpr(spacing,fr)": inputOverflowExpr(INPUT_OVERFLOW_DETAIL.spacing.fr, CELL_SUFFIX.fr),
+    "inputOverflowZoomExpr(zoom,en)": inputOverflowZoomExpr(INPUT_OVERFLOW_DETAIL.zoom.en, CELL_SUFFIX.en),
+    OPEN_DIALOGS_STEP,
+    CLOSE_DIALOGS_STEP,
+    "liveRegionExpr(clicks)": liveRegionExpr(LIVE_REGION_DETAIL.en, true),
+    "liveRegionExpr(noClicks)": liveRegionExpr(LIVE_REGION_DETAIL.fr, false),
+  };
+}
+
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
 /** Drive one page through axe-core + every probe, returning a RunnerOutput. */
@@ -585,7 +654,7 @@ async function runOnPage(
   AxeBuilder: Any,
   target: string,
   isFile: boolean,
-  opts: { storageState?: string; interact: boolean; lang: Lang },
+  opts: { storageState?: string; interact: boolean; allowClicks: boolean; lang: Lang },
 ): Promise<RunnerOutput> {
   const context = await browser.newContext(opts.storageState ? { storageState: opts.storageState } : {});
   const page = await context.newPage();
@@ -633,11 +702,13 @@ async function runOnPage(
       ? ((await page.evaluate(inputOverflowExpr(INPUT_OVERFLOW_DETAIL.spacing[l], CELL_SUFFIX[l])).catch(() => [])) as ProbeHit[])
       : [];
     if (opts.interact) await page.evaluate(RESTORE_INPUTS_STEP).catch(() => {});
-    // Stateful interaction probes last (opened dialogs / clicked buttons leave the DOM
-    // altered — nothing measures after them). Dialog focus issues fold into the same 2.4.7
-    // focus-visible bucket.
+    // Stateful interaction probes last, and LIVE-REGION IS THE TERMINAL PROBE: unlike the
+    // fill/toggle interactions (restored) its button-click DOM mutations are NOT restored
+    // (a page's own click handler can change anything), so reordering it before any
+    // measurement probe would leak that state into the measurements. Dialog focus issues
+    // fold into the same 2.4.7 focus-visible bucket.
     const dialogFocus = opts.interact ? await probeDialogs(page).catch(() => empty) : [];
-    const liveRegion = opts.interact ? await probeLiveRegion(page, l).catch(() => empty) : [];
+    const liveRegion = opts.interact ? await probeLiveRegion(page, l, opts.allowClicks).catch(() => empty) : [];
     return {
       url: (page.url() as string) || target,
       violations,
@@ -664,6 +735,11 @@ export interface LocalScanOpts {
   // Stateful probes (fill inputs → input-overflow, open dialogs, live-region) ON by default;
   // `scan --no-interact` sets this false to fall back to the pristine-page probes only.
   interact?: boolean;
+  // Allow the live-region probe to CLICK button[type=button] on an AUTHENTICATED scan
+  // (storageState in use). Off by default there — a click can trigger a server mutation
+  // invisible to the href assertion; `scan --interact-clicks` opts in. Ignored (clicks
+  // always on) when no storageState is loaded. See clicksAllowed().
+  interactClicks?: boolean;
 }
 
 /** Run the dynamic tier locally over a single URL/file (no Docker). */
@@ -678,7 +754,12 @@ export async function runScanLocal(opts: LocalScanOpts): Promise<DynamicResult> 
   const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
   const browser = await launchChromium(chromium);
   try {
-    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, { storageState: opts.storageState, interact, lang });
+    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, {
+      storageState: opts.storageState,
+      interact,
+      allowClicks: clicksAllowed(opts.storageState, opts.interactClicks),
+      lang,
+    });
     return toDynamicResult(out, opts.target, lang, LOCAL_ENGINE);
   } finally {
     await browser.close();
@@ -690,6 +771,7 @@ export interface LocalManyOpts {
   storageState?: string;
   lang?: Lang;
   interact?: boolean;
+  interactClicks?: boolean; // see LocalScanOpts.interactClicks
 }
 
 /** Run the local dynamic tier over many URLs (one browser, one context per page). */
@@ -701,7 +783,12 @@ export async function runScanManyLocal(urls: string[], opts: LocalManyOpts): Pro
   const findings: DynamicFinding[] = [];
   try {
     for (const url of urls) {
-      const out = await runOnPage(browser, AxeBuilder, url, false, { storageState: opts.storageState, interact, lang });
+      const out = await runOnPage(browser, AxeBuilder, url, false, {
+        storageState: opts.storageState,
+        interact,
+        allowClicks: clicksAllowed(opts.storageState, opts.interactClicks),
+        lang,
+      });
       findings.push(...toDynamicResult(out, url, lang, LOCAL_ENGINE).findings);
     }
   } finally {

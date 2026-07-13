@@ -124,18 +124,22 @@ contribute your country (see `references/standards.md`). Packs (and their concre
   `report`/`prd`/`criteria`/`check`/`verify`; see **`references/standards.md`** and
   **`references/methodology.md`**. **For an RGAA audit, PROPOSE the scan by default**: a real
   RGAA audit runs over a normative page **sample** (échantillon) — declare it in
-  `.ultra11yrc.json` under `sample.pages` (+ `transverse`), lint its coverage with the
-  `sample check` command, then scan that sample (Playwright + axe + probes; per-page
-  `storageState` for authenticated pages) and `--merge` the result into the audit. Without a
-  merged scan, `--standard rgaa` reports are marked **partial** (a CLI warning + a report
-  banner: the needs-rendering criteria were not tested) — say so instead of implying full
-  coverage.
+  `.ultra11yrc.json` under `sample.pages` (+ `transverse`), lint its coverage with
+  `sample check` (which required page kinds it lacks, per the pack's `sampleMethodology`), then
+  `scan --sample` that sample (Playwright + axe + probes; per-page `storageState` for
+  authenticated pages) and `--merge` the result into the audit. Without a merged scan,
+  `--standard rgaa` reports are marked **partial** (a CLI warning + a report banner: the
+  needs-rendering criteria were not tested) — say so instead of implying full coverage.
 - **"High-assurance audit"** → `verify --report … --semantic`; see **`references/verify.md`**.
 - **"Check contrast / rendering (dynamic tier)"** → `scan <url> --merge …` (axe-core in a
   headless browser). `--runtime local` (default when Playwright resolves from `--cwd`, **no
   Docker**) also probes focus visibility (2.4.7), 200% zoom (1.4.4), text spacing (1.4.12) and
   content-on-hover (1.4.13) (target size 2.5.8 via axe), and takes `--storage-state` for
-  authenticated pages; see **`references/dynamic.md`**.
+  authenticated pages. It additionally runs **stateful** probes (bounded, non-navigating: fill
+  inputs then re-measure overflow, and a live-region probe for status messages 4.1.3) — disable
+  them with `--no-interact`; on an authenticated (`--storage-state`) scan the live-region probe
+  does not click buttons unless you pass `--interact-clicks` (a destructive-named button is never
+  clicked either way); see **`references/dynamic.md`**.
 
 ## Orchestration — route by harness
 
@@ -197,6 +201,10 @@ node scripts/ultra11y.mjs init --hook --baseline            # opt-in: regression
 node scripts/ultra11y.mjs audit "src/**/*.tsx" --jsx --out audits   # persist audits/audit-latest.json (for scan --merge / report --in)
 node scripts/ultra11y.mjs scan https://example.com --merge audits/audit-latest.json  # dynamic tier (auto runtime)
 node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd packages/app --storage-state .auth/user.json  # no-Docker axe + probes, authed
+node scripts/ultra11y.mjs scan http://localhost:3000 --runtime local --cwd packages/app --no-interact   # skip the stateful probes
+node scripts/ultra11y.mjs sample check --standard rgaa      # lint the .ultra11yrc.json page sample vs the standard's required kinds
+node scripts/ultra11y.mjs scan --sample --runtime local --cwd packages/app --merge audits/audit-latest.json  # scan the normative page sample (authed pages via --interact-clicks)
+node scripts/ultra11y.mjs prd --in audit.json --no-technical   # auditor block WITHOUT the technical ticket sections
 ```
 Machine output everywhere with `--json`. `--lang` follows the conversation (pass it
 explicitly); unset it auto-resolves repo `<html lang>` → standard's default locale → English.
@@ -252,6 +260,15 @@ with a `justification` or a groundable finding, folded back FAIL-CLOSED by `veri
 and routes the rendering criteria to `scan` — a criterion is never silently marked "conforming".
 The report is complete only when every applicable criterion is a justified `C`/`NC`/`NA` and
 every residual risk is named.
+
+**Advisory (non-normative) recommendations are a distinct class.** A good-practice signal with
+NO failing normative test — an `advisory` pack rule (e.g. RGAA's download-link recommendation),
+a best-practice-only axe violation, or an agent `recommendations[]` verdict — is rendered as
+« Recommandation (non normative) » under a dedicated section, **never** as a non-conformity: it
+can never flip a criterion to `NC` nor enter `conformancePct`, but stays attached to its
+criterion so grounding/`check` still resolve it. An `NC` needs a `normativeRef` citing the
+failed test; a recommendation does not. Do not promote a recommendation to an NC (see
+`references/false-positives.md` and `references/judgment.md`).
 
 ## Do not
 

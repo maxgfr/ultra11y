@@ -53,6 +53,25 @@ rendered output (rendering criteria go to `scan`), recording a verdict either wa
 | `contrast` (1.4.3), focus, zoom, reflow | Needs computed styles | `scan` (Docker tier) — never decide from source |
 | `aria-*` referencing a runtime-built id (`id={`\`x-${i}\``}`) | The id is dynamic; cross-file resolution only handles `const` string ids | Read the component; refute if the id is generated and wired correctly |
 
+## Normativity false positives — a "problem" with no failing normative test
+
+A finding can cite a real element yet still not be a **non-conformity**, because no test of
+the active standard actually fails. These were the professional-auditor + official-Ara
+corrections against ultra11y's own RGAA audit of egapro; each is now handled as a
+**recommendation (non-normative)** or suppressed outright — never a normative NC.
+
+| Case | Why it is NOT an NC | Current handling |
+|---|---|---|
+| An **empty `<th>`** (layout/spacer header cell) | No RGAA/WCAG test says every `<th>` must have content; a best-practice-only axe `empty-table-header` violation carries no `wcag*` tag | merges as **advisory**, attaches to no criterion as NC |
+| A **download link** (`…report.pdf`) whose text doesn't name the format/weight | Good practice (DSFR), but no failing normative test under 6.1/2.4.4 | the RGAA `download-link-format` pack rule is **`advisory: true`** → « Recommandation (non normative) », never flips 6.1 |
+| **Two `<h1>`** on a page / a page **starting at `<h2>`** | "one `<h1>` per page" is not a rule in HTML, a11y, or SEO; no heading-order skip occurs | `h1-multiple` / `h1-missing` are **advisory** (no normative NC) |
+| A **lorem-ipsum tooltip** | Content-quality (UX), not accessibility | emits **no finding** |
+
+The distinction is the same one you apply in the judgment phase (`references/judgment.md`):
+an **NC needs a `normativeRef`** citing the precise failed test of the active standard; a
+good practice without one is a `recommendations[]` entry, and a pure UX concern is neither.
+When you adjudicate, don't "promote" a recommendation to an NC to look thorough.
+
 ## The rule of thumb
 
 The engine raises **confirmed candidates**, never silent conformance. When a finding is

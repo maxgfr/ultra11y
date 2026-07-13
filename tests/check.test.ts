@@ -292,3 +292,29 @@ describe("checkReport --in (pack applicability gate)", () => {
     expect(checkReport(rgaaReport, "rgaa", "fr").ok).toBe(true);
   });
 });
+
+// Advisory (« Recommandation ») findings must be invisible to the check gates: they are
+// not NC, so they must not trip the rate-consistency gate (core) nor the NC over/under-
+// projection gate (pack). two-h1.html carries an advisory-only 1.3.1 (h1-multiple) and no
+// normative NC.
+describe("checkReport — advisory findings excluded from the gates", () => {
+  const twoH1 = runAudit({ inputs: [`${FIX}egapro-feedback/fp/two-h1.html`] });
+
+  it("has no normative NC yet renders a recommendation for 1.3.1", () => {
+    expect(twoH1.criteria.some((c) => c.status === "NC")).toBe(false);
+    const md = renderReport(twoH1, "en");
+    expect(md).toMatch(/Recommendations \(non-normative\)/);
+    expect(md).toMatch(/1\.3\.1/);
+  });
+
+  it("the core report passes checkReport (rate-consistency gate not tripped by the advisory)", () => {
+    const r = checkReport(renderReport(twoH1, "en"), "wcag", "en");
+    expect(r.ok, r.issues.join("\n")).toBe(true);
+  });
+
+  it("the derived RGAA report passes the applicability gate (no over/under-projected NC from the advisory)", () => {
+    const md = rpr(twoH1, loadPack("rgaa"), "fr");
+    const r = checkReport(md, "rgaa", "fr", { audit: twoH1 });
+    expect(r.ok, r.issues.join("\n")).toBe(true);
+  });
+});

@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity, Status } from "./types.js";
 import { guidelineTitle, scTitle } from "./wcag.js";
-import { prdUnits } from "./prd.js";
+import { prdUnits, partitionUnits } from "./prd.js";
 import { renderAuditorUnit } from "./auditor.js";
 import { type StandardId, CORE, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
 
@@ -35,6 +35,9 @@ const L = {
     th: (head: string) => [head, "C", "NC", "NA", "À évaluer"],
     total: "Total",
     ncTitle: "2. Non-conformités (par priorité)",
+    recTitle: "Recommandations (non normatives)",
+    recNote:
+      "Bonnes pratiques SANS test normatif du référentiel actif — ce ne sont PAS des non-conformités et elles n'entrent pas dans le taux de réussite. Libre à l'équipe de les suivre.",
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" } as Record<Severity, string>,
     none: "Aucune non-conformité détectée par le moteur statique.",
     cTitle: "3. Critères conformes (C)",
@@ -77,6 +80,9 @@ const L = {
     th: (head: string) => [head, "C", "NC", "NA", "To assess"],
     total: "Total",
     ncTitle: "2. Non-conformities (by priority)",
+    recTitle: "Recommendations (non-normative)",
+    recNote:
+      "Good practices with NO normative test of the active standard — these are NOT non-conformities and do not enter the pass rate. The team may adopt them at will.",
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" } as Record<Severity, string>,
     none: "No non-conformity detected by the static engine.",
     cTitle: "3. Conforming criteria (C)",
@@ -163,7 +169,7 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   // `prdUnits` so a criterion here is EXACTLY a `prd`/`gh` backlog item — no
   // report-local re-grouping logic, and the two stay impossible to drift apart.
   out.push(`## ${s.ncTitle}`, "");
-  const ncUnits = prdUnits(r, opts.standard, lang);
+  const { nc: ncUnits, advisory: advisoryUnits } = partitionUnits(prdUnits(r, opts.standard, lang));
   if (ncUnits.length === 0) {
     out.push(s.none, "");
   } else {
@@ -173,6 +179,15 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
       out.push(`### ${ICON[sev]} ${s.sev[sev]} (${group.length})`, "");
       for (const u of group) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "####" }));
     }
+  }
+
+  // Recommendations (non-normative) — advisory units, AFTER the non-conformities and
+  // BEFORE the numbered §3. An UNNUMBERED heading so the 1–5 section numbering `check`
+  // requires stays intact, and so the advisory blocks sit outside §2 (packReportNcIds /
+  // the NC over-under-projection gate never see them). Only emitted when present.
+  if (advisoryUnits.length) {
+    out.push(`## 💡 ${s.recTitle}`, "", `> ${s.recNote}`, "");
+    for (const u of advisoryUnits) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "###" }));
   }
 
   // 3. conforming

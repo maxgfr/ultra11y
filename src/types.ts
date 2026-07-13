@@ -135,6 +135,15 @@ export interface Finding {
   // still index the capture bytes (so `fix` and baseline diffing stay stable); origin
   // points back to the source. Optional/additive (no schemaVersion bump).
   origin?: { capture: string; sourceFile?: string; component?: string; sourceLine?: number };
+  // NON-NORMATIVE recommendation: a good-practice signal NOT backed by a testable
+  // criterion of the active standard (e.g. "one h1 per page", a best-practice-only axe
+  // violation, an agent-noted UX improvement). An advisory finding can NEVER flip a
+  // criterion to NC nor enter `conformancePct`; it is rendered as « Recommandation (non
+  // normative) », never as a non-conformity, but stays attached to its criterion and in
+  // the flat findings list so grounding + `check` still resolve it. Optional/additive
+  // (no SCHEMA_VERSION bump) — absent ⇒ normative, following the `preliminary`/`origin`/
+  // `decidedBy` pattern.
+  advisory?: boolean;
 }
 
 export interface CriterionResult {
@@ -234,6 +243,10 @@ export interface DynamicFinding {
   snippet: string;
   engine: DynamicEngine;
   page?: string; // the scanned URL/page this finding came from (multi-page crawl)
+  // Best-practice-only dynamic finding (no `wcag*` tag on the axe violation): folds into
+  // the audit as an advisory recommendation, never a criterion NC. See Finding.advisory
+  // and src/axe-map.ts `axeAdvisory`. Optional/additive — absent ⇒ normative.
+  advisory?: boolean;
 }
 
 export interface DynamicResult {

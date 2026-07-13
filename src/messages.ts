@@ -296,8 +296,8 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: (p) => `aria-live="${p.value}" is invalid — only the values off, polite, assertive are honoured.`,
     },
     remediation: {
-      fr: () => `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignorée.`,
-      en: () => `Use aria-live="polite" (or "assertive" for an alert); any other value is ignored.`,
+      fr: () => `Utilisez aria-live="polite" (associé à aria-atomic="true") — ou role="alert" pour une erreur ; toute autre valeur est ignorée.`,
+      en: () => `Use aria-live="polite" (paired with aria-atomic="true") — or role="alert" for an error; any other value is ignored.`,
     },
   },
   "live-region-conflict.mismatch": {
@@ -309,11 +309,11 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       fr: (p) =>
         p.want === "assertive"
           ? `Laissez role="${p.role}" gérer la restitution (retirez aria-live) ou utilisez aria-live="assertive".`
-          : `Alignez aria-live sur "${p.want}", cohérent avec role="${p.role}", ou retirez-le.`,
+          : `Alignez aria-live sur "${p.want}" (avec aria-atomic="true"), cohérent avec role="${p.role}", ou retirez-le.`,
       en: (p) =>
         p.want === "assertive"
           ? `Let role="${p.role}" drive the announcement (remove aria-live), or use aria-live="assertive".`
-          : `Align aria-live with "${p.want}", consistent with role="${p.role}", or remove it.`,
+          : `Align aria-live with "${p.want}" (with aria-atomic="true"), consistent with role="${p.role}", or remove it.`,
     },
   },
   "status-message-not-assertive": {
@@ -322,8 +322,10 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: () => `Error/alert container with aria-live="polite" — an error message must be conveyed assertively.`,
     },
     remediation: {
-      fr: () => `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annoncé immédiatement.`,
-      en: () => `Use role="alert" (or aria-live="assertive") so an error message is announced immediately.`,
+      fr: () =>
+        `Utilisez role="alert" seul (restitution assertive immédiate) plutôt qu'aria-live="polite" ; ne déplacez pas aussi le focus vers ce conteneur — soit un mécanisme aria-live/role="alert", soit un déplacement du focus, jamais les deux.`,
+      en: () =>
+        `Use role="alert" alone (immediate assertive restitution) rather than aria-live="polite"; do not also move focus to that container — a live region OR a focus move, never both.`,
     },
   },
 
@@ -390,24 +392,33 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: () => `Do not skip a level: chain heading levels without omitting a step.`,
     },
   },
+  // ADVISORY (non-normative): "start the page at h1" is not required by HTML, WCAG, or
+  // SEO — a single, well-structured heading hierarchy (covered normatively by
+  // heading-order-skip) is what matters. Worded as a recommendation, not a constat.
   "h1-missing": {
     message: {
-      fr: () => `Aucun <h1> dans la page — le titre principal de niveau 1 est manquant.`,
-      en: () => `No <h1> in the page — the level-1 main heading is missing.`,
+      fr: () =>
+        `Recommandation : la page ne commence par aucun <h1>. Un <h1> décrivant le contenu principal aide au repérage, mais démarrer à h1 n'est requis ni par HTML, ni par l'accessibilité, ni par le SEO.`,
+      en: () =>
+        `Recommendation: the page starts with no <h1>. An <h1> naming the main content aids orientation, but starting at h1 is not required by HTML, accessibility, or SEO.`,
     },
     remediation: {
-      fr: () => `Ajoutez un <h1> décrivant le contenu principal de la page.`,
-      en: () => `Add an <h1> describing the page's main content.`,
+      fr: () => `Envisagez d'ajouter un <h1> décrivant le contenu principal ; la hiérarchie des titres (sans saut de niveau) reste l'exigence normative.`,
+      en: () => `Consider adding an <h1> describing the page's main content; a heading hierarchy with no level skip stays the normative requirement.`,
     },
   },
+  // ADVISORY (non-normative): "a single h1 per page" is not a rule in HTML, accessibility,
+  // or SEO. Multiple h1 are valid (HTML5 sectioning) — worded as a recommendation.
   "h1-multiple": {
     message: {
-      fr: (p) => `Plusieurs <h1> dans la page (${p.count}) — un seul titre de niveau 1 est recommandé.`,
-      en: (p) => `Multiple <h1> in the page (${p.count}) — a single level-1 heading is recommended.`,
+      fr: (p) =>
+        `Recommandation : plusieurs <h1> dans la page (${p.count}). Un titre de niveau 1 unique clarifie souvent la structure, mais « un seul <h1> par page » n'est une règle ni en HTML, ni en accessibilité, ni en SEO.`,
+      en: (p) =>
+        `Recommendation: multiple <h1> in the page (${p.count}). A single level-1 heading often clarifies structure, but "one h1 per page" is not a rule in HTML, accessibility, or SEO.`,
     },
     remediation: {
-      fr: () => `Conservez un unique <h1> et hiérarchisez le reste avec h2…h6.`,
-      en: () => `Keep a single <h1> and structure the rest with h2…h6.`,
+      fr: () => `Envisagez de conserver un unique <h1> et de hiérarchiser le reste avec h2…h6 ; ce n'est pas une non-conformité.`,
+      en: () => `Consider keeping a single <h1> and structuring the rest with h2…h6; this is not a non-conformity.`,
     },
   },
   "list-structure.invalid-child": {
@@ -532,8 +543,10 @@ export const MSG_CATALOG: Record<string, MsgEntry> = {
       en: (p) => `Error message (id="${p.id}") linked to no field — no aria-describedby/aria-errormessage references it.`,
     },
     remediation: {
-      fr: (p) => `Sur le champ concerné, ajoutez aria-describedby="${p.id}" (ou aria-errormessage) et aria-invalid="true".`,
-      en: (p) => `On the relevant field, add aria-describedby="${p.id}" (or aria-errormessage) and aria-invalid="true".`,
+      fr: (p) =>
+        `Sur le champ concerné, ajoutez aria-describedby="${p.id}" (ou aria-errormessage) et aria-invalid="true" ; restituez l'erreur via role="alert" (pas aria-live="polite"), sans à la fois déplacer le focus et recourir à aria-live/role="alert".`,
+      en: (p) =>
+        `On the relevant field, add aria-describedby="${p.id}" (or aria-errormessage) and aria-invalid="true"; announce the error via role="alert" (not aria-live="polite"), without both moving focus and using a live region.`,
     },
   },
   "field-purpose-incomplete.autocomplete": {

@@ -89,6 +89,13 @@ export interface PrdUnit {
   refs: string[]; // related WCAG SC ids (pack units) — empty for the WCAG core
   severity: Severity; // most severe finding in the group
   findings: Finding[];
+  // True when EVERY finding in the group is advisory (non-normative): the unit is a
+  // « Recommandation (non normative) », never a non-conformity. A mixed unit (≥1 normative
+  // finding) is NC and stays NC — advisory findings then ride along inside it. Renderers
+  // route advisory units to the recommendations channel (report §Recommandations, the
+  // `recommendation`-labelled GitHub issue), never the NC channel. Optional/additive
+  // (absent ⇒ normative) — `prdUnits` always sets it; hand-built units may omit it.
+  advisory?: boolean;
 }
 
 /** Group findings into actionable units (one backlog item / one GitHub issue),
@@ -98,6 +105,8 @@ export function prdUnits(r: AuditResult, standard: StandardId = "wcag", lang: La
   const units: PrdUnit[] = [];
   const mostSevere = (fs: Finding[]): Severity => [...fs].sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])[0]?.severity ?? "mineur";
   const sortFindings = (fs: Finding[]) => [...fs].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  // All-advisory ⇒ recommendation unit; a single normative finding makes it an NC unit.
+  const allAdvisory = (fs: Finding[]) => fs.length > 0 && fs.every((f) => f.advisory);
 
   if (isCore(standard)) {
     const byCrit = new Map<string, Finding[]>();
@@ -111,6 +120,7 @@ export function prdUnits(r: AuditResult, standard: StandardId = "wcag", lang: La
         refs: [],
         severity: mostSevere(fs),
         findings: sortFindings(fs),
+        advisory: allAdvisory(fs),
       });
     }
   } else {
@@ -126,11 +136,22 @@ export function prdUnits(r: AuditResult, standard: StandardId = "wcag", lang: La
         refs: pc.wcag,
         severity: mostSevere(pr.findings),
         findings: sortFindings(pr.findings),
+        advisory: allAdvisory(pr.findings),
       });
     }
   }
   units.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || a.criteriaId.localeCompare(b.criteriaId, undefined, { numeric: true }));
   return units;
+}
+
+/** Split PRD units into the non-conformity channel (nc) and the advisory recommendation
+ *  channel (advisory). The report/GitHub renderers key off this so an advisory unit is
+ *  NEVER presented among non-conformities. Order within each list is preserved. */
+export function partitionUnits(units: PrdUnit[]): { nc: PrdUnit[]; advisory: PrdUnit[] } {
+  const nc: PrdUnit[] = [];
+  const advisory: PrdUnit[] = [];
+  for (const u of units) (u.advisory ? advisory : nc).push(u);
+  return { nc, advisory };
 }
 
 const SEV_WEIGHT: Record<Severity, number> = { bloquant: 3, majeur: 2, mineur: 1 };

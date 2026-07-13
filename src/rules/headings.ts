@@ -84,11 +84,17 @@ const headingOrderSkip: Rule = {
   },
 };
 
+// h1-missing / h1-multiple are ADVISORY (non-normative): neither "start at h1" nor "a
+// single h1 per page" is a requirement in HTML, accessibility, or SEO. A human RGAA
+// auditor rejected them as non-conformities — no normative test backs them. Heading
+// HIERARCHY stays covered by `heading-order-skip` (normative: RGAA 9.1.3 makes a level
+// skip testable). These fire as « Recommandation (non normative) », never an NC.
 const h1Missing: Rule = {
   id: "h1-missing",
   criteria: ["1.3.1"],
-  severity: "majeur",
+  severity: "mineur",
   scope: "page",
+  advisory: true,
   run(doc: Doc): RuleFinding[] {
     const hasH1 = headings(doc).some((h) => h.level === 1);
     if (hasH1) return [];
@@ -112,6 +118,7 @@ const h1Multiple: Rule = {
   criteria: ["1.3.1"],
   severity: "mineur",
   scope: "page",
+  advisory: true,
   run(doc: Doc): RuleFinding[] {
     const h1s = elementsByTag(doc, "h1");
     if (h1s.length <= 1) return [];

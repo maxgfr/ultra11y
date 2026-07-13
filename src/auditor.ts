@@ -8,7 +8,7 @@
 // core reads "Principle · Guideline / Success criterion / Technique / Pass-Fail", and any
 // future country pack reads its own — no term is hardcoded to one standard.
 import type { AuditResult, Lang, Severity } from "./types.js";
-import { prdUnits, type PrdUnit, type PrdFile } from "./prd.js";
+import { prdUnits, partitionUnits, type PrdUnit, type PrdFile } from "./prd.js";
 import { getSC, guidelineTitle, principleTitle, techniques as scTechniques } from "./wcag.js";
 import { resolveMessage, resolveRemediation, resolveNote } from "./messages.js";
 import { type StandardId, isCore, loadPack, standardLabel, themeName, vocabularyFor } from "./standards/index.js";
@@ -39,6 +39,13 @@ const L = {
     files: "fichier(s)",
     none: "Aucune non-conformité relevée automatiquement par le moteur statique.",
     captureOf: (comp: string, src: string) => `capture rendue de \`${comp}\` — source \`${src}\``,
+    recommendationsTitle: "Recommandations (non normatives)",
+    // Advisory (non-normative recommendation) vocabulary — deliberately NOT the NC wording.
+    advisoryTag: "Recommandation (non normative)",
+    advisoryNote: "Bonne pratique — aucun test normatif du référentiel actif ne l'exige. Ce n'est PAS une non-conformité.",
+    observation: "Observation",
+    suggestion: "Suggestion",
+    relatedRef: "Critère lié",
   },
   en: {
     lead: "Auditor view",
@@ -55,6 +62,13 @@ const L = {
     files: "file(s)",
     none: "No non-conformity found automatically by the static engine.",
     captureOf: (comp: string, src: string) => `rendered capture of \`${comp}\` — source \`${src}\``,
+    recommendationsTitle: "Recommendations (non-normative)",
+    // Advisory (non-normative recommendation) vocabulary — deliberately NOT the NC wording.
+    advisoryTag: "Recommendation (non-normative)",
+    advisoryNote: "Good practice — no normative test of the active standard requires it. This is NOT a non-conformity.",
+    observation: "Observation",
+    suggestion: "Suggestion",
+    relatedRef: "Related criterion",
   },
 } as const;
 
@@ -68,6 +82,7 @@ export interface AuditorUnitOpts {
  *  standard's vocabulary. Returns lines (caller joins). */
 export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lang, opts: AuditorUnitOpts = {}): string[] {
   const s = L[lang];
+  if (unit.advisory) return renderAdvisoryUnit(unit, standard, lang, opts);
   const v = vocabularyFor(standard, lang);
   const out: string[] = [];
   if (opts.heading) out.push(`${opts.heading} ${ICON[unit.severity]} ${unit.label}`, "");
@@ -115,6 +130,35 @@ export function renderAuditorUnit(unit: PrdUnit, standard: StandardId, lang: Lan
   return out;
 }
 
+const ADVISORY_ICON = "💡";
+
+/** The auditor block for ONE advisory (non-normative recommendation) unit. Rendered with
+ *  the « Recommandation (non normative) » vocabulary, NEVER the non-conformity wording.
+ *  Crucially, the criterion reference deliberately AVOIDS the "**label** : <id>" colon
+ *  grammar the verify worklist parser keys on (src/verify.ts `auditorCriterionLine`), so
+ *  an advisory block can never enter the non-conformity worklist — the related criterion
+ *  is cited with an em-dash + middot instead of a colon. */
+function renderAdvisoryUnit(unit: PrdUnit, standard: StandardId, lang: Lang, opts: AuditorUnitOpts): string[] {
+  const s = L[lang];
+  const out: string[] = [];
+  if (opts.heading) out.push(`${opts.heading} ${ADVISORY_ICON} ${unit.label}`, "");
+  out.push(`> ${s.advisoryTag} — ${s.advisoryNote}`, "");
+  out.push(`**${s.advisoryTag}** — ${unit.criteriaId} · ${unit.title}`);
+  if (!isCore(standard) && unit.refs.length) out.push(`_${s.relatedRef}: WCAG ${unit.refs.join(", ")}_`);
+  const messages = uniq(unit.findings.map((f) => resolveMessage(f, lang)));
+  const fixes = uniq(unit.findings.map((f) => resolveRemediation(f, lang)));
+  out.push("");
+  out.push(`**${s.observation}** : ${unit.findings.length} ${s.occ} — ${messages.join(" ; ")}`);
+  if (fixes.length) out.push(`**${s.suggestion}** : ${fixes.join(" ; ")}`);
+  out.push("");
+  for (const f of unit.findings) {
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) — ${resolveMessage(f, lang)}`);
+    if (f.related) out.push(`  - ↳ ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+  }
+  out.push("");
+  return out;
+}
+
 function scLevel(sc: string): string {
   const c = getSC(sc);
   return c ? ` (${c.level})` : "";
@@ -134,20 +178,25 @@ function auditorHeader(r: AuditResult, lang: Lang, standard: StandardId): string
   ];
 }
 
-/** A single auditor backlog, sectioned by priority (bloquant → majeur → mineur). Default `prd`. */
+/** A single auditor backlog, sectioned by priority (bloquant → majeur → mineur), with
+ *  advisory recommendations kept in their own trailing section (never among NC). Default `prd`. */
 export function renderAuditorBacklog(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): string {
   const s = L[lang];
-  const units = prdUnits(r, standard, lang);
+  const { nc, advisory } = partitionUnits(prdUnits(r, standard, lang));
   const out = auditorHeader(r, lang, standard);
-  if (!units.length) {
+  if (!nc.length && !advisory.length) {
     out.push(s.none, "");
     return out.join("\n");
   }
   for (const sev of SEV_ORDER) {
-    const group = units.filter((u) => u.severity === sev);
+    const group = nc.filter((u) => u.severity === sev);
     if (!group.length) continue;
     out.push(`## ${ICON[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
     for (const u of group) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
+  }
+  if (advisory.length) {
+    out.push(`## ${ADVISORY_ICON} ${s.recommendationsTitle} (${advisory.length})`, "");
+    for (const u of advisory) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
   }
   return out.join("\n");
 }

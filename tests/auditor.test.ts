@@ -127,6 +127,26 @@ describe("renderAuditorUnit", () => {
     const md = renderAuditorUnit(u, "wcag", "fr").join("\n");
     expect(md).toContain("- _capture rendue de `Button` — source `src/Button.tsx`_");
   });
+
+  // An advisory unit renders the « Recommandation (non normative) » vocabulary and
+  // MUST NOT emit the "**<criterion>** : <id>" colon grammar the verify worklist parser
+  // keys on — so it can never enter the non-conformity worklist.
+  it("renders an advisory unit with recommendation vocabulary, not the NC criterion-line grammar (fr)", () => {
+    const u = { ...unit("1.3.1", "Structuration de l'information"), advisory: true };
+    const md = renderAuditorUnit(u, "wcag", "fr").join("\n");
+    expect(md).toContain("Recommandation (non normative)");
+    expect(md).not.toContain("**Critère de succès** : 1.3.1"); // no NC criterion line
+    expect(md).not.toContain("**Constat (Non conforme"); // no NC finding wording
+    // The verify worklist parser's criterion-line shape must be absent.
+    expect(md).not.toMatch(/^\*\*[^*:]+\*\*\s*:\s*1\.3\.1(?:\s*—.*)?\s*$/m);
+  });
+
+  it("renders an advisory unit in English with the non-normative recommendation vocabulary", () => {
+    const u = { ...unit("1.3.1", "Info and Relationships"), advisory: true };
+    const md = renderAuditorUnit(u, "wcag", "en").join("\n");
+    expect(md).toContain("Recommendation (non-normative)");
+    expect(md).not.toContain("**Success criterion** : 1.3.1");
+  });
 });
 
 describe("renderAuditorBacklog / renderAuditorPerCriterion", () => {

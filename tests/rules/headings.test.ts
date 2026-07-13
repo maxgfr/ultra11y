@@ -82,6 +82,27 @@ describe("h1-multiple (9.1)", () => {
   });
 });
 
+// h1-missing / h1-multiple are ADVISORY (non-normative recommendations): they fire, but
+// carry `advisory: true` so they can never flip a criterion to NC. Heading HIERARCHY
+// (heading-order-skip) stays normative.
+describe("h1 rules are advisory (non-normative)", () => {
+  it("h1-missing carries advisory: true", () => {
+    const f = findOf(page("<h2>Sub</h2>"), "h1-missing");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.advisory).toBe(true);
+  });
+  it("h1-multiple carries advisory: true", () => {
+    const f = findOf(page("<h1>A</h1><h1>B</h1>"), "h1-multiple");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.advisory).toBe(true);
+  });
+  it("heading-order-skip stays NORMATIVE (no advisory flag)", () => {
+    const f = findOf(`<h2>A</h2><h4>B</h4>`, "heading-order-skip");
+    expect(f).toHaveLength(1);
+    expect(f[0]!.advisory).toBeUndefined();
+  });
+});
+
 describe("list-structure (9.3)", () => {
   it("conforming: ul of li", () => {
     expect(findOf(`<ul><li>a</li><li>b</li></ul>`, "list-structure")).toHaveLength(0);

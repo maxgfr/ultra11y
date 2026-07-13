@@ -44,6 +44,10 @@ export interface RuleFinding {
   severity?: Severity; // override the rule default
   selectorHint?: string; // override the derived selector
   preliminary?: boolean; // provisional finding (target/name may resolve at composition/runtime)
+  // Per-finding override of the rule-level `advisory` flag (finding-level wins). A rule
+  // may be normative overall yet mark an individual finding as a non-normative
+  // recommendation, or vice-versa. Absent ⇒ inherit the rule's `advisory`.
+  advisory?: boolean;
 }
 
 export interface Rule {
@@ -53,6 +57,10 @@ export interface Rule {
   severity: Severity; // default severity for findings
   /** "page" rules only run on a full document (skip fragments/components) */
   scope?: "page" | "any";
+  // When true, EVERY finding this rule raises is a non-normative recommendation
+  // (Finding.advisory) unless a RuleFinding overrides it — it can never flip a criterion
+  // to NC. Absent ⇒ normative. See src/rules/headings.ts (h1-missing / h1-multiple).
+  advisory?: boolean;
   run(doc: Doc): RuleFinding[];
 }
 
@@ -76,7 +84,7 @@ export function selectorOf(el: El): string {
   return el.tag;
 }
 
-export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFinding): Finding {
+export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFinding, ruleAdvisory?: boolean): Finding {
   const entry = MSG_CATALOG[rf.msgId];
   if (!entry) {
     throw new Error(`toFinding: msgId "${rf.msgId}" (rule "${ruleId}") is not in MSG_CATALOG — add it to src/messages.ts.`);
@@ -106,5 +114,9 @@ export function toFinding(doc: Doc, ruleId: string, def: Severity, rf: RuleFindi
     // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
     // to the source component recorded in the capture's provenance.
     ...(doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}),
+    // Non-normative recommendation: the per-finding override (rf.advisory) wins over the
+    // rule-level default (ruleAdvisory); only stamp the flag when it is actually true, so
+    // a normative finding stays byte-identical (no `advisory: false` noise in the JSON).
+    ...((rf.advisory ?? ruleAdvisory) ? { advisory: true } : {}),
   };
 }

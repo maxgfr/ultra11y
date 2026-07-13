@@ -63,17 +63,29 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
     const allFindings = scResults.flatMap((r) => r.findings);
 
     // No applicability data (third-party pack) → legacy fan-out: every mapped SC's
-    // findings attach and the SC statuses aggregate directly.
+    // findings attach (advisory ones project too, so a pack view can render the
+    // recommendation) and the SC statuses aggregate directly. The SC status already
+    // excludes advisory findings (src/audit.ts finalize), so the aggregate is NC-clean.
     if (!pc.appliesTo) {
       const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
       return { id: pc.id, theme: pc.theme, status, findings: allFindings, scs: pc.wcag };
     }
 
     // Applicability-aware projection: a finding attaches ONLY if its rule is one this
-    // criterion can actually be non-conformant on.
+    // criterion can actually be non-conformant on. NC is driven by NON-ADVISORY findings
+    // only; advisory findings still attach (so the pack report/PRD renders the
+    // recommendation) but never flip the criterion to NC.
     const findings = allFindings.filter((f) => ruleMatches(f.ruleId, pc.appliesTo!.ruleIds));
-    if (findings.length) {
+    const normativeFindings = findings.filter((f) => !f.advisory);
+    if (normativeFindings.length) {
       return { id: pc.id, theme: pc.theme, status: "NC" as Status, findings, scs: pc.wcag };
+    }
+    // Only advisory findings attach (no normative failure) → not NC. Fall through to the
+    // ordinary aggregate over the mapped SCs, but keep the advisory findings on the result
+    // so the pack view can surface them as recommendations.
+    if (findings.length) {
+      const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
+      return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
     }
     // A mapped SC failed but on out-of-scope elements (no applicable finding) → the NC is
     // NOT ours: derive as manual (assess separately), never a foreign NC, never a silent C.

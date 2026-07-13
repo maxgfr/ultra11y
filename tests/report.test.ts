@@ -147,6 +147,37 @@ describe("writeReport", () => {
 });
 
 // R7: technique lists are no longer truncated with "…" (full actionability)
+describe("renderReport — advisory recommendations section", () => {
+  // two-h1.html: 1.3.1 carries only the advisory h1-multiple → a recommendation, never NC.
+  const twoH1 = runAudit({ inputs: [`${FIX}egapro-feedback/fp/two-h1.html`] });
+
+  it("renders a Recommendations section AFTER the non-conformities, and NOT among them", () => {
+    const md = renderReport(twoH1, "en");
+    const recIdx = md.indexOf("Recommendations (non-normative)");
+    const ncIdx = md.indexOf("## 2. Non-conformities");
+    const conformingIdx = md.indexOf("## 3. Conforming");
+    expect(recIdx).toBeGreaterThan(-1);
+    expect(recIdx).toBeGreaterThan(ncIdx); // after §2
+    expect(recIdx).toBeLessThan(conformingIdx); // before §3
+    // The advisory 1.3.1 is a recommendation, never a non-conformity.
+    expect(md).toContain("Recommendation (non-normative)");
+    expect(md).not.toContain("### 🔴 Blocking");
+    expect(md).not.toContain("### 🟠 Major");
+    expect(md).toContain("No non-conformity detected by the static engine.");
+  });
+
+  it("omits the Recommendations section when there is no advisory finding", () => {
+    const md = renderReport(bad, "en");
+    expect(md).not.toContain("Recommendations (non-normative)");
+  });
+
+  it("still keeps the required 1–5 numbered sections intact with the advisory section present", () => {
+    const md = renderReport(twoH1, "fr");
+    for (const n of [1, 2, 3, 4, 5]) expect(md).toMatch(new RegExp(`^##\\s+${n}\\.`, "m"));
+    expect(md).toContain("Recommandations (non normatives)");
+  });
+});
+
 describe("report technique lists — full, never truncated (R7)", () => {
   const md7 = renderReport(bad, "fr");
   it("renders the whole technique list for a criterion with many techniques (1.3.1 has 67)", () => {

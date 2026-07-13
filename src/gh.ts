@@ -63,10 +63,15 @@ export function ghAvailable(): boolean {
   }
 }
 
+// Stable, language-neutral suffix marking a non-normative recommendation issue apart
+// from a non-conformity one. Part of the de-dupe grain, so it must never drift.
+export const RECOMMENDATION_SUFFIX = " (recommendation)";
+
 /** One issue per criterion (stable de-dupe grain, regardless of --split). The label
- *  is the active standard ("WCAG" for the core, else the pack name e.g. "RGAA"). */
+ *  is the active standard ("WCAG" for the core, else the pack name e.g. "RGAA"). An
+ *  advisory unit gets a stable suffix so its issue is never confused with an NC one. */
 export function issueTitle(unit: PrdUnit, label = "WCAG"): string {
-  return `[a11y] ${label} ${unit.criteriaId} — ${unit.title}`;
+  return `[a11y] ${label} ${unit.criteriaId} — ${unit.title}${unit.advisory ? RECOMMENDATION_SUFFIX : ""}`;
 }
 
 /** Titles of all existing issues (open + closed), for de-duplication. Empty on any failure. */
@@ -145,7 +150,10 @@ export function pushIssues(units: PrdUnit[], lang: Lang, standard: StandardId = 
       result.skipped++;
       continue;
     }
-    const r = createIssue(title, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity]);
+    // Advisory units get the `recommendation` label so they can be triaged apart from
+    // real non-conformities (which they are not).
+    const labels = u.advisory ? ["accessibility", tag, "recommendation", u.severity] : ["accessibility", tag, u.severity];
+    const r = createIssue(title, issueBody(u, lang, standard, format), labels);
     if (r.ok) {
       result.created++;
       result.createdTitles.push(title);

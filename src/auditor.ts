@@ -116,16 +116,17 @@ export interface AuditorUnitOpts {
 // A URL-shaped finding location (a served page a `scan` crawled) vs a source file path.
 const isUrlLocation = (file: string): boolean => /^https?:\/\//i.test(file);
 
-// Task 5 will attach per-sample provenance to a finding — the crawled page name and whether
-// the page sits behind authentication. We read it DEFENSIVELY now (the field does not exist
-// yet) so the technical + reproduction sections light up automatically once Task 5 lands,
-// and render gracefully (URL only) until then.
+// Per-sample provenance attached to a finding by `mergeDynamic` (`scan --sample`) — the
+// crawled page name, whether it sits behind authentication, and reproduction notes. The
+// technical + reproduction sections render it when present, and gracefully (URL only) when
+// absent (a plain single-page/served-URL scan).
 interface SampleMeta {
   page?: string;
   authRequired?: boolean;
+  notes?: string;
 }
 function sampleMetaOf(f: Finding): SampleMeta | undefined {
-  const meta = (f as Finding & { sample?: SampleMeta }).sample;
+  const meta = f.sample;
   return meta && typeof meta === "object" ? meta : undefined;
 }
 
@@ -280,7 +281,10 @@ function renderReproductionContext(normative: Finding[], lang: Lang): string[] {
   for (const f of qualifying) {
     const meta = sampleMetaOf(f);
     const auth = meta ? (meta.authRequired ? s.yes : s.no) : s.unknown;
-    out.push(`- **URL** : \`${f.file}\` — ${s.authRequired} : ${auth}`);
+    const name = meta?.page ? `${meta.page} · ` : "";
+    out.push(`- **URL** : \`${f.file}\` — ${name}${s.authRequired} : ${auth}`);
+    // Task 5: the sample page's notes ARE the required state / reproduction steps.
+    if (meta?.notes) out.push(`  - ↳ ${meta.notes}`);
   }
   out.push(`- _${s.reproSteps}_`, "");
   return out;

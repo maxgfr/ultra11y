@@ -10,11 +10,12 @@ import { mkdtempSync, writeFileSync, existsSync, statSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AuditResult, DynamicEngine, DynamicFinding, DynamicResult, Finding, Lang, Severity } from "./types.js";
+import type { AuditResult, DynamicEngine, DynamicFinding, DynamicResult, Finding, Lang, SamplePage, Severity } from "./types.js";
 import { lineStartsOf, lineColAt } from "./parse/html.js";
 import { allGuidelines } from "./wcag.js";
 import { PROBE_SEVERITY, PROBE_WCAG, scForAxe, severityFromImpact, isAxeAdvisory } from "./axe-map.js";
 import { parseSitemapUrls, crawlUrls } from "./crawl.js";
+import { sampleScope } from "./sample.js";
 import { today } from "./util.js";
 
 export const IMAGE_TAG = "ultra11y-dyn:1";
@@ -338,6 +339,40 @@ export function runScanMany(urls: string[], tag = IMAGE_TAG): DynamicResult {
   return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target: `${urls.length} page(s)`, date: today(), findings };
 }
 
+/** Stamp each dynamic finding with its originating sample page's provenance (id/name/auth/
+ *  notes) so `mergeDynamic` can carry it onto the Finding for ticket rendering. Shared by
+ *  the Docker and local sample runners. Mutates + returns the findings. */
+export function tagSampleFindings(findings: DynamicFinding[], page: SamplePage): DynamicFinding[] {
+  for (const f of findings) {
+    f.sample = { id: page.id, name: page.name, ...(page.auth !== undefined ? { auth: page.auth } : {}), ...(page.notes ? { notes: page.notes } : {}) };
+  }
+  return findings;
+}
+
+/** Run the Docker dynamic tier over a NORMATIVE page SAMPLE and aggregate into one
+ *  DynamicResult. No storageState support (the Docker runner has no session mechanism) — the
+ *  CLI requires the local runtime whenever any sample page carries auth. Each finding keeps
+ *  its sample-page provenance; the sample itself is recorded on the result. */
+export function runSampleScan(pages: SamplePage[], tag = IMAGE_TAG): DynamicResult {
+  if (!dockerAvailable()) {
+    throw new Error("Docker is not available. Start Docker, then re-run `scan`.");
+  }
+  if (!imageExists(tag)) buildImage(tag);
+  const findings: DynamicFinding[] = [];
+  for (const page of pages) {
+    const out = runRunner(page.url, false, tag);
+    findings.push(...tagSampleFindings(toDynamicResult(out, page.url).findings, page));
+  }
+  return {
+    tool: "ultra11y",
+    engine: "axe-core@playwright (docker)",
+    target: `${pages.length} page(s) (échantillon)`,
+    date: today(),
+    findings,
+    sample: sampleScope({ pages }),
+  };
+}
+
 /** Discover URLs (sitemap/crawl) then scan them all through the dynamic tier. */
 export async function runCrawlScan(opts: DiscoverOpts & { tag?: string }): Promise<DynamicResult> {
   const urls = await discoverUrls(opts);
@@ -397,6 +432,9 @@ function resolveHostAnchor(file: string, snippet: string): { line: number; col: 
  *  clean criterion that axe flags becomes NC; tallies + conformance recompute. */
 export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: Lang = "en"): AuditResult {
   const merged: AuditResult = JSON.parse(JSON.stringify(audit)) as AuditResult;
+  // Record the normative page sample the dynamic tier ran over (Task 5) — drives the
+  // report's « Constats par page » section. Storage-state paths were already dropped upstream.
+  if (dynamic.sample) merged.scope.sample = dynamic.sample;
   const byId = new Map(merged.criteria.map((c) => [c.id, c]));
   const remediation =
     lang === "fr" ? "Vérifié au rendu par axe-core ; corrigez l'élément cité." : "Verified at render time by axe-core; fix the cited element.";
@@ -429,6 +467,17 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
       snippet: df.snippet,
       ...(anchor ? { sourceStart: anchor.start, sourceEnd: anchor.end } : {}),
       ...(df.advisory ? { advisory: true } : {}),
+      // Task 5: carry the sample-page provenance onto the merged Finding so the auditor
+      // ticket renders the page name + auth flag + reproduction notes.
+      ...(df.sample
+        ? {
+            sample: {
+              page: df.sample.name,
+              ...(df.sample.auth !== undefined ? { authRequired: df.sample.auth } : {}),
+              ...(df.sample.notes ? { notes: df.sample.notes } : {}),
+            },
+          }
+        : {}),
     };
     c.findings.push(finding);
     merged.findings.push(finding);

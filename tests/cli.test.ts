@@ -523,3 +523,82 @@ describe("audit --out .json footgun (R6)", () => {
     expect(existsSync(join(dir, "audit-latest.json"))).toBe(true);
   });
 });
+
+describe("sample check + scan --sample + partial-audit advisory (Task 5)", () => {
+  const withConfig = async (cfg: unknown, argv: string[]): Promise<{ code: number; out: string; err: string }> => {
+    const cwd = process.cwd();
+    const d = mkdtempSync(join(tmpdir(), "u11y-sample-cli-"));
+    try {
+      if (cfg !== undefined) writeFileSync(join(d, ".ultra11yrc.json"), JSON.stringify(cfg));
+      process.chdir(d);
+      return await run(argv);
+    } finally {
+      process.chdir(cwd);
+      rmSync(d, { recursive: true, force: true });
+    }
+  };
+
+  it("`sample check` lists the required RGAA page kinds a sample lacks (advisory, exit 0)", async () => {
+    const r = await withConfig({ sample: { pages: [{ id: "accueil", name: "Accueil", url: "https://example.fr/" }] } }, [
+      "sample",
+      "check",
+      "--standard",
+      "rgaa",
+    ]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("Mentions légales");
+    expect(r.out).toContain("Déclaration d’accessibilité");
+  });
+
+  it("`sample check` reports a complete-enough sample as covered", async () => {
+    const r = await withConfig(
+      {
+        sample: {
+          pages: [
+            { id: "accueil", name: "Accueil", url: "https://example.fr/" },
+            { id: "contact", name: "Contact", url: "https://example.fr/contact" },
+            { id: "ml", name: "Mentions légales", url: "https://example.fr/mentions" },
+            { id: "da", name: "Déclaration d'accessibilité", url: "https://example.fr/accessibilite" },
+            { id: "plan", name: "Plan du site", url: "https://example.fr/plan" },
+            { id: "aide", name: "Aide", url: "https://example.fr/aide" },
+            { id: "auth", name: "Connexion", url: "https://example.fr/login" },
+            { id: "rep", name: "Formulaire de recherche", url: "https://example.fr/recherche" },
+          ],
+          transverse: ["En-tête", "Navigation", "Pied de page"],
+        },
+      },
+      ["sample", "check", "--standard", "rgaa", "--json"],
+    );
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.out).missing).toEqual([]);
+  });
+
+  it("`sample check` hard-errors (exit 2) when there is no sample block", async () => {
+    expect((await withConfig({ standard: "rgaa" }, ["sample", "check"])).code).toBe(2);
+    expect((await withConfig(undefined, ["sample", "check"])).code).toBe(2);
+  });
+
+  it("`sample check` hard-errors (exit 2) on a malformed sample", async () => {
+    const r = await withConfig({ sample: { pages: [{ id: "x", url: "not a url" }] } }, ["sample", "check", "--standard", "rgaa"]);
+    expect(r.code).toBe(2);
+    expect(r.err).toMatch(/sample\.pages\[0\]/);
+  });
+
+  it("`scan --sample` without a sample block exits 2 with guidance", async () => {
+    const r = await withConfig({ standard: "rgaa" }, ["scan", "--sample", "--runtime", "docker"]);
+    expect(r.code).toBe(2);
+    expect(r.err).toContain(".ultra11yrc.json");
+  });
+
+  it("`report --standard rgaa` on a scanless audit prints the partial-audit advisory (exit 0)", async () => {
+    const d = mkdtempSync(join(tmpdir(), "u11y-partial-"));
+    try {
+      await run(["audit", `${FIX}conforming/good.html`, "--out", d, "--json"]); // <html lang=fr> → lang fr
+      const r = await run(["report", "--in", join(d, "audit-latest.json"), "--standard", "rgaa", "--out", d]);
+      expect(r.code).toBe(0);
+      expect(r.err).toContain("Audit partiel");
+    } finally {
+      rmSync(d, { recursive: true, force: true });
+    }
+  });
+});

@@ -11,8 +11,9 @@
 import { existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import type { DynamicFinding, DynamicResult, Lang } from "./types.js";
-import { type DiscoverOpts, discoverUrls, type ProbeHit, type RunnerOutput, toDynamicResult } from "./scan.js";
+import type { DynamicFinding, DynamicResult, Lang, SamplePage } from "./types.js";
+import { type DiscoverOpts, discoverUrls, type ProbeHit, type RunnerOutput, tagSampleFindings, toDynamicResult } from "./scan.js";
+import { sampleScope } from "./sample.js";
 import { today } from "./util.js";
 
 export const LOCAL_ENGINE = "axe-core@playwright (local)";
@@ -804,6 +805,36 @@ export async function runScanManyLocal(urls: string[], opts: LocalManyOpts): Pro
     await browser.close();
   }
   return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${urls.length} page(s)`, date: today(), findings };
+}
+
+/** Run the local dynamic tier over a NORMATIVE page SAMPLE (one browser, one context per
+ *  page). Each page's own `storageState` OVERRIDES the run-wide one, so a mixed sample
+ *  (some pages public, some authenticated) is scanned with the right session per page; the
+ *  clicks-off policy (clicksAllowed) is re-evaluated per page from its effective
+ *  storageState. Findings keep their sample-page provenance; the sample is recorded on the
+ *  result. SECURITY: storageState is only ever passed to Playwright as a path — never read. */
+export async function runSampleScanLocal(pages: SamplePage[], opts: LocalManyOpts): Promise<DynamicResult> {
+  const lang = opts.lang ?? "en";
+  const interact = opts.interact !== false;
+  const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
+  const browser = await launchChromium(chromium);
+  const findings: DynamicFinding[] = [];
+  try {
+    for (const page of pages) {
+      const storageState = page.storageState ?? opts.storageState; // per-page override
+      const isFile = !/^https?:\/\//i.test(page.url);
+      const out = await runOnPage(browser, AxeBuilder, page.url, isFile, {
+        storageState,
+        interact,
+        allowClicks: clicksAllowed(storageState, opts.interactClicks),
+        lang,
+      });
+      findings.push(...tagSampleFindings(toDynamicResult(out, page.url, lang, LOCAL_ENGINE).findings, page));
+    }
+  } finally {
+    await browser.close();
+  }
+  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${pages.length} page(s) (échantillon)`, date: today(), findings, sample: sampleScope({ pages }) };
 }
 
 /** Discover URLs (sitemap/crawl) then scan them all through the local dynamic tier. */

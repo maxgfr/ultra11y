@@ -10,6 +10,7 @@ import type { AuditResult, Finding, Lang, Severity, Status } from "./types.js";
 import { guidelineTitle, scTitle } from "./wcag.js";
 import { prdUnits, partitionUnits } from "./prd.js";
 import { renderAuditorUnit } from "./auditor.js";
+import { resolveMessage } from "./messages.js";
 import { type StandardId, CORE, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
@@ -60,6 +61,17 @@ const L = {
     captures: (n: number) => `${n} fichier(s) de capture rendus audités à pleine fidélité (DOM réel) — le vrai HTML produit, pas l'appel de composant.`,
     blindSpots: (n: number) =>
       `${n} composant(s) sans capture rendue (angles morts) — audités sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`,
+    // Task 5 — partial-audit advisory (owner decision: scan stays opt-in but strongly advised).
+    partialAudit:
+      "Audit partiel — les critères « à restituer » (zoom 200 %, reflow 320 px, espacement du texte, visibilité du focus, régions live) n'ont pas été testés. Lancez `ultra11y scan --sample` (Playwright + axe + sondes) sur l'échantillon, puis fusionnez avec `scan --merge`.",
+    // Task 5 — « Constats par page » (Ara-style per-sample-page synthesis).
+    perPageTitle: "Constats par page",
+    perPageNote: "Constats regroupés par page de l'échantillon audité (rendu dynamique).",
+    transverseNote: (list: string) => `Éléments transverses audités sur chaque page : ${list}.`,
+    authYes: "🔒 authentification requise",
+    authNo: "🌐 public",
+    ncCount: "non-conformité(s)",
+    advCount: "recommandation(s)",
   },
   en: {
     title: (std: string) => `Accessibility audit report — ${std}`,
@@ -104,8 +116,34 @@ const L = {
     captures: (n: number) => `${n} rendered capture file(s) audited at full fidelity (real DOM) — the true produced HTML, not the component call.`,
     blindSpots: (n: number) =>
       `${n} component(s) without a rendered capture (blind spots) — audited from opaque source only; audit their rendered DOM (\`render --setup\`).`,
+    // Task 5 — partial-audit advisory (owner decision: scan stays opt-in but strongly advised).
+    partialAudit:
+      "Partial audit — the needs-rendering criteria (200% zoom, 320px reflow, text spacing, focus visibility, live regions) were not tested. Run `ultra11y scan --sample` (Playwright + axe + probes) on the sample, then merge with `scan --merge`.",
+    // Task 5 — « Findings per page » (Ara-style per-sample-page synthesis).
+    perPageTitle: "Findings per page",
+    perPageNote: "Findings grouped by the audited sample page (dynamic rendering).",
+    transverseNote: (list: string) => `Transverse elements audited on every page: ${list}.`,
+    authYes: "🔒 authentication required",
+    authNo: "🌐 public",
+    ncCount: "non-conformity(ies)",
+    advCount: "recommendation(s)",
   },
 } as const;
+
+/** The partial-audit advisory text (no leading `> `) — shared by the report banner and the
+ *  CLI warning (src/cli.ts cmdReport) so the two can never drift. */
+export function partialAuditBanner(lang: Lang): string {
+  return L[lang].partialAudit;
+}
+
+/** Did a `scan` tier feed into this audit? True once a dynamic finding (axe:* / dyn-*) or a
+ *  scan-decided criterion is present, or a page sample was merged. Drives the partial-audit
+ *  advisory (a pack audit with NO scan results is flagged partial in the CLI + report). */
+export function hasScanResults(r: AuditResult): boolean {
+  if (r.scope.sample) return true;
+  if (r.criteria.some((c) => c.decidedBy === "scan")) return true;
+  return r.findings.some((f) => /^(axe:|dyn-)/.test(f.ruleId));
+}
 
 // A normalized row the renderer is agnostic about: one labelled criterion + its status/findings.
 interface Row {
@@ -125,7 +163,11 @@ interface Group {
 // Shared renderer over normalized groups/rows — keeps the WCAG and pack reports identical
 // in shape. `groupHead` labels the synthesis column ("WCAG guideline" / "theme"). `standard`
 // drives the NC section below (`prdUnits`/`renderAuditorUnit` are standard-aware).
-function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: string; groups: Group[]; standard: StandardId; derivedOf?: string }): string {
+function render(
+  r: AuditResult,
+  lang: Lang,
+  opts: { std: string; groupHead: string; groups: Group[]; standard: StandardId; derivedOf?: string; partialAudit?: boolean },
+): string {
   const s = L[lang];
   const out: string[] = [];
   out.push(`# ${s.title(opts.std)}`, "");
@@ -135,6 +177,10 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> ⚠️ ${s.warn}`, "");
+  // Partial-audit advisory banner (owner decision) — a pack audit with NO merged scan
+  // results has not tested the needs-rendering criteria. Placed in the header, before the
+  // derived-view note. No criterion-shaped token, so the `check` structural gate accepts it.
+  if (opts.partialAudit) out.push(`> 🚨 ${s.partialAudit}`, "");
   if (opts.derivedOf) out.push(`> ↪️ ${s.derived(opts.derivedOf)}`, "");
   if (r.scope.truncated) out.push(`> ✂️ ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> 🧩 ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
@@ -188,6 +234,25 @@ function render(r: AuditResult, lang: Lang, opts: { std: string; groupHead: stri
   if (advisoryUnits.length) {
     out.push(`## 💡 ${s.recTitle}`, "", `> ${s.recNote}`, "");
     for (const u of advisoryUnits) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "###" }));
+  }
+
+  // « Constats par page » — Ara-style per-sample-page synthesis (name + URL + auth badge +
+  // NC/advisory counts, then the page's findings). Only when a page sample was recorded
+  // (scan --sample merged in). UNNUMBERED heading so the 1–5 section numbering `check`
+  // requires stays intact and the packReportNcIds parser (section 2) never sees it.
+  if (r.scope.sample?.pages.length) {
+    out.push(`## 📄 ${s.perPageTitle}`, "", `> ${s.perPageNote}`, "");
+    if (r.scope.sample.transverse?.length) out.push(`> ${s.transverseNote(r.scope.sample.transverse.join(", "))}`, "");
+    for (const pg of r.scope.sample.pages) {
+      const onPage = r.findings.filter((f) => f.file === pg.url || (f.sample?.page !== undefined && f.sample.page === pg.name));
+      const nc = onPage.filter((f) => !f.advisory);
+      const adv = onPage.filter((f) => f.advisory);
+      out.push(`### ${pg.name} — \`${pg.url}\` — ${pg.auth ? s.authYes : s.authNo}`, "");
+      out.push(`- ${nc.length} ${s.ncCount}${adv.length ? ` · ${adv.length} ${s.advCount}` : ""}`);
+      if (pg.notes) out.push(`- _${pg.notes}_`);
+      for (const f of nc.slice(0, 30)) out.push(`  - [${f.criteriaId}] \`${f.selectorHint}\` — ${resolveMessage(f, lang)}`);
+      out.push("");
+    }
   }
 
   // 3. conforming
@@ -252,7 +317,10 @@ export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang 
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)!).push(row);
   }
   const groups: Group[] = pack.themes.map((t) => ({ key: `${t.number}.`, title: themeName(pack, t.number, lang) ?? "", rows: byTheme.get(t.number) ?? [] }));
-  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std, standard: pack.key });
+  // Owner decision: a pack (RGAA) report is flagged PARTIAL when no scan tier fed the audit
+  // — the needs-rendering criteria were never tested. The core WCAG report carries its own
+  // §5 manual worklist and is not flagged here.
+  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std, standard: pack.key, partialAudit: !hasScanResults(r) });
 }
 
 export interface ReportOpts {

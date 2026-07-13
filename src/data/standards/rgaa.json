@@ -1614,7 +1614,7 @@
       ],
       "wcag": ["4.1.3"],
       "appliesTo": {
-        "ruleIds": ["live-region-conflict", "status-message-not-assertive"]
+        "ruleIds": ["dyn-live-region", "live-region-conflict", "status-message-not-assertive"]
       }
     },
     {
@@ -2057,7 +2057,7 @@
       ],
       "wcag": ["1.4.4"],
       "appliesTo": {
-        "ruleIds": ["axe:meta-viewport", "axe:meta-viewport-large", "dyn-reflow-zoom", "meta-viewport-zoom-block"]
+        "ruleIds": ["axe:meta-viewport", "axe:meta-viewport-large", "dyn-input-overflow-zoom", "dyn-reflow-zoom", "meta-viewport-zoom-block"]
       }
     },
     {
@@ -2244,7 +2244,7 @@
       ],
       "wcag": ["1.4.10"],
       "appliesTo": {
-        "ruleIds": ["dyn-reflow"]
+        "ruleIds": ["dyn-input-overflow-reflow", "dyn-reflow"]
       }
     },
     {
@@ -2272,7 +2272,7 @@
       ],
       "wcag": ["1.4.12"],
       "appliesTo": {
-        "ruleIds": ["dyn-text-spacing"]
+        "ruleIds": ["dyn-input-overflow-spacing", "dyn-text-spacing"]
       }
     },
     {

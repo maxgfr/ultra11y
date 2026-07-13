@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Champ dans une cellule de tableau — débordement à 320px</title>
+    <style>
+      /* The pattern the human auditor confirmed on "every page with an input inside a table
+         cell": at a normal viewport the field is comfortably wide and its typed value reads
+         fine, but a broken responsive rule collapses it on a narrow screen — at 320px the
+         input shrinks to a couple of characters wide, so the value the user typed is
+         unreadable (WCAG 1.4.10). A pristine static audit sees only an empty, harmless field;
+         the stateful scan fills it, reduces the viewport to 320px and flags the collapse. */
+      table {
+        border-collapse: collapse;
+      }
+      td,
+      th {
+        border: 1px solid #333;
+        padding: 4px;
+      }
+      .amount {
+        width: 260px;
+      }
+      /* the responsive bug: the field collapses to an unusable width on small screens */
+      @media (max-width: 400px) {
+        .amount {
+          width: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Déclaration — rémunérations</h1>
+      <form action="#" method="dialog">
+        <table>
+          <caption>
+            Écarts de rémunération par catégorie
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Catégorie</th>
+              <th scope="col">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">
+                <label for="cat-1">Cadres</label>
+              </th>
+              <td>
+                <input id="cat-1" class="amount" type="text" name="amount-1" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button">Recalculer</button>
+      </form>
+    </main>
+  </body>
+</html>

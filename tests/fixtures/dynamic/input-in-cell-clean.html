@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Champ dans une cellule de tableau — sans débordement</title>
+    <style>
+      /* The clean counterpart: same input-in-a-table-cell structure, but the field grows
+         with its content instead of clipping it (no fixed width, no overflow:hidden, and a
+         generous max-width). The stateful scan fills it exactly the same way and must NOT
+         fire an input-overflow finding — proving the probe keys on real clipping, not on
+         "there is a filled input in a cell". */
+      table {
+        border-collapse: collapse;
+      }
+      td,
+      th {
+        border: 1px solid #333;
+        padding: 4px;
+      }
+      .amount {
+        width: 100%;
+        max-width: 40ch;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Déclaration — rémunérations</h1>
+      <form action="#" method="dialog">
+        <table>
+          <caption>
+            Écarts de rémunération par catégorie
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Catégorie</th>
+              <th scope="col">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">
+                <label for="cat-1">Cadres</label>
+              </th>
+              <td>
+                <input id="cat-1" class="amount" type="text" name="amount-1" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button">Recalculer</button>
+      </form>
+    </main>
+  </body>
+</html>

@@ -147,6 +147,13 @@ export interface RunnerOutput {
   reflowZoom?: ProbeHit[];
   textSpacing?: ProbeHit[];
   hover?: ProbeHit[];
+  // Stateful probes (local runtime, interactions ON) — a filled input clipped under each
+  // stress, and content updated by a safe interaction outside any live region. Optional +
+  // Docker-never-sets, exactly like the residual probes above.
+  inputOverflowReflow?: ProbeHit[];
+  inputOverflowZoom?: ProbeHit[];
+  inputOverflowSpacing?: ProbeHit[];
+  liveRegion?: ProbeHit[];
 }
 
 // RunnerOutput key ↔ probe engine, so a clean Docker output (no probe arrays) folds
@@ -156,6 +163,10 @@ const PROBE_FIELDS: { key: keyof RunnerOutput; engine: Exclude<DynamicEngine, "a
   { key: "reflowZoom", engine: "reflow-zoom" },
   { key: "textSpacing", engine: "text-spacing" },
   { key: "hover", engine: "hover" },
+  { key: "inputOverflowReflow", engine: "input-overflow-reflow" },
+  { key: "inputOverflowZoom", engine: "input-overflow-zoom" },
+  { key: "inputOverflowSpacing", engine: "input-overflow-spacing" },
+  { key: "liveRegion", engine: "live-region" },
 ];
 
 function runRunner(target: string, isFile: boolean, tag: string): RunnerOutput {

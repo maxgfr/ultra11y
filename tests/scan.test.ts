@@ -77,6 +77,71 @@ describe("toDynamicResult — residual-criteria probes (local runtime)", () => {
   });
 });
 
+describe("toDynamicResult — stateful probes (input-overflow + live-region)", () => {
+  const out = {
+    url: "https://exemple.fr",
+    violations: [],
+    reflow: { horizontalScroll: false },
+    inputOverflowReflow: [{ selector: "input.q", html: "<input>", detail: "clipped at 320px (input inside a table cell)" }],
+    inputOverflowZoom: [{ selector: "input.q", html: "<input>", detail: "clipped at 200% zoom" }],
+    inputOverflowSpacing: [{ selector: "textarea.t", html: "<textarea>", detail: "clipped under text-spacing" }],
+    liveRegion: [{ selector: "div.toast", html: "<div>", detail: "content update outside a live region" }],
+  };
+  const dyn = toDynamicResult(out, "https://exemple.fr", "en", "axe-core@playwright (local)");
+
+  it("maps each input-overflow stress to its own SC (1.4.10 / 1.4.4 / 1.4.12)", () => {
+    expect(dyn.findings.find((f) => f.engine === "input-overflow-reflow")?.criteriaId).toBe("1.4.10");
+    expect(dyn.findings.find((f) => f.engine === "input-overflow-zoom")?.criteriaId).toBe("1.4.4");
+    expect(dyn.findings.find((f) => f.engine === "input-overflow-spacing")?.criteriaId).toBe("1.4.12");
+  });
+
+  it("input-overflow findings are NORMATIVE and majeur; live-region is normative + mineur (4.1.3)", () => {
+    for (const e of ["input-overflow-reflow", "input-overflow-zoom", "input-overflow-spacing"]) {
+      const f = dyn.findings.find((x) => x.engine === e)!;
+      expect(f.severity).toBe("majeur");
+      expect(f.advisory).toBeUndefined(); // normative
+    }
+    const lr = dyn.findings.find((f) => f.engine === "live-region")!;
+    expect(lr.criteriaId).toBe("4.1.3");
+    expect(lr.severity).toBe("mineur");
+    expect(lr.advisory).toBeUndefined();
+  });
+
+  it("carries the probe's own detail message verbatim, including the table-cell note", () => {
+    expect(dyn.findings.find((f) => f.engine === "input-overflow-reflow")?.message).toContain("input inside a table cell");
+  });
+
+  it("merges input-overflow into the audit as NC with dyn- ruleIds, dropping the residual risk", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    expect(audit.criteria.find((c) => c.id === "1.4.10")?.status).toBe("manual");
+    const merged = mergeDynamic(audit, dyn);
+    expect(merged.criteria.find((c) => c.id === "1.4.10")?.status).toBe("NC");
+    expect(merged.criteria.find((c) => c.id === "1.4.4")?.status).toBe("NC");
+    expect(merged.criteria.find((c) => c.id === "1.4.12")?.status).toBe("NC");
+    expect(merged.findings.some((f) => f.ruleId === "dyn-input-overflow-reflow")).toBe(true);
+    expect(merged.findings.some((f) => f.ruleId === "dyn-input-overflow-zoom")).toBe(true);
+    expect(merged.findings.some((f) => f.ruleId === "dyn-input-overflow-spacing")).toBe(true);
+    expect(merged.residualRisks.some((r) => r.criteriaId === "1.4.10")).toBe(false);
+  });
+
+  it("merges live-region into the audit as a NC on 4.1.3 with a dyn-live-region ruleId (mineur)", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    expect(audit.criteria.find((c) => c.id === "4.1.3")?.status).toBe("manual");
+    const merged = mergeDynamic(audit, dyn);
+    expect(merged.criteria.find((c) => c.id === "4.1.3")?.status).toBe("NC");
+    const lr = merged.findings.find((f) => f.ruleId === "dyn-live-region")!;
+    expect(lr.severity).toBe("mineur");
+    expect(lr.advisory).toBeUndefined();
+  });
+
+  it("a Docker RunnerOutput (no stateful arrays) folds unchanged — the fields are absent", () => {
+    const dockerOut = { url: "https://exemple.fr", violations: [], reflow: { horizontalScroll: false } };
+    const d = toDynamicResult(dockerOut, "https://exemple.fr");
+    expect(d.findings.filter((f) => f.engine.startsWith("input-overflow")).length).toBe(0);
+    expect(d.findings.some((f) => f.engine === "live-region")).toBe(false);
+  });
+});
+
 describe("cleanTempContexts", () => {
   it("removes leftover dynamic build contexts from the temp dir", () => {
     const a = mkdtempSync(join(tmpdir(), "ultra11y-dyn-"));

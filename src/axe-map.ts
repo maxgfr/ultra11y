@@ -14,6 +14,13 @@ export const PROBE_WCAG: Record<Exclude<DynamicEngine, "axe" | "reflow">, string
   "reflow-zoom": "1.4.4", // Resize Text / 200% zoom — content clipped/lost when enlarged
   "text-spacing": "1.4.12", // Text Spacing — clipping/overlap under the WCAG spacing override
   hover: "1.4.13", // Content on Hover or Focus — not dismissible/hoverable/persistent
+  // Stateful input-overflow probes — a FILLED input whose typed value is clipped/unreadable
+  // under a stress. Same defect, one SC per stress (so each folds onto the SC that stress
+  // actually evidences), so they stay unambiguous cross-standard (RGAA 10.11/10.4/10.12).
+  "input-overflow-reflow": "1.4.10", // typed value clipped at 320px width
+  "input-overflow-zoom": "1.4.4", // typed value clipped at 200% zoom
+  "input-overflow-spacing": "1.4.12", // typed value clipped under the WCAG text-spacing override
+  "live-region": "4.1.3", // Status Messages — content updated by an interaction outside any live region
 };
 
 // Probe severities are deliberately conservative: focus + zoom are real blockers
@@ -23,6 +30,14 @@ export const PROBE_SEVERITY: Record<Exclude<DynamicEngine, "axe" | "reflow">, Se
   "reflow-zoom": "majeur",
   "text-spacing": "mineur",
   hover: "mineur",
+  // Input-overflow is a directly OBSERVED loss of content (the value the user typed is no
+  // longer visible), not a heuristic — the human auditor confirmed the real instance class
+  // — so it is majeur on every stress (incl. text-spacing, unlike the generic text-spacing
+  // probe which stays mineur). live-region is an honest heuristic → mineur.
+  "input-overflow-reflow": "majeur",
+  "input-overflow-zoom": "majeur",
+  "input-overflow-spacing": "majeur",
+  "live-region": "mineur",
 };
 
 export const AXE_WCAG: Record<string, string> = {

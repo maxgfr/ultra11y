@@ -248,6 +248,40 @@ describe("validatePack — declarative rules", () => {
     const dup = { ...base(), rules: [okRule(), okRule()] };
     expect(errs(validatePack(dup)).some((e) => /duplicate/.test(e.message))).toBe(true);
   });
+
+  it("rejects an empty match (would fire on every element)", () => {
+    const r = validatePack(withRule({ match: {} }));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /at least one condition|empty match/.test(e.message))).toBe(true);
+  });
+
+  it("rejects a scope-only match (scope is not a condition)", () => {
+    const r = validatePack(withRule({ match: { scope: "page" } }));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /at least one condition|empty match/.test(e.message))).toBe(true);
+  });
+
+  it("rejects a match with only empty condition arrays", () => {
+    expect(validatePack(withRule({ match: { attrs: [] } })).ok).toBe(false);
+    expect(validatePack(withRule({ match: { has: [] } })).ok).toBe(false);
+  });
+
+  it("rejects an unknown top-level match key (e.g. a typo)", () => {
+    const r = validatePack(withRule({ match: { tag: "a", tgo: "x" } }));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /unknown match key/.test(e.message) && /tgo/.test(e.message))).toBe(true);
+  });
+
+  it("rejects an unknown key inside a nested has/lacks node", () => {
+    const r = validatePack(withRule({ match: { tag: "a", has: [{ tag: "b", bogus: 1 }] } }));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /unknown match key/.test(e.message) && /bogus/.test(e.message))).toBe(true);
+  });
+
+  it("accepts a minimal one-condition match (tag only) and the scope modifier alongside a condition", () => {
+    expect(validatePack(withRule({ match: { tag: "a" } })).ok).toBe(true);
+    expect(validatePack(withRule({ match: { tag: "a", scope: "page" } })).ok).toBe(true);
+  });
 });
 
 describe("validatePack — normativity/severity overrides", () => {

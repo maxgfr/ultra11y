@@ -21,6 +21,32 @@ export interface GlossaryEntry {
 }
 export type Glossary = Record<string, GlossaryEntry>;
 
+// ---- normative page sample (échantillon) — Task 5. STANDARD-AGNOSTIC mechanics: a real
+// audit runs over a representative set of served pages (+ transverse elements audited on
+// every page), NOT the whole file tree. The REQUIRED page KINDS a given standard mandates
+// live in the pack (`sampleMethodology`, src/standards/types.ts), never here.
+// SECURITY: `storageState` is a FILE PATH (a Playwright session file) — its CONTENT is
+// never read into any output/report/finding; only the path is ever cited.
+export interface SamplePage {
+  id: string; // stable slug used for per-page provenance, e.g. "accueil"
+  name: string; // human page name shown in the report, e.g. "Page d'accueil"
+  url: string; // served URL (http(s)://) or a local HTML file path
+  auth?: boolean; // the page sits behind authentication (renders an auth badge)
+  storageState?: string; // Playwright storageState FILE PATH (content never read) — per-page auth
+  notes?: string; // reproduction steps / required state, surfaced in the ticket repro block
+}
+export interface SampleConfig {
+  pages: SamplePage[];
+  // Element descriptions audited on EVERY page (header, nav, footer, modals…).
+  transverse?: string[];
+}
+// The sample as recorded in an AuditResult / DynamicResult. The `storageState` PATH is
+// deliberately dropped (never persisted): the report needs name/url/auth/notes only.
+export interface SampleScope {
+  pages: Array<{ id: string; name: string; url: string; auth?: boolean; notes?: string }>;
+  transverse?: string[];
+}
+
 // ---- WCAG 2.2 canonical core (src/data/wcag.json, produced by scripts/build-standards.mjs)
 // The engine's canonical key. Success-criterion ids/titles/levels are derived from the
 // official W3C source (https://github.com/w3c/wcag); rule coverage + automatability are
@@ -144,6 +170,12 @@ export interface Finding {
   // (no SCHEMA_VERSION bump) — absent ⇒ normative, following the `preliminary`/`origin`/
   // `decidedBy` pattern.
   advisory?: boolean;
+  // Per-sample provenance (`scan --sample`): the crawled page NAME, whether it sits behind
+  // authentication, and optional reproduction notes. Attached by `mergeDynamic` from the
+  // dynamic finding's originating sample page, so the auditor ticket (src/auditor.ts) can
+  // render the human page name + auth flag under « Pages / URLs impactées » and the notes
+  // under « Contexte de reproduction ». Optional/additive (no SCHEMA_VERSION bump).
+  sample?: { page?: string; authRequired?: boolean; notes?: string };
 }
 
 export interface CriterionResult {
@@ -210,6 +242,10 @@ export interface AuditResult {
     // frequency. Used as the CLI's `--lang auto` repo-detection signal (see
     // `resolveLang` in src/cli.ts) — never invented when no document declares one.
     langs?: string[];
+    // Set when a `scan --sample` run was merged in: the normative page sample the dynamic
+    // tier was run over (name/url/auth/notes per page, storageState paths dropped). Drives
+    // the report's « Constats par page » section. Optional/additive.
+    sample?: SampleScope;
   };
   guidelines: GuidelineTally[];
   criteria: CriterionResult[];
@@ -266,6 +302,9 @@ export interface DynamicFinding {
   // the audit as an advisory recommendation, never a criterion NC. See Finding.advisory
   // and src/axe-map.ts `axeAdvisory`. Optional/additive — absent ⇒ normative.
   advisory?: boolean;
+  // Per-sample provenance (`scan --sample`): the originating sample page. Carried through
+  // `mergeDynamic` onto the merged Finding's `sample` for ticket rendering. Optional.
+  sample?: { id: string; name: string; auth?: boolean; notes?: string };
 }
 
 export interface DynamicResult {
@@ -274,4 +313,7 @@ export interface DynamicResult {
   target: string;
   date: string;
   findings: DynamicFinding[];
+  // Set by a `scan --sample` run: the normative page sample scanned (recorded onto the
+  // merged AuditResult's scope.sample). Optional/additive — absent for a plain scan.
+  sample?: SampleScope;
 }

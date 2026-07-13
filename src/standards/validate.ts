@@ -234,6 +234,32 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
     }
   }
 
+  // Optional normative page-sample methodology (src/standards/types.ts SampleMethodology).
+  // Purely ADVISORY (drives `sample check` / `scan --sample` lint), so a malformation is a
+  // WARNING and the field is ignored — never a hard failure that blocks the pack from
+  // deriving reports. Mirrors the vocabulary block's tolerance above.
+  if (p.sampleMethodology !== undefined) {
+    const m = p.sampleMethodology as Record<string, unknown> | null;
+    const kinds = m && typeof m === "object" && !Array.isArray(m) ? m.requiredKinds : undefined;
+    if (!m || typeof m !== "object" || Array.isArray(m) || !Array.isArray(kinds)) {
+      warn("sampleMethodology", "sampleMethodology must be an object { requiredKinds: [...] } — ignored");
+    } else {
+      (kinds as unknown[]).forEach((k, i) => {
+        const kk = k as Record<string, unknown> | null;
+        if (!kk || typeof kk !== "object" || Array.isArray(kk)) {
+          warn(`sampleMethodology.requiredKinds[${i}]`, "each required kind must be an object { id, label, keywords } — ignored");
+          return;
+        }
+        if (typeof kk.id !== "string" || kk.id.trim() === "") warn(`sampleMethodology.requiredKinds[${i}].id`, "required kind id should be a non-empty string");
+        const label = kk.label as Record<string, unknown> | undefined;
+        if (!label || typeof label !== "object" || Array.isArray(label) || typeof label[loc] !== "string")
+          warn(`sampleMethodology.requiredKinds[${i}].label`, `required kind should carry label[${loc}]`);
+        if (!Array.isArray(kk.keywords) || (kk.keywords as unknown[]).some((w) => typeof w !== "string"))
+          warn(`sampleMethodology.requiredKinds[${i}].keywords`, "required kind keywords should be an array of strings");
+      });
+    }
+  }
+
   return done();
 }
 

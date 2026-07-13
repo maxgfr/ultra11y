@@ -5,6 +5,7 @@
 // phases (P1 normativity layer, P3 new rules) turn the gated cases on as they land.
 import { describe, it, expect } from "vitest";
 import { runAudit } from "../src/audit.js";
+import { buildAdjudicationWorklist } from "../src/adjudicate.js";
 import { derivePackResults } from "../src/standards/index.js";
 import { toDynamicResult, mergeDynamic, type RunnerOutput } from "../src/scan.js";
 import type { Finding } from "../src/types.js";
@@ -118,13 +119,25 @@ describe("egapro-feedback — missed patterns (must fire)", () => {
   });
 
   it.skipIf(!IMPLEMENTED_PHASES.has("P0"))(
-    "a div/div label-value modal (the 'Mon profil' pattern, RGAA 8.9) is never silently Conforming — it stays a manual residual",
+    "a div/div label-value modal (the 'Mon profil' pattern, RGAA 8.9) is never silently Conforming — it stays a manual residual whose 1.3.1 evidence harvests the div-presented field pairs",
     () => {
       const audit = runAudit({ inputs: [`${FIX}missed/modal-div-fields.html`] });
       const c131 = audit.criteria.find((c) => c.id === "1.3.1");
       expect(c131?.status).toBe("manual");
       expect(c131?.status).not.toBe("C");
       expect(audit.residualRisks.some((r) => r.criteriaId === "1.3.1")).toBe(true);
+
+      // The 8.9/read-only-fields harvester must surface this fixture's specific div-presented
+      // label/value pairs — the case is now specific to the pattern, not the generic invariant.
+      const item = buildAdjudicationWorklist(audit).find((i) => i.criteriaId === "1.3.1");
+      expect(item).toBeDefined();
+      const pairNotes = item!.evidence.filter((e) => (e.note ?? "").includes("key/value pair"));
+      expect(pairNotes.length).toBeGreaterThanOrEqual(2); // « Nom / Dupont » and « Prénom / Jean »
+      const blob = pairNotes.map((e) => e.note).join(" | ");
+      expect(blob).toContain("Nom");
+      expect(blob).toContain("Dupont");
+      expect(blob).toContain("Prénom");
+      expect(blob).toContain("Jean");
     },
   );
 });

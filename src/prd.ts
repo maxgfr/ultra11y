@@ -8,7 +8,16 @@ import { join } from "node:path";
 import type { AuditResult, Finding, Lang, Severity } from "./types.js";
 import { getSC, guidelineTitle, scTitle, techniques as scTechniques } from "./wcag.js";
 import { resolveRemediation } from "./messages.js";
-import { type StandardId, isCore, loadPack, derivePackResults, standardLabel, themeName, titlePlain as packTitlePlain } from "./standards/index.js";
+import {
+  type StandardId,
+  isCore,
+  loadPack,
+  derivePackResults,
+  packConformancePct,
+  standardLabel,
+  themeName,
+  titlePlain as packTitlePlain,
+} from "./standards/index.js";
 import { guidanceForWcag, guidanceForCriterion } from "./guidance/index.js";
 import type { GuidanceEntry } from "./guidance/types.js";
 import { renderAuditorBacklog, renderAuditorPerCriterion, occurrenceLine, relatedLine } from "./auditor.js";
@@ -222,14 +231,18 @@ function unitBlock(unit: PrdUnit, lang: Lang, heading: string, standard: Standar
   return out;
 }
 
-function header(r: AuditResult, lang: Lang, title: string, note: string = L[lang].note): string[] {
+// `ratePct`: the pack-projection rate (packConformancePct over that standard's own
+// criteria), passed by pack callers so the PRD header matches the pack report's header
+// (and its own NC table) instead of the core WCAG `conformancePct`. Core callers pass
+// nothing — unchanged behavior.
+function header(r: AuditResult, lang: Lang, title: string, note: string = L[lang].note, ratePct?: number): string[] {
   const s = L[lang];
   return [
     `# ${title}`,
     "",
     `- **${s.date}** : ${r.date}`,
     `- **${s.scope}** : ${r.scope.files} ${s.files} — ${r.scope.inputs.join(", ")}`,
-    `- **${s.rate}** : ${r.conformancePct}%`,
+    `- **${s.rate}** : ${ratePct ?? r.conformancePct}%`,
     "",
     `> ${note}`,
     "",
@@ -240,7 +253,8 @@ function header(r: AuditResult, lang: Lang, title: string, note: string = L[lang
 export function renderBacklog(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): string {
   const s = L[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(standardLabel(standard)));
+  const ratePct = isCore(standard) ? undefined : packConformancePct(derivePackResults(r, standard));
+  const out = header(r, lang, s.title(standardLabel(standard)), undefined, ratePct);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -262,8 +276,9 @@ export interface PrdFile {
 /** One standalone PRD document per criterion (for `--split criterion`). */
 export function renderPerCriterion(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): PrdFile[] {
   const s = L[lang];
+  const ratePct = isCore(standard) ? undefined : packConformancePct(derivePackResults(r, standard));
   return prdUnits(r, standard, lang).map((u) => {
-    const out = header(r, lang, s.prdTitle(u.label));
+    const out = header(r, lang, s.prdTitle(u.label), undefined, ratePct);
     out.push(...unitBlock(u, lang, "##", standard));
     return { name: `prd-${u.criteriaId}-${r.date}.md`, content: out.join("\n") };
   });
@@ -322,7 +337,8 @@ export function acceptanceCriteria(unit: PrdUnit, standard: StandardId, lang: La
 export function renderPrdDoc(r: AuditResult, lang: Lang = "en", standard: StandardId = "wcag"): string {
   const s = L[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(standardLabel(standard)), s.docNote);
+  const ratePct = isCore(standard) ? undefined : packConformancePct(derivePackResults(r, standard));
+  const out = header(r, lang, s.title(standardLabel(standard)), s.docNote, ratePct);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");

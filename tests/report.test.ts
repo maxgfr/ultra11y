@@ -6,7 +6,7 @@ import { runAudit } from "../src/audit.js";
 import { renderReport, renderPackReport, writeReport, untestedNeedsRendering } from "../src/report.js";
 import { mergeDynamic } from "../src/scan.js";
 import { prdUnits } from "../src/prd.js";
-import { loadPack } from "../src/standards/index.js";
+import { derivePackResults, loadPack, packConformancePct } from "../src/standards/index.js";
 import type { AuditResult, DynamicResult, Finding } from "../src/types.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
@@ -202,6 +202,23 @@ describe("renderPackReport (derived RGAA view)", () => {
     expect(ncSection).toContain("**Thématique** : 8.");
     expect(ncSection).toMatch(/\*\*Critère\*\* : 8\.3 —/);
     expect(ncSection).not.toContain("RGAA 8.1"); // out-of-scope — §5 only, never a fake NC block
+  });
+});
+
+// Task #9: the pack report's header pass-rate must be the projection tally
+// (packConformancePct over the pack's OWN criteria), consistent with its own §1
+// synthesis table / §2 NC table — never the core WCAG `conformancePct`, which is a
+// different criteria basis (WCAG SCs, not pack criteria) and can diverge from it.
+describe("pack report header rate uses the projection tally, not core conformancePct (Task #9)", () => {
+  it("renderPackReport's header % is packConformancePct(derivePackResults(r, pack.key)) — wired via render()'s headerRatePct opt", () => {
+    const expected = packConformancePct(derivePackResults(bad, "rgaa"));
+    const md = renderPackReport(bad, loadPack("rgaa"), "fr");
+    expect(md).toMatch(new RegExp(`Taux de réussite automatique[^*]*\\*\\* : ${expected}%`));
+  });
+
+  it("renderReport (core WCAG) is UNCHANGED — its header % stays r.conformancePct, never a pack rate", () => {
+    const md = renderReport(bad, "fr");
+    expect(md).toMatch(new RegExp(`Taux de réussite automatique[^*]*\\*\\* : ${bad.conformancePct}%`));
   });
 });
 

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import type { AuditResult } from "../src/types.js";
 import { prdUnits, partitionUnits, renderBacklog, renderPerCriterion, renderPrdDoc, writePrd } from "../src/prd.js";
 import { runAudit } from "../src/audit.js";
+import { derivePackResults, packConformancePct } from "../src/standards/index.js";
 
 const FIXTURES = new URL("./fixtures/", import.meta.url).pathname;
 
@@ -204,5 +205,47 @@ describe("renderPrdDoc (--format doc)", () => {
     const paths = writePrd(AUDIT, { out, lang: "en", format: "doc", standard: "wcag" });
     expect(paths).toEqual([join(out, "prd-doc-2026-06-29.md")]);
     expect(readFileSync(paths[0]!, "utf8")).toContain("Epic — ");
+  });
+});
+
+// Task #9: PRD headers (remediation backlog / per-criterion / doc format) must show the
+// pack's OWN projection rate for a pack standard, never the core WCAG `conformancePct` —
+// consistent with the pack report's header (src/report.ts). Core headers stay unchanged.
+describe("PRD header rate uses the pack projection tally, not core conformancePct (Task #9)", () => {
+  const bad = runAudit({ inputs: [`${FIXTURES}non-conforming/bad.html`] });
+
+  it("renderBacklog (pack) shows packConformancePct over the pack's derived criteria", () => {
+    const expected = packConformancePct(derivePackResults(bad, "rgaa"));
+    const md = renderBacklog(bad, "fr", "rgaa");
+    expect(md).toMatch(new RegExp(`Taux de réussite automatique\\*\\* : ${expected}%`));
+  });
+
+  it("renderBacklog (core) is UNCHANGED — shows r.conformancePct", () => {
+    const md = renderBacklog(bad, "fr", "wcag");
+    expect(md).toMatch(new RegExp(`Taux de réussite automatique\\*\\* : ${bad.conformancePct}%`));
+  });
+
+  it("renderPrdDoc (pack) shows packConformancePct in its header", () => {
+    const expected = packConformancePct(derivePackResults(bad, "rgaa"));
+    const doc = renderPrdDoc(bad, "fr", "rgaa");
+    expect(doc).toMatch(new RegExp(`Taux de réussite automatique\\*\\* : ${expected}%`));
+  });
+
+  it("renderPrdDoc (core) is UNCHANGED — shows r.conformancePct", () => {
+    const doc = renderPrdDoc(bad, "fr", "wcag");
+    expect(doc).toMatch(new RegExp(`Taux de réussite automatique\\*\\* : ${bad.conformancePct}%`));
+  });
+
+  it("renderPerCriterion (pack, --split criterion) stamps the same pack rate on every generated file", () => {
+    const expected = packConformancePct(derivePackResults(bad, "rgaa"));
+    const files = renderPerCriterion(bad, "fr", "rgaa");
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) expect(f.content).toContain(`Taux de réussite automatique** : ${expected}%`);
+  });
+
+  it("renderPerCriterion (core, --split criterion) is UNCHANGED — every file shows r.conformancePct", () => {
+    const files = renderPerCriterion(AUDIT, "fr", "wcag");
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) expect(f.content).toContain(`Taux de réussite automatique** : ${AUDIT.conformancePct}%`);
   });
 });

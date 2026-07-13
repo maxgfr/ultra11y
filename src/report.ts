@@ -18,6 +18,7 @@ import {
   loadPack,
   derivePackResults,
   packCriteriaForFinding,
+  packConformancePct,
   title as packTitle,
   themeName,
   type StandardPack,
@@ -196,7 +197,15 @@ interface Group {
 function render(
   r: AuditResult,
   lang: Lang,
-  opts: { std: string; groupHead: string; groups: Group[]; standard: StandardId; derivedOf?: string; partialAudit?: string[] },
+  opts: {
+    std: string;
+    groupHead: string;
+    groups: Group[];
+    standard: StandardId;
+    derivedOf?: string;
+    partialAudit?: string[];
+    headerRatePct?: number;
+  },
 ): string {
   const s = L[lang];
   const out: string[] = [];
@@ -204,7 +213,7 @@ function render(
   out.push(`- **${s.date}** : ${r.date}`);
   out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
   out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} — ${r.scope.inputs.join(", ")}`);
-  out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
+  out.push(`- **${s.rate}** : ${opts.headerRatePct ?? r.conformancePct}% (${s.rateNote})`);
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> ⚠️ ${s.warn}`, "");
   // Partial-audit advisory banner (owner decision) — a pack audit whose scan coverage
@@ -361,7 +370,15 @@ export function renderPackReport(r: AuditResult, pack: StandardPack, lang: Lang 
   // criterion lacks a dynamic verdict — the banner names exactly which ones (a Docker-only
   // scan covers reflow but not the local probes). The core WCAG report carries its own §5
   // manual worklist and is not flagged here.
-  return render(r, lang, { std, groupHead: L[lang].byTheme, groups, derivedOf: std, standard: pack.key, partialAudit: untestedNeedsRendering(r) });
+  return render(r, lang, {
+    std,
+    groupHead: L[lang].byTheme,
+    groups,
+    derivedOf: std,
+    standard: pack.key,
+    partialAudit: untestedNeedsRendering(r),
+    headerRatePct: packConformancePct(derived),
+  });
 }
 
 export interface ReportOpts {

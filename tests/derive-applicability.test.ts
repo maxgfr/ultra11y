@@ -3,8 +3,9 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
-import { derivePackResults, loadPack, registerRuntimePack } from "../src/standards/index.js";
+import { derivePackResults, loadPack, packConformancePct, registerRuntimePack, type PackCriterionResult } from "../src/standards/index.js";
 import { toDynamicResult, mergeDynamic } from "../src/scan.js";
+import type { Status } from "../src/types.js";
 
 const dir = mkdtempSync(join(tmpdir(), "u11y-derive-"));
 function auditHtml(html: string) {
@@ -166,5 +167,42 @@ describe("the built RGAA pack carries applicability data", () => {
     expect(c11.appliesTo!.ruleIds).toContain("img-alt-missing");
     const c14 = pack.criteria.find((c) => c.id === "1.4")!;
     expect(c14.appliesTo!.ruleIds).toEqual([]);
+  });
+});
+
+// Task #9: the pack-report header must show the SAME pass rate as its own per-criterion
+// NC table (the projection tally), never the core WCAG `conformancePct` — the two bases
+// (pack criteria vs WCAG SCs) can diverge, today already by fan-out/fan-in and — once
+// pack overrides land (Task #13) — by advisory/severity flips too. Hand-built
+// `PackCriterionResult[]` arrays are the primary evidence (per the task brief), since no
+// shipped pack ships overrides yet to exercise a real divergence end to end.
+describe("packConformancePct", () => {
+  const row = (id: string, status: Status): PackCriterionResult => ({ id, theme: 1, status, findings: [], scs: [] });
+
+  it("computes C / (C + NC), rounded — manual and NA never enter the ratio", () => {
+    // 2 C, 1 NC, 1 manual, 1 NA → 2/3 = 66.67% → rounds to 67.
+    const derived = [row("1", "C"), row("2", "C"), row("3", "NC"), row("4", "manual"), row("5", "NA")];
+    expect(packConformancePct(derived)).toBe(67);
+  });
+
+  it("mirrors the core denominator-zero convention (audit.ts conformancePct): no decided criterion ⇒ 100, never NaN/divide-by-zero", () => {
+    expect(packConformancePct([])).toBe(100);
+    expect(packConformancePct([row("1", "manual"), row("2", "NA")])).toBe(100);
+  });
+
+  it("is 100 when every decided criterion conforms, 0 when every decided criterion fails", () => {
+    expect(packConformancePct([row("1", "C"), row("2", "C"), row("3", "manual")])).toBe(100);
+    expect(packConformancePct([row("1", "NC"), row("2", "NC"), row("3", "NA")])).toBe(0);
+  });
+
+  it("can diverge from a core WCAG conformancePct computed over a different criteria basis — the whole point of the task", () => {
+    // A pack projection with 3 decided criteria, 2 conforming → 67%. A hand-built core
+    // AuditResult.conformancePct of 50% (over a totally different WCAG-SC basis) must NOT
+    // be what a pack report/PRD header shows — it must show this 67%, wired via
+    // src/report.ts render()'s `headerRatePct` opt and src/prd.ts header()'s `ratePct` opt.
+    const derived = [row("1", "C"), row("2", "C"), row("3", "NC")];
+    const corePct = 50;
+    expect(packConformancePct(derived)).toBe(67);
+    expect(packConformancePct(derived)).not.toBe(corePct);
   });
 });

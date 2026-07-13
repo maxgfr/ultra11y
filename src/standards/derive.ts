@@ -61,6 +61,18 @@ export function packCriteriaForFinding(pack: StandardPack, finding: Finding): st
     .map((pc) => pc.id);
 }
 
+/** The pack-projection pass rate: C ÷ (C + NC) over the pack's own criteria (NOT the core
+ *  WCAG criteria) — the same basis the pack report's per-criterion NC table already uses.
+ *  Mirrors the core denominator-zero convention (src/audit.ts conformancePct): no decided
+ *  criterion ⇒ 100, never a divide-by-zero. `manual`/`NA` criteria don't enter the ratio,
+ *  same as core. Exists so a pack report's header rate can't drift from its own table once
+ *  pack overrides (advisory/severity flips) make the two diverge from core `conformancePct`. */
+export function packConformancePct(derived: PackCriterionResult[]): number {
+  const c = derived.filter((d) => d.status === "C").length;
+  const nc = derived.filter((d) => d.status === "NC").length;
+  return c + nc === 0 ? 100 : Math.round((c / (c + nc)) * 100);
+}
+
 /** Apply a pack's normativity/severity overrides to a finding WITHIN the pack projection.
  *  Returns a COPY when an override applies (the core finding is never mutated), or the
  *  original reference when there is nothing to change. */

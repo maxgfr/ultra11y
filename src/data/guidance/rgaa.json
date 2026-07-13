@@ -338,6 +338,84 @@
       "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
     },
     {
+      "id": "aria-live-polite-atomic",
+      "criterionId": "7.5",
+      "wcag": ["4.1.3"],
+      "title": {
+        "fr": "Une région live polie doit être atomique",
+        "en": "A polite live region must be atomic"
+      },
+      "summary": {
+        "fr": "Une région live en aria-live=\"polite\" doit toujours porter aria-atomic=\"true\" pour que la technologie d'assistance restitue l'intégralité du message et non seulement le nœud de texte modifié. Sans aria-atomic, une mise à jour partielle (ex. un compteur qui passe de « 2 » à « 3 ») peut être annoncée hors contexte ou pas du tout.",
+        "en": "A live region with aria-live=\"polite\" must always carry aria-atomic=\"true\" so the assistive technology reads the whole message, not just the changed text node. Without aria-atomic, a partial update (e.g. a counter going from \"2\" to \"3\") may be announced out of context or not at all."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div aria-live=\"polite\">3 résultats trouvés</div>",
+          "good": "<div aria-live=\"polite\" aria-atomic=\"true\">3 résultats trouvés</div>",
+          "note": {
+            "fr": "aria-atomic=\"true\" garantit que le message entier est restitué à chaque mise à jour, pas seulement le fragment modifié.",
+            "en": "aria-atomic=\"true\" guarantees the entire message is announced on each update, not just the changed fragment."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      "id": "error-message-role-alert-not-polite",
+      "criterionId": "7.5",
+      "wcag": ["4.1.3"],
+      "title": {
+        "fr": "Un message d'erreur utilise role=\"alert\", pas aria-live=\"polite\"",
+        "en": "An error message uses role=\"alert\", not aria-live=\"polite\""
+      },
+      "summary": {
+        "fr": "Un message d'erreur doit être restitué immédiatement : utilisez role=\"alert\" seul (qui implique une restitution assertive). N'utilisez pas aria-live=\"polite\" pour une erreur — la file basse priorité peut la retarder ou la faire manquer. N'ajoutez pas non plus aria-live sur un conteneur déjà en role=\"alert\" (redondant et parfois contradictoire).",
+        "en": "An error message must be announced immediately: use role=\"alert\" alone (it implies assertive restitution). Do not use aria-live=\"polite\" for an error — the low-priority queue can delay it or make it be missed. Do not add aria-live on a container already in role=\"alert\" either (redundant, sometimes contradictory)."
+      },
+      "impact": "high",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div aria-live=\"polite\" class=\"form-error\">Adresse e-mail invalide.</div>",
+          "good": "<div role=\"alert\">Adresse e-mail invalide.</div>",
+          "note": {
+            "fr": "role=\"alert\" restitue l'erreur immédiatement (assertif) ; aria-live=\"polite\" la mettrait en file basse priorité.",
+            "en": "role=\"alert\" announces the error immediately (assertive); aria-live=\"polite\" would queue it at low priority."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      "id": "post-action-focus-xor-live-region",
+      "criterionId": "7.5",
+      "wcag": ["4.1.3"],
+      "title": {
+        "fr": "Après une action : déplacer le focus OU utiliser une région live, jamais les deux",
+        "en": "After an action: move focus OR use a live region, never both"
+      },
+      "summary": {
+        "fr": "Après une action (soumission, ajout au panier, sauvegarde), choisissez UNE seule stratégie de restitution : soit déplacer le focus vers un élément qui décrit le résultat (le lecteur d'écran lit ce nouvel élément), soit annoncer via une région live sans déplacer le focus. Combiner les deux (déplacer le focus vers un conteneur qui est aussi une région live) provoque une double annonce et désoriente l'utilisateur.",
+        "en": "After an action (submit, add-to-cart, save), pick ONE restitution strategy: either move focus to an element that describes the outcome (the screen reader reads that new element), or announce via a live region without moving focus. Combining both (moving focus into a container that is also a live region) causes a double announcement and disorients the user."
+      },
+      "impact": "medium",
+      "examples": [
+        {
+          "lang": "html",
+          "bad": "<div role=\"alert\" tabindex=\"-1\">Modifications enregistrées.</div>",
+          "good": "<div role=\"alert\">Modifications enregistrées.</div>",
+          "note": {
+            "fr": "Le conteneur en role=\"alert\" annonce déjà le message ; lui donner aussi le focus (tabindex=\"-1\" ciblé au script) le fait annoncer deux fois. Choisissez la région live SEULE, ou déplacez le focus vers un élément non-live.",
+            "en": "The role=\"alert\" container already announces the message; also focusing it (tabindex=\"-1\" targeted by script) makes it announced twice. Use the live region ALONE, or move focus to a non-live element."
+          }
+        }
+      ],
+      "reference": "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
       "id": "forms-error-association",
       "criterionId": "11.10",
       "wcag": ["3.3.1", "3.3.2"],

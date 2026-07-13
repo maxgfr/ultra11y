@@ -119,7 +119,15 @@ describe("applyAdjudication — updates the audit + records provenance", () => {
             ...i,
             verdict: "NC" as const,
             findings: [
-              { file: PAGE, line: 9, selector: "img", message: 'alt="chart" is not descriptive', snippet: 'alt="chart"', severity: "majeur" as const },
+              {
+                file: PAGE,
+                line: 9,
+                selector: "img",
+                message: 'alt="chart" is not descriptive',
+                snippet: 'alt="chart"',
+                severity: "majeur" as const,
+                normativeRef: "1.1.1",
+              },
             ],
           }
         : { ...i, verdict: "manual" as const, reason: "undecidable" },
@@ -201,10 +209,71 @@ describe("applyAdjudication — fail-closed validation", () => {
 
   it("fails an agent NC whose snippet does not match the cited source", () => {
     const items = decideAll(
-      { verdict: "NC", findings: [{ file: PAGE, line: 9, selector: "video", message: "bogus", snippet: "<video controls></video>" }] },
+      { verdict: "NC", findings: [{ file: PAGE, line: 9, selector: "video", message: "bogus", snippet: "<video controls></video>", normativeRef: "1.1.1" }] },
       "1.1.1",
     );
     const r = applyAdjudication(auditPage(), file(items));
+    expect(r.ok).toBe(false);
+    expect(r.grounding.failed).toBeGreaterThan(0);
+  });
+
+  it("fails an NC finding with no normativeRef (a good practice needs a normative test to be an NC)", () => {
+    const items = decideAll(
+      { verdict: "NC", findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is vague', snippet: 'alt="chart"' }] },
+      "1.1.1",
+    );
+    const r = applyAdjudication(auditPage(), file(items));
+    expect(r.ok).toBe(false);
+    expect(r.issues.join("\n")).toMatch(/normativeRef/);
+  });
+
+  it("fails an NC finding whose normativeRef does not resolve to a real WCAG SC", () => {
+    const items = decideAll(
+      { verdict: "NC", findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is vague', snippet: 'alt="chart"', normativeRef: "9.9.9" }] },
+      "1.1.1",
+    );
+    const r = applyAdjudication(auditPage(), file(items));
+    expect(r.ok).toBe(false);
+    expect(r.issues.join("\n")).toMatch(/9\.9\.9|does not resolve/);
+  });
+});
+
+describe("applyAdjudication — recommendations fold as advisory (status-neutral)", () => {
+  it("folds a recommendation into audit.findings as an advisory finding without flipping the criterion", () => {
+    const audit = auditPage();
+    const items = buildAdjudicationWorklist(audit).map((i) =>
+      i.criteriaId === "2.4.4"
+        ? {
+            ...i,
+            verdict: "C" as const,
+            justification: "Every link text is self-describing.",
+            // A non-normative good practice noted alongside the conformant verdict.
+            recommendations: [{ file: PAGE, line: 9, selector: "img", message: "Consider a more descriptive alt.", snippet: 'alt="chart"' }],
+          }
+        : { ...i, verdict: "manual" as const, reason: "undecidable" },
+    );
+    const r = applyAdjudication(audit, file(items));
+    expect(r.ok).toBe(true);
+    // The recommendation lands as an advisory finding on its criterion…
+    const rec = r.audit.findings.find((f) => f.advisory && f.criteriaId === "2.4.4");
+    expect(rec).toBeDefined();
+    // …but the criterion keeps its adjudicated status (C), never NC.
+    expect(r.audit.criteria.find((c) => c.id === "2.4.4")?.status).toBe("C");
+  });
+
+  it("fails when a recommendation snippet does not ground to the cited source", () => {
+    const audit = auditPage();
+    const items = buildAdjudicationWorklist(audit).map((i) =>
+      i.criteriaId === "2.4.4"
+        ? {
+            ...i,
+            verdict: "C" as const,
+            justification: "Links are fine.",
+            recommendations: [{ file: PAGE, line: 9, selector: "video", message: "bogus", snippet: "<video controls></video>" }],
+          }
+        : { ...i, verdict: "manual" as const, reason: "undecidable" },
+    );
+    const r = applyAdjudication(audit, file(items));
     expect(r.ok).toBe(false);
     expect(r.grounding.failed).toBeGreaterThan(0);
   });

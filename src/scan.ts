@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import type { AuditResult, DynamicEngine, DynamicFinding, DynamicResult, Finding, Lang, Severity } from "./types.js";
 import { lineStartsOf, lineColAt } from "./parse/html.js";
 import { allGuidelines } from "./wcag.js";
-import { PROBE_SEVERITY, PROBE_WCAG, scForAxe, severityFromImpact } from "./axe-map.js";
+import { PROBE_SEVERITY, PROBE_WCAG, scForAxe, severityFromImpact, isAxeAdvisory } from "./axe-map.js";
 import { parseSitemapUrls, crawlUrls } from "./crawl.js";
 import { today } from "./util.js";
 
@@ -200,6 +200,9 @@ export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = 
   for (const v of out.violations) {
     const criteriaId = scForAxe(v.id, v.tags);
     const severity: Severity = severityFromImpact(v.impact);
+    // A best-practice-only axe violation (no `wcag<digits>` tag) evidences no testable SC
+    // → fold as an advisory recommendation, never a criterion NC (e.g. empty-table-header).
+    const advisory = isAxeAdvisory(v.id, v.tags);
     for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
       findings.push({
         criteriaId,
@@ -211,6 +214,7 @@ export function toDynamicResult(out: RunnerOutput, target: string, lang: Lang = 
         snippet: n.html,
         engine: "axe",
         page,
+        ...(advisory ? { advisory: true } : {}),
       });
     }
   }
@@ -413,15 +417,22 @@ export function mergeDynamic(audit: AuditResult, dynamic: DynamicResult, lang: L
       msg,
       snippet: df.snippet,
       ...(anchor ? { sourceStart: anchor.start, sourceEnd: anchor.end } : {}),
+      ...(df.advisory ? { advisory: true } : {}),
     };
     c.findings.push(finding);
-    c.status = "NC"; // a rendered-tool finding is authoritative
-    delete c.justification;
     merged.findings.push(finding);
+    // An ADVISORY dynamic finding (best-practice-only axe violation) is attached but never
+    // authoritative: it must NOT flip the criterion to NC nor clear its justification, and
+    // the criterion stays in residualRisks. A normative dynamic finding behaves as before.
+    if (!df.advisory) {
+      c.status = "NC"; // a rendered-tool finding is authoritative
+      delete c.justification;
+    }
   }
 
-  // drop upgraded criteria from residual risks
-  const nowNc = new Set(dynamic.findings.map((d) => d.criteriaId));
+  // drop upgraded criteria from residual risks — NORMATIVE findings only (an advisory
+  // finding does not decide the criterion, so its residual risk must remain).
+  const nowNc = new Set(dynamic.findings.filter((d) => !d.advisory).map((d) => d.criteriaId));
   merged.residualRisks = merged.residualRisks.filter((r) => !nowNc.has(r.criteriaId));
 
   // recompute tallies + conformance (by WCAG guideline)

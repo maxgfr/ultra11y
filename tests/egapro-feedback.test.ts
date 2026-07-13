@@ -14,11 +14,10 @@ const FIX = `${FIX_ROOT}egapro-feedback/`;
 
 // Phases whose cases must pass TODAY. Each later phase adds its tag here as it lands —
 // the gated cases then run for real, with no rewrite needed.
-const IMPLEMENTED_PHASES = new Set<string>(["P0"]);
+const IMPLEMENTED_PHASES = new Set<string>(["P0", "P1"]);
 
-// `Finding.advisory` does not exist yet (Phase 1 adds it) — the cast keeps this
-// typechecking both before and after that field lands.
-const normative = (fs: Finding[]) => fs.filter((f) => !(f as { advisory?: boolean }).advisory);
+// `Finding.advisory` now exists (Phase 1) — filter to normative findings directly.
+const normative = (fs: Finding[]) => fs.filter((f) => !f.advisory);
 
 describe("egapro-feedback — false positives (must raise zero normative NC)", () => {
   describe("download-links.html — a 'Télécharger' link not naming its file format is not an NC", () => {
@@ -73,7 +72,7 @@ describe("axe best-practice channel", () => {
       const audit = runAudit({ inputs: [`${FIX_ROOT}conforming/good.html`] });
       const merged = mergeDynamic(audit, dyn);
       const finding = merged.findings.find((f) => f.ruleId === "axe:empty-table-header");
-      expect((finding as (Finding & { advisory?: boolean }) | undefined)?.advisory).toBe(true);
+      expect(finding?.advisory).toBe(true);
       expect(normative(merged.findings).some((f) => f.ruleId === "axe:empty-table-header")).toBe(false);
       expect(merged.criteria.find((c) => c.id === "1.3.1")?.status).not.toBe("NC");
     },

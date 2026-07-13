@@ -148,6 +148,33 @@ export function scForAxeRule(ruleId: string): string {
   return AXE_WCAG[ruleId] ?? FALLBACK_SC;
 }
 
+// Curated overrides of the tag-based advisory decision, keyed by axe rule id. Forces a
+// rule to (non-)advisory regardless of its tags — a deliberate escape hatch for the rare
+// case where axe's tagging disagrees with the normativity we want. Starts EMPTY: the
+// tag-based `axeAdvisory` is correct for every rule we ship today. `true` ⇒ always
+// advisory, `false` ⇒ always normative.
+export const AXE_ADVISORY_EXCEPTIONS: Record<string, boolean> = {};
+
+/** A best-practice-only axe violation carries tags but NO `wcag<digits>` SC tag (only
+ *  umbrellas like `wcag2aa`/`best-practice`/`cat.*`) — it evidences no testable WCAG
+ *  success criterion, so it must fold as an ADVISORY recommendation, never a criterion NC.
+ *  Covers `empty-table-header`, `page-has-heading-one`, `landmark-one-main`, `region`, …
+ *  The `\d+` requires an ALL-DIGIT suffix, so umbrella tags ("wcag2aa", "wcag22aa") never
+ *  count as a real SC tag. A TAG-LESS violation (no evidence either way — real axe always
+ *  tags, so this is only a hand-built input) stays NORMATIVE: we never silently downgrade
+ *  a finding to advisory without positive best-practice evidence. */
+export function axeAdvisory(tags: string[] | undefined): boolean {
+  const t = tags ?? [];
+  if (t.length === 0) return false;
+  return !t.some((tag) => /^wcag\d+$/.test(tag));
+}
+
+/** Resolve whether an axe violation is advisory: the curated exception wins, else the
+ *  tag-based `axeAdvisory` decides. This is what src/scan.ts stamps onto its findings. */
+export function isAxeAdvisory(ruleId: string, tags: string[] | undefined): boolean {
+  return AXE_ADVISORY_EXCEPTIONS[ruleId] ?? axeAdvisory(tags);
+}
+
 /** Resolve an axe rule to a WCAG SC: the curated map first (deliberate, e.g.
  *  color-contrast → 1.4.3), then axe's own wcag tags, then the 4.1.2 fallback. */
 export function scForAxe(ruleId: string, tags?: string[]): string {

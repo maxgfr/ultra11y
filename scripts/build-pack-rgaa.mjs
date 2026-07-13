@@ -95,9 +95,8 @@ const RULE_SC = {
   "button-empty-name": ["4.1.2"], "canvas-fallback-missing": ["1.1.1"], "chart-no-accessible-name": ["1.1.1"],
   "clickable-noninteractive": ["4.1.2", "2.1.1"], "contrast-literal": ["1.4.3"], "control-label-missing": ["4.1.2"],
   "css-generated-content-informative": ["1.3.1"], "date-fields-ungrouped": ["3.3.2"], "disabled-context-content": ["4.1.2"],
-  "control-name-title-only": ["4.1.2"], "cross-aria-forwarding": ["4.1.2"], "cross-aria-ref-cross-file": ["4.1.2"],
-  "cross-icon-only-unnamed": ["4.1.2"], "cross-name-ref-cross-file": ["1.3.1"], "cross-page-lang": ["3.1.1"],
-  "cross-prop-drilled-name-lost": ["4.1.2"], "cross-skip-link-target": ["2.4.1"], "data-table-no-headers": ["1.3.1"],
+  "control-name-title-only": ["4.1.2"], "cross-icon-only-unnamed": ["4.1.2"],
+  "cross-prop-drilled-name-lost": ["4.1.2"], "data-table-no-headers": ["1.3.1"],
   "decorative-alt-misuse": ["1.1.1"], "duplicate-id": ["4.1.2"], "empty-heading": ["1.3.1"], "error-not-associated": ["3.3.1"],
   "field-purpose-incomplete": ["1.3.5", "4.1.2"], "fieldset-legend-missing": ["1.3.1"], "form-field-multiple-labels": ["4.1.2"],
   "h1-missing": ["1.3.1"], "h1-multiple": ["1.3.1"], "heading-order-skip": ["1.3.1"], "html-lang-missing": ["3.1.1"],
@@ -139,7 +138,7 @@ const RULE_TO_CRITERIA = {
   // Theme 7 — scripts/ARIA (7.1 AT-compat, 7.3 keyboard, 7.5 status messages)
   "invalid-aria-role": ["7.1"], "aria-ref-missing-id": ["7.1"], "aria-required-children": ["7.1"],
   "aria-hidden-focusable": ["7.1"], "redundant-aria": ["7.1"], "nested-interactive": ["7.1"],
-  "cross-aria-forwarding": ["7.1"], "cross-aria-ref-cross-file": ["7.1"], "cross-prop-drilled-name-lost": ["7.1"],
+  "cross-prop-drilled-name-lost": ["7.1"],
   "clickable-noninteractive": ["7.3"], "live-region-conflict": ["7.5"], "status-message-not-assertive": ["7.5"],
   // Dynamic tier (scan --local): the live-region probe projects onto WCAG 4.1.3 → RGAA 7.5
   // (status messages). NOTE: Ara filed the source finding under RGAA 7.4 (change of context,
@@ -153,12 +152,12 @@ const RULE_TO_CRITERIA = {
   "axe:aria-hidden-focus": ["7.1"], "axe:presentation-role-conflict": ["7.1"],
   // Theme 8 — document (8.2 valid code, 8.3 default lang, 8.4 lang relevant, 8.5 title, 8.7/8.8 lang changes)
   "duplicate-id": ["8.2"], "axe:duplicate-id": ["8.2"], "axe:duplicate-id-aria": ["8.2"], "axe:duplicate-id-active": ["8.2"],
-  "html-lang-missing": ["8.3"], "cross-page-lang": ["8.3"], "axe:html-has-lang": ["8.3"], "axe:html-xml-lang-mismatch": ["8.3"],
+  "html-lang-missing": ["8.3"], "axe:html-has-lang": ["8.3"], "axe:html-xml-lang-mismatch": ["8.3"],
   "lang-invalid": ["8.4", "8.8"], "axe:html-lang-valid": ["8.4"], "axe:valid-lang": ["8.8"],
   "title-missing-empty": ["8.5"], "axe:document-title": ["8.5"], "inline-lang-change-missing": ["8.7"],
   // Theme 9 — structure (9.1 headings, 9.2 doc structure, 9.3 lists)
   "h1-missing": ["9.1"], "h1-multiple": ["9.1"], "heading-order-skip": ["9.1"], "empty-heading": ["9.1"],
-  "cross-name-ref-cross-file": ["9.1"], "axe:heading-order": ["9.1"], "axe:empty-heading": ["9.1"], "axe:page-has-heading-one": ["9.1"],
+  "axe:heading-order": ["9.1"], "axe:empty-heading": ["9.1"], "axe:page-has-heading-one": ["9.1"],
   "missing-main-landmark": ["9.2", "12.6"], "multiple-main-landmark": ["9.2", "12.6"], "axe:landmark-one-main": ["12.6"],
   "nav-landmark-missing": ["9.2", "12.6"], "nav-landmark-unnamed": ["12.6"],
   "list-structure": ["9.3"], "axe:list": ["9.3"], "axe:listitem": ["9.3"], "axe:definition-list": ["9.3"], "axe:dlitem": ["9.3"],
@@ -178,7 +177,7 @@ const RULE_TO_CRITERIA = {
   "axe:label": ["11.1"], "axe:form-field-multiple-labels": ["11.1"], "axe:select-name": ["11.1"], "axe:label-title-only": ["11.1"],
   "axe:autocomplete-valid": ["11.13"], "axe:fieldset": ["11.6"], "axe:input-button-name": ["11.9"], "axe:button-name": ["11.9"],
   // Theme 12 — navigation (12.7 skip link, 12.8 tab order)
-  "skip-link-target-missing": ["12.7"], "cross-skip-link-target": ["12.7"], "axe:skip-link": ["12.7"], "axe:bypass": ["12.7"],
+  "skip-link-target-missing": ["12.7"], "axe:skip-link": ["12.7"], "axe:bypass": ["12.7"],
   "positive-tabindex": ["12.8"], "axe:tabindex": ["12.8"],
   // Theme 13 — consultation (13.1 time limits, 13.8 moving/blinking)
   "meta-refresh-redirect": ["13.1"], "blink-marquee": ["13.8"], "autoplay-media": ["4.10", "13.8"],

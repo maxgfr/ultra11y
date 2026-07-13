@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.13.0](https://github.com/maxgfr/ultra11y/compare/v2.12.2...v2.13.0) (2026-07-13)
+
+
+### Bug Fixes
+
+* **adjudicate:** add caption-concision manual question (RGAA 5.5) ([6f8da13](https://github.com/maxgfr/ultra11y/commit/6f8da1319ab50316b64c88c65959f19a10d55393))
+* **i18n:** localize declarative pack-rule findings via Finding.i18n ([44bdd39](https://github.com/maxgfr/ultra11y/commit/44bdd398d1da126f9e81b255777bdfbc89fcc477))
+* **sample:** needs-rendering-aware partial-audit banner + lint precision ([4519543](https://github.com/maxgfr/ultra11y/commit/4519543de750b1b3cf5695e8461af971cb2069d7))
+* **scan:** CI probe-string smoke, authenticated-click safety, probe docs ([dfe7df5](https://github.com/maxgfr/ultra11y/commit/dfe7df58918dab3354c8505e639a92af6b584a89))
+* **scan:** close accessible-name bypasses in destructive-click skip ([ba17d62](https://github.com/maxgfr/ultra11y/commit/ba17d62a8013dcb9f0bb5eb80010386396c147e5))
+* **scan:** pin cross-channel normative axe rules + adjudication/guidance polish ([c0d940a](https://github.com/maxgfr/ultra11y/commit/c0d940a46492c6268eaa74a0cb0a632f98b99965))
+* **scan:** pin empty-heading, two-way cross-channel consistency guard ([29cd8f9](https://github.com/maxgfr/ultra11y/commit/29cd8f9b4dac1107a7f4620f5189155ea2298388))
+* **scan:** promote exact-twin axe rules to pins, drift-proof cross-channel rule ([12ab213](https://github.com/maxgfr/ultra11y/commit/12ab213191f10eb204b503ad3884fe671d1b7ecc))
+* **validate:** harden ReDoS guard against alternation + nested-group shapes ([ae34d10](https://github.com/maxgfr/ultra11y/commit/ae34d10826e69daf1322efefe52834c367e1f80d))
+* **validate:** reject empty and unknown-key declarative match nodes ([254dbed](https://github.com/maxgfr/ultra11y/commit/254dbed480f688019b08254f26c1082322785128))
+
+
+### Features
+
+* **adjudicate:** manual question bank + evidence harvesters for the judgment tier ([dc7b676](https://github.com/maxgfr/ultra11y/commit/dc7b67618ba92585e5897d284ccf4e355feaafcb))
+* **adjudicate:** require normativeRef for NC verdicts, add recommendations channel ([57ea761](https://github.com/maxgfr/ultra11y/commit/57ea761c5cccf771bf7f444720d1a6c9c8e54592))
+* **engine:** advisory finding class — NC requires a normative test ([6f4b511](https://github.com/maxgfr/ultra11y/commit/6f4b51104d21c71d0e611750dbbcaf2bad02bdea))
+* **output:** native full PRD ticket structure + reproduction context ([6a039a3](https://github.com/maxgfr/ultra11y/commit/6a039a3d54585dd213f95546fd5140cea682bbc2))
+* **packs:** declarative rule interpreter + normativity overrides ([133844a](https://github.com/maxgfr/ultra11y/commit/133844a087c33e849a548353963b7fc03d865cf2))
+* **packs:** RGAA download-link-format advisory rule (usage proof) ([95259db](https://github.com/maxgfr/ultra11y/commit/95259dba98b0a351035dbb6fe9d07d0e0c3f6329))
+* **rules:** nav landmark, disabled-context, grouping detectors from Ara audit gaps ([ba475f7](https://github.com/maxgfr/ultra11y/commit/ba475f73fc164e0b8cfa1628e76681a0f9123bc7))
+* **sample:** normative page-sample config, validation + RGAA methodology ([8af7320](https://github.com/maxgfr/ultra11y/commit/8af7320186d51f5ff2d41c80257e3f850eaad0a5))
+* **scan:** best-practice axe violations merge as advisory, not NC ([5e049b9](https://github.com/maxgfr/ultra11y/commit/5e049b98886c335ab183fe7fa7e80b24258a1fd5))
+* **scan:** scan --sample, per-page findings, partial-audit advisory ([8655fba](https://github.com/maxgfr/ultra11y/commit/8655fba06937396dde93f9904f3f7e2a88e35bdd))
+* **scan:** stateful probes — filled inputs, dialogs, custom-control focus, live regions ([b072597](https://github.com/maxgfr/ultra11y/commit/b072597d6e6604cd19a5ddfed239af87ae1046e3))
+
 ## [2.12.2](https://github.com/maxgfr/ultra11y/compare/v2.12.1...v2.12.2) (2026-07-10)
 
 

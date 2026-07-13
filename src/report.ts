@@ -11,7 +11,17 @@ import { guidelineTitle, scTitle } from "./wcag.js";
 import { prdUnits, partitionUnits } from "./prd.js";
 import { renderAuditorUnit } from "./auditor.js";
 import { resolveMessage } from "./messages.js";
-import { type StandardId, CORE, isCore, loadPack, derivePackResults, title as packTitle, themeName, type StandardPack } from "./standards/index.js";
+import {
+  type StandardId,
+  CORE,
+  isCore,
+  loadPack,
+  derivePackResults,
+  packCriteriaForFinding,
+  title as packTitle,
+  themeName,
+  type StandardPack,
+} from "./standards/index.js";
 
 const ICON: Record<Severity, string> = { bloquant: "🔴", majeur: "🟠", mineur: "🟡" };
 const SEV_ORDER: Severity[] = ["bloquant", "majeur", "mineur"];
@@ -265,6 +275,10 @@ function render(
   if (r.scope.sample?.pages.length) {
     out.push(`## 📄 ${s.perPageTitle}`, "", `> ${s.perPageNote}`, "");
     if (r.scope.sample.transverse?.length) out.push(`> ${s.transverseNote(r.scope.sample.transverse.join(", "))}`, "");
+    // Standard-aware per-finding label: a pack report (RGAA, …) speaks its own criteria
+    // everywhere else, so this per-page line should too, rather than the raw WCAG SC id.
+    // `loadPack` once, outside the finding loop — never per-finding.
+    const pack = isCore(opts.standard) ? undefined : loadPack(opts.standard);
     for (const pg of r.scope.sample.pages) {
       const onPage = r.findings.filter((f) => f.file === pg.url || (f.sample?.page !== undefined && f.sample.page === pg.name));
       const nc = onPage.filter((f) => !f.advisory);
@@ -272,7 +286,11 @@ function render(
       out.push(`### ${pg.name} — \`${pg.url}\` — ${pg.auth ? s.authYes : s.authNo}`, "");
       out.push(`- ${nc.length} ${s.ncCount}${adv.length ? ` · ${adv.length} ${s.advCount}` : ""}`);
       if (pg.notes) out.push(`- _${pg.notes}_`);
-      for (const f of nc.slice(0, 30)) out.push(`  - [${f.criteriaId}] \`${f.selectorHint}\` — ${resolveMessage(f, lang)}`);
+      for (const f of nc.slice(0, 30)) {
+        const crits = pack ? packCriteriaForFinding(pack, f) : [];
+        const label = crits.length ? crits.join(", ") : f.criteriaId; // graceful fallback to the WCAG SC
+        out.push(`  - [${label}] \`${f.selectorHint}\` — ${resolveMessage(f, lang)}`);
+      }
       out.push("");
     }
   }

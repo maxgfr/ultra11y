@@ -5,7 +5,7 @@
 import type { AuditResult, CriterionResult, Status, Finding, Severity } from "../types.js";
 import { loadPack } from "./registry.js";
 import { knownScStatus } from "../wcag.js";
-import type { PackOverride } from "./types.js";
+import type { PackOverride, StandardPack } from "./types.js";
 
 export interface PackCriterionResult {
   id: string;
@@ -44,6 +44,21 @@ function ruleMatches(ruleId: string, patterns: string[]): boolean {
     } else if (p === ruleId) return true;
   }
   return false;
+}
+
+/** Which of a pack's criterion ids a single finding maps onto — the same wcag/appliesTo
+ *  projection `derivePackResults` runs per-criterion, exposed per-finding for callers that
+ *  render one finding at a time (e.g. src/report.ts's per-page section) rather than the
+ *  full aggregated view. A criterion's id is included iff its `wcag` list contains the
+ *  finding's SC AND (legacy fan-out when the criterion has no `appliesTo`, or the
+ *  finding's ruleId matches one of its `appliesTo.ruleIds` patterns via `ruleMatches`).
+ *  Usually one id; can be several (e.g. `contrast-literal` → RGAA 3.2 + 10.5); can be
+ *  none when the pack has no criterion mapped to this finding's SC (caller falls back to
+ *  the WCAG SC id). */
+export function packCriteriaForFinding(pack: StandardPack, finding: Finding): string[] {
+  return pack.criteria
+    .filter((pc) => pc.wcag.includes(finding.criteriaId) && (!pc.appliesTo || ruleMatches(finding.ruleId, pc.appliesTo.ruleIds)))
+    .map((pc) => pc.id);
 }
 
 /** Apply a pack's normativity/severity overrides to a finding WITHIN the pack projection.

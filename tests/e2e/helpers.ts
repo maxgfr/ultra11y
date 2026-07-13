@@ -4,6 +4,7 @@
 // exactly as a user runs it, and assert on exit codes / stdout / on-disk artifacts.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,8 @@ export const FIX = {
   lowContrast: join(FIXTURES, "dynamic", "low-contrast.html"),
   contrastOverGradient: join(FIXTURES, "dynamic", "contrast-over-gradient.html"),
   fixedWidthReflow: join(FIXTURES, "dynamic", "fixed-width-reflow.html"),
+  inputInCellClip: join(FIXTURES, "dynamic", "input-in-cell-clip.html"),
+  inputInCellClean: join(FIXTURES, "dynamic", "input-in-cell-clean.html"),
   loginForm: join(FIXTURES, "realworld", "LoginForm.tsx"),
   landing: join(FIXTURES, "realworld", "landing.html"),
 };
@@ -92,4 +95,24 @@ export function mkTmpRepo(): string {
 export function hasDocker(): boolean {
   const r = spawnSync("docker", ["info"], { encoding: "utf8", timeout: 10_000 });
   return r.status === 0;
+}
+
+/** True when the LOCAL dynamic runtime can run from `cwd`: @playwright/test +
+ *  @axe-core/playwright resolve AND a Chromium browser is installed. Gates the
+ *  stateful probe smoke test, which needs a real browser (layout-dependent). */
+export function hasLocalPlaywright(cwd: string = REPO_ROOT): boolean {
+  try {
+    const req = createRequire(join(cwd, "package.json"));
+    req.resolve("@playwright/test");
+    req.resolve("@axe-core/playwright");
+  } catch {
+    return false;
+  }
+  // A resolvable Playwright still needs its browser binary — probe with `--version`+launch check.
+  const r = spawnSync(process.execPath, ["-e", "require('@playwright/test').chromium.executablePath()"], {
+    cwd,
+    encoding: "utf8",
+    timeout: 10_000,
+  });
+  return r.status === 0 && (r.stdout ?? "").length >= 0;
 }

@@ -159,32 +159,66 @@ const TEXT_SPACING_PROBE = `(() => { ${PRELUDE}
 })()`;
 
 // 2.4.7 Focus Visible — pass 1: tag each focusable + snapshot its unfocused style.
-const FOCUS_SETUP_PROBE = `(() => { ${PRELUDE}
+// `scope` (a CSS selector or "" for the whole document) restricts the pass — used to
+// re-run it INSIDE an opened dialog whose focusables the pristine pass could not see.
+//
+// Custom radios/checkboxes (RGAA 10.7): the DSFR-style pattern hides the native input
+// (sr-only) and paints the focus ring on its LABEL. Measuring the hidden input would
+// always report "no visible change" as a false pass — so for a visually-hidden but
+// focusable radio/checkbox we measure the PROXY (label[for], wrapping label, or the
+// aria-labelledby target) instead, keyed by the input (which is what Tab focuses).
+function focusSetupExpr(scope = ""): string {
+  const rootExpr = scope ? `document.querySelectorAll(${JSON.stringify(scope)})` : `[document.documentElement]`;
+  return `(() => { ${PRELUDE}
   const sel = 'a[href],button:not([disabled]),input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[role=button]:not([disabled])';
   const snap = (e) => { const s = getComputedStyle(e); return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|'); };
+  // Visually-hidden radio/checkbox → measure its visible label/proxy, not the input.
+  const proxyFor = (e) => {
+    const type = (e.getAttribute('type') || '').toLowerCase();
+    const custom = e.tagName === 'INPUT' && (type === 'radio' || type === 'checkbox') && !__vis(e);
+    if (!custom) return __vis(e) ? e : null;
+    let p = null;
+    if (e.id) { try { p = document.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(e.id) : e.id) + '"]'); } catch (_) {} }
+    if (!p) p = e.closest('label');
+    if (!p) { const lb = (e.getAttribute('aria-labelledby') || '').split(/\\s+/)[0]; if (lb) p = document.getElementById(lb); }
+    return (p && __vis(p)) ? p : null;
+  };
+  // Fresh authoritative pass: drop any tags a previous (whole-document or dialog) pass left.
+  for (const el of Array.from(document.querySelectorAll('[data-u11y-f],[data-u11y-fp]'))) { el.removeAttribute('data-u11y-f'); el.removeAttribute('data-u11y-fp'); }
+  const roots = ${rootExpr};
+  const focusables = [];
+  for (const root of Array.from(roots)) {
+    if (root.matches && root.matches(sel)) focusables.push(root);
+    for (const e of Array.from(root.querySelectorAll(sel))) focusables.push(e);
+  }
   window.__u11yF = {};
   let n = 0;
-  for (const e of Array.from(document.querySelectorAll(sel))) {
-    if (!__vis(e)) continue;
+  for (const e of focusables) {
+    const proxy = proxyFor(e);
+    if (!proxy) continue;
     const key = 'k' + n;
     e.setAttribute('data-u11y-f', key);
-    window.__u11yF[key] = { rest: snap(e), sel: __sel(e), html: __html(e) };
+    proxy.setAttribute('data-u11y-fp', key);
+    window.__u11yF[key] = { rest: snap(proxy), sel: __sel(proxy), html: __html(proxy) };
     n++;
     if (n >= 120) break;
   }
   return n;
 })()`;
+}
 
-// Pass 2 (after each Tab): is the active element a tagged focusable whose style is
-// UNCHANGED vs its unfocused snapshot? If so, focus produced no visible indicator.
+// Pass 2 (after each Tab): is the active element a tagged focusable whose focus PROXY
+// (itself, or its label for a custom control) is UNCHANGED vs the unfocused snapshot?
+// If so, focus produced no visible indicator.
 const FOCUS_CHECK_PROBE = `(() => {
   const e = document.activeElement;
   if (!e || e === document.body || e === document.documentElement) return null;
   const key = e.getAttribute && e.getAttribute('data-u11y-f');
   if (!key || !window.__u11yF || !window.__u11yF[key]) return null;
-  const s = getComputedStyle(e);
-  const now = [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|');
   const rec = window.__u11yF[key];
+  const proxy = document.querySelector('[data-u11y-fp="' + key + '"]') || e;
+  const s = getComputedStyle(proxy);
+  const now = [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|');
   return { key: key, changed: now !== rec.rest, selector: rec.sel, html: rec.html };
 })()`;
 
@@ -215,8 +249,8 @@ function hoverVisibleExpr(id: string, wantHidden = false): string {
   return `(() => { const t = document.getElementById(${j}); if (!t) return ${wantHidden ? "true" : "false"}; const s = getComputedStyle(t); const shown = s.display !== 'none' && s.visibility !== 'hidden' && t.getBoundingClientRect().height > 0; return ${wantHidden ? "!shown" : "shown"}; })()`;
 }
 
-async function probeFocusVisible(page: Any): Promise<ProbeHit[]> {
-  const count = (await page.evaluate(FOCUS_SETUP_PROBE)) as number;
+async function probeFocusVisible(page: Any, scope = ""): Promise<ProbeHit[]> {
+  const count = (await page.evaluate(focusSetupExpr(scope))) as number;
   if (!count) return [];
   const hits: ProbeHit[] = [];
   const seen = new Set<string>();
@@ -237,6 +271,282 @@ async function probeFocusVisible(page: Any): Promise<ProbeHit[]> {
     if (hits.length >= 20) break;
   }
   return hits;
+}
+
+// ---- stateful probes (local runtime, interactions ON) --------------------------------
+// SAFETY CONTRACT (also stated in `scan --no-interact` help): these probes drive the page
+// but perform ONLY non-navigating actions — fill text inputs, toggle checkbox/radio, click
+// `button[type="button"]`. NEVER a link, NEVER a submit button, NEVER a form submit. Every
+// interaction records `location.href` before and aborts + restores if it changed, and every
+// loop is bounded, exactly like the read-only probes above. Original state is restored.
+
+// (1) FILL_INPUTS_STEP — set a long representative value on each visible text-like input
+// (text/search/email/tel/number/date + textarea), fire `input`, tag whether an ancestor is
+// a td/th, and stash the original value so RESTORE_INPUTS_STEP reverts every field. The
+// stress probes then measure a page that carries the real typed content the auditor
+// confirmed is required to reproduce the reflow/zoom/text-spacing NCs.
+const FILL_INPUTS_STEP = `(() => { ${PRELUDE}
+  const LONG = 'Établissement Général des Très Longues Valeurs Saisies 0123456789 exemple';
+  const textLike = new Set(['text','search','email','tel','number','date']);
+  let n = 0;
+  for (const e of Array.from(document.querySelectorAll('input, textarea'))) {
+    const tag = e.tagName.toLowerCase();
+    const type = (e.getAttribute('type') || 'text').toLowerCase();
+    const isTextarea = tag === 'textarea';
+    if (!isTextarea && !textLike.has(type)) continue;
+    if (e.disabled || e.readOnly) continue;
+    if (!__vis(e)) continue;
+    let val = LONG;
+    if (type === 'number') val = '01234567890123456789';
+    else if (type === 'date') val = '2026-12-31';
+    else if (type === 'email') val = 'utilisateur.au.nom.tres.long@sous-domaine.exemple.fr';
+    else if (type === 'tel') val = '+33 6 12 34 56 78 90 12 34';
+    // Respect maxlength: a user can never enter more than that, so a short-code field
+    // (maxlength=4) must not be judged as if it held a 70-char value (false overflow).
+    const ml = parseInt(e.getAttribute('maxlength') || '0', 10);
+    if (ml > 0 && val.length > ml && type !== 'date') val = val.slice(0, ml);
+    const key = 'fi' + n;
+    e.setAttribute('data-u11y-fill', key);
+    e.setAttribute('data-u11y-orig', e.value == null ? '' : String(e.value));
+    if (e.closest('td, th')) e.setAttribute('data-u11y-cell', '1');
+    try { e.value = val; e.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+    n++;
+    if (n >= 60) break;
+  }
+  return n;
+})()`;
+
+const RESTORE_INPUTS_STEP = `(() => {
+  for (const e of Array.from(document.querySelectorAll('[data-u11y-fill]'))) {
+    const orig = e.getAttribute('data-u11y-orig');
+    try { if (orig !== null) { e.value = orig; e.dispatchEvent(new Event('input', { bubbles: true })); } } catch (_) {}
+    e.removeAttribute('data-u11y-fill');
+    e.removeAttribute('data-u11y-orig');
+    e.removeAttribute('data-u11y-cell');
+  }
+  return true;
+})()`;
+
+// (2) INPUT_OVERFLOW — a FILLED input whose typed value has become UNREADABLE under the
+// active stress. A single-line <input> never wraps, so a long value always makes
+// scrollWidth > clientWidth — that alone is normal (the field scrolls), NOT a failure. The
+// real defect the auditor confirmed is a field squeezed so NARROW (a fixed-width or
+// table-cell input at 320px / 200% zoom / text-spacing) that only a character or two of the
+// typed value is visible. So we require clipping AND an unusably narrow visible box: fewer
+// than ~4 characters fit at the current font size (font-relative, so the 200%-zoom case is
+// caught naturally as the character width doubles), or the box collapsed near zero. The SC +
+// wording differ per stress; the "input inside a table cell" note is appended for a td/th.
+const MIN_VISIBLE_CHARS = 6;
+function inputOverflowScan(detail: string, cellSuffix: string): string {
+  const d = JSON.stringify(detail);
+  const cs = JSON.stringify(cellSuffix);
+  return `
+    for (const e of Array.from(document.querySelectorAll('[data-u11y-fill]'))) {
+      if (!__vis(e)) continue;
+      const clientW = e.clientWidth;
+      const clipping = e.scrollWidth > clientW + 8;
+      if (!clipping) continue;
+      const fs = parseFloat(getComputedStyle(e).fontSize) || 16;
+      const charW = Math.max(1, fs * 0.5); // ~ average glyph advance
+      const charsVisible = clientW / charW;
+      if (charsVisible < ${MIN_VISIBLE_CHARS} || clientW <= 24) {
+        const inCell = e.getAttribute('data-u11y-cell') === '1';
+        hits.push({ selector: __sel(e), html: __html(e), detail: ${d} + (inCell ? ${cs} : '') });
+      }
+      if (hits.length >= 12) break;
+    }`;
+}
+// Viewport / text-spacing stress: the caller already set the 320px viewport or added the
+// text-spacing stylesheet; we just measure the filled inputs.
+function inputOverflowExpr(detail: string, cellSuffix: string): string {
+  return `(() => { ${PRELUDE} const hits = [];${inputOverflowScan(detail, cellSuffix)} return hits; })()`;
+}
+// Zoom stress: self-contained — enlarge text to 200%, measure, restore.
+function inputOverflowZoomExpr(detail: string, cellSuffix: string): string {
+  return `(() => { ${PRELUDE}
+  const root = document.documentElement;
+  const prev = root.style.fontSize;
+  root.style.fontSize = '200%';
+  const hits = [];${inputOverflowScan(detail, cellSuffix)}
+  root.style.fontSize = prev;
+  return hits;
+})()`;
+}
+
+const CELL_SUFFIX = { fr: " (champ situé dans une cellule de tableau)", en: " (input inside a table cell)" };
+const INPUT_OVERFLOW_DETAIL = {
+  reflow: {
+    fr: "Champ rempli dont la valeur saisie est tronquée/illisible à 320px de large — perte de contenu (1.4.10).",
+    en: "Filled input whose typed value is clipped/unreadable at 320px width — loss of content (1.4.10).",
+  },
+  zoom: {
+    fr: "Champ rempli dont la valeur saisie est tronquée/illisible au zoom 200% — perte de contenu (1.4.4).",
+    en: "Filled input whose typed value is clipped/unreadable at 200% zoom — loss of content (1.4.4).",
+  },
+  spacing: {
+    fr: "Champ rempli dont la valeur saisie est tronquée/illisible sous l'espacement de texte WCAG — perte de contenu (1.4.12).",
+    en: "Filled input whose typed value is clipped/unreadable under the WCAG text-spacing override — loss of content (1.4.12).",
+  },
+};
+
+// (3) OPEN_DIALOGS_STEP — best effort: open the first 3 closed <dialog> (showModal, else
+// the `open` attribute) and reveal currently-hidden [role=dialog]/[role=alertdialog]
+// wrappers, tagging each so the focus pass can be re-run scoped to it. Original state is
+// captured for CLOSE_DIALOGS_STEP. No navigation is possible from opening a dialog.
+const OPEN_DIALOGS_STEP = `(() => { ${PRELUDE}
+  const out = [];
+  let n = 0;
+  for (const d of Array.from(document.querySelectorAll('dialog:not([open])'))) {
+    if (n >= 3) break;
+    let opened = false;
+    try { if (typeof d.showModal === 'function') { d.showModal(); opened = d.open === true; } } catch (_) {}
+    if (!opened) { try { d.setAttribute('open', ''); opened = true; } catch (_) {} }
+    if (!opened) continue;
+    const key = 'dl' + n;
+    d.setAttribute('data-u11y-dialog', key);
+    out.push(key);
+    n++;
+  }
+  for (const d of Array.from(document.querySelectorAll('[role=dialog],[role=alertdialog]'))) {
+    if (n >= 3) break;
+    if (__vis(d)) continue; // already open — its focusables were covered by the main pass
+    const prevStyle = d.getAttribute('style') || '';
+    const hadHidden = d.hasAttribute('hidden');
+    d.removeAttribute('hidden');
+    if (d.style.display === 'none') d.style.display = 'block';
+    d.style.visibility = 'visible';
+    d.style.opacity = '1';
+    if (!__vis(d)) { if (hadHidden) d.setAttribute('hidden', ''); d.setAttribute('style', prevStyle); continue; }
+    const key = 'dl' + n;
+    d.setAttribute('data-u11y-dialog', key);
+    d.setAttribute('data-u11y-dlg-style', prevStyle);
+    if (hadHidden) d.setAttribute('data-u11y-dlg-hidden', '1');
+    out.push(key);
+    n++;
+  }
+  return out;
+})()`;
+
+const CLOSE_DIALOGS_STEP = `(() => {
+  for (const d of Array.from(document.querySelectorAll('[data-u11y-dialog]'))) {
+    if (d.tagName.toLowerCase() === 'dialog') {
+      try { if (typeof d.close === 'function' && d.open) d.close(); } catch (_) {}
+      d.removeAttribute('open');
+    } else {
+      const prev = d.getAttribute('data-u11y-dlg-style');
+      if (prev) d.setAttribute('style', prev); else d.removeAttribute('style');
+      if (d.getAttribute('data-u11y-dlg-hidden') === '1') d.setAttribute('hidden', '');
+    }
+    d.removeAttribute('data-u11y-dialog');
+    d.removeAttribute('data-u11y-dlg-style');
+    d.removeAttribute('data-u11y-dlg-hidden');
+  }
+  return true;
+})()`;
+
+async function probeDialogs(page: Any): Promise<ProbeHit[]> {
+  const keys = (await page.evaluate(OPEN_DIALOGS_STEP).catch(() => [])) as string[];
+  if (!Array.isArray(keys) || keys.length === 0) return [];
+  const hits: ProbeHit[] = [];
+  for (const key of keys) {
+    const scoped = await probeFocusVisible(page, `[data-u11y-dialog="${key}"]`).catch(() => [] as ProbeHit[]);
+    hits.push(...scoped);
+    if (hits.length >= 12) break;
+  }
+  await page.evaluate(CLOSE_DIALOGS_STEP).catch(() => {});
+  return hits.slice(0, 12);
+}
+
+// (5) LIVE_REGION_PROBE — WCAG 4.1.3 Status Messages (honest heuristic, severity mineur).
+// Install a MutationObserver on <body>, perform ONLY the safe interactions above, and flag
+// a text update whose nearest ancestor is NOT a live region (aria-live / role=status|alert
+// |log) — it was likely never announced to assistive tech. location.href is asserted after
+// each interaction (abort + restore on any change). Interactions and hits are bounded.
+function liveRegionExpr(detail: string): string {
+  const d = JSON.stringify(detail);
+  return `(async () => { ${PRELUDE}
+  const isLive = (node) => {
+    let el = node && node.nodeType === 1 ? node : (node ? node.parentElement : null);
+    while (el && el !== document.documentElement) {
+      const live = (el.getAttribute && el.getAttribute('aria-live')) || '';
+      const role = (el.getAttribute && el.getAttribute('role')) || '';
+      if (live === 'polite' || live === 'assertive') return true;
+      if (role === 'status' || role === 'alert' || role === 'log') return true;
+      el = el.parentElement;
+    }
+    return false;
+  };
+  const hits = [];
+  const seen = new Set();
+  const records = [];
+  const obs = new MutationObserver((muts) => { for (const m of muts) records.push(m); });
+  obs.observe(document.body, { subtree: true, childList: true, characterData: true });
+  const settle = () => new Promise((r) => setTimeout(r, 40));
+  const drain = () => {
+    for (const m of records.splice(0)) {
+      const targets = m.type === 'characterData' ? [m.target] : Array.from(m.addedNodes);
+      for (const t of targets) {
+        if (!t || (t.textContent || '').trim().length === 0) continue;
+        if (isLive(t)) continue;
+        const host = t.nodeType === 1 ? t : t.parentElement;
+        if (!host || !__vis(host)) continue;
+        const key = __sel(host);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        hits.push({ selector: key, html: __html(host), detail: ${d} });
+      }
+    }
+  };
+  let count = 0;
+  // click button[type=button] only (never a submit/link)
+  for (const b of Array.from(document.querySelectorAll('button[type="button"]'))) {
+    if (count >= 20 || hits.length >= 10) break;
+    if (b.disabled || !__vis(b)) continue;
+    const before = location.href;
+    try { b.click(); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    count++;
+  }
+  // toggle checkbox/radio, then restore
+  for (const t of Array.from(document.querySelectorAll('input[type="checkbox"], input[type="radio"]'))) {
+    if (count >= 40 || hits.length >= 10) break;
+    if (t.disabled || !__vis(t)) continue;
+    const before = location.href;
+    const prev = t.checked;
+    try { t.click(); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    try { if (t.checked !== prev) { t.checked = prev; t.dispatchEvent(new Event('change', { bubbles: true })); } } catch (_) {}
+    count++;
+  }
+  // fill text inputs, then restore
+  for (const inp of Array.from(document.querySelectorAll('input[type="text"], input[type="email"], input[type="search"], textarea'))) {
+    if (count >= 60 || hits.length >= 10) break;
+    if (inp.disabled || inp.readOnly || !__vis(inp)) continue;
+    const before = location.href;
+    const prev = inp.value == null ? '' : String(inp.value);
+    try { inp.value = 'test 123'; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    try { inp.value = prev; inp.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+    count++;
+  }
+  obs.disconnect();
+  return hits.slice(0, 10);
+})()`;
+}
+const LIVE_REGION_DETAIL = {
+  fr: "Mise à jour de contenu déclenchée par une interaction hors d'une région live (aria-live / role=status|alert|log) — probablement non restituée aux technologies d'assistance (4.1.3).",
+  en: "Content update triggered by an interaction outside any live region (aria-live / role=status|alert|log) — likely not announced to assistive technology (4.1.3).",
+};
+
+async function probeLiveRegion(page: Any, lang: Lang): Promise<ProbeHit[]> {
+  const detail = LIVE_REGION_DETAIL[lang] ?? LIVE_REGION_DETAIL.en;
+  return (await page.evaluate(liveRegionExpr(detail)).catch(() => [])) as ProbeHit[];
 }
 
 async function probeHover(page: Any): Promise<ProbeHit[]> {
@@ -270,9 +580,16 @@ async function probeHover(page: Any): Promise<ProbeHit[]> {
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
 /** Drive one page through axe-core + every probe, returning a RunnerOutput. */
-async function runOnPage(browser: Any, AxeBuilder: Any, target: string, isFile: boolean, storageState?: string): Promise<RunnerOutput> {
-  const context = await browser.newContext(storageState ? { storageState } : {});
+async function runOnPage(
+  browser: Any,
+  AxeBuilder: Any,
+  target: string,
+  isFile: boolean,
+  opts: { storageState?: string; interact: boolean; lang: Lang },
+): Promise<RunnerOutput> {
+  const context = await browser.newContext(opts.storageState ? { storageState: opts.storageState } : {});
   const page = await context.newPage();
+  const empty: ProbeHit[] = [];
   try {
     const url = isFile ? "file://" + resolve(target) : target;
     await page.goto(url, { waitUntil: "load", timeout: 45000 });
@@ -289,19 +606,51 @@ async function runOnPage(browser: Any, AxeBuilder: Any, target: string, isFile: 
       tags: v.tags as string[],
       nodes: (v.nodes as Any[]).slice(0, 10).map((n: Any) => ({ target: (n.target as unknown[]).map(String), html: ((n.html as string) || "").slice(0, 200) })),
     }));
-    // clean-DOM probes first (normal viewport), then viewport/zoom, then the
-    // text-spacing override LAST (it mutates the page, so nothing runs after it).
-    // Each probe is guarded: a single probe failing degrades to no findings for that
-    // criterion rather than zeroing the whole page (axe results are already captured).
-    const focusVisible = await probeFocusVisible(page).catch(() => [] as ProbeHit[]);
-    const hover = await probeHover(page).catch(() => [] as ProbeHit[]);
+    // clean-DOM probes first (normal viewport), then — with inputs FILLED when interactions
+    // are on — viewport/zoom, then the text-spacing override. Each probe is guarded: a single
+    // probe failing degrades to no findings for that criterion rather than zeroing the whole
+    // page (axe results are already captured). The stateful interaction probes (dialogs,
+    // live-region) run LAST so their DOM side effects can never leak into the stress
+    // measurements; `--no-interact` (opts.interact === false) skips fill/dialogs/live-region
+    // entirely — the exact pre-stateful behaviour.
+    const focusVisible = await probeFocusVisible(page).catch(() => empty);
+    const hover = await probeHover(page).catch(() => empty);
+    const l = opts.lang;
+    if (opts.interact) await page.evaluate(FILL_INPUTS_STEP).catch(() => {});
     const reflowZoom = (await page.evaluate(REFLOW_ZOOM_PROBE).catch(() => [])) as ProbeHit[];
+    const inputOverflowZoom = opts.interact
+      ? ((await page.evaluate(inputOverflowZoomExpr(INPUT_OVERFLOW_DETAIL.zoom[l], CELL_SUFFIX[l])).catch(() => [])) as ProbeHit[])
+      : [];
     await page.setViewportSize({ width: 320, height: 800 }).catch(() => {});
     const reflow = (await page.evaluate(REFLOW_PROBE).catch(() => ({ horizontalScroll: false }))) as { horizontalScroll: boolean };
+    const inputOverflowReflow = opts.interact
+      ? ((await page.evaluate(inputOverflowExpr(INPUT_OVERFLOW_DETAIL.reflow[l], CELL_SUFFIX[l])).catch(() => [])) as ProbeHit[])
+      : [];
     await page.setViewportSize({ width: 1280, height: 900 }).catch(() => {});
     await page.addStyleTag({ content: TEXT_SPACING_CSS }).catch(() => {});
     const textSpacing = (await page.evaluate(TEXT_SPACING_PROBE).catch(() => [])) as ProbeHit[];
-    return { url: (page.url() as string) || target, violations, reflow, focusVisible, hover, reflowZoom, textSpacing };
+    const inputOverflowSpacing = opts.interact
+      ? ((await page.evaluate(inputOverflowExpr(INPUT_OVERFLOW_DETAIL.spacing[l], CELL_SUFFIX[l])).catch(() => [])) as ProbeHit[])
+      : [];
+    if (opts.interact) await page.evaluate(RESTORE_INPUTS_STEP).catch(() => {});
+    // Stateful interaction probes last (opened dialogs / clicked buttons leave the DOM
+    // altered — nothing measures after them). Dialog focus issues fold into the same 2.4.7
+    // focus-visible bucket.
+    const dialogFocus = opts.interact ? await probeDialogs(page).catch(() => empty) : [];
+    const liveRegion = opts.interact ? await probeLiveRegion(page, l).catch(() => empty) : [];
+    return {
+      url: (page.url() as string) || target,
+      violations,
+      reflow,
+      focusVisible: dialogFocus.length ? [...focusVisible, ...dialogFocus] : focusVisible,
+      hover,
+      reflowZoom,
+      textSpacing,
+      inputOverflowReflow,
+      inputOverflowZoom,
+      inputOverflowSpacing,
+      liveRegion,
+    };
   } finally {
     await context.close();
   }
@@ -312,6 +661,9 @@ export interface LocalScanOpts {
   cwd: string;
   storageState?: string;
   lang?: Lang;
+  // Stateful probes (fill inputs → input-overflow, open dialogs, live-region) ON by default;
+  // `scan --no-interact` sets this false to fall back to the pristine-page probes only.
+  interact?: boolean;
 }
 
 /** Run the dynamic tier locally over a single URL/file (no Docker). */
@@ -321,11 +673,13 @@ export async function runScanLocal(opts: LocalScanOpts): Promise<DynamicResult> 
     throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   const isFile = !isUrl && statSync(opts.target).isFile();
+  const lang = opts.lang ?? "en";
+  const interact = opts.interact !== false;
   const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
   const browser = await launchChromium(chromium);
   try {
-    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, opts.storageState);
-    return toDynamicResult(out, opts.target, opts.lang ?? "en", LOCAL_ENGINE);
+    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, { storageState: opts.storageState, interact, lang });
+    return toDynamicResult(out, opts.target, lang, LOCAL_ENGINE);
   } finally {
     await browser.close();
   }
@@ -335,17 +689,20 @@ export interface LocalManyOpts {
   cwd: string;
   storageState?: string;
   lang?: Lang;
+  interact?: boolean;
 }
 
 /** Run the local dynamic tier over many URLs (one browser, one context per page). */
 export async function runScanManyLocal(urls: string[], opts: LocalManyOpts): Promise<DynamicResult> {
+  const lang = opts.lang ?? "en";
+  const interact = opts.interact !== false;
   const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
   const browser = await launchChromium(chromium);
   const findings: DynamicFinding[] = [];
   try {
     for (const url of urls) {
-      const out = await runOnPage(browser, AxeBuilder, url, false, opts.storageState);
-      findings.push(...toDynamicResult(out, url, opts.lang ?? "en", LOCAL_ENGINE).findings);
+      const out = await runOnPage(browser, AxeBuilder, url, false, { storageState: opts.storageState, interact, lang });
+      findings.push(...toDynamicResult(out, url, lang, LOCAL_ENGINE).findings);
     }
   } finally {
     await browser.close();

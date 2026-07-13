@@ -141,6 +141,11 @@ const RULE_TO_CRITERIA = {
   "aria-hidden-focusable": ["7.1"], "redundant-aria": ["7.1"], "nested-interactive": ["7.1"],
   "cross-aria-forwarding": ["7.1"], "cross-aria-ref-cross-file": ["7.1"], "cross-prop-drilled-name-lost": ["7.1"],
   "clickable-noninteractive": ["7.3"], "live-region-conflict": ["7.5"], "status-message-not-assertive": ["7.5"],
+  // Dynamic tier (scan --local): the live-region probe projects onto WCAG 4.1.3 → RGAA 7.5
+  // (status messages). NOTE: Ara filed the source finding under RGAA 7.4 (change of context,
+  // WCAG 3.2.1/3.2.2); the WCAG-4.1.3 projection is 7.5, not 7.4. Owner decision pending —
+  // flip this to ["7.4"] here (one line) if the audit should align with Ara's filing.
+  "dyn-live-region": ["7.5"],
   "disabled-context-content": ["7.1", "10.8"],
   "axe:aria-allowed-attr": ["7.1"], "axe:aria-allowed-role": ["7.1"], "axe:aria-roles": ["7.1"],
   "axe:aria-required-attr": ["7.1"], "axe:aria-required-children": ["7.1"], "axe:aria-required-parent": ["7.1"],
@@ -161,6 +166,9 @@ const RULE_TO_CRITERIA = {
   "css-generated-content-informative": ["10.2"],
   "meta-viewport-zoom-block": ["10.4"], "axe:meta-viewport": ["10.4"], "axe:meta-viewport-large": ["10.4"],
   "dyn-reflow": ["10.11"], "dyn-reflow-zoom": ["10.4"], "dyn-focus-visible": ["10.7"], "dyn-text-spacing": ["10.12"], "dyn-hover": ["10.13"],
+  // Stateful input-overflow probes — a filled input clipped under each stress, same RGAA
+  // theme as the corresponding reflow/zoom/text-spacing residual probe above.
+  "dyn-input-overflow-reflow": ["10.11"], "dyn-input-overflow-zoom": ["10.4"], "dyn-input-overflow-spacing": ["10.12"],
   // Theme 11 — forms (11.1 field label, 11.5 field grouping, 11.6 fieldset legend, 11.9 button label, 11.10 input control, 11.13 autocomplete)
   "control-label-missing": ["11.1"], "label-for-dangling": ["11.1"], "placeholder-as-label": ["11.1"],
   "form-field-multiple-labels": ["11.1"], "select-has-option": ["11.1"], "control-name-title-only": ["11.1"],

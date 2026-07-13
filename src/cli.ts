@@ -61,7 +61,7 @@ Usage:
   ultra11y fix      <globs… | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
-  ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
+  ultra11y scan     <url|file…> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--no-interact] [--merge <audit.json>] [--out <dir>] [--json]
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--runtime …] [--cwd <dir>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
 
@@ -141,7 +141,13 @@ Commands:
              no Docker) additionally probes focus visibility (2.4.7), 200% zoom
              (1.4.4), text spacing (1.4.12), content on hover (1.4.13) and target
              size (2.5.8), and accepts --storage-state for authenticated pages.
-             --merge folds the findings into a static AuditResult (manual → C/NC).
+             By default the local runtime is STATEFUL: it types long values into
+             inputs and flags any that clip at 320px/200%/text-spacing (1.4.10/1.4.4/
+             1.4.12 — esp. inputs inside table cells), opens closed dialogs to re-check
+             focus, and drives SAFE interactions (fill / toggle / click type=button —
+             never a link, submit or navigation) to spot content updated outside a live
+             region (4.1.3). --no-interact disables all of that (pristine-page probes
+             only). --merge folds the findings into a static AuditResult (manual → C/NC).
              --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
              links BFS-crawled from a start URL) and aggregate the findings.
 
@@ -225,6 +231,11 @@ Options:
                      (and the browser) from here (e.g. --cwd packages/app)
   --storage-state <file>  scan: --runtime local — Playwright storageState JSON for
                      authenticated pages (e.g. test-results/.auth/user.json)
+  --no-interact      scan: --runtime local — disable the STATEFUL probes (fill inputs,
+                     open dialogs, live-region). Default is ON; the interactions are
+                     strictly non-navigating (fill text inputs, toggle checkbox/radio,
+                     click button[type=button] — never a link/submit/navigation) and
+                     restore page state, asserting location.href is unchanged
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
                      check: engage the semantic gate — requires an adjudicated verdicts
@@ -328,6 +339,7 @@ const BOOLEAN_FLAGS = new Set([
   "override",
   "local",
   "docker",
+  "no-interact",
   "clean",
   "eco",
   "help",
@@ -1321,6 +1333,13 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
     return 2;
   }
 
+  // Stateful probes (fill inputs → input-overflow, open dialogs, live-region) are ON by
+  // default for the local runtime. SAFETY CONTRACT: they perform only non-navigating
+  // actions (fill text inputs, toggle checkbox/radio, click button[type=button]) — never a
+  // link, never a submit, never a form submit — and abort+restore if location.href changes.
+  // `--no-interact` disables them, leaving only the pristine-page probes. (Docker never
+  // interacts.)
+  const interact = p.flags["no-interact"] !== true;
   const sitemap = typeof p.flags.sitemap === "string" ? (p.flags.sitemap as string) : undefined;
   const crawl = typeof p.flags.crawl === "string" ? (p.flags.crawl as string) : undefined;
   let dynamic: DynamicResult;
@@ -1329,7 +1348,7 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
       const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : undefined;
       const max = typeof p.flags.max === "string" ? Number(p.flags.max) : undefined;
       dynamic = useLocal
-        ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang })
+        ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang, interact })
         : await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
       const targets = p.positionals.filter((a) => a !== "-");
@@ -1340,8 +1359,8 @@ async function cmdScan(p: ParsedArgs): Promise<number> {
       if (useLocal) {
         dynamic =
           targets.length === 1
-            ? await runScanLocal({ target: targets[0]!, cwd, storageState, lang })
-            : await runScanManyLocal(targets, { cwd, storageState, lang });
+            ? await runScanLocal({ target: targets[0]!, cwd, storageState, lang, interact })
+            : await runScanManyLocal(targets, { cwd, storageState, lang, interact });
       } else {
         dynamic = targets.length === 1 ? runScan({ target: targets[0]! }) : runScanMany(targets);
       }

@@ -9,7 +9,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { runCli, FIX, mkTmp, cleanupTmp, hasDocker } from "./helpers.js";
+import { runCli, FIX, mkTmp, cleanupTmp, hasDocker, hasLocalPlaywright, REPO_ROOT } from "./helpers.js";
 
 afterAll(cleanupTmp);
 
@@ -75,5 +75,50 @@ describe("e2e: dynamic-tier delta — scan --merge upgrades the residual criteri
     expect(runCli(["scan", FIX.fixedWidthReflow, "--merge", auditPath, "--out", dir]).code).toBe(0);
     const after = JSON.parse(readFileSync(auditPath, "utf8")) as Audit;
     expect(statusOf(after, "1.4.10")).toBe("NC");
+  });
+});
+
+// ---- stateful probe smoke (Task 4): the input-in-a-table-cell that only clips once FILLED.
+// Needs a real browser (layout: scrollWidth/clientWidth) → runs ONLY where a local
+// Playwright + Chromium resolve from the repo. Skipped (not failed) otherwise: the
+// synthetic-RunnerOutput fold logic is proven browser-free in tests/scan.test.ts.
+interface DynFinding {
+  ruleId: string;
+  criteriaId: string;
+  severity: string;
+  message: string;
+}
+interface DynResult {
+  findings: DynFinding[];
+}
+const runLocal = hasLocalPlaywright(REPO_ROOT);
+
+describe("e2e: stateful scan — a FILLED input inside a table cell clips at 320px/200%/text-spacing", () => {
+  it.skipIf(!runLocal)("flags the clipping input (input-overflow → 1.4.10/1.4.4/1.4.12, with the table-cell note)", () => {
+    const r = runCli(["scan", FIX.inputInCellClip, "--runtime", "local", "--cwd", REPO_ROOT, "--json"]);
+    expect(r.code).toBe(0);
+    const dyn = JSON.parse(r.stdout) as DynResult;
+    const overflow = dyn.findings.filter((f) => f.ruleId.startsWith("dyn-input-overflow"));
+    expect(overflow.length).toBeGreaterThan(0);
+    // maps onto the reflow / zoom / spacing SCs
+    const scs = new Set(overflow.map((f) => f.criteriaId));
+    expect([...scs].some((sc) => sc === "1.4.10" || sc === "1.4.4" || sc === "1.4.12")).toBe(true);
+    // carries the "input inside a table cell" detail
+    expect(overflow.some((f) => /table cell|cellule de tableau/.test(f.message))).toBe(true);
+  });
+
+  it.skipIf(!runLocal)("the clean counterpart (growing field) fires NO input-overflow finding", () => {
+    const r = runCli(["scan", FIX.inputInCellClean, "--runtime", "local", "--cwd", REPO_ROOT, "--json"]);
+    expect(r.code).toBe(0);
+    const dyn = JSON.parse(r.stdout) as DynResult;
+    expect(dyn.findings.some((f) => f.ruleId.startsWith("dyn-input-overflow"))).toBe(false);
+  });
+
+  it.skipIf(!runLocal)("--no-interact turns the stateful probes off (no input-overflow, no live-region)", () => {
+    const r = runCli(["scan", FIX.inputInCellClip, "--runtime", "local", "--cwd", REPO_ROOT, "--no-interact", "--json"]);
+    expect(r.code).toBe(0);
+    const dyn = JSON.parse(r.stdout) as DynResult;
+    expect(dyn.findings.some((f) => f.ruleId.startsWith("dyn-input-overflow"))).toBe(false);
+    expect(dyn.findings.some((f) => f.ruleId === "dyn-live-region")).toBe(false);
   });
 });

@@ -231,7 +231,26 @@ export interface AuditResult {
 // the axe + 320px-reflow pair to the bespoke residual-criteria probes the local
 // runtime adds (focus visibility, 200% zoom reflow, text spacing, content-on-hover)
 // — the criteria axe alone cannot decide. (Target size 2.5.8 is left to axe's own rule.)
-export type DynamicEngine = "axe" | "reflow" | "focus-visible" | "reflow-zoom" | "text-spacing" | "hover";
+//
+// The `input-overflow-*` and `live-region` engines are STATEFUL: they only ever
+// populate when the local runtime runs with interactions ON (the default; `scan
+// --no-interact` disables them). Each measures the page AFTER a real user action —
+// long values typed into inputs, or a safe interaction (fill / toggle / click a
+// type=button) — the class of non-conformity a pristine page never reveals. The
+// three input-overflow engines share the "filled input clipped/unreadable" check but
+// map to a different SC per stress (320px reflow 1.4.10, 200% zoom 1.4.4, text
+// spacing 1.4.12); live-region maps to 4.1.3 Status Messages.
+export type DynamicEngine =
+  | "axe"
+  | "reflow"
+  | "focus-visible"
+  | "reflow-zoom"
+  | "text-spacing"
+  | "hover"
+  | "input-overflow-reflow"
+  | "input-overflow-zoom"
+  | "input-overflow-spacing"
+  | "live-region";
 
 export interface DynamicFinding {
   criteriaId: string;

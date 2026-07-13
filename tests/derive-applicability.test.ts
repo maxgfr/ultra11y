@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAudit } from "../src/audit.js";
 import { derivePackResults, loadPack, registerRuntimePack } from "../src/standards/index.js";
+import { toDynamicResult, mergeDynamic } from "../src/scan.js";
 
 const dir = mkdtempSync(join(tmpdir(), "u11y-derive-"));
 function auditHtml(html: string) {
@@ -92,6 +93,38 @@ describe("RGAA applicability — a pack WITHOUT appliesTo keeps the legacy fan-o
     const rows = derivePackResults(audit, "legacyfan");
     expect(statusOf(rows, "L1")).toBe("NC");
     expect(statusOf(rows, "L2")).toBe("NC");
+  });
+});
+
+describe("RGAA applicability — the stateful scan probes project onto the right themes", () => {
+  // A merged audit carrying the Task-4 stateful probe findings, then derived to RGAA.
+  const audit = auditHtml(`<!doctype html><html lang="fr"><head><title>t</title></head><body><main><h1>H</h1></main></body></html>`);
+  const dyn = toDynamicResult(
+    {
+      url: "https://exemple.fr",
+      violations: [],
+      reflow: { horizontalScroll: false },
+      inputOverflowReflow: [{ selector: "input.a", html: "<input>", detail: "clip 320" }],
+      inputOverflowZoom: [{ selector: "input.a", html: "<input>", detail: "clip 200%" }],
+      inputOverflowSpacing: [{ selector: "input.a", html: "<input>", detail: "clip spacing" }],
+      liveRegion: [{ selector: "div.toast", html: "<div>", detail: "unannounced update" }],
+    },
+    "https://exemple.fr",
+    "fr",
+    "axe-core@playwright (local)",
+  );
+  const rows = derivePackResults(mergeDynamic(audit, dyn, "fr"), "rgaa");
+  const statusOfR = (id: string) => rows.find((r) => r.id === id)?.status;
+
+  it("input-overflow lands on RGAA 10.11 (320px), 10.4 (zoom) and 10.12 (text-spacing)", () => {
+    expect(statusOfR("10.11")).toBe("NC");
+    expect(statusOfR("10.4")).toBe("NC");
+    expect(statusOfR("10.12")).toBe("NC");
+  });
+
+  it("live-region lands on RGAA 7.5 (status messages), NOT 7.4 (change of context)", () => {
+    expect(statusOfR("7.5")).toBe("NC");
+    expect(statusOfR("7.4")).not.toBe("NC");
   });
 });
 

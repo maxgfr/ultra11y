@@ -105,6 +105,55 @@ describe("mergeDynamic", () => {
       expect(g.c + g.nc + g.na + g.manual).toBe(inGuideline);
     }
   });
+  // A best-practice-only axe violation (tags present, none `wcag<digits>`) folds as an
+  // ADVISORY finding: it attaches but never flips the criterion to NC, and the criterion's
+  // residual risk is preserved. A normative violation still flips to NC.
+  it("a best-practice-only violation merges as advisory: attached, criterion NOT flipped to NC, residual kept", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    const bestPracticeOut = {
+      url: "https://exemple.fr",
+      violations: [
+        {
+          id: "empty-table-header",
+          impact: "minor",
+          help: "Table header text should not be empty",
+          tags: ["cat.name-role-value", "best-practice"],
+          nodes: [{ target: ["th"], html: "<th></th>" }],
+        },
+      ],
+      reflow: { horizontalScroll: false },
+    };
+    const dyn = toDynamicResult(bestPracticeOut, "https://exemple.fr");
+    expect(dyn.findings.find((f) => f.axeRule === "empty-table-header")?.advisory).toBe(true);
+    const merged = mergeDynamic(audit, dyn);
+    const finding = merged.findings.find((f) => f.ruleId === "axe:empty-table-header");
+    expect(finding?.advisory).toBe(true);
+    // 1.3.1 is a judgment criterion → stays manual (residual), NOT NC.
+    expect(merged.criteria.find((c) => c.id === "1.3.1")?.status).not.toBe("NC");
+    expect(merged.residualRisks.some((r) => r.criteriaId === "1.3.1")).toBe(true);
+  });
+
+  it("a normative violation (curated map, wcag tag) still flips its criterion to NC", () => {
+    const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
+    const normativeOut = {
+      url: "https://exemple.fr",
+      violations: [
+        {
+          id: "color-contrast",
+          impact: "serious",
+          help: "Elements must have sufficient color contrast",
+          tags: ["cat.color", "wcag2aa", "wcag143"],
+          nodes: [{ target: ["p"], html: "<p>x</p>" }],
+        },
+      ],
+      reflow: { horizontalScroll: false },
+    };
+    const dyn = toDynamicResult(normativeOut, "https://exemple.fr");
+    expect(dyn.findings.find((f) => f.axeRule === "color-contrast")?.advisory).toBeUndefined();
+    const merged = mergeDynamic(audit, dyn);
+    expect(merged.criteria.find((c) => c.id === "1.4.3")?.status).toBe("NC");
+  });
+
   it("uses each finding's page as its file when merging multi-page (crawl) results", () => {
     const audit = runAudit({ inputs: [`${FIX}conforming/good.html`] });
     const dyn = {

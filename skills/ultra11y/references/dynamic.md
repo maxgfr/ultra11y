@@ -100,6 +100,50 @@ and **local-only** — the Docker `RUNNER` is kept byte-identical to `docker/run
 (`docker-sync` test), so mirroring the probes into the Docker path is deferred. Adversarially
 verify probe findings (a `verify` pass) before filing them.
 
+### Stateful interaction probes (local runtime, interactions ON by default)
+
+The read-only probes above measure a page **as served**. Some non-conformities only appear
+once the user has *interacted* — a filled field that overflows its cell, a status message
+that never reaches a live region. The local runtime therefore also runs a **stateful** pass
+that drives the page, then restores it. **Safety contract**: only NON-navigating actions are
+performed — fill text inputs (a long representative value, respecting `maxlength`), toggle
+checkbox/radio, click `button[type="button"]`. **Never** a link, a submit button, or a form
+submit; every interaction records `location.href` first and aborts + restores if it changed;
+every loop is bounded; original state is always restored.
+
+| Stateful probe | SC | What it adds |
+|---|---|---|
+| fill-inputs → re-measure | 1.4.4 / 1.4.10 / 1.4.12 | fills visible text-like inputs with real content, then re-runs the zoom/reflow/spacing stress probes so an overflow that only occurs *when the field holds the value the auditor must type* is caught |
+| live-region | 4.1.3 | triggers safe interactions and checks that a resulting status message lands in an `aria-live`/`role="status"`/`role="alert"` region (status-messages) — the extra SC `localTestedScs` reports only when interactions are on |
+
+- **`--no-interact`** disables the whole stateful pass (fill + live-region), leaving only the
+  read-only probes — use it when even bounded, non-navigating interaction is unwelcome.
+- **Authenticated-scan click policy.** When a `--storage-state` session is loaded, the
+  live-region probe does **not** click buttons by default (even a `type="button"` click can
+  trigger a server mutation the `location.href` assertion cannot see). Fill/toggle still run.
+  **`--interact-clicks`** re-enables the clicks explicitly; unauthenticated scans keep clicks
+  on. Defense-in-depth on top: a button whose accessible name matches a
+  destructive/submitting verb (delete, remove, send, submit, confirm, pay…) is **never**
+  clicked, in either mode.
+
+## Scan a normative page sample (`scan --sample`)
+
+A real country-standard audit runs over a declared **page sample** (échantillon), not one
+URL. Declare it in `.ultra11yrc.json` under `sample.pages` (+ `transverse`), then:
+
+```
+node scripts/ultra11y.mjs sample check                                   # lint the sample's coverage vs the standard's required kinds
+node scripts/ultra11y.mjs scan --sample --runtime local --cwd packages/app --merge audits/audit-latest.json --out audits
+```
+
+`scan --sample` iterates every configured sample page (per-page `--storage-state` supported
+for authenticated pages), keeps each finding's originating **page name + auth flag** as
+provenance (surfaced in the auditor ticket's *Pages / URLs impactées* and *Contexte de
+reproduction*), and `--merge`s them into the audit. `sample check` is an **advisory** lint —
+it reports which required page kinds the sample lacks (a malformed `sample` block is a hard
+error, exit 2; a merely-incomplete one is guidance, exit 0). See `references/audit.md`
+(sample concept) and `references/packs.md` (`sampleMethodology`).
+
 ## Limits
 
 Even with the local probes, **reading order**, **alt relevance** and the other judgment criteria

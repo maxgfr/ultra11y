@@ -62,7 +62,7 @@ describe("the skills are installable", () => {
   });
 });
 
-const CLI_COMMANDS = new Set(["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack", "orchestrate"]);
+const CLI_COMMANDS = new Set(["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "sample", "fix", "init", "pack", "orchestrate"]);
 
 // The user-facing docs the CLI reference must stay true to — SKILL.mds, references, AND the
 // top-level README + manual test plan (which drifted before this oracle covered them).

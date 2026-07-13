@@ -56,6 +56,39 @@ non-conformity.
 7. **High assurance (optional)**: `references/verify.md` — prove every non-conformity is
    real before you ship.
 
+## The normative page sample (échantillon) — country-standard audits
+
+A file-tree audit answers "is this markup conformant?"; a **country-standard** audit (RGAA,
+Section 508…) is normatively defined over a **representative page sample**, not the whole
+repo. Declare that sample once in `.ultra11yrc.json`:
+
+```json
+{ "standard": "rgaa",
+  "sample": {
+    "pages": [
+      { "id": "accueil", "name": "Page d'accueil", "url": "http://localhost:3000/" },
+      { "id": "contact", "name": "Contact", "url": "http://localhost:3000/contact" },
+      { "id": "compte", "name": "Mon compte", "url": "http://localhost:3000/compte", "auth": true, "storageState": ".auth/user.json", "notes": "connecté" }
+    ],
+    "transverse": ["header", "navigation principale", "pied de page"]
+  } }
+```
+
+- `sample.pages[]` are the audited URLs (each may sit behind `auth` with a per-page
+  `storageState`); `transverse` names the elements audited on **every** page (header, nav,
+  footer, modals…). The `storageState` **path** is used but its content is never read into
+  any output.
+- **Lint the coverage**: `node scripts/ultra11y.mjs sample check` reports which **required
+  page kinds** the active standard's `sampleMethodology` expects but the sample lacks (RGAA:
+  accueil, contact, mentions légales, déclaration d'accessibilité, plan du site, aide,
+  authentification…). Advisory (exit 0) unless the `sample` block is malformed (exit 2).
+- **Scan the sample**: `scan --sample --merge audits/audit-latest.json` iterates every page,
+  keeps each finding's page name + auth flag as provenance, and merges the rendered verdicts
+  in (see `references/dynamic.md`).
+- **Partial-audit honesty**: a `--standard rgaa` report produced **without** a merged sample
+  scan is flagged **partial** — a CLI warning + a report banner naming the needs-rendering
+  criteria that were not tested. Say the audit is partial rather than implying full coverage.
+
 ## Golden rules
 
 - **Never invent a non-conformity**: every `NC` must cite a real, resolvable element

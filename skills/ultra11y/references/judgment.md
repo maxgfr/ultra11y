@@ -20,19 +20,38 @@ This phase makes each verdict defensible and recorded, never invented, never sil
 2. **Rule on each item**, filling its `verdict` in `ADJUDICATE.todo.json` (provenance
    `decidedBy: "agent"` is recorded):
    - `C` — conforming, with a `justification` from the evidence;
-   - `NC` — non-conforming, with ≥1 **groundable** finding (`file`/`line`/`message`/`snippet`);
+   - `NC` — non-conforming, with ≥1 **groundable** finding (`file`/`line`/`message`/`snippet`)
+     **AND a `normativeRef`** citing the precise failed test of the *active standard* (a WCAG
+     technique/SC, or an RGAA test number under `--standard rgaa`). The fold rejects a missing
+     `normativeRef`, or one that does not resolve to a real test of the active standard
+     (anti-fabrication) — a non-conformity must always name the normative rule it breaks;
    - `NA` — not applicable, with a `justification`;
    - `manual` — undecidable from what is captured, with a `reason`: `"needs-rendered-dom"`
      (decide via `scan`) or `"undecidable"`.
+   - `recommendations[]` — a **good practice with no failing normative test** (e.g. "state a
+     download link's format/weight", "one `<h1>` per page") is NOT an NC: record it as a
+     non-normative recommendation (groundable exactly like an NC, but **no `normativeRef`
+     required**). It renders under « Recommandations (non normatives) » and never flips the
+     criterion to NC. A purely UX concern is neither an NC nor a recommendation — leave it out.
 3. **Fold back FAIL-CLOSED**:
    ```
    node scripts/ultra11y.mjs verify --apply ADJUDICATE.todo.json --in audit.json --out .
    ```
    rejects a null verdict, a `C`/`NA` without a `justification`, an `NC` without a groundable
-   finding, a `manual` without a `reason`, or any uncovered residual criterion. Agent `NC`s become
-   real `agent:<sc>` findings that re-render in the report's §2 and re-enter the verify worklist;
-   `report`/`prd` re-render with the adjudicated statuses; §5 shrinks to only the still-`manual`
-   items.
+   finding **or without a resolving `normativeRef`**, a `manual` without a `reason`, or any
+   uncovered residual criterion. Agent `NC`s become real `agent:<sc>` findings that re-render in
+   the report's §2 and re-enter the verify worklist; `report`/`prd` re-render with the adjudicated
+   statuses; §5 shrinks to only the still-`manual` items.
+
+### The judgment-question bank
+
+Each residual criterion in `ADJUDICATE.md` is pre-loaded, alongside the harvested evidence,
+with a curated **question bank** (`src/data/manual-questions.json`, SC-keyed onto the WCAG
+core, both languages) — the concrete questions an auditor asks to decide *that* criterion
+(e.g. under 2.4.4 "does each link's text, in context, convey its destination?"; under 4.1.3
+"is every status change announced in a live region?"). They frame the call; they are prompts,
+not verdicts — you still answer from the evidence and record `C`/`NC`/`NA`/`manual` (+ a
+recommendation where a good practice has no failing normative test).
 4. **Rendering required**: a `manual` item marked `needs-rendered-dom` (computed contrast, visible
    focus, 200% zoom, 320px reflow, content-on-hover) is decided on the **render** (the `scan` tier,
    or inspection) — never from the source.

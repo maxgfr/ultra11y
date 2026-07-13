@@ -24,14 +24,35 @@ node scripts/ultra11y.mjs prd --in audit.json --format remediation # legacy dev 
 
 - **Default (`--format audit`) — the auditor conformance block**: one document
   `audits/prd-YYYY-MM-DD.md`, sectioned by priority (🔴 blocking → 🟠 major → 🟡 minor). Each
-  criterion becomes an entry rendered **with the active standard's vocabulary** (see
-  `references/standards.md` → *Auditor vocabulary*): **theme** (RGAA *Thématique* / WCAG core
-  *Principle · Guideline*), **criterion** + its official wording, **test(s)** (RGAA test
-  numbers `11.6.1` / WCAG techniques), **WCAG** mapping + level, the **finding** (non-conformity,
-  labelled with the standard's *non-conformant* verdict), the **expected** conformant state, a
-  **verification** method, and the occurrence **checklist** (`file:line`) with the cross-file
-  **definition site** (`related`) when present. Localized by `--lang fr|en`. The **GitHub issues**
-  below use this same block by default.
+  criterion becomes a full **ticket** rendered **with the active standard's vocabulary** (see
+  `references/standards.md` → *Auditor vocabulary*):
+  1. **Auditor block** — **theme** (RGAA *Thématique* / WCAG core *Principle · Guideline*),
+     **criterion** + its official wording, **test(s)** (RGAA test numbers `11.6.1` / WCAG
+     techniques), **WCAG** mapping + level, **Priorité**, the **finding** (non-conformity,
+     labelled with the standard's *non-conformant* verdict), the **expected** conformant state,
+     a **verification** method, and the occurrence **checklist** (`file:line`) with the
+     cross-file **definition site** (`related`) when present.
+  2. **Partie technique / Technical details** — **impacted files** (source paths), **impacted
+     pages / URLs** (served locations, each with its sample **page name + auth flag** when
+     `scan --sample` provenance is present), the **expected change** + a before/after
+     **guidance example** (`references/guidance.md`), **Critères d'acceptation / Acceptance
+     criteria** as a Given/When/Then checkbox list, and **Complexité / Complexity** (a
+     deterministic t-shirt size + story points).
+  3. **Contexte de reproduction / Reproduction context** — emitted only when ≥1 occurrence
+     cites a served URL static grounding could not resolve, or a sample page behind
+     authentication: the URL, whether auth is required, and the required-state / reproduction
+     steps. This is what lets a developer reproduce a scan/`--sample` finding.
+
+  Sections 2–3 are opt-out with **`--no-technical`** (a pure-auditor consumption drops the
+  ticket scaffolding, keeping only the auditor block). Everything is localized by `--lang
+  fr|en`. The **GitHub issues** below use this same block by default.
+- **Advisory findings render as recommendations, never NCs.** A non-normative recommendation
+  (an advisory pack rule, or an agent `recommendations[]` verdict) is rendered under
+  « Recommandations (non normatives) » / "Recommendations (non-normative)" with a 💡 marker and
+  the « Recommandation (non normative) » tag — a distinct, non-parseable list so `verify` never
+  captures it as an NC claim. An advisory finding riding along in an otherwise-NC criterion is
+  split out under « Recommandations associées ». It never enters the occurrence checklist,
+  never flips a criterion to NC, and never counts toward `conformancePct`.
 - **`--format remediation` (legacy dev backlog)**: the previous developer-oriented block —
   fix(es), an **effort estimate** (S/M/L), a **before/after example** from the implementation
   guidance (`references/guidance.md`), and the occurrence checklist.

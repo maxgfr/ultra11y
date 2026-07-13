@@ -121,7 +121,9 @@ affect the WCAG core verdict — they surface only in the pack's own report.
 The shipped RGAA pack uses exactly this rule (built by `scripts/build-pack-rgaa.mjs`, never
 hand-edited): an **advisory** flag on download links whose visible text omits the file
 format/weight — the DSFR auditor recommendation under criterion 6.1. Advisory ⇒ it renders
-as a recommendation and **never** makes 6.1 non-conformant.
+as a recommendation and **never** makes 6.1 non-conformant. Its `message`/`remediation` pair
+is **localized**: the finding carries both `en` and `fr`, so a `--lang fr` RGAA report renders
+the French recommendation text (not the English bake).
 
 **The matcher vocabulary is deliberately CAPPED** at what RGAA needs today:
 
@@ -138,7 +140,13 @@ cross-file resolution — is **out of scope on purpose**: it belongs in a core W
 engine rule instead, where every standard benefits. `pack check` rejects a rule whose
 criterion doesn't exist, whose SC isn't a real WCAG criterion, whose regex is unsafe/won't
 compile, whose has/lacks nest too deep, or whose `message`/`remediation` is missing `en`
-or `fr`.
+or `fr`. It also rejects a **match node with no condition** (`{}` — it would fire on every
+element) and a match node carrying an **unknown key** (a typo like `{ tgo: "a" }` is a hard
+error, never silently ignored): every node must carry ≥1 of `tag`/`attrs`/`text`/`has`/`lacks`.
+The **ReDoS guard** on every regex rejects the classic single-quantified-atom shape
+(`(a+)+`), an overlapping alternation under a quantifier (`(a|a)*`), and a nested quantifier
+over a group (`(ab+)+`) — while still accepting an anchored criterion grammar like `(\.\d+)*`
+and a non-quantified extension alternation like `(pdf|docx?|zip)`.
 
 ### `overrides` — re-normativize within a projection
 
@@ -152,6 +160,29 @@ Applied **only** in `derivePackResults`, it flips a finding's normativity
 core WCAG result is never mutated. This is the precise *"WCAG can differ from RGAA"*
 mechanism: a standard can treat as normative something WCAG leaves advisory (or vice
 versa) without changing the canonical engine verdict.
+
+### `sampleMethodology` — the standard's required page kinds
+
+A country standard defines its audit over a **normative page sample** (see
+`references/audit.md`). A pack declares the page KINDS a real audit of it must cover; the
+mechanics (a project's actual `sample.pages`) live in `.ultra11yrc.json`, never in the pack.
+
+```json
+{ "sampleMethodology": {
+    "requiredKinds": [
+      { "id": "accueil", "label": { "fr": "Page d'accueil" }, "keywords": ["accueil", "home"] },
+      { "id": "mentions-legales", "label": { "fr": "Mentions légales" }, "keywords": ["mentions", "legal"] },
+      { "id": "declaration-accessibilite", "label": { "fr": "Déclaration d'accessibilité" }, "keywords": ["declaration", "accessibilite"] }
+    ] } }
+```
+
+`sample check` fuzzy-matches (accent-insensitive) each required kind's `keywords` against the
+configured pages' name/notes/url and reports the missing kinds. It is purely **advisory**
+(the sample is opt-in, the missing kinds are guidance not a gate), so a malformed
+`sampleMethodology` is a validator **warning** and the field is ignored — never a hard
+failure that blocks the pack from deriving reports. RGAA ships the reference list (accueil,
+contact, mentions légales, déclaration d'accessibilité, plan du site, aide, authentification,
+pages représentatives + éléments transverses).
 
 ## Gate-compatibility note (id grammar)
 

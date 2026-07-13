@@ -22483,6 +22483,17 @@ var rgaa_default = {
       }
     ]
   },
+  secondaryMappings: [
+    {
+      ruleId: "dyn-live-region",
+      criterion: "7.4",
+      note: {
+        fr: "Rel\xE8ve aussi de 7.4 (changement de contexte) selon le classement Ara ; projection WCAG-fid\xE8le = 7.5.",
+        en: "Also classified under 7.4 (change of context) per Ara; the WCAG-faithful projection is 7.5."
+      },
+      enabled: false
+    }
+  ],
   rules: [
     {
       id: "download-link-format",
@@ -23976,8 +23987,6 @@ var rgaa_default = {
           "axe:aria-valid-attr-value",
           "axe:nested-interactive",
           "axe:presentation-role-conflict",
-          "cross-aria-forwarding",
-          "cross-aria-ref-cross-file",
           "cross-prop-drilled-name-lost",
           "disabled-context-content",
           "invalid-aria-role",
@@ -24162,7 +24171,7 @@ var rgaa_default = {
       techniques: ["H57"],
       wcag: ["3.1.1"],
       appliesTo: {
-        ruleIds: ["axe:html-has-lang", "axe:html-xml-lang-mismatch", "cross-page-lang", "html-lang-missing"]
+        ruleIds: ["axe:html-has-lang", "axe:html-xml-lang-mismatch", "html-lang-missing"]
       }
     },
     {
@@ -24344,16 +24353,7 @@ var rgaa_default = {
       ],
       wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
       appliesTo: {
-        ruleIds: [
-          "axe:empty-heading",
-          "axe:heading-order",
-          "axe:page-has-heading-one",
-          "cross-name-ref-cross-file",
-          "empty-heading",
-          "h1-missing",
-          "h1-multiple",
-          "heading-order-skip"
-        ]
+        ruleIds: ["axe:empty-heading", "axe:heading-order", "axe:page-has-heading-one", "empty-heading", "h1-missing", "h1-multiple", "heading-order-skip"]
       }
     },
     {
@@ -25416,7 +25416,7 @@ var rgaa_default = {
       ],
       wcag: ["2.4.1", "2.4.3", "3.2.3"],
       appliesTo: {
-        ruleIds: ["axe:bypass", "axe:skip-link", "cross-skip-link-target", "skip-link-target-missing"]
+        ruleIds: ["axe:bypass", "axe:skip-link", "skip-link-target-missing"]
       }
     },
     {
@@ -26611,6 +26611,37 @@ function validatePack(raw, opts = {}) {
       }
     }
   }
+  if (p.secondaryMappings !== void 0) {
+    if (!Array.isArray(p.secondaryMappings)) {
+      err("secondaryMappings", "secondaryMappings must be an array");
+    } else {
+      p.secondaryMappings.forEach((raw2, i) => {
+        const at = `secondaryMappings[${i}]`;
+        if (typeof raw2 !== "object" || raw2 === null || Array.isArray(raw2)) {
+          err(at, "each secondary mapping must be an object { ruleId, criterion, note?, enabled? }");
+          return;
+        }
+        const m = raw2;
+        if (typeof m.ruleId !== "string" || m.ruleId.trim() === "") err(`${at}.ruleId`, "secondary mapping ruleId must be a non-empty string");
+        if (typeof m.criterion !== "string" || m.criterion === "") {
+          err(`${at}.criterion`, "secondary mapping criterion must be a non-empty string");
+        } else if (!ids.has(m.criterion)) {
+          err(`${at}.criterion`, `secondary mapping projects onto criterion "${m.criterion}" which does not exist in this pack`);
+        }
+        if (m.enabled !== void 0 && typeof m.enabled !== "boolean") err(`${at}.enabled`, "secondary mapping enabled must be a boolean");
+        if (m.note !== void 0) {
+          if (typeof m.note !== "object" || m.note === null || Array.isArray(m.note)) {
+            err(`${at}.note`, `secondary mapping note must be a localized object (e.g. { "${loc}": "\u2026" })`);
+          } else if (typeof m.note[loc] !== "string") {
+            warn(`${at}.note`, `secondary mapping note has no string for the default locale "${loc}"`);
+          }
+        }
+        if (typeof m.ruleId === "string" && m.ruleId.trim() !== "" && typeof m.criterion === "string" && ids.has(m.criterion)) {
+          warn(at, `secondary mapping bypasses the SC crosswalk \u2014 intentional deviation (ruleId "${m.ruleId}" \u2192 criterion "${m.criterion}")`);
+        }
+      });
+    }
+  }
   return done();
 }
 function validateMatch(node, path, depth, err, top) {
@@ -26709,6 +26740,17 @@ function registerRuntimePack(raw, glossary = {}, opts = {}) {
   const v = validatePack(raw, { knownKeys: new Set(listStandards()), allowOverride: opts.override });
   if (v.ok && v.pack) registry.set(v.pack.key, { pack: v.pack, glossary });
   return v;
+}
+function enableSecondaryMapping(packKey, m) {
+  const pack = loadPack(packKey);
+  const list = pack.secondaryMappings ??= [];
+  const existing = list.find((x) => x.ruleId === m.ruleId && x.criterion === m.criterion);
+  if (existing) {
+    existing.enabled = true;
+    if (m.note) existing.note = m.note;
+  } else {
+    list.push({ ruleId: m.ruleId, criterion: m.criterion, ...m.note ? { note: m.note } : {}, enabled: true });
+  }
 }
 function isCore(key) {
   return key === CORE_KEY;
@@ -27554,6 +27596,14 @@ function ruleMatches(ruleId, patterns) {
   }
   return false;
 }
+function packCriteriaForFinding(pack, finding) {
+  return pack.criteria.filter((pc) => pc.wcag.includes(finding.criteriaId) && (!pc.appliesTo || ruleMatches(finding.ruleId, pc.appliesTo.ruleIds))).map((pc) => pc.id);
+}
+function packConformancePct(derived) {
+  const c = derived.filter((d) => d.status === "C").length;
+  const nc = derived.filter((d) => d.status === "NC").length;
+  return c + nc === 0 ? 100 : Math.round(c / (c + nc) * 100);
+}
 function overrideFinding(f, overrides) {
   const o = overrides?.[f.ruleId];
   if (!o) return f;
@@ -27562,12 +27612,29 @@ function overrideFinding(f, overrides) {
   if (o.severity) patched.severity = o.severity;
   return patched;
 }
+function pickLocale(ls, preferred) {
+  if (!ls) return void 0;
+  return ls[preferred] ?? ls.en ?? ls.fr ?? Object.values(ls).find((v) => typeof v === "string");
+}
+function tagSecondary(f, note) {
+  return { ...f, secondary: note ? { note } : {} };
+}
+function applySecondaryMappings(base, pc, enabled, sources, defaultLocale) {
+  const active = enabled.filter((m) => m.criterion === pc.id);
+  if (!active.length) return base;
+  const added = [];
+  for (const m of active) for (const f of sources) if (f.ruleId === m.ruleId) added.push(tagSecondary(f, pickLocale(m.note, defaultLocale)));
+  if (!added.length) return base;
+  const findings = [...base.findings, ...added];
+  if (added.some((f) => !f.advisory)) return { id: pc.id, theme: pc.theme, status: aggregate([base.status, "NC"]), findings, scs: base.scs };
+  return { ...base, findings };
+}
 function derivePackResults(audit, packKey) {
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
   const myPackFindings = (audit.packFindings ?? []).filter((f) => f.ruleId.startsWith(`pack:${packKey}:`));
   const overrides = pack.overrides;
-  return pack.criteria.map((pc) => {
+  const deriveBase = (pc) => {
     const outOfScope = pc.wcag.every((sc) => {
       const s = knownScStatus(sc);
       return s === "out-of-core" || s === "removed";
@@ -27592,6 +27659,12 @@ function derivePackResults(audit, packKey) {
     }
     const status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
     return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
+  };
+  const enabledSecondary = (pack.secondaryMappings ?? []).filter((m) => m.enabled === true);
+  const secondarySources = enabledSecondary.length ? [...audit.criteria.flatMap((c) => c.findings), ...myPackFindings] : [];
+  return pack.criteria.map((pc) => {
+    const base = deriveBase(pc);
+    return enabledSecondary.length ? applySecondaryMappings(base, pc, enabledSecondary, secondarySources, pack.defaultLocale) : base;
   });
 }
 
@@ -30210,6 +30283,15 @@ function sampleMetaOf(f) {
 function subHeading(heading) {
   return "#".repeat(Math.min((heading?.length ?? 2) + 1, 4));
 }
+var ADVISORY_ICON = "\u{1F4A1}";
+function occurrenceLine(f, lang, opts) {
+  const marker = opts.marker === "checkbox" ? "[ ]" : ADVISORY_ICON;
+  return `- ${marker} \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`;
+}
+function relatedLine(related, lang, opts) {
+  const sel = opts.selector ? ` (\`${related.selectorHint}\`)` : "";
+  return `  - \u21B3 ${resolveNote(related, lang)} : \`${related.file}:${related.line}\`${sel}`;
+}
 function renderAuditorUnit(unit, standard, lang, opts = {}) {
   const s = L[lang];
   if (unit.advisory) return renderAdvisoryUnit(unit, standard, lang, opts);
@@ -30249,8 +30331,9 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
   if (fixes.length) out.push(`**${s.expected} (${v.conformant})** : ${fixes.join(" ; ")}`);
   out.push(`**${s.verification}** : ${s.verify}`, "");
   for (const f of normative) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    if (f.secondary?.note) out.push(`  - \u21B3 ${f.secondary.note}`);
+    if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
     if (f.origin) {
       const comp = f.origin.component ?? f.origin.sourceFile ?? f.file;
       const srcFile = f.origin.sourceFile ?? f.origin.capture;
@@ -30261,7 +30344,7 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
   out.push("");
   if (advisories.length) {
     out.push(`_${s.associatedRec}_`, "");
-    for (const f of advisories) out.push(`- ${ADVISORY_ICON} \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
+    for (const f of advisories) out.push(occurrenceLine(f, lang, { marker: "advisory" }));
     out.push("");
   }
   if (technical) {
@@ -30323,7 +30406,6 @@ function renderReproductionContext(normative, lang) {
   out.push(`- _${s.reproSteps}_`, "");
   return out;
 }
-var ADVISORY_ICON = "\u{1F4A1}";
 function renderAdvisoryUnit(unit, standard, lang, opts) {
   const s = L[lang];
   const out = [];
@@ -30338,8 +30420,8 @@ function renderAdvisoryUnit(unit, standard, lang, opts) {
   if (fixes.length) out.push(`**${s.suggestion}** : ${fixes.join(" ; ")}`);
   out.push("");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
   }
   out.push("");
   return out;
@@ -30550,20 +30632,20 @@ function unitBlock(unit, lang, heading, standard) {
   out.push(...guidanceExampleBlock(guidanceFor(unit, standard), lang));
   out.push(`**${s.affected} (${unit.findings.length})**`, "");
   for (const f of unit.findings) {
-    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-    if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
+    out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+    if (f.related) out.push(relatedLine(f.related, lang, { selector: true }));
   }
   out.push("");
   return out;
 }
-function header(r, lang, title2, note = L2[lang].note) {
+function header(r, lang, title2, note = L2[lang].note, ratePct) {
   const s = L2[lang];
   return [
     `# ${title2}`,
     "",
     `- **${s.date}** : ${r.date}`,
     `- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`,
-    `- **${s.rate}** : ${r.conformancePct}%`,
+    `- **${s.rate}** : ${ratePct ?? r.conformancePct}%`,
     "",
     `> ${note}`,
     ""
@@ -30572,7 +30654,8 @@ function header(r, lang, title2, note = L2[lang].note) {
 function renderBacklog(r, lang = "en", standard = "wcag") {
   const s = L2[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(standardLabel(standard)));
+  const ratePct = isCore(standard) ? void 0 : packConformancePct(derivePackResults(r, standard));
+  const out = header(r, lang, s.title(standardLabel(standard)), void 0, ratePct);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -30587,8 +30670,9 @@ function renderBacklog(r, lang = "en", standard = "wcag") {
 }
 function renderPerCriterion(r, lang = "en", standard = "wcag") {
   const s = L2[lang];
+  const ratePct = isCore(standard) ? void 0 : packConformancePct(derivePackResults(r, standard));
   return prdUnits(r, standard, lang).map((u) => {
-    const out = header(r, lang, s.prdTitle(u.label));
+    const out = header(r, lang, s.prdTitle(u.label), void 0, ratePct);
     out.push(...unitBlock(u, lang, "##", standard));
     return { name: `prd-${u.criteriaId}-${r.date}.md`, content: out.join("\n") };
   });
@@ -30630,7 +30714,8 @@ function acceptanceCriteria(unit, standard, lang, opts = {}) {
 function renderPrdDoc(r, lang = "en", standard = "wcag") {
   const s = L2[lang];
   const units = prdUnits(r, standard, lang);
-  const out = header(r, lang, s.title(standardLabel(standard)), s.docNote);
+  const ratePct = isCore(standard) ? void 0 : packConformancePct(derivePackResults(r, standard));
+  const out = header(r, lang, s.title(standardLabel(standard)), s.docNote, ratePct);
   if (!units.length) {
     out.push(s.none, "");
     return out.join("\n");
@@ -30647,8 +30732,8 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
       if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
       for (const f of u.findings) {
-        out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
-        if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\``);
+        out.push(occurrenceLine(f, lang, { marker: "checkbox" }));
+        if (f.related) out.push(relatedLine(f.related, lang, { selector: false }));
       }
       out.push("");
     }
@@ -30807,7 +30892,7 @@ function render(r, lang, opts) {
   out.push(`- **${s.date}** : ${r.date}`);
   out.push(`- **${s.tool}** : ultra11y v${r.version} (${s.toolNote})`);
   out.push(`- **${s.scope}** : ${r.scope.files} ${s.files} \u2014 ${r.scope.inputs.join(", ")}`);
-  out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
+  out.push(`- **${s.rate}** : ${opts.headerRatePct ?? r.conformancePct}% (${s.rateNote})`);
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> \u26A0\uFE0F ${s.warn}`, "");
   if (opts.partialAudit?.length) out.push(`> \u{1F6A8} ${partialAuditBanner(lang, opts.partialAudit)}`, "");
@@ -30854,6 +30939,7 @@ function render(r, lang, opts) {
   if (r.scope.sample?.pages.length) {
     out.push(`## \u{1F4C4} ${s.perPageTitle}`, "", `> ${s.perPageNote}`, "");
     if (r.scope.sample.transverse?.length) out.push(`> ${s.transverseNote(r.scope.sample.transverse.join(", "))}`, "");
+    const pack = isCore(opts.standard) ? void 0 : loadPack(opts.standard);
     for (const pg of r.scope.sample.pages) {
       const onPage = r.findings.filter((f) => f.file === pg.url || f.sample?.page !== void 0 && f.sample.page === pg.name);
       const nc = onPage.filter((f) => !f.advisory);
@@ -30861,7 +30947,11 @@ function render(r, lang, opts) {
       out.push(`### ${pg.name} \u2014 \`${pg.url}\` \u2014 ${pg.auth ? s.authYes : s.authNo}`, "");
       out.push(`- ${nc.length} ${s.ncCount}${adv.length ? ` \xB7 ${adv.length} ${s.advCount}` : ""}`);
       if (pg.notes) out.push(`- _${pg.notes}_`);
-      for (const f of nc.slice(0, 30)) out.push(`  - [${f.criteriaId}] \`${f.selectorHint}\` \u2014 ${resolveMessage(f, lang)}`);
+      for (const f of nc.slice(0, 30)) {
+        const crits = pack ? packCriteriaForFinding(pack, f) : [];
+        const label = crits.length ? crits.join(", ") : f.criteriaId;
+        out.push(`  - [${label}] \`${f.selectorHint}\` \u2014 ${resolveMessage(f, lang)}`);
+      }
       out.push("");
     }
   }
@@ -30907,7 +30997,15 @@ function renderPackReport(r, pack, lang = "en") {
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)).push(row);
   }
   const groups = pack.themes.map((t2) => ({ key: `${t2.number}.`, title: themeName(pack, t2.number, lang) ?? "", rows: byTheme.get(t2.number) ?? [] }));
-  return render(r, lang, { std, groupHead: L3[lang].byTheme, groups, derivedOf: std, standard: pack.key, partialAudit: untestedNeedsRendering(r) });
+  return render(r, lang, {
+    std,
+    groupHead: L3[lang].byTheme,
+    groups,
+    derivedOf: std,
+    standard: pack.key,
+    partialAudit: untestedNeedsRendering(r),
+    headerRatePct: packConformancePct(derived)
+  });
 }
 function writeReport(r, opts) {
   const core = isCore(opts.standard);
@@ -32616,7 +32714,7 @@ try {
 }
 `;
 var PKG = JSON.stringify(
-  { name: "ultra11y-dynamic", private: true, type: "module", dependencies: { playwright: "^1.49.0", "axe-core": "^4.10.0" } },
+  { name: "ultra11y-dynamic", private: true, type: "module", dependencies: { playwright: "^1.49.0", "axe-core": "4.12.1" } },
   null,
   2
 );
@@ -34321,6 +34419,17 @@ ${formatIssues(v.issues).join("\n")}`);
     if (paths.guidance) loadGuidanceFile(paths.guidance, result, onWarn);
   }
   for (const g of config?.guidance ?? []) loadGuidanceFile(isAbsolute(g) ? g : join12(cwd, g), result, onWarn);
+  for (const sm of config?.secondaryMappings ?? []) {
+    if (!sm || typeof sm.standard !== "string" || typeof sm.ruleId !== "string" || typeof sm.criterion !== "string") {
+      result.errors.push("secondaryMappings: each entry must be { standard, ruleId, criterion, note? }");
+      continue;
+    }
+    if (!getPack(sm.standard)) {
+      result.errors.push(`secondaryMappings: unknown standard "${sm.standard}" (register its pack first; the WCAG core has no pack criteria)`);
+      continue;
+    }
+    enableSecondaryMapping(sm.standard, { ruleId: sm.ruleId, criterion: sm.criterion, note: sm.note });
+  }
   return result;
 }
 function loadGuidanceFile(path, result, onWarn) {

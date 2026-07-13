@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync, writeFileSync as writeFileSync9, mkdirSync as mkdirSync7, existsSync as existsSync11, readFileSync as readFileSync7, appendFileSync } from "fs";
+import { realpathSync, writeFileSync as writeFileSync9, mkdirSync as mkdirSync7, existsSync as existsSync12, readFileSync as readFileSync7, appendFileSync } from "fs";
 import { join as join15, relative as relative3, sep as sep2, dirname as dirname5 } from "path";
 import { fileURLToPath as fileURLToPath2, pathToFileURL } from "url";
 
@@ -268,7 +268,12 @@ var wcag_default = {
         "label-for-dangling",
         "missing-main-landmark",
         "multiple-main-landmark",
-        "sortable-header-no-aria-sort"
+        "sortable-header-no-aria-sort",
+        "nav-landmark-missing",
+        "nav-landmark-unnamed",
+        "radio-checkbox-group-ungrouped",
+        "table-empty-data-cell",
+        "css-generated-content-informative"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
       techniques: [
@@ -993,7 +998,7 @@ var wcag_default = {
       level: "A",
       addedIn: "2.0",
       automatability: "judgment",
-      ruleIds: [],
+      ruleIds: ["radio-checkbox-group-ungrouped", "date-fields-ungrouped"],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html",
       techniques: [
         "ARIA1",
@@ -1102,7 +1107,8 @@ var wcag_default = {
         "button-empty-name",
         "icon-only-control-unnamed",
         "control-name-title-only",
-        "field-purpose-incomplete"
+        "field-purpose-incomplete",
+        "disabled-context-content"
       ],
       understanding: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
       techniques: [
@@ -19203,6 +19209,16 @@ var MSG_CATALOG = {
       en: () => `Add aria-sort="none|ascending|descending" on the sorted <th>, and hide the sort glyph (aria-hidden="true").`
     }
   },
+  "table-empty-data-cell": {
+    message: {
+      fr: () => `Cellule de donn\xE9es vide (ou r\xE9duite \xE0 \xAB - \xBB) : restitu\xE9e \xAB vide \xBB par les lecteurs d'\xE9cran.`,
+      en: () => `Empty data cell (or reduced to "-"): announced as "blank" by screen readers.`
+    },
+    remediation: {
+      fr: () => `Ajoutez un texte masqu\xE9 (classe sr-only) pr\xE9cisant l'absence de valeur, ex. \xAB Non renseign\xE9 \xBB.`,
+      en: () => `Insert hidden text (an sr-only class) stating the absence of a value, e.g. "Not provided".`
+    }
+  },
   // ---- Theme 6/7 — Links & buttons (src/rules/links.ts) -----------------------
   "link-empty-name": {
     message: {
@@ -19321,8 +19337,8 @@ var MSG_CATALOG = {
       en: (p) => `aria-live="${p.value}" is invalid \u2014 only the values off, polite, assertive are honoured.`
     },
     remediation: {
-      fr: () => `Utilisez aria-live="polite" (ou "assertive" pour une alerte) ; toute autre valeur est ignor\xE9e.`,
-      en: () => `Use aria-live="polite" (or "assertive" for an alert); any other value is ignored.`
+      fr: () => `Utilisez aria-live="polite" (associ\xE9 \xE0 aria-atomic="true") \u2014 ou role="alert" pour une erreur ; toute autre valeur est ignor\xE9e.`,
+      en: () => `Use aria-live="polite" (paired with aria-atomic="true") \u2014 or role="alert" for an error; any other value is ignored.`
     }
   },
   "live-region-conflict.mismatch": {
@@ -19331,8 +19347,8 @@ var MSG_CATALOG = {
       en: (p) => `role="${p.role}" implies aria-live="${p.want}" but aria-live="${p.live}" \u2014 status message conveyed inconsistently.`
     },
     remediation: {
-      fr: (p) => p.want === "assertive" ? `Laissez role="${p.role}" g\xE9rer la restitution (retirez aria-live) ou utilisez aria-live="assertive".` : `Alignez aria-live sur "${p.want}", coh\xE9rent avec role="${p.role}", ou retirez-le.`,
-      en: (p) => p.want === "assertive" ? `Let role="${p.role}" drive the announcement (remove aria-live), or use aria-live="assertive".` : `Align aria-live with "${p.want}", consistent with role="${p.role}", or remove it.`
+      fr: (p) => p.want === "assertive" ? `Laissez role="${p.role}" g\xE9rer la restitution (retirez aria-live) ou utilisez aria-live="assertive".` : `Alignez aria-live sur "${p.want}" (avec aria-atomic="true"), coh\xE9rent avec role="${p.role}", ou retirez-le.`,
+      en: (p) => p.want === "assertive" ? `Let role="${p.role}" drive the announcement (remove aria-live), or use aria-live="assertive".` : `Align aria-live with "${p.want}" (with aria-atomic="true"), consistent with role="${p.role}", or remove it.`
     }
   },
   "status-message-not-assertive": {
@@ -19341,8 +19357,8 @@ var MSG_CATALOG = {
       en: () => `Error/alert container with aria-live="polite" \u2014 an error message must be conveyed assertively.`
     },
     remediation: {
-      fr: () => `Utilisez role="alert" (ou aria-live="assertive") pour qu'un message d'erreur soit annonc\xE9 imm\xE9diatement.`,
-      en: () => `Use role="alert" (or aria-live="assertive") so an error message is announced immediately.`
+      fr: () => `Utilisez role="alert" seul (restitution assertive imm\xE9diate) plut\xF4t qu'aria-live="polite" ; ne d\xE9placez pas aussi le focus vers ce conteneur \u2014 soit un m\xE9canisme aria-live/role="alert", soit un d\xE9placement du focus, jamais les deux.`,
+      en: () => `Use role="alert" alone (immediate assertive restitution) rather than aria-live="polite"; do not also move focus to that container \u2014 a live region OR a focus move, never both.`
     }
   },
   // ---- Theme 8 — Mandatory elements (src/rules/mandatory.ts) ------------------
@@ -19407,24 +19423,29 @@ var MSG_CATALOG = {
       en: () => `Do not skip a level: chain heading levels without omitting a step.`
     }
   },
+  // ADVISORY (non-normative): "start the page at h1" is not required by HTML, WCAG, or
+  // SEO — a single, well-structured heading hierarchy (covered normatively by
+  // heading-order-skip) is what matters. Worded as a recommendation, not a constat.
   "h1-missing": {
     message: {
-      fr: () => `Aucun <h1> dans la page \u2014 le titre principal de niveau 1 est manquant.`,
-      en: () => `No <h1> in the page \u2014 the level-1 main heading is missing.`
+      fr: () => `Recommandation : la page ne commence par aucun <h1>. Un <h1> d\xE9crivant le contenu principal aide au rep\xE9rage, mais d\xE9marrer \xE0 h1 n'est requis ni par HTML, ni par l'accessibilit\xE9, ni par le SEO.`,
+      en: () => `Recommendation: the page starts with no <h1>. An <h1> naming the main content aids orientation, but starting at h1 is not required by HTML, accessibility, or SEO.`
     },
     remediation: {
-      fr: () => `Ajoutez un <h1> d\xE9crivant le contenu principal de la page.`,
-      en: () => `Add an <h1> describing the page's main content.`
+      fr: () => `Envisagez d'ajouter un <h1> d\xE9crivant le contenu principal ; la hi\xE9rarchie des titres (sans saut de niveau) reste l'exigence normative.`,
+      en: () => `Consider adding an <h1> describing the page's main content; a heading hierarchy with no level skip stays the normative requirement.`
     }
   },
+  // ADVISORY (non-normative): "a single h1 per page" is not a rule in HTML, accessibility,
+  // or SEO. Multiple h1 are valid (HTML5 sectioning) — worded as a recommendation.
   "h1-multiple": {
     message: {
-      fr: (p) => `Plusieurs <h1> dans la page (${p.count}) \u2014 un seul titre de niveau 1 est recommand\xE9.`,
-      en: (p) => `Multiple <h1> in the page (${p.count}) \u2014 a single level-1 heading is recommended.`
+      fr: (p) => `Recommandation : plusieurs <h1> dans la page (${p.count}). Un titre de niveau 1 unique clarifie souvent la structure, mais \xAB un seul <h1> par page \xBB n'est une r\xE8gle ni en HTML, ni en accessibilit\xE9, ni en SEO.`,
+      en: (p) => `Recommendation: multiple <h1> in the page (${p.count}). A single level-1 heading often clarifies structure, but "one h1 per page" is not a rule in HTML, accessibility, or SEO.`
     },
     remediation: {
-      fr: () => `Conservez un unique <h1> et hi\xE9rarchisez le reste avec h2\u2026h6.`,
-      en: () => `Keep a single <h1> and structure the rest with h2\u2026h6.`
+      fr: () => `Envisagez de conserver un unique <h1> et de hi\xE9rarchiser le reste avec h2\u2026h6 ; ce n'est pas une non-conformit\xE9.`,
+      en: () => `Consider keeping a single <h1> and structuring the rest with h2\u2026h6; this is not a non-conformity.`
     }
   },
   "list-structure.invalid-child": {
@@ -19466,6 +19487,16 @@ var MSG_CATALOG = {
     remediation: {
       fr: () => `Retirez user-scalable=no et maximum-scale (ou maximum-scale \u2265 2) du content du viewport.`,
       en: () => `Remove user-scalable=no and maximum-scale (or set maximum-scale \u2265 2) from the viewport content.`
+    }
+  },
+  "css-generated-content-informative": {
+    message: {
+      fr: (p) => `Contenu g\xE9n\xE9r\xE9 en CSS porteur de texte (content: "${p.text}") : invisible pour les technologies d'assistance.`,
+      en: (p) => `CSS generated content carrying text (content: "${p.text}"): invisible to assistive technologies.`
+    },
+    remediation: {
+      fr: () => `D\xE9placez ce texte informatif dans le DOM ; r\xE9servez content aux \xE9l\xE9ments purement d\xE9coratifs.`,
+      en: () => `Move this informative text into the DOM; keep content for purely decorative elements.`
     }
   },
   // ---- Theme 11 — Forms (src/rules/forms.ts) ----------------------------------
@@ -19545,8 +19576,8 @@ var MSG_CATALOG = {
       en: (p) => `Error message (id="${p.id}") linked to no field \u2014 no aria-describedby/aria-errormessage references it.`
     },
     remediation: {
-      fr: (p) => `Sur le champ concern\xE9, ajoutez aria-describedby="${p.id}" (ou aria-errormessage) et aria-invalid="true".`,
-      en: (p) => `On the relevant field, add aria-describedby="${p.id}" (or aria-errormessage) and aria-invalid="true".`
+      fr: (p) => `Sur le champ concern\xE9, ajoutez aria-describedby="${p.id}" (ou aria-errormessage) et aria-invalid="true" ; restituez l'erreur via role="alert" (pas aria-live="polite"), sans \xE0 la fois d\xE9placer le focus et recourir \xE0 aria-live/role="alert".`,
+      en: (p) => `On the relevant field, add aria-describedby="${p.id}" (or aria-errormessage) and aria-invalid="true"; announce the error via role="alert" (not aria-live="polite"), without both moving focus and using a live region.`
     }
   },
   "field-purpose-incomplete.autocomplete": {
@@ -19567,6 +19598,46 @@ var MSG_CATALOG = {
     remediation: {
       fr: () => `Ajoutez aria-required="true" sur le widget personnalis\xE9 requis.`,
       en: () => `Add aria-required="true" on the required custom widget.`
+    }
+  },
+  "disabled-context-content.fieldset": {
+    message: {
+      fr: () => `<fieldset disabled> encapsulant des champs en lecture seule \u2014 le contenu risque d'\xEAtre ignor\xE9 par les technologies d'assistance.`,
+      en: () => `<fieldset disabled> wrapping read-only fields \u2014 the content may be ignored by assistive technologies.`
+    },
+    remediation: {
+      fr: () => `Remplacez le conteneur d\xE9sactiv\xE9 par un <div> (ou aria-disabled="true" + gestion clavier en JS) afin que le contenu reste restitu\xE9.`,
+      en: () => `Replace the disabled container with a <div> (or aria-disabled="true" + JS keyboard handling) so the content stays exposed.`
+    }
+  },
+  "disabled-context-content.inert": {
+    message: {
+      fr: () => `Conteneur [inert] encapsulant des champs de formulaire \u2014 leur contenu est retir\xE9 de l'arbre d'accessibilit\xE9.`,
+      en: () => `[inert] container wrapping form fields \u2014 their content is taken out of the accessibility tree.`
+    },
+    remediation: {
+      fr: () => `Retirez [inert] du conteneur en lecture seule (ou aria-disabled="true" + JS) pour que le contenu reste restitu\xE9.`,
+      en: () => `Take [inert] off the read-only container (or use aria-disabled="true" + JS) so the content stays exposed.`
+    }
+  },
+  "radio-checkbox-group-ungrouped": {
+    message: {
+      fr: (p) => `${p.count} champs ${p.type} partageant name="${p.name}" hors de tout <fieldset>/role="radiogroup"/role="group" \u2014 regroupement absent.`,
+      en: (p) => `${p.count} ${p.type} fields sharing name="${p.name}" outside any <fieldset>/role="radiogroup"/role="group" \u2014 grouping is missing.`
+    },
+    remediation: {
+      fr: () => `Regroupez ces champs de m\xEAme nature dans un <fieldset> avec <legend> (ou un role="radiogroup"/role="group" nomm\xE9).`,
+      en: () => `Group these same-nature fields in a <fieldset> with a <legend> (or a named role="radiogroup"/role="group").`
+    }
+  },
+  "date-fields-ungrouped": {
+    message: {
+      fr: (p) => `${p.count} champs de date adjacents hors de tout <fieldset>/role="group" \u2014 champs de m\xEAme nature non regroup\xE9s.`,
+      en: (p) => `${p.count} adjacent date fields outside any <fieldset>/role="group" \u2014 same-nature fields left ungrouped.`
+    },
+    remediation: {
+      fr: () => `Regroupez les champs de date (jour/mois/ann\xE9e, d\xE9but/fin) dans un <fieldset> avec une <legend> d\xE9crivant la p\xE9riode.`,
+      en: () => `Group the date fields (day/month/year, start/end) in a <fieldset> with a <legend> describing the period.`
     }
   },
   // ---- Theme 12 — Navigation & landmarks (src/rules/navigation.ts) ------------
@@ -19608,6 +19679,26 @@ var MSG_CATALOG = {
     remediation: {
       fr: () => `Conservez un unique <main>/role="main" ; structurez le reste avec <section>/<aside>.`,
       en: () => `Keep a single <main>/role="main"; structure the rest with <section>/<aside>.`
+    }
+  },
+  "nav-landmark-missing": {
+    message: {
+      fr: (p) => `Groupe de ${p.count} liens de navigation dans <${p.region}> sans rep\xE8re de navigation (<nav> ou role="navigation") dans la page.`,
+      en: (p) => `A cluster of ${p.count} navigation links in <${p.region}> with no navigation landmark (<nav> or role="navigation") in the page.`
+    },
+    remediation: {
+      fr: () => `Encapsulez les liens de navigation dans un <nav> (ou role="navigation") pour exposer un rep\xE8re de navigation.`,
+      en: () => `Wrap the navigation links in a <nav> (or role="navigation") to expose a navigation landmark.`
+    }
+  },
+  "nav-landmark-unnamed": {
+    message: {
+      fr: () => `Plusieurs rep\xE8res de navigation dans la page ; celui-ci n'a ni aria-label ni aria-labelledby pour le distinguer.`,
+      en: () => `Several navigation landmarks in the page; this one has neither aria-label nor aria-labelledby to tell them apart.`
+    },
+    remediation: {
+      fr: () => `Donnez \xE0 chaque <nav> un aria-label (ou aria-labelledby) distinct, ex. \xAB Menu principal \xBB / \xAB Fil d'Ariane \xBB.`,
+      en: () => `Give each <nav> a distinct aria-label (or aria-labelledby), e.g. "Primary" / "Breadcrumb".`
     }
   },
   // ---- Theme 4/13 — Multimedia (src/rules/multimedia.ts) ----------------------
@@ -19732,10 +19823,14 @@ function entryFor(id) {
   return id === void 0 ? void 0 : MSG_CATALOG[id];
 }
 function resolveMessage(f, lang) {
+  const localized = f.i18n?.message?.[lang];
+  if (localized) return localized;
   const entry = entryFor(f.msg?.id);
   return entry ? entry.message[lang](f.msg?.params ?? {}) : f.message;
 }
 function resolveRemediation(f, lang) {
+  const localized = f.i18n?.remediation?.[lang];
+  if (localized) return localized;
   const entry = entryFor(f.msg?.id);
   return entry ? entry.remediation[lang](f.msg?.params ?? {}) : f.remediation;
 }
@@ -19775,7 +19870,7 @@ function selectorOf(el) {
   }
   return el.tag;
 }
-function toFinding(doc, ruleId, def, rf) {
+function toFinding(doc, ruleId, def, rf, ruleAdvisory) {
   const entry = MSG_CATALOG[rf.msgId];
   if (!entry) {
     throw new Error(`toFinding: msgId "${rf.msgId}" (rule "${ruleId}") is not in MSG_CATALOG \u2014 add it to src/messages.ts.`);
@@ -19804,7 +19899,11 @@ function toFinding(doc, ruleId, def, rf) {
     ...doc.kind === "sfc" || doc.kind === "jsx-lossy" || rf.preliminary ? { preliminary: true } : {},
     // Capture findings are rendered ground truth (NOT preliminary): re-attribute them
     // to the source component recorded in the capture's provenance.
-    ...doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {}
+    ...doc.capture ? { origin: { capture: doc.file, sourceFile: doc.capture.sourceFile, component: doc.capture.component } } : {},
+    // Non-normative recommendation: the per-finding override (rf.advisory) wins over the
+    // rule-level default (ruleAdvisory); only stamp the flag when it is actually true, so
+    // a normative finding stays byte-identical (no `advisory: false` noise in the JSON).
+    ...rf.advisory ?? ruleAdvisory ? { advisory: true } : {}
   };
 }
 
@@ -20667,8 +20766,9 @@ var headingOrderSkip = {
 var h1Missing = {
   id: "h1-missing",
   criteria: ["1.3.1"],
-  severity: "majeur",
+  severity: "mineur",
   scope: "page",
+  advisory: true,
   run(doc) {
     const hasH1 = headings(doc).some((h) => h.level === 1);
     if (hasH1) return [];
@@ -20689,6 +20789,7 @@ var h1Multiple = {
   criteria: ["1.3.1"],
   severity: "mineur",
   scope: "page",
+  advisory: true,
   run(doc) {
     const h1s = elementsByTag(doc, "h1");
     if (h1s.length <= 1) return [];
@@ -20877,7 +20978,29 @@ var sortableHeaderNoAriaSort = {
     return out;
   }
 };
-var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup, sortableHeaderNoAriaSort];
+var tableEmptyDataCell = {
+  id: "table-empty-data-cell",
+  criteria: ["1.3.1"],
+  severity: "mineur",
+  advisory: true,
+  run(doc) {
+    const out = [];
+    for (const t2 of doc.elements) {
+      if (t2.tag !== "table" || isLayoutTable(t2)) continue;
+      for (const cell of descendants(t2)) {
+        if (cell.tag !== "td") continue;
+        if (mayInjectContent(cell)) continue;
+        if (cell.children.some((c) => c.type === "element")) continue;
+        if ((attr(cell, "aria-label") ?? "").trim() || hasAttr(cell, "aria-labelledby")) continue;
+        const txt = visibleText(cell);
+        if (txt !== "" && txt !== "-") continue;
+        out.push({ criteriaId: "1.3.1", el: cell, msgId: "table-empty-data-cell", advisory: true });
+      }
+    }
+    return out;
+  }
+};
+var tablesRules = [dataTableNoHeaders, tableCaptionMissing, layoutTableDataMarkup, sortableHeaderNoAriaSort, tableEmptyDataCell];
 
 // src/rules/links.ts
 function hasIconChild(el) {
@@ -21248,6 +21371,130 @@ var fieldPurposeIncomplete = {
     return out;
   }
 };
+var GROUPING_ROLES = /* @__PURE__ */ new Set(["radiogroup", "group"]);
+function inGroupingContext(el) {
+  return ancestors(el).some((a) => a.tag === "fieldset" || GROUPING_ROLES.has((attr(a, "role") ?? "").trim().toLowerCase()));
+}
+function isSubmitControl(el) {
+  if (el.tag === "button") return (attr(el, "type") ?? "submit").trim().toLowerCase() !== "button";
+  if (el.tag === "input") return ["submit", "reset"].includes((attr(el, "type") ?? "").trim().toLowerCase());
+  return false;
+}
+function ariaBusyInScope(el) {
+  if ((attr(el, "aria-busy") ?? "").trim().toLowerCase() === "true") return true;
+  return ancestors(el).some((a) => (attr(a, "aria-busy") ?? "").trim().toLowerCase() === "true");
+}
+var disabledContextContent = {
+  id: "disabled-context-content",
+  criteria: ["4.1.2"],
+  severity: "majeur",
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      const isDisabledFieldset = el.tag === "fieldset" && hasAttr(el, "disabled");
+      const isInert = hasAttr(el, "inert");
+      if (!isDisabledFieldset && !isInert) continue;
+      const desc = descendants(el);
+      if (!desc.some(isFormField)) continue;
+      if (hasDynamicSpread(el)) continue;
+      if (ariaBusyInScope(el)) continue;
+      if (desc.some(isSubmitControl)) continue;
+      if (isInert) out.push({ criteriaId: "4.1.2", el, msgId: "disabled-context-content.inert" });
+      else out.push({ criteriaId: "4.1.2", el, msgId: "disabled-context-content.fieldset" });
+    }
+    return out;
+  }
+};
+var radioCheckboxGroupUngrouped = {
+  id: "radio-checkbox-group-ungrouped",
+  criteria: ["1.3.1", "3.3.2"],
+  severity: "majeur",
+  run(doc) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const el of doc.elements) {
+      if (el.tag !== "input") continue;
+      const type = (attr(el, "type") ?? "").trim().toLowerCase();
+      if (type !== "radio" && type !== "checkbox") continue;
+      const name = (attr(el, "name") ?? "").trim();
+      if (!name || name.includes("{")) continue;
+      const key = `${type}::${name}`;
+      const list = groups.get(key);
+      if (list) list.push(el);
+      else groups.set(key, [el]);
+    }
+    const out = [];
+    for (const [key, members] of groups) {
+      if (members.length < 2) continue;
+      if (members.some(hasDynamicSpread)) continue;
+      if (members.some(inGroupingContext)) continue;
+      const type = key.slice(0, key.indexOf("::"));
+      out.push({
+        criteriaId: "1.3.1",
+        el: members[0],
+        msgId: "radio-checkbox-group-ungrouped",
+        params: { type, name: key.slice(key.indexOf("::") + 2), count: members.length }
+      });
+    }
+    return out;
+  }
+};
+var DATE_TOKENS = /* @__PURE__ */ new Set(["jour", "mois", "annee", "ann\xE9e", "debut", "d\xE9but", "fin", "day", "month", "year"]);
+var NON_DATE_INPUT_TYPES = /* @__PURE__ */ new Set([
+  "hidden",
+  "submit",
+  "reset",
+  "button",
+  "checkbox",
+  "radio",
+  "file",
+  "password",
+  "range",
+  "color",
+  "email",
+  "tel",
+  "url",
+  "search"
+]);
+function tokenize(s) {
+  return s.toLowerCase().split(/[-_\s.]+|(?<=[a-z0-9])(?=[A-Z])/).filter(Boolean);
+}
+function fieldText(el, doc) {
+  const id = attr(el, "id");
+  const forLabel = id ? doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id) : void 0;
+  const wrapping = ancestors(el).find((a) => a.tag === "label");
+  const labelText = forLabel ? textContent(forLabel) : wrapping ? textContent(wrapping) : "";
+  return `${attr(el, "name") ?? ""} ${attr(el, "id") ?? ""} ${labelText}`;
+}
+function isDateField(el, doc) {
+  if (el.tag !== "input") return false;
+  const type = (attr(el, "type") ?? "text").trim().toLowerCase();
+  if (type === "date" || type === "month") return true;
+  if (type.includes("{") || NON_DATE_INPUT_TYPES.has(type)) return false;
+  return tokenize(fieldText(el, doc)).some((t2) => DATE_TOKENS.has(t2));
+}
+var dateFieldsUngrouped = {
+  id: "date-fields-ungrouped",
+  criteria: ["3.3.2"],
+  severity: "majeur",
+  run(doc) {
+    const byParent = /* @__PURE__ */ new Map();
+    for (const el of doc.elements) {
+      if (!isDateField(el, doc)) continue;
+      if (hasDynamicSpread(el) || inGroupingContext(el)) continue;
+      const p = el.parent;
+      if (!p) continue;
+      const list = byParent.get(p);
+      if (list) list.push(el);
+      else byParent.set(p, [el]);
+    }
+    const out = [];
+    for (const fields of byParent.values()) {
+      if (fields.length < 2) continue;
+      out.push({ criteriaId: "3.3.2", el: fields[0], msgId: "date-fields-ungrouped", params: { count: fields.length } });
+    }
+    return out;
+  }
+};
 var formsRules = [
   controlLabelMissing,
   placeholderAsLabel,
@@ -21257,7 +21504,10 @@ var formsRules = [
   labelForDangling,
   ariaInvalidNoDescription,
   errorNotAssociated,
-  fieldPurposeIncomplete
+  fieldPurposeIncomplete,
+  disabledContextContent,
+  radioCheckboxGroupUngrouped,
+  dateFieldsUngrouped
 ];
 
 // src/rules/navigation.ts
@@ -21271,6 +21521,18 @@ function mainLandmarks(doc) {
     if (e.tag === "main") return true;
     return (attr(e, "role") ?? "").trim().toLowerCase() === "main";
   });
+}
+function navLandmarks(doc) {
+  return doc.elements.filter((e) => {
+    if (attr(e, "aria-hidden") === "true") return false;
+    if (e.tag === "nav") return true;
+    return (attr(e, "role") ?? "").trim().toLowerCase() === "navigation";
+  });
+}
+function navIsNamed(el) {
+  if ((attr(el, "aria-label") ?? "").trim() || hasAttr(el, "aria-labelledby")) return true;
+  if (hasBoundAttr(el, "aria-label") || hasBoundAttr(el, "aria-labelledby")) return true;
+  return hasDynamicSpread(el);
 }
 var skipLinkTargetMissing = {
   id: "skip-link-target-missing",
@@ -21360,7 +21622,52 @@ var multipleMainLandmark = {
     }));
   }
 };
-var navigationRules = [skipLinkTargetMissing, positiveTabindex, missingMainLandmark, multipleMainLandmark];
+var NAV_CLUSTER_MIN = 4;
+var navLandmarkMissing = {
+  id: "nav-landmark-missing",
+  criteria: ["1.3.1"],
+  severity: "majeur",
+  scope: "page",
+  run(doc) {
+    if (navLandmarks(doc).length > 0) return [];
+    if (mainLandmarks(doc).length === 0) return [];
+    if (contentMaybeInjected2(doc) || shellBodyInjected(doc)) return [];
+    for (const el of doc.elements) {
+      if (el.tag !== "header" && el.tag !== "aside") continue;
+      const links = descendants(el).filter((d) => d.tag === "a" && hasAttr(d, "href"));
+      if (links.length >= NAV_CLUSTER_MIN) {
+        return [
+          {
+            criteriaId: "1.3.1",
+            el,
+            msgId: "nav-landmark-missing",
+            params: { count: links.length, region: el.tag }
+          }
+        ];
+      }
+    }
+    return [];
+  }
+};
+var navLandmarkUnnamed = {
+  id: "nav-landmark-unnamed",
+  criteria: ["1.3.1"],
+  severity: "mineur",
+  scope: "page",
+  run(doc) {
+    const navs = navLandmarks(doc);
+    if (navs.length < 2) return [];
+    return navs.filter((n) => !navIsNamed(n)).map((el) => ({ criteriaId: "1.3.1", el, msgId: "nav-landmark-unnamed" }));
+  }
+};
+var navigationRules = [
+  skipLinkTargetMissing,
+  positiveTabindex,
+  missingMainLandmark,
+  multipleMainLandmark,
+  navLandmarkMissing,
+  navLandmarkUnnamed
+];
 
 // src/rules/multimedia.ts
 function mutedStatically(el) {
@@ -21446,7 +21753,34 @@ var metaViewportZoomBlock = {
     return out;
   }
 };
-var presentationRules = [metaViewportZoomBlock];
+var CSS_CONTENT = /content\s*:\s*(["'])((?:\\.|(?!\1).)*)\1/gi;
+var INFORMATIVE_WORD = new RegExp("\\p{L}{3,}", "u");
+var cssGeneratedContentInformative = {
+  id: "css-generated-content-informative",
+  criteria: ["1.3.1"],
+  severity: "mineur",
+  advisory: true,
+  run(doc) {
+    const out = [];
+    for (const el of doc.elements) {
+      if (el.tag !== "style") continue;
+      const css = textContent(el);
+      const seen = /* @__PURE__ */ new Set();
+      CSS_CONTENT.lastIndex = 0;
+      let m;
+      while (m = CSS_CONTENT.exec(css)) {
+        const value = m[2] ?? "";
+        if (value.startsWith("\\")) continue;
+        if (!INFORMATIVE_WORD.test(value)) continue;
+        if (seen.has(value)) continue;
+        seen.add(value);
+        out.push({ criteriaId: "1.3.1", el, msgId: "css-generated-content-informative", params: { text: value.slice(0, 40) }, advisory: true });
+      }
+    }
+    return out;
+  }
+};
+var presentationRules = [metaViewportZoomBlock, cssGeneratedContentInformative];
 
 // src/color.ts
 var NAMED = {
@@ -21691,7 +22025,7 @@ function runRules(doc, only) {
   for (const rule of ALL_RULES) {
     if (only && !only.has(rule.id)) continue;
     if (rule.scope === "page" && !fullDoc) continue;
-    for (const rf of rule.run(doc)) out.push(toFinding(doc, rule.id, rule.severity, rf));
+    for (const rf of rule.run(doc)) out.push(toFinding(doc, rule.id, rule.severity, rf, rule.advisory));
   }
   out.sort((a, b) => a.line - b.line || a.col - b.col || SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
   return out;
@@ -22044,678 +22378,6 @@ function runCrossRules(doc, graph) {
   return { findings, suppress };
 }
 
-// src/graph/build.ts
-import { dirname as dirname3 } from "path";
-
-// src/graph/imports.ts
-var NAME_PROPS2 = /* @__PURE__ */ new Set(["aria-label", "aria-labelledby", "title", "label", "alt"]);
-var ICON_TAGS = /* @__PURE__ */ new Set(["svg", "path", "use", "img", "i"]);
-function opening(jsxEl) {
-  return asNode(jsxEl.openingElement);
-}
-function attrName(a) {
-  return normAttrName(jsxName(asNode(a.name)));
-}
-function attrIsExpr(a) {
-  return asNode(a.value)?.type === "JSXExpressionContainer";
-}
-function attrIsLiteral(a) {
-  return asNode(a.value)?.type === "StringLiteral";
-}
-function controlAttrs(jsxEl) {
-  const op = opening(jsxEl);
-  return op ? asNodes(op.attributes).filter((a) => a.type === "JSXAttribute") : [];
-}
-function hasSpread(jsxEl) {
-  const op = opening(jsxEl);
-  return op ? asNodes(op.attributes).some((a) => a.type === "JSXSpreadAttribute") : false;
-}
-function tagOf(jsxEl) {
-  const op = opening(jsxEl);
-  return op ? jsxName(asNode(op.name)) : "";
-}
-function hasLiteralText(jsxEl) {
-  let found = false;
-  walkAst(jsxEl, (n) => {
-    if (n.type === "JSXText" && typeof n.value === "string" && n.value.trim() !== "") found = true;
-  });
-  return found;
-}
-function hasIconChild2(jsxEl) {
-  let found = false;
-  walkAst(jsxEl, (n) => {
-    if (n.type !== "JSXElement" || n === jsxEl) return;
-    const name = tagOf(n);
-    const low = name.toLowerCase();
-    if (ICON_TAGS.has(low) || /icon|glyph/i.test(name)) found = true;
-  });
-  return found;
-}
-function rendersNameExpr(jsxEl) {
-  for (const c of asNodes(jsxEl.children)) {
-    if (c.type !== "JSXExpressionContainer") continue;
-    const expr = asNode(c.expression);
-    const id = expr && (expr.type === "Identifier" || expr.type === "JSXIdentifier") ? String(expr.name ?? "") : "";
-    if (/children|label|title|text|name/i.test(id)) return true;
-  }
-  return false;
-}
-function findControl(fnNode) {
-  let control;
-  walkAst(fnNode, (n) => {
-    if (control || n.type !== "JSXElement") return;
-    const tag = tagOf(n);
-    if (!isIntrinsic(tag)) return;
-    const low = tag.toLowerCase();
-    if (low === "button") control = n;
-    else if (low === "a" && controlAttrs(n).some((a) => attrName(a) === "href")) control = n;
-  });
-  return control;
-}
-function posOf(node) {
-  return { line: node.loc?.start.line ?? 1, col: (node.loc?.start.column ?? 0) + 1 };
-}
-function analyzeComponent(name, file, fnNode) {
-  const control = findControl(fnNode);
-  if (!control) {
-    const { line: line2, col: col2 } = posOf(fnNode);
-    return {
-      name,
-      file,
-      line: line2,
-      col: col2,
-      hasControl: false,
-      rendersIconOnlyControl: false,
-      acceptsName: false,
-      controlHasName: false,
-      spreadsProps: false,
-      forwardsAria: false
-    };
-  }
-  const { line, col } = posOf(control);
-  const attrs = controlAttrs(control);
-  const spreadsProps = hasSpread(control);
-  const forwardsAria = attrs.some((a) => (attrName(a) === "aria-label" || attrName(a) === "aria-labelledby") && attrIsExpr(a));
-  const literalAriaName = attrs.some((a) => NAME_PROPS2.has(attrName(a)) && attrIsLiteral(a));
-  const acceptsNameViaChildren = rendersNameExpr(control);
-  const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
-  const controlHasName = literalAriaName || forwardsAria || hasLiteralText(control);
-  const rendersIconOnlyControl = hasIconChild2(control) && !hasLiteralText(control) && !literalAriaName && !forwardsAria;
-  return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
-}
-function pascalCaseBasename(posix) {
-  const base = (posix.split("/").pop() ?? posix).replace(/\.[^.]+$/, "");
-  const name = base.split(/[^A-Za-z0-9]+/).filter(Boolean).map((seg) => seg[0].toUpperCase() + seg.slice(1)).join("");
-  return name || "Component";
-}
-function isCapitalized(name) {
-  const head = name.split(".")[0] ?? name;
-  const first = head[0] ?? "";
-  return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
-}
-function isComponentFn(init) {
-  return !!init && (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression" || init.type === "FunctionDeclaration");
-}
-function declComponents(decl, file) {
-  const out = [];
-  if (decl.type === "FunctionDeclaration") {
-    const id = asNode(decl.id);
-    const name = id && typeof id.name === "string" ? id.name : "";
-    if (name && isCapitalized(name)) out.push(analyzeComponent(name, file, decl));
-  } else if (decl.type === "VariableDeclaration") {
-    for (const d of asNodes(decl.declarations)) {
-      const id = asNode(d.id);
-      const init = asNode(d.init);
-      const name = id && typeof id.name === "string" ? id.name : "";
-      if (name && isCapitalized(name) && isComponentFn(init)) out.push(analyzeComponent(name, file, init));
-    }
-  }
-  return out;
-}
-function extractGraphNode(ast, doc, file, opts = {}) {
-  const posix = toPosix(file);
-  const imports = [];
-  const starReexports = [];
-  const components = /* @__PURE__ */ new Map();
-  const constStrings = /* @__PURE__ */ new Map();
-  if (ast) {
-    for (const stmt of asNodes((asNode(ast.program) ?? ast).body)) {
-      const vd = stmt.type === "VariableDeclaration" ? stmt : stmt.type === "ExportNamedDeclaration" ? asNode(stmt.declaration) : void 0;
-      if (!vd || vd.type !== "VariableDeclaration") continue;
-      for (const d of asNodes(vd.declarations)) {
-        const idn = asNode(d.id);
-        const init = asNode(d.init);
-        if (idn?.type === "Identifier" && typeof idn.name === "string" && init?.type === "StringLiteral" && typeof init.value === "string") {
-          constStrings.set(idn.name, init.value);
-        }
-      }
-    }
-  }
-  const definesIds = [];
-  let providesHtmlLang = false;
-  for (const el of doc.elements) {
-    const id = el.attribs.id;
-    if (id && !id.startsWith("{")) definesIds.push(id);
-    else if (id) {
-      const m = /^\{\s*([A-Za-z_$][\w$]*)\s*\}$/.exec(id);
-      const resolved = m ? constStrings.get(m[1]) : void 0;
-      if (resolved) definesIds.push(resolved);
-    }
-    if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
-  }
-  const opaqueComponents = doc.opaqueComponents ?? [];
-  const finish = () => {
-    if (opts.sfc) {
-      const name = pascalCaseBasename(posix);
-      if (!components.has(name)) {
-        const def = {
-          name,
-          file: posix,
-          line: 1,
-          col: 1,
-          hasControl: true,
-          rendersIconOnlyControl: false,
-          acceptsName: false,
-          controlHasName: false,
-          spreadsProps: false,
-          forwardsAria: false
-        };
-        components.set(name, def);
-        if (!components.has("default")) components.set("default", def);
-      }
-    }
-    return { file: posix, imports, components, definesIds, providesHtmlLang, starReexports, opaqueComponents };
-  };
-  if (!ast) return finish();
-  const body = asNodes((asNode(ast.program) ?? ast).body);
-  const register2 = (def) => {
-    if (!components.has(def.name)) components.set(def.name, def);
-  };
-  for (const stmt of body) {
-    if (stmt.type === "ImportDeclaration") {
-      const source = asNode(stmt.source);
-      const spec = source && typeof source.value === "string" ? source.value : "";
-      for (const s of asNodes(stmt.specifiers)) {
-        const local = asNode(s.local);
-        const localName = local && typeof local.name === "string" ? local.name : "";
-        if (!localName) continue;
-        if (s.type === "ImportDefaultSpecifier") imports.push({ source: spec, local: localName, imported: "default" });
-        else if (s.type === "ImportNamespaceSpecifier") imports.push({ source: spec, local: localName, imported: "*" });
-        else if (s.type === "ImportSpecifier") {
-          const imp = asNode(s.imported);
-          const impName = imp && typeof imp.name === "string" ? imp.name : localName;
-          imports.push({ source: spec, local: localName, imported: impName });
-        }
-      }
-    } else if (stmt.type === "FunctionDeclaration" || stmt.type === "VariableDeclaration") {
-      for (const def of declComponents(stmt, posix)) register2(def);
-    } else if (stmt.type === "ExportNamedDeclaration") {
-      const decl = asNode(stmt.declaration);
-      if (decl) for (const def of declComponents(decl, posix)) register2(def);
-      const src = asNode(stmt.source);
-      const reExportSpec = src && typeof src.value === "string" ? src.value : void 0;
-      for (const s of asNodes(stmt.specifiers)) {
-        const localN = asNode(s.local);
-        const exportedN = asNode(s.exported);
-        const localName = localN && typeof localN.name === "string" ? localN.name : "";
-        const exportedName = exportedN && typeof exportedN.name === "string" ? exportedN.name : "";
-        if (reExportSpec) {
-          if (exportedName) imports.push({ source: reExportSpec, local: exportedName, imported: localName || exportedName });
-          continue;
-        }
-        const def = components.get(localName);
-        if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
-      }
-    } else if (stmt.type === "ExportAllDeclaration") {
-      const src = asNode(stmt.source);
-      const spec = src && typeof src.value === "string" ? src.value : "";
-      if (spec && !asNode(stmt.exported)) starReexports.push(spec);
-    } else if (stmt.type === "ExportDefaultDeclaration") {
-      const decl = asNode(stmt.declaration);
-      if (!decl) continue;
-      if (decl.type === "FunctionDeclaration") {
-        const id = asNode(decl.id);
-        const name = id && typeof id.name === "string" ? id.name : "default";
-        const def = analyzeComponent(name === "default" ? "default" : name, posix, decl);
-        register2(def);
-        if (!components.has("default")) components.set("default", def);
-      } else if (decl.type === "ArrowFunctionExpression" || decl.type === "FunctionExpression") {
-        const def = analyzeComponent("default", posix, decl);
-        if (!components.has("default")) components.set("default", def);
-      } else if (decl.type === "Identifier") {
-        const ref = typeof decl.name === "string" ? components.get(decl.name) : void 0;
-        if (ref && !components.has("default")) components.set("default", ref);
-      }
-    }
-  }
-  return finish();
-}
-
-// src/graph/tsconfig.ts
-import { existsSync as existsSync2, readFileSync as readFileSync2 } from "fs";
-import { dirname as dirname2, join as join3, resolve, relative } from "path";
-function readJsonish(path) {
-  try {
-    const raw = readFileSync2(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1").replace(/,(\s*[}\]])/g, "$1");
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-function findTsconfig(startDir) {
-  let dir = resolve(startDir);
-  for (let i = 0; i < 30; i++) {
-    const p = join3(dir, "tsconfig.json");
-    if (existsSync2(p)) return p;
-    const parent = dirname2(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
-}
-function readTsAliases(startDir, cwd = process.cwd()) {
-  const tsconfigPath = findTsconfig(startDir);
-  if (!tsconfigPath) return [];
-  const root = dirname2(tsconfigPath);
-  const cfg = readJsonish(tsconfigPath);
-  if (!cfg) return [];
-  let co = cfg.compilerOptions ?? {};
-  const exts = Array.isArray(cfg.extends) ? cfg.extends : typeof cfg.extends === "string" ? [cfg.extends] : [];
-  for (const e of exts) {
-    if (typeof e !== "string") continue;
-    const ext2 = e.endsWith(".json") ? e : `${e}.json`;
-    const base = readJsonish(resolve(root, ext2));
-    if (base?.compilerOptions) co = { ...base.compilerOptions, ...co };
-  }
-  const baseUrl = typeof co.baseUrl === "string" ? co.baseUrl : ".";
-  const baseAbs = resolve(root, baseUrl);
-  const paths = co.paths ?? {};
-  const out = [];
-  for (const [pattern, targetsRaw] of Object.entries(paths)) {
-    if (!Array.isArray(targetsRaw)) continue;
-    const targets = targetsRaw.filter((t2) => typeof t2 === "string");
-    if (!targets.length) continue;
-    const wildcard = pattern.includes("*");
-    const prefix2 = wildcard ? pattern.slice(0, pattern.indexOf("*")) : pattern;
-    const bases = targets.map((t2) => {
-      const star = t2.indexOf("*");
-      const tp = wildcard && star >= 0 ? t2.slice(0, star) : t2;
-      return toPosix(relative(cwd, join3(baseAbs, tp))) || ".";
-    });
-    out.push({ prefix: prefix2, wildcard, bases });
-  }
-  return out;
-}
-
-// src/graph/build.ts
-var GRAPH_ONLY = new Set(GRAPH_ONLY_EXT);
-function emptyDoc(file, source) {
-  return { file, source, lossy: false, kind: "html", roots: [], elements: [], byId: /* @__PURE__ */ new Map(), lineStarts: [0] };
-}
-var SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
-function sfcScriptSource(content, file) {
-  if (/\.astro$/i.test(file)) return splitAstroFrontmatter(content).frontmatter;
-  return [...content.matchAll(SCRIPT_BLOCK_RE)].map((m) => m[1] ?? "").join("\n");
-}
-function buildGraphStreaming(files) {
-  const nodes = [];
-  for (const file of files) {
-    let content;
-    try {
-      content = readText(file);
-    } catch {
-      continue;
-    }
-    let ast = null;
-    let doc;
-    let sfc = false;
-    if (GRAPH_ONLY.has(ext(file))) {
-      ast = parseJsxAst(content);
-      doc = emptyDoc(file, content);
-    } else if (detectKind(file) === "jsx") {
-      ast = parseJsxAst(content);
-      doc = ast ? jsxAstToDoc(ast, content, file) : parseHtml(jsxToHtml(content), file, true);
-    } else if (detectKind(file) === "sfc") {
-      sfc = true;
-      const htmlSource = /\.astro$/i.test(file) ? splitAstroFrontmatter(content).blanked : content;
-      doc = parseHtml(htmlSource, file, false, true);
-      const scriptSrc = sfcScriptSource(content, file);
-      if (scriptSrc) ast = parseJsxAst(scriptSrc);
-    } else {
-      doc = parseHtml(content, file, false);
-    }
-    nodes.push(extractGraphNode(ast, doc, file, { sfc }));
-  }
-  const aliases = readTsAliases(files[0] ? dirname3(files[0]) : process.cwd());
-  return buildGraph(nodes, aliases);
-}
-
-// src/discover.ts
-import { existsSync as existsSync3 } from "fs";
-import { execFileSync } from "child_process";
-import { join as join4, relative as relative2 } from "path";
-function git(args, maxBuffer) {
-  try {
-    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], ...maxBuffer ? { maxBuffer } : {} });
-  } catch {
-    return null;
-  }
-}
-function gitChangedFiles(ref) {
-  const top = git(["rev-parse", "--show-toplevel"]);
-  if (top === null) return null;
-  const repoRoot2 = top.trim();
-  const base = ref?.trim() ? ref.trim() : "HEAD";
-  const out = /* @__PURE__ */ new Set();
-  const add2 = (s) => {
-    if (!s) return;
-    for (const line of s.split("\n")) {
-      const t2 = line.trim();
-      if (t2) out.add(t2);
-    }
-  };
-  add2(git(["diff", "--name-only", "--diff-filter=d", base]));
-  add2(git(["diff", "--name-only", "--diff-filter=d", "--cached", base]));
-  add2(git(["ls-files", "--others", "--exclude-standard"]));
-  const cwd = process.cwd();
-  return [...out].map((p) => relative2(cwd, join4(repoRoot2, p)));
-}
-function gitStagedFiles() {
-  const top = git(["rev-parse", "--show-toplevel"]);
-  if (top === null) return null;
-  const out = git(["diff", "--cached", "--name-only", "--diff-filter=d"]);
-  if (out === null) return null;
-  const repoRoot2 = top.trim();
-  const cwd = process.cwd();
-  return out.split("\n").map((s) => s.trim()).filter(Boolean).map((p) => relative2(cwd, join4(repoRoot2, p)));
-}
-function stagedContent(file) {
-  return git(["show", `:./${toPosix(file)}`], 32 * 1024 * 1024);
-}
-function hasUnstagedChanges(file) {
-  return !!git(["diff", "--name-only", "--", file])?.trim();
-}
-function gitAdd(file) {
-  git(["add", "--", file]);
-}
-var TIER0 = /(^|\/)(layout|template|_app|_document|app|main|index)[.\-/]|(^|\/)(layouts?|templates?)\//i;
-var TIER1 = /(^|\/)(components?|shared|ui|design-system|ds|partials?|includes?)\//i;
-function priority(file) {
-  const rel = toPosix(file);
-  if (TIER0.test(rel)) return 0;
-  if (TIER1.test(rel)) return 1;
-  return 2;
-}
-function byPriorityThenPath(a, b) {
-  return priority(a) - priority(b) || (a < b ? -1 : a > b ? 1 : 0);
-}
-function discover(inputs, opts = {}) {
-  const changedMode = !!(opts.changed || opts.since || opts.staged);
-  let files;
-  let gitUnavailable = false;
-  let staged;
-  if (opts.staged) {
-    const stagedFiles = gitStagedFiles();
-    if (stagedFiles === null) {
-      gitUnavailable = true;
-      opts.onWarn?.("ultra11y: --staged requested but git is unavailable here \u2014 falling back to a full scan.");
-      files = expandInputs(inputs, opts);
-    } else {
-      const filter = makeFilter(opts);
-      const inScope = inScopeMatcher(inputs);
-      const scoped = stagedFiles.filter((f) => filter(f) && (!inScope || inScope(f)));
-      staged = /* @__PURE__ */ new Map();
-      for (const f of scoped) {
-        const c = stagedContent(f);
-        if (c !== null) staged.set(f, c);
-      }
-      files = [...staged.keys()];
-    }
-  } else if (changedMode) {
-    const changed = gitChangedFiles(opts.since);
-    if (changed === null) {
-      gitUnavailable = true;
-      opts.onWarn?.("ultra11y: --changed requested but git is unavailable here \u2014 falling back to a full scan.");
-      files = expandInputs(inputs, opts);
-    } else {
-      const filter = makeFilter(opts);
-      const inScope = inScopeMatcher(inputs);
-      files = changed.filter((f) => existsSync3(f) && filter(f) && (!inScope || inScope(f)));
-    }
-  } else {
-    files = expandInputs(inputs, opts);
-  }
-  files = [...new Set(files)].sort(byPriorityThenPath);
-  return { files, changedMode, gitUnavailable, ...staged ? { stagedContent: staged } : {} };
-}
-
-// src/audit.ts
-var has = (d, ...tags) => d.elements.some((e) => tags.includes(e.tag));
-var APPLICABLE = {
-  "1.4.2": (d) => has(d, "audio", "video"),
-  // Audio Control — autoplay-media (audio branch)
-  "2.4.2": (d) => isFullDocument(d),
-  // Page Titled — title-missing-empty
-  "3.1.1": (d) => isFullDocument(d)
-  // Language of Page — html-lang-missing / lang-invalid
-};
-function residualReason(automatability) {
-  return automatability === "needs-rendering" ? "Needs a rendered DOM (contrast, focus visibility, zoom/reflow, target size) \u2014 decide via `scan`." : "Judgement criterion \u2014 adjudicated by the agent from source/context (`verify --manual`, gated).";
-}
-var STATIC_PREDS = allSC().filter((c) => c.automatability === "static").map((c) => [c.sc, APPLICABLE[c.sc] ?? isFullDocument]);
-function newAccum() {
-  return {
-    byCriterion: /* @__PURE__ */ new Map(),
-    applicable: /* @__PURE__ */ new Map(),
-    allFindings: [],
-    fileCount: 0,
-    opaqueLibs: /* @__PURE__ */ new Set(),
-    opaqueFiles: 0,
-    sfcFiles: 0,
-    sfcExts: /* @__PURE__ */ new Set(),
-    captures: [],
-    langCounts: /* @__PURE__ */ new Map()
-  };
-}
-function primarySubtag(lang) {
-  const m = lang.trim().match(/^[a-z]{1,8}/i);
-  return m ? m[0].toLowerCase() : void 0;
-}
-function foldDoc(acc, doc, graph) {
-  let findings = runRules(doc);
-  if (graph) {
-    const cross = runCrossRules(doc, graph);
-    if (cross.suppress.length) {
-      findings = findings.filter((f) => !cross.suppress.some((s) => s.ruleId === f.ruleId && s.line === f.line));
-    }
-    findings = findings.concat(cross.findings);
-    for (const f of cross.findings) acc.applicable.set(f.criteriaId, true);
-  }
-  for (const f of findings) {
-    acc.allFindings.push(f);
-    const arr = acc.byCriterion.get(f.criteriaId) ?? [];
-    arr.push(f);
-    acc.byCriterion.set(f.criteriaId, arr);
-  }
-  for (const [id, pred] of STATIC_PREDS) {
-    if (!acc.applicable.get(id) && pred(doc)) acc.applicable.set(id, true);
-  }
-  if (doc.opaqueComponents?.length) {
-    for (const lib of doc.opaqueComponents) acc.opaqueLibs.add(lib);
-    acc.opaqueFiles++;
-  }
-  if (doc.kind === "sfc") {
-    acc.sfcFiles++;
-    const e = doc.file.toLowerCase().match(/\.[a-z]+$/)?.[0];
-    if (e) acc.sfcExts.add(e);
-  }
-  if (doc.capture) acc.captures.push({ file: doc.file, provenance: doc.capture });
-  const html = elementsByTag(doc, "html")[0];
-  const htmlLang = html ? (attr(html, "lang") ?? attr(html, "xml:lang") ?? "").trim() : "";
-  const subtag = htmlLang ? primarySubtag(htmlLang) : void 0;
-  if (subtag) acc.langCounts.set(subtag, (acc.langCounts.get(subtag) ?? 0) + 1);
-  acc.fileCount++;
-}
-function finalize(acc, inputs, extra = {}) {
-  const criteria = [];
-  const residualRisks = [];
-  for (const c of allSC()) {
-    const fs = acc.byCriterion.get(c.sc) ?? [];
-    let status;
-    let justification;
-    if (c.automatability === "static") {
-      const applicable = acc.applicable.get(c.sc) ?? false;
-      if (!applicable) {
-        status = "NA";
-        justification = "No element in scope is concerned by this success criterion.";
-      } else if (fs.length > 0) {
-        status = "NC";
-      } else {
-        status = "C";
-      }
-    } else if (fs.length > 0) {
-      status = "NC";
-    } else {
-      status = "manual";
-      residualRisks.push({ criteriaId: c.sc, reason: residualReason(c.automatability), automatability: c.automatability });
-    }
-    criteria.push({ id: c.sc, guideline: c.guideline, status, findings: fs, ...justification ? { justification } : {} });
-  }
-  const guidelines = allGuidelines().map((g) => {
-    const inG = criteria.filter((c) => c.guideline === g.number);
-    return {
-      key: g.number,
-      title: g.title,
-      c: inG.filter((c) => c.status === "C").length,
-      nc: inG.filter((c) => c.status === "NC").length,
-      na: inG.filter((c) => c.status === "NA").length,
-      manual: inG.filter((c) => c.status === "manual").length
-    };
-  });
-  const decided = criteria.filter((c) => c.status === "C" || c.status === "NC");
-  const conform = decided.filter((c) => c.status === "C").length;
-  const conformancePct = decided.length === 0 ? 100 : Math.round(conform / decided.length * 100);
-  return {
-    tool: "ultra11y",
-    standard: "wcag",
-    version: VERSION,
-    schemaVersion: SCHEMA_VERSION,
-    date: today(),
-    scope: {
-      inputs,
-      files: acc.fileCount,
-      ...extra.truncated ? { truncated: extra.truncated } : {},
-      ...extra.dedup ? { dedup: extra.dedup } : {},
-      ...acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {},
-      ...acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {},
-      ...acc.captures.length ? {
-        captures: {
-          files: acc.captures.length,
-          components: [...new Set(acc.captures.map((c) => c.provenance.component).filter((x) => !!x))].sort()
-        }
-      } : {},
-      ...acc.langCounts.size ? { langs: [...acc.langCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([lang]) => lang) } : {}
-    },
-    guidelines,
-    criteria,
-    findings: acc.allFindings,
-    residualRisks,
-    conformancePct
-  };
-}
-function hashContent(content, mode) {
-  const norm2 = mode === "normalized" ? content.replace(/>\s+</g, "><").trim() : content;
-  return createHash("sha1").update(norm2).digest("hex");
-}
-function runAudit(opts) {
-  const acc = newAccum();
-  const dedupMode = opts.changed || opts.since || opts.staged ? "off" : opts.dedup ?? "exact";
-  const seen = /* @__PURE__ */ new Set();
-  let duplicateFiles = 0;
-  let truncated;
-  const {
-    files: discovered,
-    gitUnavailable,
-    stagedContent: stagedContent2
-  } = discover(opts.inputs, {
-    include: opts.include,
-    exclude: opts.exclude,
-    ext: opts.ext,
-    changed: opts.changed,
-    since: opts.since,
-    staged: opts.staged,
-    noDefaultExcludes: opts.noDefaultExcludes,
-    onWarn: opts.onWarn
-  });
-  const useStaged = opts.staged === true && !gitUnavailable;
-  const diffMode = opts.changed || opts.since || opts.staged;
-  const relevantCaptures = opts.captureDiff && diffMode && opts.captureDir ? capturesForSources(opts.captureDir, discovered).filter((c) => !discovered.includes(c)) : [];
-  const files = relevantCaptures.length ? [...discovered, ...relevantCaptures] : discovered;
-  let graph;
-  if (opts.graph || opts.captureCoverage) {
-    const graphExt = [...GRAPH_ONLY_EXT, ...opts.ext ?? []];
-    const graphFiles = discover(opts.inputs, {
-      include: opts.include,
-      exclude: opts.exclude,
-      ext: graphExt,
-      noDefaultExcludes: opts.noDefaultExcludes
-    }).files;
-    graph = buildGraphStreaming(graphFiles);
-  }
-  for (let i = 0; i < files.length; i++) {
-    if (opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles) {
-      const skipped = files.length - acc.fileCount;
-      truncated = { limit: opts.maxFiles, total: files.length, skipped };
-      opts.onWarn?.(
-        `ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`
-      );
-      break;
-    }
-    const file = files[i];
-    let content;
-    const staged = useStaged ? stagedContent2?.get(file) : void 0;
-    if (staged !== void 0) {
-      content = staged;
-    } else {
-      try {
-        content = readText(file);
-      } catch {
-        continue;
-      }
-    }
-    if (dedupMode !== "off") {
-      const h = hashContent(content, dedupMode);
-      if (seen.has(h)) {
-        duplicateFiles++;
-        continue;
-      }
-      seen.add(h);
-    }
-    foldDoc(acc, parseSource(content, file, { forceJsx: opts.forceJsx }), graph);
-  }
-  const canonicalFiles = acc.fileCount;
-  if (opts.inputs.includes("-") && opts.stdin !== void 0 && !(opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles)) {
-    foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }), graph);
-  }
-  const result = finalize(acc, opts.inputs, {
-    ...truncated ? { truncated } : {},
-    ...duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}
-  });
-  if (graph) {
-    enrichCaptureOrigins(result.findings, graph);
-    if (opts.captureCoverage) result.scope.captureCoverage = computeCaptureCoverage(graph, readCaptureDir(opts.captureDir ?? ".ultra11y/captures"));
-  }
-  return result;
-}
-
-// src/report.ts
-import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
-import { join as join6 } from "path";
-
-// src/prd.ts
-import { mkdirSync, writeFileSync } from "fs";
-import { join as join5 } from "path";
-
 // src/data/standards/rgaa.json
 var rgaa_default = {
   key: "rgaa",
@@ -22754,6 +22416,104 @@ var rgaa_default = {
       fr: "Crit\xE8re d\u2019accessibilit\xE9"
     }
   },
+  sampleMethodology: {
+    requiredKinds: [
+      {
+        id: "accueil",
+        label: {
+          fr: "Page d\u2019accueil"
+        },
+        keywords: ["accueil", "home", "index", "racine", "homepage"]
+      },
+      {
+        id: "contact",
+        label: {
+          fr: "Contact"
+        },
+        keywords: ["contact", "nous contacter", "nous ecrire", "coordonnees"]
+      },
+      {
+        id: "mentions-legales",
+        label: {
+          fr: "Mentions l\xE9gales"
+        },
+        keywords: ["mentions legales", "mentions", "legal notice", "legal"]
+      },
+      {
+        id: "declaration-accessibilite",
+        label: {
+          fr: "D\xE9claration d\u2019accessibilit\xE9"
+        },
+        keywords: ["declaration d accessibilite", "declaration accessibilite", "accessibilite", "accessibility statement", "accessibility"]
+      },
+      {
+        id: "plan-du-site",
+        label: {
+          fr: "Plan du site"
+        },
+        keywords: ["plan du site", "sitemap", "site map"]
+      },
+      {
+        id: "aide",
+        label: {
+          fr: "Aide"
+        },
+        keywords: ["aide", "help", "faq", "assistance"]
+      },
+      {
+        id: "authentification",
+        label: {
+          fr: "Authentification"
+        },
+        keywords: ["authentification", "authentication", "connexion", "identification", "login", "log in", "sign in", "se connecter", "auth"]
+      },
+      {
+        id: "pages-representatives",
+        label: {
+          fr: "Pages repr\xE9sentatives"
+        },
+        keywords: ["representative", "representatif", "representatives", "gabarit", "template", "modele", "formulaire", "recherche", "resultats"]
+      },
+      {
+        id: "elements-transverses",
+        label: {
+          fr: "\xC9l\xE9ments transverses"
+        },
+        keywords: ["transverse", "transversaux", "en-tete", "entete", "header", "navigation", "menu", "pied de page", "footer"]
+      }
+    ]
+  },
+  rules: [
+    {
+      id: "download-link-format",
+      criterion: "6.1",
+      wcag: ["2.4.4"],
+      severity: "mineur",
+      advisory: true,
+      match: {
+        tag: "a",
+        attrs: [
+          {
+            name: "href",
+            op: "matches",
+            value: "\\.(pdf|docx?|pptx?|xlsx?|odt|ods|odp|rtf|csv|zip|rar|7z|gz|epub|mp3|mp4|avi|mov)(\\?|#|$)"
+          }
+        ],
+        text: {
+          op: "lacks",
+          value: "(pdf|docx?|pptx?|xlsx?|odt|ods|odp|rtf|csv|zip|rar|7z|gz|epub|mp3|mp4|avi|mov|\\d+\\s*(ko|mo|go|kb|mb|gb|octets?|bytes?))"
+        }
+      },
+      message: {
+        en: "Download link whose visible text states neither the file format nor its size.",
+        fr: "Lien de t\xE9l\xE9chargement dont l\u2019intitul\xE9 ne pr\xE9cise ni le format ni le poids du fichier."
+      },
+      remediation: {
+        en: "State the file format and size in the link text, e.g. \u201CAnnual report (PDF, 2 MB)\u201D.",
+        fr: "Indiquez le format et le poids du fichier dans l\u2019intitul\xE9 du lien, par exemple \xAB Rapport annuel (PDF, 2 Mo) \xBB."
+      }
+    }
+  ],
   themes: [
     {
       number: 1,
@@ -24063,7 +23823,7 @@ var rgaa_default = {
       ],
       wcag: ["1.3.1"],
       appliesTo: {
-        ruleIds: ["axe:scope-attr-valid", "axe:td-headers-attr", "data-table-no-headers", "sortable-header-no-aria-sort"]
+        ruleIds: ["axe:scope-attr-valid", "axe:td-headers-attr", "data-table-no-headers", "sortable-header-no-aria-sort", "table-empty-data-cell"]
       }
     },
     {
@@ -24137,7 +23897,7 @@ var rgaa_default = {
       ],
       wcag: ["1.1.1", "2.4.4", "2.5.3"],
       appliesTo: {
-        ruleIds: []
+        ruleIds: ["pack:rgaa:download-link-format"]
       }
     },
     {
@@ -24219,6 +23979,7 @@ var rgaa_default = {
           "cross-aria-forwarding",
           "cross-aria-ref-cross-file",
           "cross-prop-drilled-name-lost",
+          "disabled-context-content",
           "invalid-aria-role",
           "nested-interactive",
           "redundant-aria"
@@ -24332,7 +24093,7 @@ var rgaa_default = {
       ],
       wcag: ["4.1.3"],
       appliesTo: {
-        ruleIds: ["live-region-conflict", "status-message-not-assertive"]
+        ruleIds: ["dyn-live-region", "live-region-conflict", "status-message-not-assertive"]
       }
     },
     {
@@ -24622,7 +24383,7 @@ var rgaa_default = {
       particularCases: ["Lorsque le doctype d\xE9clar\xE9 dans la page n\u2019est pas le doctype HTML5, ce crit\xE8re est non applicable."],
       wcag: ["1.3.1"],
       appliesTo: {
-        ruleIds: ["missing-main-landmark", "multiple-main-landmark"]
+        ruleIds: ["missing-main-landmark", "multiple-main-landmark", "nav-landmark-missing"]
       }
     },
     {
@@ -24722,7 +24483,7 @@ var rgaa_default = {
       techniques: ["G140", "F3", "F87"],
       wcag: ["1.1.1", "1.3.1"],
       appliesTo: {
-        ruleIds: []
+        ruleIds: ["css-generated-content-informative"]
       }
     },
     {
@@ -24775,7 +24536,7 @@ var rgaa_default = {
       ],
       wcag: ["1.4.4"],
       appliesTo: {
-        ruleIds: ["axe:meta-viewport", "axe:meta-viewport-large", "dyn-reflow-zoom", "meta-viewport-zoom-block"]
+        ruleIds: ["axe:meta-viewport", "axe:meta-viewport-large", "dyn-input-overflow-zoom", "dyn-reflow-zoom", "meta-viewport-zoom-block"]
       }
     },
     {
@@ -24874,7 +24635,7 @@ var rgaa_default = {
       ],
       wcag: ["1.3.2", "4.1.2"],
       appliesTo: {
-        ruleIds: []
+        ruleIds: ["disabled-context-content"]
       }
     },
     {
@@ -24962,7 +24723,7 @@ var rgaa_default = {
       ],
       wcag: ["1.4.10"],
       appliesTo: {
-        ruleIds: ["dyn-reflow"]
+        ruleIds: ["dyn-input-overflow-reflow", "dyn-reflow"]
       }
     },
     {
@@ -24990,7 +24751,7 @@ var rgaa_default = {
       ],
       wcag: ["1.4.12"],
       appliesTo: {
-        ruleIds: ["dyn-text-spacing"]
+        ruleIds: ["dyn-input-overflow-spacing", "dyn-text-spacing"]
       }
     },
     {
@@ -25222,7 +24983,7 @@ var rgaa_default = {
       techniques: ["H71", "ARIA17"],
       wcag: ["1.3.1", "3.3.2"],
       appliesTo: {
-        ruleIds: []
+        ruleIds: ["date-fields-ungrouped", "radio-checkbox-group-ungrouped"]
       }
     },
     {
@@ -25624,7 +25385,7 @@ var rgaa_default = {
       techniques: ["H69", "G115", "ARIA4", "ARIA11"],
       wcag: ["1.3.1", "2.4.1", "4.1.2"],
       appliesTo: {
-        ruleIds: ["axe:landmark-one-main", "missing-main-landmark", "multiple-main-landmark"]
+        ruleIds: ["axe:landmark-one-main", "missing-main-landmark", "multiple-main-landmark", "nav-landmark-missing", "nav-landmark-unnamed"]
       }
     },
     {
@@ -26557,6 +26318,29 @@ var rgaa_glossary_default = {
 var RESERVED_CORE_KEY = "wcag";
 var LOCALE_SHAPE = /^[a-z]{2,3}(-[a-zA-Z]{2,4})?$/;
 var SC_SHAPE = /^\d+\.\d+\.\d+$/;
+var RULE_ID_SHAPE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+var SEVERITIES = /* @__PURE__ */ new Set(["bloquant", "majeur", "mineur"]);
+var MAX_MATCH_DEPTH = 3;
+var MATCH_OPS = /* @__PURE__ */ new Set(["present", "absent", "equals", "matches"]);
+var TEXT_OPS = /* @__PURE__ */ new Set(["matches", "lacks"]);
+var MATCH_CONDITION_KEYS = ["tag", "attrs", "text", "has", "lacks"];
+var MATCH_NODE_KEYS = new Set(MATCH_CONDITION_KEYS);
+var REDOS_SINGLE_ATOM = /\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/;
+var REDOS_ALT_QUANTIFIED = /\([^()]*\|[^()]*\)[*+]/;
+var REDOS_NESTED_QUANT_GROUP = /\((?![\\])[^()|]*[*+][^()|]*\)[*+]/;
+function isRedosShape(pattern) {
+  return REDOS_SINGLE_ATOM.test(pattern) || REDOS_ALT_QUANTIFIED.test(pattern) || REDOS_NESTED_QUANT_GROUP.test(pattern);
+}
+function regexIssue(pattern) {
+  if (isRedosShape(pattern))
+    return "has a nested quantifier or an ambiguous alternation (e.g. (a+)+, (a|a)*, (ab+)+) \u2014 a catastrophic-backtracking (ReDoS) shape; simplify it";
+  try {
+    new RegExp(pattern);
+  } catch (e) {
+    return `is not a valid regex: ${e.message}`;
+  }
+  return null;
+}
 function classifySc(sc) {
   if (!SC_SHAPE.test(sc)) return "malformed";
   if (hasSC(sc)) return "core";
@@ -26603,14 +26387,9 @@ function validatePack(raw, opts = {}) {
   const loc = typeof defaultLocale === "string" ? defaultLocale : locales[0] ?? "en";
   let idRe = null;
   if (typeof p.idPattern === "string") {
-    if (/\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/.test(p.idPattern)) {
-      err("idPattern", "idPattern has a nested quantifier (e.g. (a+)+) \u2014 a catastrophic-backtracking (ReDoS) shape; simplify it");
-    }
-    try {
-      idRe = new RegExp(p.idPattern);
-    } catch (e) {
-      err("idPattern", `idPattern is not a valid regex: ${e.message}`);
-    }
+    const bad = regexIssue(p.idPattern);
+    if (bad) err("idPattern", `idPattern ${bad}`);
+    else idRe = new RegExp(p.idPattern);
   }
   const themes = Array.isArray(p.themes) ? p.themes : null;
   if (!themes) err("themes", "themes must be an array");
@@ -26727,7 +26506,188 @@ function validatePack(raw, opts = {}) {
       }
     }
   }
+  if (p.sampleMethodology !== void 0) {
+    const m = p.sampleMethodology;
+    const kinds = m && typeof m === "object" && !Array.isArray(m) ? m.requiredKinds : void 0;
+    if (!m || typeof m !== "object" || Array.isArray(m) || !Array.isArray(kinds)) {
+      warn("sampleMethodology", "sampleMethodology must be an object { requiredKinds: [...] } \u2014 ignored");
+    } else {
+      kinds.forEach((k, i) => {
+        const kk = k;
+        if (!kk || typeof kk !== "object" || Array.isArray(kk)) {
+          warn(`sampleMethodology.requiredKinds[${i}]`, "each required kind must be an object { id, label, keywords } \u2014 ignored");
+          return;
+        }
+        if (typeof kk.id !== "string" || kk.id.trim() === "") warn(`sampleMethodology.requiredKinds[${i}].id`, "required kind id should be a non-empty string");
+        const label = kk.label;
+        if (!label || typeof label !== "object" || Array.isArray(label) || typeof label[loc] !== "string")
+          warn(`sampleMethodology.requiredKinds[${i}].label`, `required kind should carry label[${loc}]`);
+        if (!Array.isArray(kk.keywords) || kk.keywords.some((w) => typeof w !== "string"))
+          warn(`sampleMethodology.requiredKinds[${i}].keywords`, "required kind keywords should be an array of strings");
+      });
+    }
+  }
+  if (p.rules !== void 0) {
+    if (!Array.isArray(p.rules)) {
+      err("rules", "rules must be an array");
+    } else {
+      const ruleIds2 = /* @__PURE__ */ new Set();
+      p.rules.forEach((raw2, i) => {
+        const at = `rules[${i}]`;
+        if (typeof raw2 !== "object" || raw2 === null || Array.isArray(raw2)) {
+          err(at, "each rule must be an object");
+          return;
+        }
+        const r = raw2;
+        const rid = r.id;
+        if (typeof rid !== "string" || !RULE_ID_SHAPE.test(rid)) {
+          err(`${at}.id`, 'rule id must be a lower-kebab slug (e.g. "download-link-format")');
+        } else {
+          if (ruleIds2.has(rid)) err(`${at}.id`, `duplicate rule id "${rid}"`);
+          ruleIds2.add(rid);
+        }
+        if (typeof r.criterion !== "string" || r.criterion === "") {
+          err(`${at}.criterion`, "rule criterion must be a non-empty string");
+        } else if (!ids.has(r.criterion)) {
+          err(`${at}.criterion`, `rule reports under criterion "${r.criterion}" which does not exist in this pack`);
+        }
+        if (typeof r.severity !== "string" || !SEVERITIES.has(r.severity)) {
+          err(`${at}.severity`, "rule severity must be one of bloquant|majeur|mineur");
+        }
+        if (r.advisory !== void 0 && typeof r.advisory !== "boolean") err(`${at}.advisory`, "rule advisory must be a boolean");
+        const wcag = Array.isArray(r.wcag) ? r.wcag : null;
+        if (!wcag || wcag.length === 0) {
+          err(`${at}.wcag`, "rule must map to at least one WCAG SC");
+        } else {
+          wcag.forEach((sc, j) => {
+            const where = `${at}.wcag[${j}]`;
+            if (typeof sc !== "string") {
+              err(where, `malformed SC id "${String(sc)}" (expected N.N.N)`);
+              return;
+            }
+            switch (classifySc(sc)) {
+              case "malformed":
+                err(where, `malformed SC id "${sc}" (expected N.N.N)`);
+                break;
+              case "unknown":
+                err(where, `SC "${sc}" is not a recognized WCAG success criterion \u2014 fabricated?`);
+                break;
+              case "out-of-core":
+                warn(where, `SC "${sc}" is a real WCAG AAA success criterion, outside the WCAG 2.2 AA core (out of engine scope)`);
+                break;
+              case "removed":
+                warn(where, `SC "${sc}" is a real but removed WCAG success criterion (obsolete)`);
+                break;
+            }
+          });
+          if (typeof r.criterion === "string") {
+            const crit = criteria?.find((c) => c.id === r.criterion);
+            const critWcag = Array.isArray(crit?.wcag) ? crit.wcag : [];
+            if (critWcag.length && !wcag.some((sc) => critWcag.includes(sc)))
+              warn(`${at}.wcag`, `none of the rule's SC(s) are in criterion ${String(r.criterion)}'s WCAG mapping \u2014 the finding will not project`);
+          }
+        }
+        validateMatch(r.match, `${at}.match`, 1, err, true);
+        validateLocaleText(r.message, `${at}.message`, err);
+        validateLocaleText(r.remediation, `${at}.remediation`, err);
+      });
+    }
+  }
+  if (p.overrides !== void 0) {
+    if (typeof p.overrides !== "object" || p.overrides === null || Array.isArray(p.overrides)) {
+      err("overrides", "overrides must be an object keyed by ruleId");
+    } else {
+      for (const [ruleId, raw2] of Object.entries(p.overrides)) {
+        const at = `overrides["${ruleId}"]`;
+        if (typeof raw2 !== "object" || raw2 === null || Array.isArray(raw2)) {
+          err(at, "each override must be an object { advisory?, severity? }");
+          continue;
+        }
+        const o = raw2;
+        if (o.advisory !== void 0 && typeof o.advisory !== "boolean") err(`${at}.advisory`, "override advisory must be a boolean");
+        if (o.severity !== void 0 && (typeof o.severity !== "string" || !SEVERITIES.has(o.severity)))
+          err(`${at}.severity`, "override severity must be one of bloquant|majeur|mineur");
+        if (o.advisory === void 0 && o.severity === void 0) warn(at, "override has neither advisory nor severity \u2014 no effect");
+      }
+    }
+  }
   return done();
+}
+function validateMatch(node, path, depth, err, top) {
+  if (top && node === void 0) {
+    err(path, "rule must carry a match");
+    return;
+  }
+  if (typeof node !== "object" || node === null || Array.isArray(node)) {
+    err(path, "match must be an object");
+    return;
+  }
+  if (depth > MAX_MATCH_DEPTH) {
+    err(path, `match nesting exceeds the maximum depth of ${MAX_MATCH_DEPTH}`);
+    return;
+  }
+  const n = node;
+  const allowedKeys = top ? /* @__PURE__ */ new Set([...MATCH_NODE_KEYS, "scope"]) : MATCH_NODE_KEYS;
+  for (const k of Object.keys(n)) {
+    if (!allowedKeys.has(k)) err(`${path}.${k}`, `unknown match key "${k}" (allowed: ${[...allowedKeys].sort().join(", ")})`);
+  }
+  const hasCondition = MATCH_CONDITION_KEYS.some((k) => {
+    const v = n[k];
+    if (k === "tag") return typeof v === "string" && v !== "";
+    if (k === "text") return v !== void 0 && v !== null;
+    return Array.isArray(v) && v.length > 0;
+  });
+  if (!hasCondition) err(path, "match must carry at least one condition (tag, attrs, text, has, or lacks) \u2014 an empty match fires on every element");
+  if (n.tag !== void 0 && (typeof n.tag !== "string" || n.tag === "")) err(`${path}.tag`, "match tag must be a non-empty string");
+  if (top && n.scope !== void 0 && n.scope !== "page" && n.scope !== "fragment") err(`${path}.scope`, 'match scope must be "page" or "fragment"');
+  if (n.attrs !== void 0) {
+    if (!Array.isArray(n.attrs)) err(`${path}.attrs`, "match attrs must be an array");
+    else
+      n.attrs.forEach((raw, i) => {
+        const a = raw;
+        const at = `${path}.attrs[${i}]`;
+        if (!a || typeof a !== "object" || Array.isArray(a)) {
+          err(at, "each attr condition must be an object { name, op, value? }");
+          return;
+        }
+        if (typeof a.name !== "string" || a.name === "") err(`${at}.name`, "attr name must be a non-empty string");
+        if (typeof a.op !== "string" || !MATCH_OPS.has(a.op)) err(`${at}.op`, "attr op must be one of present|absent|equals|matches");
+        if ((a.op === "equals" || a.op === "matches") && typeof a.value !== "string") err(`${at}.value`, `attr op "${String(a.op)}" requires a string value`);
+        if (a.op === "matches" && typeof a.value === "string") {
+          const bad = regexIssue(a.value);
+          if (bad) err(`${at}.value`, `attr matches regex ${bad}`);
+        }
+      });
+  }
+  if (n.text !== void 0) {
+    const t2 = n.text;
+    if (!t2 || typeof t2 !== "object" || Array.isArray(t2)) {
+      err(`${path}.text`, "match text must be an object { op, value }");
+    } else {
+      if (typeof t2.op !== "string" || !TEXT_OPS.has(t2.op)) err(`${path}.text.op`, "text op must be one of matches|lacks");
+      if (typeof t2.value !== "string" || t2.value === "") err(`${path}.text.value`, "text value must be a non-empty regex string");
+      else {
+        const bad = regexIssue(t2.value);
+        if (bad) err(`${path}.text.value`, `text regex ${bad}`);
+      }
+    }
+  }
+  for (const key of ["has", "lacks"]) {
+    const v = n[key];
+    if (v === void 0) continue;
+    if (!Array.isArray(v)) err(`${path}.${key}`, `match ${key} must be an array of match nodes`);
+    else v.forEach((child, i) => validateMatch(child, `${path}.${key}[${i}]`, depth + 1, err, false));
+  }
+}
+function validateLocaleText(v, path, err) {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) {
+    err(path, "must be a localized object carrying both en and fr");
+    return;
+  }
+  const t2 = v;
+  for (const lang of ["en", "fr"]) {
+    if (typeof t2[lang] !== "string" || t2[lang] === "") err(`${path}.${lang}`, `missing ${lang} text`);
+  }
 }
 function normalize(p) {
   return { ...p, key: String(p.key).toLowerCase() };
@@ -26778,6 +26738,764 @@ function packsForSc(sc) {
   }
   return out;
 }
+
+// src/standards/pack-rules.ts
+var MAX_MATCH_DEPTH2 = 3;
+var regexCache = /* @__PURE__ */ new Map();
+function compile(pattern) {
+  let re = regexCache.get(pattern);
+  if (!re) {
+    re = new RegExp(pattern, "i");
+    regexCache.set(pattern, re);
+  }
+  return re;
+}
+function matchAttr(el, a) {
+  const v = el.attribs[a.name.toLowerCase()];
+  switch (a.op) {
+    case "present":
+      return v !== void 0;
+    case "absent":
+      return v === void 0;
+    case "equals":
+      return v !== void 0 && v === a.value;
+    case "matches":
+      return v !== void 0 && a.value !== void 0 && compile(a.value).test(v);
+    default:
+      return false;
+  }
+}
+function matchText(el, t2) {
+  const text = visibleText(el);
+  const hit = compile(t2.value).test(text);
+  return t2.op === "matches" ? hit : !hit;
+}
+function matchNode(el, node, depth) {
+  if (depth > MAX_MATCH_DEPTH2) return false;
+  if (node.tag && el.tag.toLowerCase() !== node.tag.toLowerCase()) return false;
+  if (node.attrs && !node.attrs.every((a) => matchAttr(el, a))) return false;
+  if (node.text && !matchText(el, node.text)) return false;
+  if (node.has || node.lacks) {
+    const desc = descendants(el);
+    if (node.has && !node.has.every((sub) => desc.some((d) => matchNode(d, sub, depth + 1)))) return false;
+    if (node.lacks && node.lacks.some((sub) => desc.some((d) => matchNode(d, sub, depth + 1)))) return false;
+  }
+  return true;
+}
+function toFinding2(doc, el, rule, packKey) {
+  const message = rule.message.en ?? rule.message.fr ?? rule.id;
+  const remediation = rule.remediation.en ?? rule.remediation.fr ?? "";
+  return {
+    ruleId: `pack:${packKey}:${rule.id}`,
+    criteriaId: rule.wcag[0],
+    file: doc.file,
+    line: el.line,
+    col: el.col,
+    selectorHint: selectorOf(el),
+    severity: rule.severity,
+    message,
+    remediation,
+    snippet: snippet(doc, el),
+    sourceStart: el.start,
+    sourceEnd: el.end,
+    i18n: {
+      message: { en: rule.message.en, fr: rule.message.fr },
+      remediation: { en: rule.remediation.en, fr: rule.remediation.fr }
+    },
+    ...rule.advisory ? { advisory: true } : {}
+  };
+}
+function runPackRules(doc, pack) {
+  const rules = pack.rules;
+  if (!rules || rules.length === 0) return [];
+  const out = [];
+  const fullDoc = isFullDocument(doc);
+  for (const rule of rules) {
+    if (rule.match.scope === "page" && !fullDoc) continue;
+    for (const el of doc.elements) {
+      if (matchNode(el, rule.match, 1)) out.push(toFinding2(doc, el, rule, pack.key));
+    }
+  }
+  return out;
+}
+
+// src/graph/build.ts
+import { dirname as dirname3 } from "path";
+
+// src/graph/imports.ts
+var NAME_PROPS2 = /* @__PURE__ */ new Set(["aria-label", "aria-labelledby", "title", "label", "alt"]);
+var ICON_TAGS = /* @__PURE__ */ new Set(["svg", "path", "use", "img", "i"]);
+function opening(jsxEl) {
+  return asNode(jsxEl.openingElement);
+}
+function attrName(a) {
+  return normAttrName(jsxName(asNode(a.name)));
+}
+function attrIsExpr(a) {
+  return asNode(a.value)?.type === "JSXExpressionContainer";
+}
+function attrIsLiteral(a) {
+  return asNode(a.value)?.type === "StringLiteral";
+}
+function controlAttrs(jsxEl) {
+  const op = opening(jsxEl);
+  return op ? asNodes(op.attributes).filter((a) => a.type === "JSXAttribute") : [];
+}
+function hasSpread(jsxEl) {
+  const op = opening(jsxEl);
+  return op ? asNodes(op.attributes).some((a) => a.type === "JSXSpreadAttribute") : false;
+}
+function tagOf(jsxEl) {
+  const op = opening(jsxEl);
+  return op ? jsxName(asNode(op.name)) : "";
+}
+function hasLiteralText(jsxEl) {
+  let found = false;
+  walkAst(jsxEl, (n) => {
+    if (n.type === "JSXText" && typeof n.value === "string" && n.value.trim() !== "") found = true;
+  });
+  return found;
+}
+function hasIconChild2(jsxEl) {
+  let found = false;
+  walkAst(jsxEl, (n) => {
+    if (n.type !== "JSXElement" || n === jsxEl) return;
+    const name = tagOf(n);
+    const low = name.toLowerCase();
+    if (ICON_TAGS.has(low) || /icon|glyph/i.test(name)) found = true;
+  });
+  return found;
+}
+function rendersNameExpr(jsxEl) {
+  for (const c of asNodes(jsxEl.children)) {
+    if (c.type !== "JSXExpressionContainer") continue;
+    const expr = asNode(c.expression);
+    const id = expr && (expr.type === "Identifier" || expr.type === "JSXIdentifier") ? String(expr.name ?? "") : "";
+    if (/children|label|title|text|name/i.test(id)) return true;
+  }
+  return false;
+}
+function findControl(fnNode) {
+  let control;
+  walkAst(fnNode, (n) => {
+    if (control || n.type !== "JSXElement") return;
+    const tag = tagOf(n);
+    if (!isIntrinsic(tag)) return;
+    const low = tag.toLowerCase();
+    if (low === "button") control = n;
+    else if (low === "a" && controlAttrs(n).some((a) => attrName(a) === "href")) control = n;
+  });
+  return control;
+}
+function posOf(node) {
+  return { line: node.loc?.start.line ?? 1, col: (node.loc?.start.column ?? 0) + 1 };
+}
+function analyzeComponent(name, file, fnNode) {
+  const control = findControl(fnNode);
+  if (!control) {
+    const { line: line2, col: col2 } = posOf(fnNode);
+    return {
+      name,
+      file,
+      line: line2,
+      col: col2,
+      hasControl: false,
+      rendersIconOnlyControl: false,
+      acceptsName: false,
+      controlHasName: false,
+      spreadsProps: false,
+      forwardsAria: false
+    };
+  }
+  const { line, col } = posOf(control);
+  const attrs = controlAttrs(control);
+  const spreadsProps = hasSpread(control);
+  const forwardsAria = attrs.some((a) => (attrName(a) === "aria-label" || attrName(a) === "aria-labelledby") && attrIsExpr(a));
+  const literalAriaName = attrs.some((a) => NAME_PROPS2.has(attrName(a)) && attrIsLiteral(a));
+  const acceptsNameViaChildren = rendersNameExpr(control);
+  const acceptsName = spreadsProps || forwardsAria || acceptsNameViaChildren;
+  const controlHasName = literalAriaName || forwardsAria || hasLiteralText(control);
+  const rendersIconOnlyControl = hasIconChild2(control) && !hasLiteralText(control) && !literalAriaName && !forwardsAria;
+  return { name, file, line, col, hasControl: true, rendersIconOnlyControl, acceptsName, controlHasName, spreadsProps, forwardsAria };
+}
+function pascalCaseBasename(posix) {
+  const base = (posix.split("/").pop() ?? posix).replace(/\.[^.]+$/, "");
+  const name = base.split(/[^A-Za-z0-9]+/).filter(Boolean).map((seg) => seg[0].toUpperCase() + seg.slice(1)).join("");
+  return name || "Component";
+}
+function isCapitalized(name) {
+  const head = name.split(".")[0] ?? name;
+  const first = head[0] ?? "";
+  return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
+}
+function isComponentFn(init) {
+  return !!init && (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression" || init.type === "FunctionDeclaration");
+}
+function declComponents(decl, file) {
+  const out = [];
+  if (decl.type === "FunctionDeclaration") {
+    const id = asNode(decl.id);
+    const name = id && typeof id.name === "string" ? id.name : "";
+    if (name && isCapitalized(name)) out.push(analyzeComponent(name, file, decl));
+  } else if (decl.type === "VariableDeclaration") {
+    for (const d of asNodes(decl.declarations)) {
+      const id = asNode(d.id);
+      const init = asNode(d.init);
+      const name = id && typeof id.name === "string" ? id.name : "";
+      if (name && isCapitalized(name) && isComponentFn(init)) out.push(analyzeComponent(name, file, init));
+    }
+  }
+  return out;
+}
+function extractGraphNode(ast, doc, file, opts = {}) {
+  const posix = toPosix(file);
+  const imports = [];
+  const starReexports = [];
+  const components = /* @__PURE__ */ new Map();
+  const constStrings = /* @__PURE__ */ new Map();
+  if (ast) {
+    for (const stmt of asNodes((asNode(ast.program) ?? ast).body)) {
+      const vd = stmt.type === "VariableDeclaration" ? stmt : stmt.type === "ExportNamedDeclaration" ? asNode(stmt.declaration) : void 0;
+      if (!vd || vd.type !== "VariableDeclaration") continue;
+      for (const d of asNodes(vd.declarations)) {
+        const idn = asNode(d.id);
+        const init = asNode(d.init);
+        if (idn?.type === "Identifier" && typeof idn.name === "string" && init?.type === "StringLiteral" && typeof init.value === "string") {
+          constStrings.set(idn.name, init.value);
+        }
+      }
+    }
+  }
+  const definesIds = [];
+  let providesHtmlLang = false;
+  for (const el of doc.elements) {
+    const id = el.attribs.id;
+    if (id && !id.startsWith("{")) definesIds.push(id);
+    else if (id) {
+      const m = /^\{\s*([A-Za-z_$][\w$]*)\s*\}$/.exec(id);
+      const resolved = m ? constStrings.get(m[1]) : void 0;
+      if (resolved) definesIds.push(resolved);
+    }
+    if (el.tag === "html" && hasAttr(el, "lang") && (attr(el, "lang") ?? "") !== "") providesHtmlLang = true;
+  }
+  const opaqueComponents = doc.opaqueComponents ?? [];
+  const finish = () => {
+    if (opts.sfc) {
+      const name = pascalCaseBasename(posix);
+      if (!components.has(name)) {
+        const def = {
+          name,
+          file: posix,
+          line: 1,
+          col: 1,
+          hasControl: true,
+          rendersIconOnlyControl: false,
+          acceptsName: false,
+          controlHasName: false,
+          spreadsProps: false,
+          forwardsAria: false
+        };
+        components.set(name, def);
+        if (!components.has("default")) components.set("default", def);
+      }
+    }
+    return { file: posix, imports, components, definesIds, providesHtmlLang, starReexports, opaqueComponents };
+  };
+  if (!ast) return finish();
+  const body = asNodes((asNode(ast.program) ?? ast).body);
+  const register2 = (def) => {
+    if (!components.has(def.name)) components.set(def.name, def);
+  };
+  for (const stmt of body) {
+    if (stmt.type === "ImportDeclaration") {
+      const source = asNode(stmt.source);
+      const spec = source && typeof source.value === "string" ? source.value : "";
+      for (const s of asNodes(stmt.specifiers)) {
+        const local = asNode(s.local);
+        const localName = local && typeof local.name === "string" ? local.name : "";
+        if (!localName) continue;
+        if (s.type === "ImportDefaultSpecifier") imports.push({ source: spec, local: localName, imported: "default" });
+        else if (s.type === "ImportNamespaceSpecifier") imports.push({ source: spec, local: localName, imported: "*" });
+        else if (s.type === "ImportSpecifier") {
+          const imp = asNode(s.imported);
+          const impName = imp && typeof imp.name === "string" ? imp.name : localName;
+          imports.push({ source: spec, local: localName, imported: impName });
+        }
+      }
+    } else if (stmt.type === "FunctionDeclaration" || stmt.type === "VariableDeclaration") {
+      for (const def of declComponents(stmt, posix)) register2(def);
+    } else if (stmt.type === "ExportNamedDeclaration") {
+      const decl = asNode(stmt.declaration);
+      if (decl) for (const def of declComponents(decl, posix)) register2(def);
+      const src = asNode(stmt.source);
+      const reExportSpec = src && typeof src.value === "string" ? src.value : void 0;
+      for (const s of asNodes(stmt.specifiers)) {
+        const localN = asNode(s.local);
+        const exportedN = asNode(s.exported);
+        const localName = localN && typeof localN.name === "string" ? localN.name : "";
+        const exportedName = exportedN && typeof exportedN.name === "string" ? exportedN.name : "";
+        if (reExportSpec) {
+          if (exportedName) imports.push({ source: reExportSpec, local: exportedName, imported: localName || exportedName });
+          continue;
+        }
+        const def = components.get(localName);
+        if (def && exportedName && !components.has(exportedName)) components.set(exportedName, def);
+      }
+    } else if (stmt.type === "ExportAllDeclaration") {
+      const src = asNode(stmt.source);
+      const spec = src && typeof src.value === "string" ? src.value : "";
+      if (spec && !asNode(stmt.exported)) starReexports.push(spec);
+    } else if (stmt.type === "ExportDefaultDeclaration") {
+      const decl = asNode(stmt.declaration);
+      if (!decl) continue;
+      if (decl.type === "FunctionDeclaration") {
+        const id = asNode(decl.id);
+        const name = id && typeof id.name === "string" ? id.name : "default";
+        const def = analyzeComponent(name === "default" ? "default" : name, posix, decl);
+        register2(def);
+        if (!components.has("default")) components.set("default", def);
+      } else if (decl.type === "ArrowFunctionExpression" || decl.type === "FunctionExpression") {
+        const def = analyzeComponent("default", posix, decl);
+        if (!components.has("default")) components.set("default", def);
+      } else if (decl.type === "Identifier") {
+        const ref = typeof decl.name === "string" ? components.get(decl.name) : void 0;
+        if (ref && !components.has("default")) components.set("default", ref);
+      }
+    }
+  }
+  return finish();
+}
+
+// src/graph/tsconfig.ts
+import { existsSync as existsSync2, readFileSync as readFileSync2 } from "fs";
+import { dirname as dirname2, join as join3, resolve, relative } from "path";
+function readJsonish(path) {
+  try {
+    const raw = readFileSync2(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1").replace(/,(\s*[}\]])/g, "$1");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+function findTsconfig(startDir) {
+  let dir = resolve(startDir);
+  for (let i = 0; i < 30; i++) {
+    const p = join3(dir, "tsconfig.json");
+    if (existsSync2(p)) return p;
+    const parent = dirname2(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+function readTsAliases(startDir, cwd = process.cwd()) {
+  const tsconfigPath = findTsconfig(startDir);
+  if (!tsconfigPath) return [];
+  const root = dirname2(tsconfigPath);
+  const cfg = readJsonish(tsconfigPath);
+  if (!cfg) return [];
+  let co = cfg.compilerOptions ?? {};
+  const exts = Array.isArray(cfg.extends) ? cfg.extends : typeof cfg.extends === "string" ? [cfg.extends] : [];
+  for (const e of exts) {
+    if (typeof e !== "string") continue;
+    const ext2 = e.endsWith(".json") ? e : `${e}.json`;
+    const base = readJsonish(resolve(root, ext2));
+    if (base?.compilerOptions) co = { ...base.compilerOptions, ...co };
+  }
+  const baseUrl = typeof co.baseUrl === "string" ? co.baseUrl : ".";
+  const baseAbs = resolve(root, baseUrl);
+  const paths = co.paths ?? {};
+  const out = [];
+  for (const [pattern, targetsRaw] of Object.entries(paths)) {
+    if (!Array.isArray(targetsRaw)) continue;
+    const targets = targetsRaw.filter((t2) => typeof t2 === "string");
+    if (!targets.length) continue;
+    const wildcard = pattern.includes("*");
+    const prefix2 = wildcard ? pattern.slice(0, pattern.indexOf("*")) : pattern;
+    const bases = targets.map((t2) => {
+      const star = t2.indexOf("*");
+      const tp = wildcard && star >= 0 ? t2.slice(0, star) : t2;
+      return toPosix(relative(cwd, join3(baseAbs, tp))) || ".";
+    });
+    out.push({ prefix: prefix2, wildcard, bases });
+  }
+  return out;
+}
+
+// src/graph/build.ts
+var GRAPH_ONLY = new Set(GRAPH_ONLY_EXT);
+function emptyDoc(file, source) {
+  return { file, source, lossy: false, kind: "html", roots: [], elements: [], byId: /* @__PURE__ */ new Map(), lineStarts: [0] };
+}
+var SCRIPT_BLOCK_RE = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+function sfcScriptSource(content, file) {
+  if (/\.astro$/i.test(file)) return splitAstroFrontmatter(content).frontmatter;
+  return [...content.matchAll(SCRIPT_BLOCK_RE)].map((m) => m[1] ?? "").join("\n");
+}
+function buildGraphStreaming(files) {
+  const nodes = [];
+  for (const file of files) {
+    let content;
+    try {
+      content = readText(file);
+    } catch {
+      continue;
+    }
+    let ast = null;
+    let doc;
+    let sfc = false;
+    if (GRAPH_ONLY.has(ext(file))) {
+      ast = parseJsxAst(content);
+      doc = emptyDoc(file, content);
+    } else if (detectKind(file) === "jsx") {
+      ast = parseJsxAst(content);
+      doc = ast ? jsxAstToDoc(ast, content, file) : parseHtml(jsxToHtml(content), file, true);
+    } else if (detectKind(file) === "sfc") {
+      sfc = true;
+      const htmlSource = /\.astro$/i.test(file) ? splitAstroFrontmatter(content).blanked : content;
+      doc = parseHtml(htmlSource, file, false, true);
+      const scriptSrc = sfcScriptSource(content, file);
+      if (scriptSrc) ast = parseJsxAst(scriptSrc);
+    } else {
+      doc = parseHtml(content, file, false);
+    }
+    nodes.push(extractGraphNode(ast, doc, file, { sfc }));
+  }
+  const aliases = readTsAliases(files[0] ? dirname3(files[0]) : process.cwd());
+  return buildGraph(nodes, aliases);
+}
+
+// src/discover.ts
+import { existsSync as existsSync3 } from "fs";
+import { execFileSync } from "child_process";
+import { join as join4, relative as relative2 } from "path";
+function git(args, maxBuffer) {
+  try {
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], ...maxBuffer ? { maxBuffer } : {} });
+  } catch {
+    return null;
+  }
+}
+function gitChangedFiles(ref) {
+  const top = git(["rev-parse", "--show-toplevel"]);
+  if (top === null) return null;
+  const repoRoot2 = top.trim();
+  const base = ref?.trim() ? ref.trim() : "HEAD";
+  const out = /* @__PURE__ */ new Set();
+  const add2 = (s) => {
+    if (!s) return;
+    for (const line of s.split("\n")) {
+      const t2 = line.trim();
+      if (t2) out.add(t2);
+    }
+  };
+  add2(git(["diff", "--name-only", "--diff-filter=d", base]));
+  add2(git(["diff", "--name-only", "--diff-filter=d", "--cached", base]));
+  add2(git(["ls-files", "--others", "--exclude-standard"]));
+  const cwd = process.cwd();
+  return [...out].map((p) => relative2(cwd, join4(repoRoot2, p)));
+}
+function gitStagedFiles() {
+  const top = git(["rev-parse", "--show-toplevel"]);
+  if (top === null) return null;
+  const out = git(["diff", "--cached", "--name-only", "--diff-filter=d"]);
+  if (out === null) return null;
+  const repoRoot2 = top.trim();
+  const cwd = process.cwd();
+  return out.split("\n").map((s) => s.trim()).filter(Boolean).map((p) => relative2(cwd, join4(repoRoot2, p)));
+}
+function stagedContent(file) {
+  return git(["show", `:./${toPosix(file)}`], 32 * 1024 * 1024);
+}
+function hasUnstagedChanges(file) {
+  return !!git(["diff", "--name-only", "--", file])?.trim();
+}
+function gitAdd(file) {
+  git(["add", "--", file]);
+}
+var TIER0 = /(^|\/)(layout|template|_app|_document|app|main|index)[.\-/]|(^|\/)(layouts?|templates?)\//i;
+var TIER1 = /(^|\/)(components?|shared|ui|design-system|ds|partials?|includes?)\//i;
+function priority(file) {
+  const rel = toPosix(file);
+  if (TIER0.test(rel)) return 0;
+  if (TIER1.test(rel)) return 1;
+  return 2;
+}
+function byPriorityThenPath(a, b) {
+  return priority(a) - priority(b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+function discover(inputs, opts = {}) {
+  const changedMode = !!(opts.changed || opts.since || opts.staged);
+  let files;
+  let gitUnavailable = false;
+  let staged;
+  if (opts.staged) {
+    const stagedFiles = gitStagedFiles();
+    if (stagedFiles === null) {
+      gitUnavailable = true;
+      opts.onWarn?.("ultra11y: --staged requested but git is unavailable here \u2014 falling back to a full scan.");
+      files = expandInputs(inputs, opts);
+    } else {
+      const filter = makeFilter(opts);
+      const inScope = inScopeMatcher(inputs);
+      const scoped = stagedFiles.filter((f) => filter(f) && (!inScope || inScope(f)));
+      staged = /* @__PURE__ */ new Map();
+      for (const f of scoped) {
+        const c = stagedContent(f);
+        if (c !== null) staged.set(f, c);
+      }
+      files = [...staged.keys()];
+    }
+  } else if (changedMode) {
+    const changed = gitChangedFiles(opts.since);
+    if (changed === null) {
+      gitUnavailable = true;
+      opts.onWarn?.("ultra11y: --changed requested but git is unavailable here \u2014 falling back to a full scan.");
+      files = expandInputs(inputs, opts);
+    } else {
+      const filter = makeFilter(opts);
+      const inScope = inScopeMatcher(inputs);
+      files = changed.filter((f) => existsSync3(f) && filter(f) && (!inScope || inScope(f)));
+    }
+  } else {
+    files = expandInputs(inputs, opts);
+  }
+  files = [...new Set(files)].sort(byPriorityThenPath);
+  return { files, changedMode, gitUnavailable, ...staged ? { stagedContent: staged } : {} };
+}
+
+// src/audit.ts
+var has = (d, ...tags) => d.elements.some((e) => tags.includes(e.tag));
+var APPLICABLE = {
+  "1.4.2": (d) => has(d, "audio", "video"),
+  // Audio Control — autoplay-media (audio branch)
+  "2.4.2": (d) => isFullDocument(d),
+  // Page Titled — title-missing-empty
+  "3.1.1": (d) => isFullDocument(d)
+  // Language of Page — html-lang-missing / lang-invalid
+};
+function residualReason(automatability) {
+  return automatability === "needs-rendering" ? "Needs a rendered DOM (contrast, focus visibility, zoom/reflow, target size) \u2014 decide via `scan`." : "Judgement criterion \u2014 adjudicated by the agent from source/context (`verify --manual`, gated).";
+}
+var STATIC_PREDS = allSC().filter((c) => c.automatability === "static").map((c) => [c.sc, APPLICABLE[c.sc] ?? isFullDocument]);
+function newAccum() {
+  return {
+    byCriterion: /* @__PURE__ */ new Map(),
+    applicable: /* @__PURE__ */ new Map(),
+    allFindings: [],
+    packFindings: [],
+    fileCount: 0,
+    opaqueLibs: /* @__PURE__ */ new Set(),
+    opaqueFiles: 0,
+    sfcFiles: 0,
+    sfcExts: /* @__PURE__ */ new Set(),
+    captures: [],
+    langCounts: /* @__PURE__ */ new Map()
+  };
+}
+function primarySubtag(lang) {
+  const m = lang.trim().match(/^[a-z]{1,8}/i);
+  return m ? m[0].toLowerCase() : void 0;
+}
+function foldDoc(acc, doc, graph) {
+  let findings = runRules(doc);
+  if (graph) {
+    const cross = runCrossRules(doc, graph);
+    if (cross.suppress.length) {
+      findings = findings.filter((f) => !cross.suppress.some((s) => s.ruleId === f.ruleId && s.line === f.line));
+    }
+    findings = findings.concat(cross.findings);
+    for (const f of cross.findings) acc.applicable.set(f.criteriaId, true);
+  }
+  for (const f of findings) {
+    acc.allFindings.push(f);
+    const arr = acc.byCriterion.get(f.criteriaId) ?? [];
+    arr.push(f);
+    acc.byCriterion.set(f.criteriaId, arr);
+  }
+  for (const pack of listPacks()) {
+    if (pack.rules?.length) acc.packFindings.push(...runPackRules(doc, pack));
+  }
+  for (const [id, pred] of STATIC_PREDS) {
+    if (!acc.applicable.get(id) && pred(doc)) acc.applicable.set(id, true);
+  }
+  if (doc.opaqueComponents?.length) {
+    for (const lib of doc.opaqueComponents) acc.opaqueLibs.add(lib);
+    acc.opaqueFiles++;
+  }
+  if (doc.kind === "sfc") {
+    acc.sfcFiles++;
+    const e = doc.file.toLowerCase().match(/\.[a-z]+$/)?.[0];
+    if (e) acc.sfcExts.add(e);
+  }
+  if (doc.capture) acc.captures.push({ file: doc.file, provenance: doc.capture });
+  const html = elementsByTag(doc, "html")[0];
+  const htmlLang = html ? (attr(html, "lang") ?? attr(html, "xml:lang") ?? "").trim() : "";
+  const subtag = htmlLang ? primarySubtag(htmlLang) : void 0;
+  if (subtag) acc.langCounts.set(subtag, (acc.langCounts.get(subtag) ?? 0) + 1);
+  acc.fileCount++;
+}
+function finalize(acc, inputs, extra = {}) {
+  const criteria = [];
+  const residualRisks = [];
+  for (const c of allSC()) {
+    const fs = acc.byCriterion.get(c.sc) ?? [];
+    const normativeFs = fs.filter((f) => !f.advisory);
+    let status;
+    let justification;
+    if (c.automatability === "static") {
+      const applicable = acc.applicable.get(c.sc) ?? false;
+      if (!applicable) {
+        status = "NA";
+        justification = "No element in scope is concerned by this success criterion.";
+      } else if (normativeFs.length > 0) {
+        status = "NC";
+      } else {
+        status = "C";
+      }
+    } else if (normativeFs.length > 0) {
+      status = "NC";
+    } else {
+      status = "manual";
+      residualRisks.push({ criteriaId: c.sc, reason: residualReason(c.automatability), automatability: c.automatability });
+    }
+    criteria.push({ id: c.sc, guideline: c.guideline, status, findings: fs, ...justification ? { justification } : {} });
+  }
+  const guidelines = allGuidelines().map((g) => {
+    const inG = criteria.filter((c) => c.guideline === g.number);
+    return {
+      key: g.number,
+      title: g.title,
+      c: inG.filter((c) => c.status === "C").length,
+      nc: inG.filter((c) => c.status === "NC").length,
+      na: inG.filter((c) => c.status === "NA").length,
+      manual: inG.filter((c) => c.status === "manual").length
+    };
+  });
+  const decided = criteria.filter((c) => c.status === "C" || c.status === "NC");
+  const conform = decided.filter((c) => c.status === "C").length;
+  const conformancePct = decided.length === 0 ? 100 : Math.round(conform / decided.length * 100);
+  return {
+    tool: "ultra11y",
+    standard: "wcag",
+    version: VERSION,
+    schemaVersion: SCHEMA_VERSION,
+    date: today(),
+    scope: {
+      inputs,
+      files: acc.fileCount,
+      ...extra.truncated ? { truncated: extra.truncated } : {},
+      ...extra.dedup ? { dedup: extra.dedup } : {},
+      ...acc.opaqueLibs.size ? { rendered: { opaqueLibraries: [...acc.opaqueLibs].sort(), files: acc.opaqueFiles } } : {},
+      ...acc.sfcFiles ? { sourceTemplate: { files: acc.sfcFiles, extensions: [...acc.sfcExts].sort() } } : {},
+      ...acc.captures.length ? {
+        captures: {
+          files: acc.captures.length,
+          components: [...new Set(acc.captures.map((c) => c.provenance.component).filter((x) => !!x))].sort()
+        }
+      } : {},
+      ...acc.langCounts.size ? { langs: [...acc.langCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([lang]) => lang) } : {}
+    },
+    guidelines,
+    criteria,
+    findings: acc.allFindings,
+    ...acc.packFindings.length ? { packFindings: acc.packFindings } : {},
+    residualRisks,
+    conformancePct
+  };
+}
+function hashContent(content, mode) {
+  const norm3 = mode === "normalized" ? content.replace(/>\s+</g, "><").trim() : content;
+  return createHash("sha1").update(norm3).digest("hex");
+}
+function runAudit(opts) {
+  const acc = newAccum();
+  const dedupMode = opts.changed || opts.since || opts.staged ? "off" : opts.dedup ?? "exact";
+  const seen = /* @__PURE__ */ new Set();
+  let duplicateFiles = 0;
+  let truncated;
+  const {
+    files: discovered,
+    gitUnavailable,
+    stagedContent: stagedContent2
+  } = discover(opts.inputs, {
+    include: opts.include,
+    exclude: opts.exclude,
+    ext: opts.ext,
+    changed: opts.changed,
+    since: opts.since,
+    staged: opts.staged,
+    noDefaultExcludes: opts.noDefaultExcludes,
+    onWarn: opts.onWarn
+  });
+  const useStaged = opts.staged === true && !gitUnavailable;
+  const diffMode = opts.changed || opts.since || opts.staged;
+  const relevantCaptures = opts.captureDiff && diffMode && opts.captureDir ? capturesForSources(opts.captureDir, discovered).filter((c) => !discovered.includes(c)) : [];
+  const files = relevantCaptures.length ? [...discovered, ...relevantCaptures] : discovered;
+  let graph;
+  if (opts.graph || opts.captureCoverage) {
+    const graphExt = [...GRAPH_ONLY_EXT, ...opts.ext ?? []];
+    const graphFiles = discover(opts.inputs, {
+      include: opts.include,
+      exclude: opts.exclude,
+      ext: graphExt,
+      noDefaultExcludes: opts.noDefaultExcludes
+    }).files;
+    graph = buildGraphStreaming(graphFiles);
+  }
+  for (let i = 0; i < files.length; i++) {
+    if (opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles) {
+      const skipped = files.length - acc.fileCount;
+      truncated = { limit: opts.maxFiles, total: files.length, skipped };
+      opts.onWarn?.(
+        `ultra11y: --max-files=${opts.maxFiles} reached; audited ${acc.fileCount}/${files.length} files (highest-priority first). Skipped ${skipped}.`
+      );
+      break;
+    }
+    const file = files[i];
+    let content;
+    const staged = useStaged ? stagedContent2?.get(file) : void 0;
+    if (staged !== void 0) {
+      content = staged;
+    } else {
+      try {
+        content = readText(file);
+      } catch {
+        continue;
+      }
+    }
+    if (dedupMode !== "off") {
+      const h = hashContent(content, dedupMode);
+      if (seen.has(h)) {
+        duplicateFiles++;
+        continue;
+      }
+      seen.add(h);
+    }
+    foldDoc(acc, parseSource(content, file, { forceJsx: opts.forceJsx }), graph);
+  }
+  const canonicalFiles = acc.fileCount;
+  if (opts.inputs.includes("-") && opts.stdin !== void 0 && !(opts.maxFiles && opts.maxFiles > 0 && acc.fileCount >= opts.maxFiles)) {
+    foldDoc(acc, parseSource(opts.stdin, "<stdin>", { forceJsx: opts.forceJsx }), graph);
+  }
+  const result = finalize(acc, opts.inputs, {
+    ...truncated ? { truncated } : {},
+    ...duplicateFiles > 0 ? { dedup: { canonicalFiles, duplicateFiles } } : {}
+  });
+  if (graph) {
+    enrichCaptureOrigins(result.findings, graph);
+    if (opts.captureCoverage) result.scope.captureCoverage = computeCaptureCoverage(graph, readCaptureDir(opts.captureDir ?? ".ultra11y/captures"));
+  }
+  return result;
+}
+
+// src/report.ts
+import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "fs";
+import { join as join6 } from "path";
+
+// src/prd.ts
+import { mkdirSync, writeFileSync } from "fs";
+import { join as join5 } from "path";
 
 // src/standards/pack.ts
 function localize(pack, s, lang) {
@@ -26836,9 +27554,19 @@ function ruleMatches(ruleId, patterns) {
   }
   return false;
 }
+function overrideFinding(f, overrides) {
+  const o = overrides?.[f.ruleId];
+  if (!o) return f;
+  const patched = { ...f };
+  if (o.advisory !== void 0) patched.advisory = o.advisory;
+  if (o.severity) patched.severity = o.severity;
+  return patched;
+}
 function derivePackResults(audit, packKey) {
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
+  const myPackFindings = (audit.packFindings ?? []).filter((f) => f.ruleId.startsWith(`pack:${packKey}:`));
+  const overrides = pack.overrides;
   return pack.criteria.map((pc) => {
     const outOfScope = pc.wcag.every((sc) => {
       const s = knownScStatus(sc);
@@ -26848,20 +27576,22 @@ function derivePackResults(audit, packKey) {
       return { id: pc.id, theme: pc.theme, status: "manual", findings: [], scs: pc.wcag, outOfScope: true };
     }
     const scResults = pc.wcag.map((sc) => byScId.get(sc)).filter((x) => !!x);
-    const allFindings = scResults.flatMap((r) => r.findings);
+    const packFs = myPackFindings.filter((f) => pc.wcag.includes(f.criteriaId));
+    const allFindings = [...scResults.flatMap((r) => r.findings), ...packFs].map((f) => overrideFinding(f, overrides));
     if (!pc.appliesTo) {
       const status2 = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
       return { id: pc.id, theme: pc.theme, status: status2, findings: allFindings, scs: pc.wcag };
     }
     const findings = allFindings.filter((f) => ruleMatches(f.ruleId, pc.appliesTo.ruleIds));
-    if (findings.length) {
+    const normativeFindings = findings.filter((f) => !f.advisory);
+    if (normativeFindings.length) {
       return { id: pc.id, theme: pc.theme, status: "NC", findings, scs: pc.wcag };
     }
     if (scResults.some((r) => r.status === "NC")) {
-      return { id: pc.id, theme: pc.theme, status: "manual", findings: [], scs: pc.wcag, scopedOut: true };
+      return { id: pc.id, theme: pc.theme, status: "manual", findings, scs: pc.wcag, scopedOut: true };
     }
     const status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
-    return { id: pc.id, theme: pc.theme, status, findings: [], scs: pc.wcag };
+    return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
   });
 }
 
@@ -27259,6 +27989,84 @@ var rgaa_default2 = {
           note: {
             fr: `role="status" implique d\xE9j\xE0 aria-live="polite" : un aria-live="assertive" contradictoire interrompt l'utilisateur pour une information non urgente.`,
             en: 'role="status" already implies aria-live="polite"; a contradictory aria-live="assertive" interrupts the user for non-urgent information.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      id: "aria-live-polite-atomic",
+      criterionId: "7.5",
+      wcag: ["4.1.3"],
+      title: {
+        fr: "Une zone de restitution polie doit \xEAtre atomique",
+        en: "A polite live region must be atomic"
+      },
+      summary: {
+        fr: `Une zone de restitution en aria-live="polite" doit toujours porter aria-atomic="true" pour que la technologie d'assistance restitue l'int\xE9gralit\xE9 du message et non seulement le n\u0153ud de texte modifi\xE9. Sans aria-atomic, une mise \xE0 jour partielle (ex. un compteur qui passe de \xAB 2 \xBB \xE0 \xAB 3 \xBB) peut \xEAtre annonc\xE9e hors contexte ou pas du tout.`,
+        en: 'A live region with aria-live="polite" must always carry aria-atomic="true" so the assistive technology reads the whole message, not just the changed text node. Without aria-atomic, a partial update (e.g. a counter going from "2" to "3") may be announced out of context or not at all.'
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div aria-live="polite">3 r\xE9sultats trouv\xE9s</div>',
+          good: '<div aria-live="polite" aria-atomic="true">3 r\xE9sultats trouv\xE9s</div>',
+          note: {
+            fr: 'aria-atomic="true" garantit que le message entier est restitu\xE9 \xE0 chaque mise \xE0 jour, pas seulement le fragment modifi\xE9.',
+            en: 'aria-atomic="true" guarantees the entire message is announced on each update, not just the changed fragment.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      id: "error-message-role-alert-not-polite",
+      criterionId: "7.5",
+      wcag: ["4.1.3"],
+      title: {
+        fr: `Un message d'erreur utilise role="alert", pas aria-live="polite"`,
+        en: 'An error message uses role="alert", not aria-live="polite"'
+      },
+      summary: {
+        fr: `Un message d'erreur doit \xEAtre restitu\xE9 imm\xE9diatement : utilisez role="alert" seul (qui implique une restitution assertive). N'utilisez pas aria-live="polite" pour une erreur \u2014 la file basse priorit\xE9 peut la retarder ou la faire manquer. N'ajoutez pas non plus aria-live sur un conteneur d\xE9j\xE0 en role="alert" (redondant et parfois contradictoire).`,
+        en: 'An error message must be announced immediately: use role="alert" alone (it implies assertive restitution). Do not use aria-live="polite" for an error \u2014 the low-priority queue can delay it or make it be missed. Do not add aria-live on a container already in role="alert" either (redundant, sometimes contradictory).'
+      },
+      impact: "high",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div aria-live="polite" class="form-error">Adresse e-mail invalide.</div>',
+          good: '<div role="alert">Adresse e-mail invalide.</div>',
+          note: {
+            fr: `role="alert" restitue l'erreur imm\xE9diatement (assertif) ; aria-live="polite" la mettrait en file basse priorit\xE9.`,
+            en: 'role="alert" announces the error immediately (assertive); aria-live="polite" would queue it at low priority.'
+          }
+        }
+      ],
+      reference: "https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#7.5"
+    },
+    {
+      id: "post-action-focus-xor-live-region",
+      criterionId: "7.5",
+      wcag: ["4.1.3"],
+      title: {
+        fr: "Apr\xE8s une action : d\xE9placer le focus OU utiliser une zone de restitution, jamais les deux",
+        en: "After an action: move focus OR use a live region, never both"
+      },
+      summary: {
+        fr: "Apr\xE8s une action (soumission, ajout au panier, sauvegarde), choisissez UNE seule strat\xE9gie de restitution : soit d\xE9placer le focus vers un \xE9l\xE9ment qui d\xE9crit le r\xE9sultat (le lecteur d'\xE9cran lit ce nouvel \xE9l\xE9ment), soit annoncer via une zone de restitution sans d\xE9placer le focus. Combiner les deux (d\xE9placer le focus vers un conteneur qui est aussi une zone de restitution) provoque une double annonce et d\xE9soriente l'utilisateur.",
+        en: "After an action (submit, add-to-cart, save), pick ONE restitution strategy: either move focus to an element that describes the outcome (the screen reader reads that new element), or announce via a live region without moving focus. Combining both (moving focus into a container that is also a live region) causes a double announcement and disorients the user."
+      },
+      impact: "medium",
+      examples: [
+        {
+          lang: "html",
+          bad: '<div role="alert" tabindex="-1">Modifications enregistr\xE9es.</div>',
+          good: '<div role="alert">Modifications enregistr\xE9es.</div>',
+          note: {
+            fr: `Le conteneur en role="alert" annonce d\xE9j\xE0 le message ; lui donner aussi le focus (tabindex="-1" cibl\xE9 au script) le fait annoncer deux fois. Choisissez la zone de restitution SEULE, ou d\xE9placez le focus vers un \xE9l\xE9ment qui n'est pas une zone de restitution.`,
+            en: 'The role="alert" container already announces the message; also focusing it (tabindex="-1" targeted by script) makes it announced twice. Use the live region ALONE, or move focus to a non-live element.'
           }
         }
       ],
@@ -29329,7 +30137,30 @@ var L = {
     scope: "P\xE9rim\xE8tre",
     files: "fichier(s)",
     none: "Aucune non-conformit\xE9 relev\xE9e automatiquement par le moteur statique.",
-    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``
+    captureOf: (comp, src) => `capture rendue de \`${comp}\` \u2014 source \`${src}\``,
+    recommendationsTitle: "Recommandations (non normatives)",
+    // Advisory (non-normative recommendation) vocabulary — deliberately NOT the NC wording.
+    advisoryTag: "Recommandation (non normative)",
+    advisoryNote: "Bonne pratique \u2014 aucun test normatif du r\xE9f\xE9rentiel actif ne l'exige. Ce n'est PAS une non-conformit\xE9.",
+    observation: "Observation",
+    suggestion: "Suggestion",
+    relatedRef: "Crit\xE8re li\xE9",
+    // Unified ticket template (Task 2).
+    priority: "Priorit\xE9",
+    technical: "Partie technique",
+    impactedFiles: "Fichiers impact\xE9s",
+    pages: "Pages / URLs impact\xE9es",
+    change: "Changement attendu",
+    ac: "Crit\xE8res d'acceptation",
+    complexity: "Complexit\xE9",
+    pts: "pts",
+    reproduction: "Contexte de reproduction",
+    authRequired: "authentification requise",
+    yes: "oui",
+    no: "non",
+    unknown: "inconnu",
+    reproSteps: "\xE9tat requis / \xE9tapes pour reproduire",
+    associatedRec: "Recommandations associ\xE9es (non normatives)"
   },
   en: {
     lead: "Auditor view",
@@ -29344,13 +30175,46 @@ var L = {
     scope: "Scope",
     files: "file(s)",
     none: "No non-conformity found automatically by the static engine.",
-    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``
+    captureOf: (comp, src) => `rendered capture of \`${comp}\` \u2014 source \`${src}\``,
+    recommendationsTitle: "Recommendations (non-normative)",
+    // Advisory (non-normative recommendation) vocabulary — deliberately NOT the NC wording.
+    advisoryTag: "Recommendation (non-normative)",
+    advisoryNote: "Good practice \u2014 no normative test of the active standard requires it. This is NOT a non-conformity.",
+    observation: "Observation",
+    suggestion: "Suggestion",
+    relatedRef: "Related criterion",
+    // Unified ticket template (Task 2).
+    priority: "Priority",
+    technical: "Technical details",
+    impactedFiles: "Impacted files",
+    pages: "Impacted pages / URLs",
+    change: "Expected change",
+    ac: "Acceptance criteria",
+    complexity: "Complexity",
+    pts: "pts",
+    reproduction: "Reproduction context",
+    authRequired: "authentication required",
+    yes: "yes",
+    no: "no",
+    unknown: "unknown",
+    reproSteps: "required state / steps to reproduce",
+    associatedRec: "Related recommendations (non-normative)"
   }
 };
 var uniq = (xs) => [...new Set(xs.filter(Boolean))];
+var isUrlLocation = (file) => /^https?:\/\//i.test(file);
+function sampleMetaOf(f) {
+  const meta2 = f.sample;
+  return meta2 && typeof meta2 === "object" ? meta2 : void 0;
+}
+function subHeading(heading) {
+  return "#".repeat(Math.min((heading?.length ?? 2) + 1, 4));
+}
 function renderAuditorUnit(unit, standard, lang, opts = {}) {
   const s = L[lang];
+  if (unit.advisory) return renderAdvisoryUnit(unit, standard, lang, opts);
   const v = vocabularyFor(standard, lang);
+  const technical = opts.technical ?? true;
   const out = [];
   if (opts.heading) out.push(`${opts.heading} ${ICON[unit.severity]} ${unit.label}`, "");
   out.push(`> ${v.normativeNote ?? `${s.lead} \u2014 ${standardLabel(standard)}. ${s.tail}`}`, "");
@@ -29374,13 +30238,17 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
     if (testNums.length) out.push(`**${v.test}(s)** : ${testNums.join(" \xB7 ")}`);
     if (unit.refs.length) out.push(`**WCAG** : ${unit.refs.map((sc) => `${sc}${scLevel(sc)}`).join(" \xB7 ")}`);
   }
-  const messages = uniq(unit.findings.map((f) => resolveMessage(f, lang)));
-  const fixes = uniq(unit.findings.map((f) => resolveRemediation(f, lang)));
+  out.push(`**${s.priority}** : ${ICON[unit.severity]} ${SEV_LABEL[lang][unit.severity]}`);
+  const normative = unit.findings.filter((f) => !f.advisory);
+  const advisories = unit.findings.filter((f) => f.advisory);
+  const ncView = { ...unit, findings: normative };
+  const messages = uniq(normative.map((f) => resolveMessage(f, lang)));
+  const fixes = uniq(normative.map((f) => resolveRemediation(f, lang)));
   out.push("");
-  out.push(`**${s.finding} (${v.nonConformant})** : ${unit.findings.length} ${s.occ} \u2014 ${messages.join(" ; ")}`);
+  out.push(`**${s.finding} (${v.nonConformant})** : ${normative.length} ${s.occ} \u2014 ${messages.join(" ; ")}`);
   if (fixes.length) out.push(`**${s.expected} (${v.conformant})** : ${fixes.join(" ; ")}`);
   out.push(`**${s.verification}** : ${s.verify}`, "");
-  for (const f of unit.findings) {
+  for (const f of normative) {
     out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
     if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
     if (f.origin) {
@@ -29389,6 +30257,89 @@ function renderAuditorUnit(unit, standard, lang, opts = {}) {
       const src = f.origin.sourceFile && f.origin.sourceLine !== void 0 ? `${f.origin.sourceFile}:${f.origin.sourceLine}` : srcFile;
       out.push(`  - _${s.captureOf(comp, src)}_`);
     }
+  }
+  out.push("");
+  if (advisories.length) {
+    out.push(`_${s.associatedRec}_`, "");
+    for (const f of advisories) out.push(`- ${ADVISORY_ICON} \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
+    out.push("");
+  }
+  if (technical) {
+    out.push(...renderTechnicalSection(ncView, unit, standard, lang, opts));
+    out.push(...renderReproductionContext(normative, lang));
+  }
+  return out;
+}
+function renderTechnicalSection(ncView, unit, standard, lang, opts) {
+  const s = L[lang];
+  const out = [`${subHeading(opts.heading)} ${s.technical}`, ""];
+  const files = uniq(ncView.findings.filter((f) => !isUrlLocation(f.file)).map((f) => f.file));
+  if (files.length) {
+    out.push(`**${s.impactedFiles}**`, "");
+    for (const f of files) out.push(`- \`${f}\``);
+    out.push("");
+  }
+  const seenUrl = /* @__PURE__ */ new Set();
+  const pageLines = [];
+  for (const f of ncView.findings) {
+    if (!isUrlLocation(f.file) || seenUrl.has(f.file)) continue;
+    seenUrl.add(f.file);
+    const meta2 = sampleMetaOf(f);
+    const suffix = meta2 ? ` \u2014 ${meta2.page ? `${meta2.page} \xB7 ` : ""}${s.authRequired} : ${meta2.authRequired ? s.yes : s.no}` : "";
+    pageLines.push(`- \`${f.file}\`${suffix}`);
+  }
+  if (pageLines.length) out.push(`**${s.pages}**`, "", ...pageLines, "");
+  out.push(`**${s.change}**`, "");
+  for (const fx of uniq(ncView.findings.map((f) => resolveRemediation(f, lang)))) out.push(`- ${fx}`);
+  out.push("");
+  out.push(...guidanceExampleBlock(guidanceFor(unit, standard), lang));
+  out.push(`**${s.ac}**`, "");
+  out.push(...acceptanceCriteria(ncView, standard, lang, { checkbox: true }));
+  out.push("");
+  const { bucket, points } = effortOf(ncView);
+  out.push(`**${s.complexity}** : ${bucket} (${points} ${s.pts})`, "");
+  return out;
+}
+function renderReproductionContext(normative, lang) {
+  const s = L[lang];
+  const seen = /* @__PURE__ */ new Set();
+  const qualifying = [];
+  for (const f of normative) {
+    const unresolvedUrl = isUrlLocation(f.file) && f.line === 0;
+    const authGated = sampleMetaOf(f)?.authRequired === true;
+    if (!unresolvedUrl && !authGated || seen.has(f.file)) continue;
+    seen.add(f.file);
+    qualifying.push(f);
+  }
+  if (!qualifying.length) return [];
+  const out = [`**${s.reproduction}**`, ""];
+  for (const f of qualifying) {
+    const meta2 = sampleMetaOf(f);
+    const auth = meta2 ? meta2.authRequired ? s.yes : s.no : s.unknown;
+    const name = meta2?.page ? `${meta2.page} \xB7 ` : "";
+    out.push(`- **URL** : \`${f.file}\` \u2014 ${name}${s.authRequired} : ${auth}`);
+    if (meta2?.notes) out.push(`  - \u21B3 ${meta2.notes}`);
+  }
+  out.push(`- _${s.reproSteps}_`, "");
+  return out;
+}
+var ADVISORY_ICON = "\u{1F4A1}";
+function renderAdvisoryUnit(unit, standard, lang, opts) {
+  const s = L[lang];
+  const out = [];
+  if (opts.heading) out.push(`${opts.heading} ${ADVISORY_ICON} ${unit.label}`, "");
+  out.push(`> ${s.advisoryTag} \u2014 ${s.advisoryNote}`, "");
+  out.push(`**${s.advisoryTag}** \u2014 ${unit.criteriaId} \xB7 ${unit.title}`);
+  if (!isCore(standard) && unit.refs.length) out.push(`_${s.relatedRef}: WCAG ${unit.refs.join(", ")}_`);
+  const messages = uniq(unit.findings.map((f) => resolveMessage(f, lang)));
+  const fixes = uniq(unit.findings.map((f) => resolveRemediation(f, lang)));
+  out.push("");
+  out.push(`**${s.observation}** : ${unit.findings.length} ${s.occ} \u2014 ${messages.join(" ; ")}`);
+  if (fixes.length) out.push(`**${s.suggestion}** : ${fixes.join(" ; ")}`);
+  out.push("");
+  for (const f of unit.findings) {
+    out.push(`- [ ] \`${f.file}:${f.line}\` (\`${f.selectorHint}\`) \u2014 ${resolveMessage(f, lang)}`);
+    if (f.related) out.push(`  - \u21B3 ${resolveNote(f.related, lang)} : \`${f.related.file}:${f.related.line}\` (\`${f.related.selectorHint}\`)`);
   }
   out.push("");
   return out;
@@ -29410,26 +30361,32 @@ function auditorHeader(r, lang, standard) {
     ""
   ];
 }
-function renderAuditorBacklog(r, lang = "en", standard = "wcag") {
+function renderAuditorBacklog(r, lang = "en", standard = "wcag", opts = {}) {
   const s = L[lang];
-  const units = prdUnits(r, standard, lang);
+  const technical = opts.technical ?? true;
+  const { nc, advisory } = partitionUnits(prdUnits(r, standard, lang));
   const out = auditorHeader(r, lang, standard);
-  if (!units.length) {
+  if (!nc.length && !advisory.length) {
     out.push(s.none, "");
     return out.join("\n");
   }
   for (const sev of SEV_ORDER) {
-    const group = units.filter((u) => u.severity === sev);
+    const group = nc.filter((u) => u.severity === sev);
     if (!group.length) continue;
     out.push(`## ${ICON[sev]} ${SEV_LABEL[lang][sev]} (${group.length})`, "");
-    for (const u of group) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###" }));
+    for (const u of group) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###", technical }));
+  }
+  if (advisory.length) {
+    out.push(`## ${ADVISORY_ICON} ${s.recommendationsTitle} (${advisory.length})`, "");
+    for (const u of advisory) out.push(...renderAuditorUnit(u, standard, lang, { heading: "###", technical }));
   }
   return out.join("\n");
 }
-function renderAuditorPerCriterion(r, lang = "en", standard = "wcag") {
+function renderAuditorPerCriterion(r, lang = "en", standard = "wcag", opts = {}) {
+  const technical = opts.technical ?? true;
   return prdUnits(r, standard, lang).map((u) => {
     const out = auditorHeader(r, lang, standard);
-    out.push(...renderAuditorUnit(u, standard, lang, { heading: "##" }));
+    out.push(...renderAuditorUnit(u, standard, lang, { heading: "##", technical }));
     return { name: `prd-${u.criteriaId}-${r.date}.md`, content: out.join("\n") };
   });
 }
@@ -29504,6 +30461,7 @@ function prdUnits(r, standard = "wcag", lang = "en") {
   const units = [];
   const mostSevere = (fs) => [...fs].sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])[0]?.severity ?? "mineur";
   const sortFindings = (fs) => [...fs].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  const allAdvisory = (fs) => fs.length > 0 && fs.every((f) => f.advisory);
   if (isCore(standard)) {
     const byCrit = /* @__PURE__ */ new Map();
     for (const f of r.findings) (byCrit.get(f.criteriaId) ?? byCrit.set(f.criteriaId, []).get(f.criteriaId)).push(f);
@@ -29515,7 +30473,8 @@ function prdUnits(r, standard = "wcag", lang = "en") {
         label: title2 ? `${criteriaId} \u2014 ${title2}` : criteriaId,
         refs: [],
         severity: mostSevere(fs),
-        findings: sortFindings(fs)
+        findings: sortFindings(fs),
+        advisory: allAdvisory(fs)
       });
     }
   } else {
@@ -29530,12 +30489,19 @@ function prdUnits(r, standard = "wcag", lang = "en") {
         label: `${pack.name} ${pr.id} \u2014 ${t2}`,
         refs: pc.wcag,
         severity: mostSevere(pr.findings),
-        findings: sortFindings(pr.findings)
+        findings: sortFindings(pr.findings),
+        advisory: allAdvisory(pr.findings)
       });
     }
   }
   units.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || a.criteriaId.localeCompare(b.criteriaId, void 0, { numeric: true }));
   return units;
+}
+function partitionUnits(units) {
+  const nc = [];
+  const advisory = [];
+  for (const u of units) (u.advisory ? advisory : nc).push(u);
+  return { nc, advisory };
 }
 var SEV_WEIGHT = { bloquant: 3, majeur: 2, mineur: 1 };
 function effortOf(unit) {
@@ -29651,6 +30617,16 @@ function epicsOf(units, standard, lang) {
   }
   return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key, void 0, { numeric: true }));
 }
+function acceptanceCriteria(unit, standard, lang, opts = {}) {
+  const s = L2[lang];
+  const prefix2 = opts.checkbox ? "- [ ] " : "- ";
+  const hints = [...new Set(unit.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "\u2014";
+  const scs = isCore(standard) ? [unit.criteriaId] : unit.refs;
+  return scs.map((sc) => {
+    const req = scTitle(sc, lang) ?? sc;
+    return `${prefix2}**${s.given}** ${s.givenElements(hints)} \xB7 **${s.when}** ${s.acWhen} \xB7 **${s.then}** \xAB ${req} \xBB (WCAG ${sc}).`;
+  });
+}
 function renderPrdDoc(r, lang = "en", standard = "wcag") {
   const s = L2[lang];
   const units = prdUnits(r, standard, lang);
@@ -29665,13 +30641,8 @@ function renderPrdDoc(r, lang = "en", standard = "wcag") {
       const refs = u.refs.length ? `  \xB7  WCAG ${u.refs.join(", ")}` : "";
       out.push(`### ${ICON2[u.severity]} ${s.story} \u2014 ${u.label}${refs}`, "");
       out.push(`> ${s.asUser}, ${s.iNeed(u.title)}.`, "");
-      const hints = [...new Set(u.findings.map((f) => `\`${f.selectorHint}\``))].slice(0, 3).join(", ") || "\u2014";
       out.push(`**${s.ac}**`, "");
-      const scs = isCore(standard) ? [u.criteriaId] : u.refs;
-      for (const sc of scs) {
-        const req = scTitle(sc, lang) ?? sc;
-        out.push(`- **${s.given}** ${s.givenElements(hints)} \xB7 **${s.when}** ${s.acWhen} \xB7 **${s.then}** \xAB ${req} \xBB (WCAG ${sc}).`);
-      }
+      out.push(...acceptanceCriteria(u, standard, lang));
       const techs = isCore(standard) ? techniques(u.criteriaId) : [...new Set(u.refs.flatMap((sc) => techniques(sc)))];
       if (techs.length) out.push("", `_${s.techniques} : ${techs.join(", ")}_`);
       out.push("", `**${s.tasks} (${u.findings.length})**`, "");
@@ -29692,11 +30663,11 @@ function writePrd(r, opts) {
     return [p2];
   }
   const remediation = opts.format === "remediation";
-  const perCriterion = remediation ? renderPerCriterion : renderAuditorPerCriterion;
-  const backlog = remediation ? renderBacklog : renderAuditorBacklog;
+  const technical = opts.technical ?? true;
   if (opts.split === "criterion") {
+    const files = remediation ? renderPerCriterion(r, opts.lang, opts.standard) : renderAuditorPerCriterion(r, opts.lang, opts.standard, { technical });
     const paths = [];
-    for (const f of perCriterion(r, opts.lang, opts.standard)) {
+    for (const f of files) {
       const p2 = join5(opts.out, f.name);
       writeFileSync(p2, f.content);
       paths.push(p2);
@@ -29704,7 +30675,7 @@ function writePrd(r, opts) {
     return paths;
   }
   const p = join5(opts.out, `prd-${r.date}.md`);
-  writeFileSync(p, backlog(r, opts.lang, opts.standard));
+  writeFileSync(p, remediation ? renderBacklog(r, opts.lang, opts.standard) : renderAuditorBacklog(r, opts.lang, opts.standard, { technical }));
   return [p];
 }
 
@@ -29730,6 +30701,8 @@ var L3 = {
     th: (head) => [head, "C", "NC", "NA", "\xC0 \xE9valuer"],
     total: "Total",
     ncTitle: "2. Non-conformit\xE9s (par priorit\xE9)",
+    recTitle: "Recommandations (non normatives)",
+    recNote: "Bonnes pratiques SANS test normatif du r\xE9f\xE9rentiel actif \u2014 ce ne sont PAS des non-conformit\xE9s et elles n'entrent pas dans le taux de r\xE9ussite. Libre \xE0 l'\xE9quipe de les suivre.",
     sev: { bloquant: "Bloquant", majeur: "Majeur", mineur: "Mineur" },
     none: "Aucune non-conformit\xE9 d\xE9tect\xE9e par le moteur statique.",
     cTitle: "3. Crit\xE8res conformes (C)",
@@ -29746,7 +30719,18 @@ var L3 = {
     rendered: (n, libs) => `Verdict source pr\xE9liminaire : ${n} fichier(s) rendent des composants de biblioth\xE8que (${libs}) dont le HTML produit n'est pas visible en analyse statique. Auditez la sortie de build (\`render\` / \`audit <dist>\`) ou \`scan\` avant de conclure.`,
     sourceTemplate: (n, exts) => `Verdict source pr\xE9liminaire : ${n} composant(s) ${exts} audit\xE9(s) en SOURCE (template). Les slots, snippets et liaisons dynamiques (:attr, {@render}) sont invisibles en analyse statique \u2014 auditez le rendu (\`render\` / \`scan\`) avant de conclure.`,
     captures: (n) => `${n} fichier(s) de capture rendus audit\xE9s \xE0 pleine fid\xE9lit\xE9 (DOM r\xE9el) \u2014 le vrai HTML produit, pas l'appel de composant.`,
-    blindSpots: (n) => `${n} composant(s) sans capture rendue (angles morts) \u2014 audit\xE9s sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`
+    blindSpots: (n) => `${n} composant(s) sans capture rendue (angles morts) \u2014 audit\xE9s sur source opaque uniquement ; auditez leur DOM rendu (\`render --setup\`).`,
+    // Task 5 — partial-audit advisory (owner decision: scan stays opt-in but strongly advised).
+    // The list names ONLY the needs-rendering criteria still untested (real coverage).
+    partialAudit: (list) => `Audit partiel \u2014 les crit\xE8res \xAB \xE0 restituer \xBB (${list}) n'ont pas \xE9t\xE9 test\xE9s. Lancez \`ultra11y scan --sample\` (Playwright + axe + sondes) sur l'\xE9chantillon, puis fusionnez avec \`scan --merge\`.`,
+    // Task 5 — « Constats par page » (Ara-style per-sample-page synthesis).
+    perPageTitle: "Constats par page",
+    perPageNote: "Constats regroup\xE9s par page de l'\xE9chantillon audit\xE9 (rendu dynamique).",
+    transverseNote: (list) => `\xC9l\xE9ments transverses audit\xE9s sur chaque page : ${list}.`,
+    authYes: "\u{1F512} authentification requise",
+    authNo: "\u{1F310} public",
+    ncCount: "non-conformit\xE9(s)",
+    advCount: "recommandation(s)"
   },
   en: {
     title: (std) => `Accessibility audit report \u2014 ${std}`,
@@ -29766,6 +30750,8 @@ var L3 = {
     th: (head) => [head, "C", "NC", "NA", "To assess"],
     total: "Total",
     ncTitle: "2. Non-conformities (by priority)",
+    recTitle: "Recommendations (non-normative)",
+    recNote: "Good practices with NO normative test of the active standard \u2014 these are NOT non-conformities and do not enter the pass rate. The team may adopt them at will.",
     sev: { bloquant: "Blocking", majeur: "Major", mineur: "Minor" },
     none: "No non-conformity detected by the static engine.",
     cTitle: "3. Conforming criteria (C)",
@@ -29782,9 +30768,38 @@ var L3 = {
     rendered: (n, libs) => `Preliminary source verdict: ${n} file(s) render component-library components (${libs}) whose produced HTML is invisible to static analysis. Audit the build output (\`render\` / \`audit <dist>\`) or \`scan\` before concluding.`,
     sourceTemplate: (n, exts) => `Preliminary source verdict: ${n} ${exts} component(s) audited as SOURCE (template). Slots, snippets and dynamic bindings (:attr, {@render}) are invisible to static analysis \u2014 audit the rendered output (\`render\` / \`scan\`) before concluding.`,
     captures: (n) => `${n} rendered capture file(s) audited at full fidelity (real DOM) \u2014 the true produced HTML, not the component call.`,
-    blindSpots: (n) => `${n} component(s) without a rendered capture (blind spots) \u2014 audited from opaque source only; audit their rendered DOM (\`render --setup\`).`
+    blindSpots: (n) => `${n} component(s) without a rendered capture (blind spots) \u2014 audited from opaque source only; audit their rendered DOM (\`render --setup\`).`,
+    // Task 5 — partial-audit advisory (owner decision: scan stays opt-in but strongly advised).
+    // The list names ONLY the needs-rendering criteria still untested (real coverage).
+    partialAudit: (list) => `Partial audit \u2014 the needs-rendering criteria (${list}) were not tested. Run \`ultra11y scan --sample\` (Playwright + axe + probes) on the sample, then merge with \`scan --merge\`.`,
+    // Task 5 — « Findings per page » (Ara-style per-sample-page synthesis).
+    perPageTitle: "Findings per page",
+    perPageNote: "Findings grouped by the audited sample page (dynamic rendering).",
+    transverseNote: (list) => `Transverse elements audited on every page: ${list}.`,
+    authYes: "\u{1F512} authentication required",
+    authNo: "\u{1F310} public",
+    ncCount: "non-conformity(ies)",
+    advCount: "recommendation(s)"
   }
 };
+var NEEDS_RENDERING = [
+  { sc: "1.4.4", label: { fr: "zoom 200 %", en: "200% zoom" } },
+  { sc: "1.4.10", label: { fr: "reflow 320 px", en: "320px reflow" } },
+  { sc: "1.4.12", label: { fr: "espacement du texte", en: "text spacing" } },
+  { sc: "2.4.7", label: { fr: "visibilit\xE9 du focus", en: "focus visibility" } },
+  { sc: "1.4.13", label: { fr: "contenu au survol", en: "content on hover" } },
+  { sc: "4.1.3", label: { fr: "r\xE9gions live", en: "live regions" } }
+];
+function untestedNeedsRendering(r) {
+  const tested = new Set(r.scope.scan?.testedScs ?? []);
+  for (const f of r.findings) if (f.ruleId.startsWith("dyn-")) tested.add(f.criteriaId);
+  return NEEDS_RENDERING.filter((c) => !tested.has(c.sc)).map((c) => c.sc);
+}
+function partialAuditBanner(lang, untested = NEEDS_RENDERING.map((c) => c.sc)) {
+  const set = new Set(untested);
+  const labels = NEEDS_RENDERING.filter((c) => set.has(c.sc)).map((c) => c.label[lang]);
+  return L3[lang].partialAudit(labels.join(", "));
+}
 function render(r, lang, opts) {
   const s = L3[lang];
   const out = [];
@@ -29795,6 +30810,7 @@ function render(r, lang, opts) {
   out.push(`- **${s.rate}** : ${r.conformancePct}% (${s.rateNote})`);
   if (r.scope.dedup) out.push(`- **${s.dedup}** : ${r.scope.dedup.canonicalFiles} ${s.canonical}, ${r.scope.dedup.duplicateFiles} ${s.duplicate}`);
   out.push("", `> \u26A0\uFE0F ${s.warn}`, "");
+  if (opts.partialAudit?.length) out.push(`> \u{1F6A8} ${partialAuditBanner(lang, opts.partialAudit)}`, "");
   if (opts.derivedOf) out.push(`> \u21AA\uFE0F ${s.derived(opts.derivedOf)}`, "");
   if (r.scope.truncated) out.push(`> \u2702\uFE0F ${s.truncated(r.scope.truncated.limit, r.scope.truncated.total, r.scope.truncated.skipped)}`, "");
   if (r.scope.rendered) out.push(`> \u{1F9E9} ${s.rendered(r.scope.rendered.files, r.scope.rendered.opaqueLibraries.join(", "))}`, "");
@@ -29820,7 +30836,7 @@ function render(r, lang, opts) {
   }
   out.push(`| **${s.total}** | **${tot.c}** | **${tot.nc}** | **${tot.na}** | **${tot.manual}** |`, "");
   out.push(`## ${s.ncTitle}`, "");
-  const ncUnits = prdUnits(r, opts.standard, lang);
+  const { nc: ncUnits, advisory: advisoryUnits } = partitionUnits(prdUnits(r, opts.standard, lang));
   if (ncUnits.length === 0) {
     out.push(s.none, "");
   } else {
@@ -29829,6 +30845,24 @@ function render(r, lang, opts) {
       if (!group.length) continue;
       out.push(`### ${ICON3[sev]} ${s.sev[sev]} (${group.length})`, "");
       for (const u of group) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "####" }));
+    }
+  }
+  if (advisoryUnits.length) {
+    out.push(`## \u{1F4A1} ${s.recTitle}`, "", `> ${s.recNote}`, "");
+    for (const u of advisoryUnits) out.push(...renderAuditorUnit(u, opts.standard, lang, { heading: "###" }));
+  }
+  if (r.scope.sample?.pages.length) {
+    out.push(`## \u{1F4C4} ${s.perPageTitle}`, "", `> ${s.perPageNote}`, "");
+    if (r.scope.sample.transverse?.length) out.push(`> ${s.transverseNote(r.scope.sample.transverse.join(", "))}`, "");
+    for (const pg of r.scope.sample.pages) {
+      const onPage = r.findings.filter((f) => f.file === pg.url || f.sample?.page !== void 0 && f.sample.page === pg.name);
+      const nc = onPage.filter((f) => !f.advisory);
+      const adv = onPage.filter((f) => f.advisory);
+      out.push(`### ${pg.name} \u2014 \`${pg.url}\` \u2014 ${pg.auth ? s.authYes : s.authNo}`, "");
+      out.push(`- ${nc.length} ${s.ncCount}${adv.length ? ` \xB7 ${adv.length} ${s.advCount}` : ""}`);
+      if (pg.notes) out.push(`- _${pg.notes}_`);
+      for (const f of nc.slice(0, 30)) out.push(`  - [${f.criteriaId}] \`${f.selectorHint}\` \u2014 ${resolveMessage(f, lang)}`);
+      out.push("");
     }
   }
   out.push(`## ${s.cTitle}`, "");
@@ -29873,7 +30907,7 @@ function renderPackReport(r, pack, lang = "en") {
     (byTheme.get(pr.theme) ?? byTheme.set(pr.theme, []).get(pr.theme)).push(row);
   }
   const groups = pack.themes.map((t2) => ({ key: `${t2.number}.`, title: themeName(pack, t2.number, lang) ?? "", rows: byTheme.get(t2.number) ?? [] }));
-  return render(r, lang, { std, groupHead: L3[lang].byTheme, groups, derivedOf: std, standard: pack.key });
+  return render(r, lang, { std, groupHead: L3[lang].byTheme, groups, derivedOf: std, standard: pack.key, partialAudit: untestedNeedsRendering(r) });
 }
 function writeReport(r, opts) {
   const core = isCore(opts.standard);
@@ -29919,8 +30953,9 @@ function ghAvailable() {
     return false;
   }
 }
+var RECOMMENDATION_SUFFIX = " (recommendation)";
 function issueTitle(unit, label = "WCAG") {
-  return `[a11y] ${label} ${unit.criteriaId} \u2014 ${unit.title}`;
+  return `[a11y] ${label} ${unit.criteriaId} \u2014 ${unit.title}${unit.advisory ? RECOMMENDATION_SUFFIX : ""}`;
 }
 function existingIssueTitles() {
   try {
@@ -29972,7 +31007,8 @@ function pushIssues(units, lang, standard = "wcag", format = "audit") {
       result.skipped++;
       continue;
     }
-    const r = createIssue(title2, issueBody(u, lang, standard, format), ["accessibility", tag, u.severity]);
+    const labels = u.advisory ? ["accessibility", tag, "recommendation", u.severity] : ["accessibility", tag, u.severity];
+    const r = createIssue(title2, issueBody(u, lang, standard, format), labels);
     if (r.ok) {
       result.created++;
       result.createdTitles.push(title2);
@@ -30482,6 +31518,7 @@ var T = {
     checklist: [
       "- [ ] Chaque entr\xE9e porte un verdict (aucun `null`).",
       "- [ ] Aucune non-conformit\xE9 invent\xE9e : chaque verdict `supported` cite un \xE9l\xE9ment r\xE9el \xE0 la ligne indiqu\xE9e.",
+      "- [ ] Non-conformit\xE9 UNIQUEMENT si un test pr\xE9cis du r\xE9f\xE9rentiel actif \xE9choue \u2014 citez-le. Une bonne pratique sans test normatif est une recommandation ; une simple pr\xE9occupation UX n'est ni l'un ni l'autre.",
       "- [ ] Les crit\xE8res \xAB \xE0 \xE9valuer \xBB (rendu / jugement) ont \xE9t\xE9 adjug\xE9s par l'agent (`verify --manual` \u2192 `--apply`), ou laiss\xE9s en risque r\xE9siduel explicite (rendu \u2192 `scan`).",
       "- [ ] Pour un code rendu par une biblioth\xE8que (DSFR\u2026), le verdict s'appuie sur le HTML **produit** (build / `scan`), pas sur la source JSX.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` repasse au vert."
@@ -30502,6 +31539,7 @@ var T = {
     checklist: [
       "- [ ] Every entry has a verdict (no `null`).",
       "- [ ] No invented non-conformity: every `supported` verdict cites a real element at the given line.",
+      "- [ ] Report NC ONLY if a precise test of the active standard fails \u2014 cite it. A good practice without a normative test is a recommendation; a purely UX concern is neither.",
       "- [ ] The \u201Cto assess\u201D criteria (rendering / judgment) have been adjudicated by the agent (`verify --manual` \u2192 `--apply`), or left as an explicit residual risk (rendering \u2192 `scan`).",
       "- [ ] For component-library-rendered code (DSFR\u2026), the verdict relies on the **produced** HTML (build / `scan`), not the JSX source.",
       "- [ ] `ultra11y verify --apply VERIFY.todo.json` is green again."
@@ -30794,6 +31832,62 @@ function sectionBody(md, n) {
 // src/adjudicate.ts
 import { mkdirSync as mkdirSync4, writeFileSync as writeFileSync4 } from "fs";
 import { join as join9 } from "path";
+
+// src/data/manual-questions.json
+var manual_questions_default = {
+  "1.3.1": [
+    {
+      fr: "Coh\xE9rence des techniques (RGAA 9.1) : v\xE9rifiez que la M\xCAME technique de structuration (hn vs caption, balisage de liste ul/ol/dl) est employ\xE9e sur TOUS les tableaux/pages similaires \u2014 pas au cas par cas.",
+      en: "Technique consistency (RGAA 9.1): verify the SAME structuring technique (hn vs caption, ul/ol/dl list markup) is used across ALL similar tables/pages \u2014 not instance by instance."
+    },
+    {
+      fr: "Champs pr\xE9sent\xE9s en div (RGAA 8.9) : pour chaque paire libell\xE9/valeur affich\xE9e avec des <div>/<span>, v\xE9rifiez que la relation n'est pas seulement visuelle (utilisez <dl>/<dt>/<dd> ou une association ARIA).",
+      en: "Div-presented fields (RGAA 8.9): for each label/value pair shown with <div>/<span>, verify the relationship is not conveyed only visually (use <dl>/<dt>/<dd> or an ARIA association)."
+    },
+    {
+      fr: "Listes (RGAA 9.3) : v\xE9rifiez que chaque liste utilise le bon balisage (ul/ol pour une \xE9num\xE9ration, dl pour des couples cl\xE9/valeur) plut\xF4t que des retours \xE0 la ligne ou des <div>.",
+      en: "Lists (RGAA 9.3): verify each list uses the right markup (ul/ol for an enumeration, dl for key/value pairs) rather than line breaks or <div>s."
+    }
+  ],
+  "2.4.3": [
+    {
+      fr: "Titre en SPA (RGAA 12.8) : lors d'un rechargement partiel (navigation c\xF4t\xE9 client), v\xE9rifiez que le <title> de la page est mis \xE0 jour pour refl\xE9ter la nouvelle vue.",
+      en: "SPA page title (RGAA 12.8): on a partial (client-side) reload, verify the page <title> is updated to reflect the new view."
+    },
+    {
+      fr: "Gestion du focus en SPA (RGAA 12.8) : \xE0 chaque changement de vue, v\xE9rifiez que le focus est d\xE9plac\xE9 vers une cible pertinente (titre de la nouvelle vue, premier \xE9l\xE9ment du contenu).",
+      en: "SPA focus management (RGAA 12.8): on each view change, verify focus is moved to a sensible target (the new view's heading, the first content element)."
+    },
+    {
+      fr: "Menu mobile : \xE0 l'ouverture d'un menu burger, v\xE9rifiez que le focus atteint la cible attendue et reste pi\xE9g\xE9 dans le menu tant qu'il est ouvert.",
+      en: "Mobile menu: when a hamburger menu opens, verify focus reaches the expected target and stays trapped inside the menu while it is open."
+    }
+  ],
+  "2.4.4": [
+    {
+      fr: "Intitul\xE9 de lien (RGAA 6.1) : v\xE9rifiez que le nom accessible de chaque lien est explicite hors contexte. Annoncer le format d'un document t\xE9l\xE9chargeable (\xAB (PDF) \xBB) est une RECOMMANDATION, pas une non-conformit\xE9.",
+      en: `Link name (RGAA 6.1): verify each link's accessible name is explicit out of context. Naming a downloadable document's format ("(PDF)") is a RECOMMENDATION, not a non-conformity.`
+    }
+  ],
+  "2.4.6": [
+    {
+      fr: "Concision des titres de tableaux (RGAA 5.5) : v\xE9rifiez que chaque <caption> est un intitul\xE9 COURT et pertinent ; un titre clair mais verbeux doit devenir une br\xE8ve introduction, les d\xE9tails \xE9tant d\xE9port\xE9s dans un texte associ\xE9 via aria-labelledby/aria-describedby.",
+      en: "Table-title concision (RGAA 5.5): verify each <caption> is a SHORT, relevant title; a clear but verbose title should become a brief intro, with the details moved into text associated via aria-labelledby/aria-describedby."
+    }
+  ],
+  "4.1.3": [
+    {
+      fr: "Focus OU r\xE9gion live (RGAA 12.8/7.5) : apr\xE8s une action asynchrone, v\xE9rifiez que SOIT le focus est d\xE9plac\xE9 vers le nouveau contenu, SOIT une r\xE9gion live l'annonce \u2014 pas les deux, pas aucun.",
+      en: "Focus move XOR live region (RGAA 12.8/7.5): after an async action, verify EITHER focus moves to the new content OR a live region announces it \u2014 not both, not neither."
+    },
+    {
+      fr: "Messages de statut (RGAA 7.4/7.5) : v\xE9rifiez que les messages d'\xE9tat (succ\xE8s, erreur, chargement) sont expos\xE9s via role=status/alert ou aria-live, sans d\xE9placer le focus intempestivement.",
+      en: "Status messages (RGAA 7.4/7.5): verify status messages (success, error, loading) are exposed via role=status/alert or aria-live, without stealing focus unexpectedly."
+    }
+  ]
+};
+
+// src/adjudicate.ts
 var ADJUDICATE_MAX_EVIDENCE = 30;
 var selectorFor = (el) => {
   const id = el.attribs.id ? `#${el.attribs.id}` : "";
@@ -30812,14 +31906,57 @@ function nearestHeading(doc, el) {
   const h = headings2[headings2.length - 1];
   return h ? textContent(h).trim().slice(0, 80) : void 0;
 }
+var LABEL_LIKE = /(^|[-_ ])(field-label|field-key|label|key|term)([-_ ]|$)/i;
+var VALUE_LIKE = /(^|[-_ ])(field-value|field-data|value|data)([-_ ]|$)/i;
+function keyValuePairs(doc) {
+  const out = [];
+  for (const el of doc.elements) {
+    const isDt = el.tag === "dt";
+    const isLabelDiv = el.tag !== "label" && el.tag !== "dt" && LABEL_LIKE.test(attr(el, "class") ?? "");
+    if (!isDt && !isLabelDiv) continue;
+    const parent = el.parent;
+    if (!parent) continue;
+    const sibs = parent.children.filter((c) => c.type === "element");
+    const next = sibs[sibs.indexOf(el) + 1];
+    if (!next) continue;
+    const paired = isDt ? next.tag === "dd" : VALUE_LIKE.test(attr(next, "class") ?? "");
+    if (!paired) continue;
+    out.push({ key: el, label: textContent(el).trim().slice(0, 40), value: textContent(next).trim().slice(0, 40) });
+  }
+  return out;
+}
+var DOWNLOAD_HREF = /\.(pdf|docx?|xlsx?)(?:[?#]|$)/i;
+var ROUTER_IMPORT = /['"](?:react-router(?:-dom)?|next\/(?:router|navigation)|vue-router|@remix-run\/[\w-]+|@tanstack\/[\w-]*router|@sveltejs\/kit|\$app\/(?:navigation|stores))['"]/;
+function routerImportEvidence(doc) {
+  const m = ROUTER_IMPORT.exec(doc.source);
+  if (!m) return [];
+  const line = doc.source.slice(0, m.index).split("\n").length;
+  return [
+    {
+      file: doc.file,
+      line,
+      selector: "import",
+      snippet: (doc.source.split("\n")[line - 1] ?? "").trim().slice(0, 120),
+      note: "client-router import \u2014 verify page title + focus are restored on partial (SPA) navigation"
+    }
+  ];
+}
+var STATUS_CLASS = /(error|status|message|alert|notif|toast|feedback|live)/i;
 var HARVESTERS = {
   // 1.1.1 Non-text Content — every image-like element's text alternative
   "1.1.1": (docs) => docs.flatMap(
     (d) => elementsByTag(d, "img", "svg", "area", "object", "embed", "canvas").concat(d.elements.filter((e) => attr(e, "role") === "img")).filter((e, i, a) => a.indexOf(e) === i).map((e) => ev(d, e, `alt="${attr(e, "alt") ?? ""}" aria-label="${attr(e, "aria-label") ?? ""}"`))
   ),
-  // 2.4.4 Link Purpose (In Context) — link text + destination + nearest heading
+  // 2.4.4 Link Purpose (In Context) — link text + destination + nearest heading. A
+  // document-download link's format mention "(PDF)" (RGAA 6.1) is a RECOMMENDATION, not an
+  // NC — the note says so, so the agent never files an NC for a missing format hint.
   "2.4.4": (docs) => docs.flatMap(
-    (d) => elementsByTag(d, "a").filter((e) => attr(e, "href") !== void 0).map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}" href="${attr(e, "href")}" under="${nearestHeading(d, e) ?? ""}"`))
+    (d) => elementsByTag(d, "a").filter((e) => attr(e, "href") !== void 0).map((e) => {
+      const href = attr(e, "href") ?? "";
+      const dl = DOWNLOAD_HREF.exec(href);
+      const note = dl ? ` download-format=${dl[1].toLowerCase()} (naming the format, e.g. "(PDF)", is a recommendation \u2014 not an NC)` : "";
+      return ev(d, e, `text="${textContent(e).trim().slice(0, 60)}" href="${href}" under="${nearestHeading(d, e) ?? ""}"${note}`);
+    })
   ),
   // 1.4.3 Contrast (Minimum) — literal inline colour pairs (the ones statically visible)
   "1.4.3": (docs) => docs.flatMap(
@@ -30831,9 +31968,12 @@ var HARVESTERS = {
       return ev(d, e, `color=${st.get("color") ?? "?"} background=${st.get("background-color") ?? st.get("background") ?? "?"}`);
     })
   ),
-  // 2.4.6 Headings and Labels — the heading + label text to judge for descriptiveness
+  // 2.4.6 Headings and Labels — heading + label + <caption> text to judge for
+  // descriptiveness/concision (captions feed the RGAA 5.5 title-concision question).
   "2.4.6": (docs) => docs.flatMap(
-    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend").map((e) => ev(d, e, `text="${textContent(e).trim().slice(0, 60)}"`))
+    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "label", "legend", "caption").map(
+      (e) => ev(d, e, `<${e.tag}> text="${textContent(e).trim().slice(0, 60)}"`)
+    )
   ),
   // 3.3.2 Labels or Instructions — controls + their associated labels/placeholders
   "3.3.2": (docs) => docs.flatMap(
@@ -30847,18 +31987,45 @@ var HARVESTERS = {
       );
     })
   ),
-  // 1.3.1 Info and Relationships — heading outline + tables (structure to judge)
-  "1.3.1": (docs) => docs.flatMap(
-    (d) => elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map(
+  // 1.3.1 Info and Relationships — heading outline + tables/lists (structure to judge for
+  // technique consistency), PLUS div-presented key/value pairs (RGAA 8.9 read-only fields /
+  // 9.3 <dl> semantics) so the "Mon profil" recap pattern is never silently conforming.
+  "1.3.1": (docs) => docs.flatMap((d) => [
+    ...elementsByTag(d, "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "dl").map(
       (e) => ev(d, e, `<${e.tag}> "${textContent(e).trim().slice(0, 50)}"`)
+    ),
+    ...keyValuePairs(d).map(
+      (p) => ev(d, p.key, `key/value pair \u2014 label="${p.label}" value="${p.value}" (div-presented field? verify the relationship isn't only visual \u2014 RGAA 8.9/9.3)`)
     )
-  ),
+  ]),
+  // 4.1.3 Status Messages (RGAA 7.4/7.5) — live regions + status-ish text near a form
+  "4.1.3": (docs) => docs.flatMap((d) => {
+    const isRegion = (e) => attr(e, "aria-live") !== void 0 || ["status", "alert", "log"].includes((attr(e, "role") ?? "").trim().toLowerCase());
+    const regions = d.elements.filter(isRegion);
+    const nearForm = d.elements.filter((e) => !isRegion(e) && STATUS_CLASS.test(attr(e, "class") ?? "") && ancestors(e).some((a) => a.tag === "form"));
+    return [
+      ...regions.map((e) => ev(d, e, `aria-live="${attr(e, "aria-live") ?? ""}" role="${attr(e, "role") ?? ""}"`)),
+      ...nearForm.map(
+        (e) => ev(
+          d,
+          e,
+          `status-like class="${(attr(e, "class") ?? "").slice(0, 40)}" in a form \u2014 verify async feedback is announced (role=status/alert or aria-live)`
+        )
+      )
+    ];
+  }),
   // 4.1.2 Name, Role, Value — elements carrying a role or ARIA state
   "4.1.2": (docs) => docs.flatMap(
     (d) => d.elements.filter((e) => attr(e, "role") !== void 0 || Object.keys(e.attribs).some((k) => k.startsWith("aria-"))).map((e) => ev(d, e, `role="${attr(e, "role") ?? ""}"`))
   ),
-  // 2.4.3 Focus Order — explicit tabindex values in DOM order
-  "2.4.3": (docs) => docs.flatMap((d) => d.elements.filter((e) => attr(e, "tabindex") !== void 0).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`))),
+  // 2.4.3 Focus Order — explicit tabindex values in DOM order, PLUS SPA focus signals
+  // (RGAA 12.8): <dialog> usage and client-router imports (verify focus is moved on route
+  // change / dialog open, and a mobile menu's target receives focus).
+  "2.4.3": (docs) => docs.flatMap((d) => [
+    ...d.elements.filter((e) => attr(e, "tabindex") !== void 0).map((e) => ev(d, e, `tabindex="${attr(e, "tabindex")}"`)),
+    ...elementsByTag(d, "dialog").map((e) => ev(d, e, `<dialog> \u2014 verify focus moves in on open and is restored to the trigger on close`)),
+    ...routerImportEvidence(d)
+  ]),
   // 3.1.2 Language of Parts — element-level lang overrides (not the root <html lang>)
   "3.1.2": (docs) => docs.flatMap((d) => d.elements.filter((e) => e.tag !== "html" && attr(e, "lang") !== void 0).map((e) => ev(d, e, `lang="${attr(e, "lang")}"`)))
 };
@@ -30890,12 +32057,24 @@ function buildAdjudicationWorklist(audit, opts = {}) {
       justification: "",
       reason: null,
       findings: [],
+      recommendations: [],
       decidedBy: "agent"
     };
   });
 }
 var NC_SEVERITY_DEFAULT = "majeur";
 var MANUAL_REASONS = /* @__PURE__ */ new Set(["needs-rendered-dom", "undecidable"]);
+function normativeRefResolves(ref, standard) {
+  const r = (ref ?? "").trim();
+  if (!r) return false;
+  if (isCore(standard)) return hasSC(r);
+  const pack = loadPack(standard);
+  if (hasId(pack, r)) return true;
+  const dot = r.lastIndexOf(".");
+  if (dot <= 0) return false;
+  const crit = getCriterion(pack, r.slice(0, dot));
+  return !!crit?.tests && Object.hasOwn(crit.tests, r.slice(dot + 1));
+}
 function applyAdjudication(audit, adj, opts = {}) {
   const issues = [];
   const byId2 = new Map(adj.items.map((it) => [it.criteriaId, it]));
@@ -30909,13 +32088,21 @@ function applyAdjudication(audit, adj, opts = {}) {
       if (!it.justification || !it.justification.trim()) issues.push(`criterion ${it.criteriaId}: a ${v} verdict requires a justification`);
     } else if (v === "NC") {
       if (!it.findings || it.findings.length === 0) issues.push(`criterion ${it.criteriaId}: an NC verdict requires at least one groundable finding`);
-      for (const f of it.findings ?? []) groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
+      for (const f of it.findings ?? []) {
+        if (!f.normativeRef || !f.normativeRef.trim()) {
+          issues.push(`criterion ${it.criteriaId}: an NC finding requires a normativeRef citing the failed test of the active standard`);
+        } else if (!normativeRefResolves(f.normativeRef, adj.standard)) {
+          issues.push(`criterion ${it.criteriaId}: normativeRef "${f.normativeRef}" does not resolve to a test of ${adj.standard} (fabricated?)`);
+        }
+        groundInputs.push({ file: f.file, line: f.line, selector: f.selector, snippet: f.snippet });
+      }
     } else if (v === "manual") {
       if (!it.reason || !MANUAL_REASONS.has(it.reason))
         issues.push(`criterion ${it.criteriaId}: a manual verdict requires reason \u2208 {needs-rendered-dom, undecidable}`);
     } else {
       issues.push(`criterion ${it.criteriaId}: unknown verdict "${String(v)}"`);
     }
+    for (const rec of it.recommendations ?? []) groundInputs.push({ file: rec.file, line: rec.line, selector: rec.selector, snippet: rec.snippet });
   }
   const grounding = groundItems(groundInputs, { cwd: opts.cwd });
   for (const gi of grounding.issues) issues.push(gi);
@@ -30948,13 +32135,22 @@ function applyAdjudication(audit, adj, opts = {}) {
       delete c.justification;
     }
   }
+  for (const it of adj.items) {
+    const c = critById.get(it.criteriaId);
+    if (!c) continue;
+    for (const rec of it.recommendations ?? []) {
+      const f = agentFinding(it.criteriaId, rec, true);
+      c.findings.push(f);
+      newFindings.push(f);
+    }
+  }
   next.findings = [...next.findings, ...newFindings];
   next.residualRisks = next.residualRisks.filter((r) => byId2.get(r.criteriaId)?.verdict === "manual");
   recomputeTallies(next);
   next.adjudicated = { date: adj.auditDate, applied, stillManual };
   return { ok: true, audit: next, issues: [], applied, stillManual, grounding };
 }
-function agentFinding(criteriaId, f) {
+function agentFinding(criteriaId, f, advisory = false) {
   return {
     ruleId: `agent:${criteriaId}`,
     criteriaId,
@@ -30962,10 +32158,11 @@ function agentFinding(criteriaId, f) {
     line: f.line,
     col: 1,
     selectorHint: f.selector ?? "",
-    severity: f.severity ?? NC_SEVERITY_DEFAULT,
+    severity: f.severity ?? (advisory ? "mineur" : NC_SEVERITY_DEFAULT),
     message: f.message,
     remediation: getSC(criteriaId)?.understanding ? `See WCAG ${criteriaId}.` : "Address the reported non-conformity.",
-    snippet: f.snippet ?? ""
+    snippet: f.snippet ?? "",
+    ...advisory ? { advisory: true } : {}
   };
 }
 function recomputeTallies(a) {
@@ -30988,37 +32185,48 @@ var T2 = {
     intro: "Pour CHAQUE crit\xE8re, lisez les \xE9vidences ci-dessous (extraites de la source audit\xE9e) et attribuez un verdict dans `ADJUDICATE.todo.json` (champ `verdict`) :",
     verdicts: [
       "- `C` \u2014 conforme (renseignez `justification`) ;",
-      "- `NC` \u2014 non conforme (ajoutez au moins un `findings[]` : file/line/message, avec un `snippet` groundable) ;",
+      "- `NC` \u2014 non conforme (ajoutez au moins un `findings[]` : file/line/message, avec un `snippet` groundable ET un `normativeRef` citant le test pr\xE9cis \xE9chou\xE9) ;",
       "- `NA` \u2014 non applicable (renseignez `justification`) ;",
       "- `manual` \u2014 ind\xE9cidable statiquement (renseignez `reason` : `needs-rendered-dom` \u2192 `scan`, ou `undecidable`)."
     ],
+    rule: "> Ne signalez une NC que si un test pr\xE9cis du r\xE9f\xE9rentiel actif \xE9choue \u2014 citez-le (`normativeRef`). Une bonne pratique sans test normatif est une recommandation (`recommendations[]`, non normative). Une simple pr\xE9occupation UX n'est ni l'un ni l'autre.",
     then: "Puis : `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (\xE9choue si un verdict manque une justification/finding/reason).",
     evidence: "\xC9vidences",
-    none: "(aucune \xE9vidence automatique \u2014 d\xE9cidez depuis la source, ou laissez `manual` avec une raison)"
+    none: "(aucune \xE9vidence automatique \u2014 d\xE9cidez depuis la source, ou laissez `manual` avec une raison)",
+    questions: "\xC0 v\xE9rifier manuellement"
   },
   en: {
     title: "# Criteria adjudication (ultra11y)",
     intro: "For EACH criterion, read the evidence below (harvested from the audited source) and set a verdict in `ADJUDICATE.todo.json` (field `verdict`):",
     verdicts: [
       "- `C` \u2014 conformant (fill `justification`);",
-      "- `NC` \u2014 non-conformant (add at least one `findings[]`: file/line/message, with a groundable `snippet`);",
+      "- `NC` \u2014 non-conformant (add at least one `findings[]`: file/line/message, with a groundable `snippet` AND a `normativeRef` citing the precise failed test);",
       "- `NA` \u2014 not applicable (fill `justification`);",
       "- `manual` \u2014 not statically decidable (fill `reason`: `needs-rendered-dom` \u2192 `scan`, or `undecidable`)."
     ],
+    rule: "> Report NC only if a precise test of the active standard fails \u2014 cite it (`normativeRef`). A good practice without a normative test is a recommendation (`recommendations[]`, non-normative). A purely UX concern is neither.",
     then: "Then: `ultra11y verify --apply ADJUDICATE.todo.json --in <audit.json> --out <dir>` (fails if any verdict lacks its justification/finding/reason).",
     evidence: "Evidence",
-    none: "(no automatic evidence \u2014 decide from source, or leave `manual` with a reason)"
+    none: "(no automatic evidence \u2014 decide from source, or leave `manual` with a reason)",
+    questions: "To verify manually"
   }
 };
+var MANUAL_QUESTIONS = manual_questions_default;
 function formatAdjudication(items, lang = "en") {
   const s = T2[lang];
-  const out = [s.title, "", s.intro, "", ...s.verdicts, "", s.then, ""];
+  const out = [s.title, "", s.intro, "", ...s.verdicts, "", s.rule, "", s.then, ""];
   for (const it of items) {
     out.push(`## ${it.criteriaId}${it.title ? ` \u2014 ${it.title}` : ""}  _(${it.automatability})_`);
     out.push("", `> ${s.evidence} (${it.evidence.length}${it.evidenceTruncated ? ` / ${it.evidenceTruncated.total}` : ""}):`, "");
     if (!it.evidence.length) out.push(s.none, "");
     else {
       for (const e of it.evidence) out.push(`- \`${e.file}:${e.line}\` (\`${e.selector}\`)${e.note ? ` \u2014 ${e.note}` : ""}`);
+      out.push("");
+    }
+    const questions = MANUAL_QUESTIONS[it.criteriaId];
+    if (questions?.length) {
+      out.push(`> ${s.questions}:`, "");
+      for (const q of questions) out.push(`- ${q[lang]}`);
       out.push("");
     }
   }
@@ -31043,7 +32251,7 @@ function writeAdjudication(items, outDir, opts) {
 
 // src/scan.ts
 import { execFileSync as execFileSync3 } from "child_process";
-import { mkdtempSync, writeFileSync as writeFileSync5, existsSync as existsSync6, statSync as statSync2, readdirSync as readdirSync2, rmSync, readFileSync as readFileSync5 } from "fs";
+import { mkdtempSync, writeFileSync as writeFileSync5, existsSync as existsSync7, statSync as statSync2, readdirSync as readdirSync2, rmSync, readFileSync as readFileSync5 } from "fs";
 import { tmpdir } from "os";
 import { join as join10, resolve as resolve3 } from "path";
 import { fileURLToPath } from "url";
@@ -31056,14 +32264,33 @@ var PROBE_WCAG = {
   // Resize Text / 200% zoom — content clipped/lost when enlarged
   "text-spacing": "1.4.12",
   // Text Spacing — clipping/overlap under the WCAG spacing override
-  hover: "1.4.13"
+  hover: "1.4.13",
   // Content on Hover or Focus — not dismissible/hoverable/persistent
+  // Stateful input-overflow probes — a FILLED input whose typed value is clipped/unreadable
+  // under a stress. Same defect, one SC per stress (so each folds onto the SC that stress
+  // actually evidences), so they stay unambiguous cross-standard (RGAA 10.11/10.4/10.12).
+  "input-overflow-reflow": "1.4.10",
+  // typed value clipped at 320px width
+  "input-overflow-zoom": "1.4.4",
+  // typed value clipped at 200% zoom
+  "input-overflow-spacing": "1.4.12",
+  // typed value clipped under the WCAG text-spacing override
+  "live-region": "4.1.3"
+  // Status Messages — content updated by an interaction outside any live region
 };
 var PROBE_SEVERITY = {
   "focus-visible": "majeur",
   "reflow-zoom": "majeur",
   "text-spacing": "mineur",
-  hover: "mineur"
+  hover: "mineur",
+  // Input-overflow is a directly OBSERVED loss of content (the value the user typed is no
+  // longer visible), not a heuristic — the human auditor confirmed the real instance class
+  // — so it is majeur on every stress (incl. text-spacing, unlike the generic text-spacing
+  // probe which stays mineur). live-region is an honest heuristic → mineur.
+  "input-overflow-reflow": "majeur",
+  "input-overflow-zoom": "majeur",
+  "input-overflow-spacing": "majeur",
+  "live-region": "mineur"
 };
 var AXE_WCAG = {
   // images
@@ -31175,6 +32402,26 @@ function severityFromImpact(impact) {
       return "mineur";
   }
 }
+var AXE_ADVISORY_EXCEPTIONS = {
+  "heading-order": false,
+  tabindex: false,
+  "skip-link": false,
+  "label-title-only": false,
+  "landmark-one-main": false,
+  "empty-heading": false,
+  "duplicate-id": false,
+  "nested-interactive": false,
+  "form-field-multiple-labels": false,
+  "aria-required-children": false
+};
+function axeAdvisory(tags) {
+  const t2 = tags ?? [];
+  if (t2.length === 0) return false;
+  return !t2.some((tag) => /^wcag\d+$/.test(tag));
+}
+function isAxeAdvisory(ruleId, tags) {
+  return AXE_ADVISORY_EXCEPTIONS[ruleId] ?? axeAdvisory(tags);
+}
 function scForAxe(ruleId, tags) {
   return AXE_WCAG[ruleId] ?? scFromWcagTags(tags) ?? FALLBACK_SC;
 }
@@ -31235,6 +32482,110 @@ async function crawlUrls(start, opts) {
     }
   }
   return order;
+}
+
+// src/sample.ts
+import { existsSync as existsSync6 } from "fs";
+function looksLikeTarget(u) {
+  return /^https?:\/\//i.test(u) || /^(\.\.?[/\\]|[/\\])/.test(u) || /\.x?html?$/i.test(u);
+}
+function validateSample(raw) {
+  const issues = [];
+  const warnings = [];
+  const err = (path, message) => issues.push({ path, message });
+  const warn = (path, message) => warnings.push({ path, message });
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    err("sample", "sample must be an object { pages: [...], transverse?: [...] }");
+    return { ok: false, issues, warnings };
+  }
+  const s = raw;
+  const pages = Array.isArray(s.pages) ? s.pages : null;
+  if (!pages || pages.length === 0) err("sample.pages", "sample.pages must be a non-empty array");
+  const ids = /* @__PURE__ */ new Set();
+  pages?.forEach((pg, i) => {
+    if (typeof pg !== "object" || pg === null || Array.isArray(pg)) {
+      err(`sample.pages[${i}]`, "each page must be an object { id, name, url, auth?, storageState?, notes? }");
+      return;
+    }
+    const p = pg;
+    const id = p.id;
+    if (typeof id !== "string" || id.trim() === "") {
+      err(`sample.pages[${i}].id`, "page id must be a non-empty string");
+    } else {
+      if (ids.has(id)) err(`sample.pages[${i}].id`, `duplicate page id "${id}"`);
+      ids.add(id);
+    }
+    if (typeof p.name !== "string" || p.name.trim() === "") err(`sample.pages[${i}].name`, "page name must be a non-empty string");
+    if (typeof p.url !== "string" || p.url.trim() === "") err(`sample.pages[${i}].url`, "page url must be a non-empty string");
+    else if (!looksLikeTarget(p.url)) err(`sample.pages[${i}].url`, `malformed url "${p.url}" (expected an http(s):// URL or an HTML file path)`);
+    if (p.auth !== void 0 && typeof p.auth !== "boolean") err(`sample.pages[${i}].auth`, "auth must be a boolean");
+    if (p.storageState !== void 0 && (typeof p.storageState !== "string" || p.storageState.trim() === "")) {
+      err(`sample.pages[${i}].storageState`, "storageState must be a non-empty file path string");
+    } else if (typeof p.storageState === "string" && p.storageState.trim() !== "" && !existsSync6(p.storageState)) {
+      warn(
+        `sample.pages[${i}].storageState`,
+        `storageState path not found: "${p.storageState}" (resolved from the current directory) \u2014 the scan will not be able to load this session`
+      );
+    }
+    if (p.notes !== void 0 && typeof p.notes !== "string") err(`sample.pages[${i}].notes`, "notes must be a string");
+  });
+  if (s.transverse !== void 0) {
+    if (!Array.isArray(s.transverse)) {
+      err("sample.transverse", "transverse must be an array of strings");
+    } else {
+      s.transverse.forEach((t2, i) => {
+        if (typeof t2 !== "string" || t2.trim() === "") err(`sample.transverse[${i}]`, "transverse entries must be non-empty strings");
+      });
+    }
+  }
+  const ok = issues.length === 0;
+  return { ok, issues, warnings, sample: ok ? normalizeSample(s) : void 0 };
+}
+function normalizeSample(s) {
+  const pages = s.pages.map((p) => ({
+    id: String(p.id),
+    name: String(p.name),
+    url: String(p.url),
+    ...typeof p.auth === "boolean" ? { auth: p.auth } : {},
+    ...typeof p.storageState === "string" ? { storageState: p.storageState } : {},
+    ...typeof p.notes === "string" ? { notes: p.notes } : {}
+  }));
+  const transverse = Array.isArray(s.transverse) ? s.transverse.map(String) : void 0;
+  return { pages, ...transverse?.length ? { transverse } : {} };
+}
+function sampleScope(sample) {
+  return {
+    pages: sample.pages.map((p) => ({
+      id: p.id,
+      name: p.name,
+      url: p.url,
+      ...p.auth !== void 0 ? { auth: p.auth } : {},
+      ...p.notes ? { notes: p.notes } : {}
+    })),
+    ...sample.transverse?.length ? { transverse: sample.transverse } : {}
+  };
+}
+var norm2 = (s) => s.normalize("NFD").replace(new RegExp("\\p{Diacritic}", "gu"), "").replace(/['’]/g, " ").toLowerCase();
+var SHORT_KEYWORD = 5;
+var escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function keywordMatches(haystack, keyword) {
+  if (keyword.length > SHORT_KEYWORD) return haystack.includes(keyword);
+  return new RegExp(`(^|[^a-z0-9])${escapeRe(keyword)}($|[^a-z0-9])`).test(haystack);
+}
+function lintSample(sample, methodology) {
+  const haystacks = sample.pages.map((p) => norm2([p.name, p.notes ?? "", p.url, p.id].join(" ")));
+  const transverseHay = norm2((sample.transverse ?? []).join(" "));
+  const hasTransverse = (sample.transverse ?? []).length > 0;
+  const missing = [];
+  for (const kind of methodology.requiredKinds) {
+    const kws = kind.keywords.map(norm2).filter(Boolean);
+    const covered = haystacks.some((h) => kws.some((k) => keywordMatches(h, k))) || transverseHay !== "" && kws.some((k) => keywordMatches(transverseHay, k)) || hasTransverse && /transverse/.test(kind.id) || /representative|representatif/.test(kind.id) && sample.pages.length >= 2;
+    if (!covered) missing.push(kind);
+  }
+  return { missing };
+}
+function kindLabel(kind, locale = "fr") {
+  return kind.label[locale] ?? Object.values(kind.label)[0] ?? kind.id;
 }
 
 // src/scan.ts
@@ -31330,7 +32681,11 @@ var PROBE_FIELDS = [
   { key: "focusVisible", engine: "focus-visible" },
   { key: "reflowZoom", engine: "reflow-zoom" },
   { key: "textSpacing", engine: "text-spacing" },
-  { key: "hover", engine: "hover" }
+  { key: "hover", engine: "hover" },
+  { key: "inputOverflowReflow", engine: "input-overflow-reflow" },
+  { key: "inputOverflowZoom", engine: "input-overflow-zoom" },
+  { key: "inputOverflowSpacing", engine: "input-overflow-spacing" },
+  { key: "liveRegion", engine: "live-region" }
 ];
 function runRunner(target, isFile, tag) {
   const args = ["run", "--rm"];
@@ -31365,6 +32720,7 @@ function toDynamicResult(out, target, lang = "en", engine = "axe-core@playwright
   for (const v of out.violations) {
     const criteriaId = scForAxe(v.id, v.tags);
     const severity = severityFromImpact(v.impact);
+    const advisory = isAxeAdvisory(v.id, v.tags);
     for (const n of v.nodes.length ? v.nodes : [{ target: [], html: "" }]) {
       findings.push({
         criteriaId,
@@ -31375,7 +32731,8 @@ function toDynamicResult(out, target, lang = "en", engine = "axe-core@playwright
         selector: n.target.join(" ") || "\u2014",
         snippet: n.html,
         engine: "axe",
-        page
+        page,
+        ...advisory ? { advisory: true } : {}
       });
     }
   }
@@ -31412,9 +32769,10 @@ function toDynamicResult(out, target, lang = "en", engine = "axe-core@playwright
   }
   return { tool: "ultra11y", engine, target, date: today(), findings };
 }
+var DOCKER_TESTED_SCS = ["1.4.10"];
 function runScan(opts) {
   const isUrl = /^https?:\/\//i.test(opts.target);
-  if (!isUrl && !existsSync6(opts.target)) {
+  if (!isUrl && !existsSync7(opts.target)) {
     throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   if (!dockerAvailable()) {
@@ -31422,9 +32780,9 @@ function runScan(opts) {
   }
   const tag = opts.tag ?? IMAGE_TAG;
   if (!imageExists(tag)) buildImage(tag);
-  const isFile = !isUrl && existsSync6(opts.target) && statSync2(opts.target).isFile();
+  const isFile = !isUrl && existsSync7(opts.target) && statSync2(opts.target).isFile();
   const out = runRunner(opts.target, isFile, tag);
-  return toDynamicResult(out, opts.target);
+  return { ...toDynamicResult(out, opts.target), testedScs: [...DOCKER_TESTED_SCS] };
 }
 async function fetchHtml(url) {
   try {
@@ -31455,7 +32813,40 @@ function runScanMany(urls, tag = IMAGE_TAG) {
     const out = runRunner(url, false, tag);
     findings.push(...toDynamicResult(out, url).findings);
   }
-  return { tool: "ultra11y", engine: "axe-core@playwright (docker)", target: `${urls.length} page(s)`, date: today(), findings };
+  return {
+    tool: "ultra11y",
+    engine: "axe-core@playwright (docker)",
+    target: `${urls.length} page(s)`,
+    date: today(),
+    findings,
+    testedScs: [...DOCKER_TESTED_SCS]
+  };
+}
+function tagSampleFindings(findings, page) {
+  for (const f of findings) {
+    f.sample = { id: page.id, name: page.name, ...page.auth !== void 0 ? { auth: page.auth } : {}, ...page.notes ? { notes: page.notes } : {} };
+  }
+  return findings;
+}
+function runSampleScan(pages, tag = IMAGE_TAG) {
+  if (!dockerAvailable()) {
+    throw new Error("Docker is not available. Start Docker, then re-run `scan`.");
+  }
+  if (!imageExists(tag)) buildImage(tag);
+  const findings = [];
+  for (const page of pages) {
+    const out = runRunner(page.url, false, tag);
+    findings.push(...tagSampleFindings(toDynamicResult(out, page.url).findings, page));
+  }
+  return {
+    tool: "ultra11y",
+    engine: "axe-core@playwright (docker)",
+    target: `${pages.length} page(s) (\xE9chantillon)`,
+    date: today(),
+    findings,
+    sample: sampleScope({ pages }),
+    testedScs: [...DOCKER_TESTED_SCS]
+  };
 }
 async function runCrawlScan(opts) {
   const urls = await discoverUrls(opts);
@@ -31467,7 +32858,7 @@ async function runCrawlScan(opts) {
 var sevRank = { bloquant: 3, majeur: 2, mineur: 1 };
 function resolveHostAnchor(file, snippet2) {
   const s = snippet2?.trim();
-  if (!s || !existsSync6(file)) return null;
+  if (!s || !existsSync7(file)) return null;
   let source;
   try {
     source = readFileSync5(file, "utf8");
@@ -31486,12 +32877,12 @@ function resolveHostAnchor(file, snippet2) {
     idx = source.indexOf(openMatch[0]);
     if (idx >= 0) return at(idx, openMatch[0].length);
   }
-  const norm2 = (t2) => t2.replace(/\s+/g, " ").trim();
-  const needle = norm2(openMatch ? openMatch[0] : s);
+  const norm3 = (t2) => t2.replace(/\s+/g, " ").trim();
+  const needle = norm3(openMatch ? openMatch[0] : s);
   if (needle) {
     const lines = source.split("\n");
     for (let i = 0; i < lines.length; i++) {
-      if (norm2(lines[i]).includes(needle)) {
+      if (norm3(lines[i]).includes(needle)) {
         const start = starts[i] ?? 0;
         return { line: i + 1, col: 1, start, end: start + lines[i].length };
       }
@@ -31501,6 +32892,11 @@ function resolveHostAnchor(file, snippet2) {
 }
 function mergeDynamic(audit, dynamic, lang = "en") {
   const merged = JSON.parse(JSON.stringify(audit));
+  if (dynamic.sample) merged.scope.sample = dynamic.sample;
+  if (dynamic.testedScs?.length) {
+    const tested = /* @__PURE__ */ new Set([...merged.scope.scan?.testedScs ?? [], ...dynamic.testedScs]);
+    merged.scope.scan = { testedScs: [...tested].sort() };
+  }
   const byId2 = new Map(merged.criteria.map((c) => [c.id, c]));
   const remediation = lang === "fr" ? "V\xE9rifi\xE9 au rendu par axe-core ; corrigez l'\xE9l\xE9ment cit\xE9." : "Verified at render time by axe-core; fix the cited element.";
   for (const df of dynamic.findings) {
@@ -31521,14 +32917,26 @@ function mergeDynamic(audit, dynamic, lang = "en") {
       remediation,
       msg,
       snippet: df.snippet,
-      ...anchor ? { sourceStart: anchor.start, sourceEnd: anchor.end } : {}
+      ...anchor ? { sourceStart: anchor.start, sourceEnd: anchor.end } : {},
+      ...df.advisory ? { advisory: true } : {},
+      // Task 5: carry the sample-page provenance onto the merged Finding so the auditor
+      // ticket renders the page name + auth flag + reproduction notes.
+      ...df.sample ? {
+        sample: {
+          page: df.sample.name,
+          ...df.sample.auth !== void 0 ? { authRequired: df.sample.auth } : {},
+          ...df.sample.notes ? { notes: df.sample.notes } : {}
+        }
+      } : {}
     };
     c.findings.push(finding);
-    c.status = "NC";
-    delete c.justification;
     merged.findings.push(finding);
+    if (!df.advisory) {
+      c.status = "NC";
+      delete c.justification;
+    }
   }
-  const nowNc = new Set(dynamic.findings.map((d) => d.criteriaId));
+  const nowNc = new Set(dynamic.findings.filter((d) => !d.advisory).map((d) => d.criteriaId));
   merged.residualRisks = merged.residualRisks.filter((r) => !nowNc.has(r.criteriaId));
   merged.guidelines = allGuidelines().map((g) => {
     const inG = merged.criteria.filter((c) => c.guideline === g.number);
@@ -31549,10 +32957,14 @@ function mergeDynamic(audit, dynamic, lang = "en") {
 }
 
 // src/scan-local.ts
-import { existsSync as existsSync7, statSync as statSync3 } from "fs";
+import { existsSync as existsSync8, statSync as statSync3 } from "fs";
 import { createRequire } from "module";
 import { resolve as resolve4 } from "path";
 var LOCAL_ENGINE = "axe-core@playwright (local)";
+var LOCAL_TESTED_SCS = ["1.4.4", "1.4.10", "1.4.12", "2.4.7", "1.4.13"];
+function localTestedScs(interact) {
+  return interact ? [...LOCAL_TESTED_SCS, "4.1.3"] : [...LOCAL_TESTED_SCS];
+}
 var PW_SPEC = "@playwright/test";
 var AXE_SPEC = "@axe-core/playwright";
 function localAvailable(cwd) {
@@ -31660,29 +33072,54 @@ var TEXT_SPACING_PROBE = `(() => { ${PRELUDE}
   }
   return hits;
 })()`;
-var FOCUS_SETUP_PROBE = `(() => { ${PRELUDE}
+function focusSetupExpr(scope = "") {
+  const rootExpr = scope ? `document.querySelectorAll(${JSON.stringify(scope)})` : `[document.documentElement]`;
+  return `(() => { ${PRELUDE}
   const sel = 'a[href],button:not([disabled]),input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[role=button]:not([disabled])';
   const snap = (e) => { const s = getComputedStyle(e); return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|'); };
+  // Visually-hidden radio/checkbox \u2192 measure its visible label/proxy, not the input.
+  const proxyFor = (e) => {
+    const type = (e.getAttribute('type') || '').toLowerCase();
+    const custom = e.tagName === 'INPUT' && (type === 'radio' || type === 'checkbox') && !__vis(e);
+    if (!custom) return __vis(e) ? e : null;
+    let p = null;
+    if (e.id) { try { p = document.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(e.id) : e.id) + '"]'); } catch (_) {} }
+    if (!p) p = e.closest('label');
+    if (!p) { const lb = (e.getAttribute('aria-labelledby') || '').split(/\\s+/)[0]; if (lb) p = document.getElementById(lb); }
+    return (p && __vis(p)) ? p : null;
+  };
+  // Fresh authoritative pass: drop any tags a previous (whole-document or dialog) pass left.
+  for (const el of Array.from(document.querySelectorAll('[data-u11y-f],[data-u11y-fp]'))) { el.removeAttribute('data-u11y-f'); el.removeAttribute('data-u11y-fp'); }
+  const roots = ${rootExpr};
+  const focusables = [];
+  for (const root of Array.from(roots)) {
+    if (root.matches && root.matches(sel)) focusables.push(root);
+    for (const e of Array.from(root.querySelectorAll(sel))) focusables.push(e);
+  }
   window.__u11yF = {};
   let n = 0;
-  for (const e of Array.from(document.querySelectorAll(sel))) {
-    if (!__vis(e)) continue;
+  for (const e of focusables) {
+    const proxy = proxyFor(e);
+    if (!proxy) continue;
     const key = 'k' + n;
     e.setAttribute('data-u11y-f', key);
-    window.__u11yF[key] = { rest: snap(e), sel: __sel(e), html: __html(e) };
+    proxy.setAttribute('data-u11y-fp', key);
+    window.__u11yF[key] = { rest: snap(proxy), sel: __sel(proxy), html: __html(proxy) };
     n++;
     if (n >= 120) break;
   }
   return n;
 })()`;
+}
 var FOCUS_CHECK_PROBE = `(() => {
   const e = document.activeElement;
   if (!e || e === document.body || e === document.documentElement) return null;
   const key = e.getAttribute && e.getAttribute('data-u11y-f');
   if (!key || !window.__u11yF || !window.__u11yF[key]) return null;
-  const s = getComputedStyle(e);
-  const now = [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|');
   const rec = window.__u11yF[key];
+  const proxy = document.querySelector('[data-u11y-fp="' + key + '"]') || e;
+  const s = getComputedStyle(proxy);
+  const now = [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.borderTopWidth, s.borderBottomWidth, s.backgroundColor, s.color, s.textDecorationLine].join('|');
   return { key: key, changed: now !== rec.rest, selector: rec.sel, html: rec.html };
 })()`;
 var HOVER_SETUP_PROBE = `(() => { ${PRELUDE}
@@ -31708,8 +33145,8 @@ function hoverVisibleExpr(id, wantHidden = false) {
   const j = JSON.stringify(id);
   return `(() => { const t = document.getElementById(${j}); if (!t) return ${wantHidden ? "true" : "false"}; const s = getComputedStyle(t); const shown = s.display !== 'none' && s.visibility !== 'hidden' && t.getBoundingClientRect().height > 0; return ${wantHidden ? "!shown" : "shown"}; })()`;
 }
-async function probeFocusVisible(page) {
-  const count = await page.evaluate(FOCUS_SETUP_PROBE);
+async function probeFocusVisible(page, scope = "") {
+  const count = await page.evaluate(focusSetupExpr(scope));
   if (!count) return [];
   const hits = [];
   const seen = /* @__PURE__ */ new Set();
@@ -31730,6 +33167,264 @@ async function probeFocusVisible(page) {
     if (hits.length >= 20) break;
   }
   return hits;
+}
+var FILL_INPUTS_STEP = `(() => { ${PRELUDE}
+  const LONG = '\xC9tablissement G\xE9n\xE9ral des Tr\xE8s Longues Valeurs Saisies 0123456789 exemple';
+  const textLike = new Set(['text','search','email','tel','number','date']);
+  let n = 0;
+  for (const e of Array.from(document.querySelectorAll('input, textarea'))) {
+    const tag = e.tagName.toLowerCase();
+    const type = (e.getAttribute('type') || 'text').toLowerCase();
+    const isTextarea = tag === 'textarea';
+    if (!isTextarea && !textLike.has(type)) continue;
+    if (e.disabled || e.readOnly) continue;
+    if (!__vis(e)) continue;
+    let val = LONG;
+    if (type === 'number') val = '01234567890123456789';
+    else if (type === 'date') val = '2026-12-31';
+    else if (type === 'email') val = 'utilisateur.au.nom.tres.long@sous-domaine.exemple.fr';
+    else if (type === 'tel') val = '+33 6 12 34 56 78 90 12 34';
+    // Respect maxlength: a user can never enter more than that, so a short-code field
+    // (maxlength=4) must not be judged as if it held a 70-char value (false overflow).
+    const ml = parseInt(e.getAttribute('maxlength') || '0', 10);
+    if (ml > 0 && val.length > ml && type !== 'date') val = val.slice(0, ml);
+    const key = 'fi' + n;
+    e.setAttribute('data-u11y-fill', key);
+    e.setAttribute('data-u11y-orig', e.value == null ? '' : String(e.value));
+    if (e.closest('td, th')) e.setAttribute('data-u11y-cell', '1');
+    try { e.value = val; e.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+    n++;
+    if (n >= 60) break;
+  }
+  return n;
+})()`;
+var RESTORE_INPUTS_STEP = `(() => {
+  for (const e of Array.from(document.querySelectorAll('[data-u11y-fill]'))) {
+    const orig = e.getAttribute('data-u11y-orig');
+    try { if (orig !== null) { e.value = orig; e.dispatchEvent(new Event('input', { bubbles: true })); } } catch (_) {}
+    e.removeAttribute('data-u11y-fill');
+    e.removeAttribute('data-u11y-orig');
+    e.removeAttribute('data-u11y-cell');
+  }
+  return true;
+})()`;
+var MIN_VISIBLE_CHARS = 6;
+function inputOverflowScan(detail, cellSuffix) {
+  const d = JSON.stringify(detail);
+  const cs = JSON.stringify(cellSuffix);
+  return `
+    for (const e of Array.from(document.querySelectorAll('[data-u11y-fill]'))) {
+      if (!__vis(e)) continue;
+      const clientW = e.clientWidth;
+      const clipping = e.scrollWidth > clientW + 8;
+      if (!clipping) continue;
+      const fs = parseFloat(getComputedStyle(e).fontSize) || 16;
+      const charW = Math.max(1, fs * 0.5); // ~ average glyph advance
+      const charsVisible = clientW / charW;
+      if (charsVisible < ${MIN_VISIBLE_CHARS} || clientW <= 24) {
+        const inCell = e.getAttribute('data-u11y-cell') === '1';
+        hits.push({ selector: __sel(e), html: __html(e), detail: ${d} + (inCell ? ${cs} : '') });
+      }
+      if (hits.length >= 12) break;
+    }`;
+}
+function inputOverflowExpr(detail, cellSuffix) {
+  return `(() => { ${PRELUDE} const hits = [];${inputOverflowScan(detail, cellSuffix)} return hits; })()`;
+}
+function inputOverflowZoomExpr(detail, cellSuffix) {
+  return `(() => { ${PRELUDE}
+  const root = document.documentElement;
+  const prev = root.style.fontSize;
+  root.style.fontSize = '200%';
+  const hits = [];${inputOverflowScan(detail, cellSuffix)}
+  root.style.fontSize = prev;
+  return hits;
+})()`;
+}
+var CELL_SUFFIX = { fr: " (champ situ\xE9 dans une cellule de tableau)", en: " (input inside a table cell)" };
+var INPUT_OVERFLOW_DETAIL = {
+  reflow: {
+    fr: "Champ rempli dont la valeur saisie est tronqu\xE9e/illisible \xE0 320px de large \u2014 perte de contenu (1.4.10).",
+    en: "Filled input whose typed value is clipped/unreadable at 320px width \u2014 loss of content (1.4.10)."
+  },
+  zoom: {
+    fr: "Champ rempli dont la valeur saisie est tronqu\xE9e/illisible au zoom 200% \u2014 perte de contenu (1.4.4).",
+    en: "Filled input whose typed value is clipped/unreadable at 200% zoom \u2014 loss of content (1.4.4)."
+  },
+  spacing: {
+    fr: "Champ rempli dont la valeur saisie est tronqu\xE9e/illisible sous l'espacement de texte WCAG \u2014 perte de contenu (1.4.12).",
+    en: "Filled input whose typed value is clipped/unreadable under the WCAG text-spacing override \u2014 loss of content (1.4.12)."
+  }
+};
+var OPEN_DIALOGS_STEP = `(() => { ${PRELUDE}
+  const out = [];
+  let n = 0;
+  for (const d of Array.from(document.querySelectorAll('dialog:not([open])'))) {
+    if (n >= 3) break;
+    let opened = false;
+    try { if (typeof d.showModal === 'function') { d.showModal(); opened = d.open === true; } } catch (_) {}
+    if (!opened) { try { d.setAttribute('open', ''); opened = true; } catch (_) {} }
+    if (!opened) continue;
+    const key = 'dl' + n;
+    d.setAttribute('data-u11y-dialog', key);
+    out.push(key);
+    n++;
+  }
+  for (const d of Array.from(document.querySelectorAll('[role=dialog],[role=alertdialog]'))) {
+    if (n >= 3) break;
+    if (__vis(d)) continue; // already open \u2014 its focusables were covered by the main pass
+    const prevStyle = d.getAttribute('style') || '';
+    const hadHidden = d.hasAttribute('hidden');
+    d.removeAttribute('hidden');
+    if (d.style.display === 'none') d.style.display = 'block';
+    d.style.visibility = 'visible';
+    d.style.opacity = '1';
+    if (!__vis(d)) { if (hadHidden) d.setAttribute('hidden', ''); d.setAttribute('style', prevStyle); continue; }
+    const key = 'dl' + n;
+    d.setAttribute('data-u11y-dialog', key);
+    d.setAttribute('data-u11y-dlg-style', prevStyle);
+    if (hadHidden) d.setAttribute('data-u11y-dlg-hidden', '1');
+    out.push(key);
+    n++;
+  }
+  return out;
+})()`;
+var CLOSE_DIALOGS_STEP = `(() => {
+  for (const d of Array.from(document.querySelectorAll('[data-u11y-dialog]'))) {
+    if (d.tagName.toLowerCase() === 'dialog') {
+      try { if (typeof d.close === 'function' && d.open) d.close(); } catch (_) {}
+      d.removeAttribute('open');
+    } else {
+      const prev = d.getAttribute('data-u11y-dlg-style');
+      if (prev) d.setAttribute('style', prev); else d.removeAttribute('style');
+      if (d.getAttribute('data-u11y-dlg-hidden') === '1') d.setAttribute('hidden', '');
+    }
+    d.removeAttribute('data-u11y-dialog');
+    d.removeAttribute('data-u11y-dlg-style');
+    d.removeAttribute('data-u11y-dlg-hidden');
+  }
+  return true;
+})()`;
+async function probeDialogs(page) {
+  const keys = await page.evaluate(OPEN_DIALOGS_STEP).catch(() => []);
+  if (!Array.isArray(keys) || keys.length === 0) return [];
+  const hits = [];
+  for (const key of keys) {
+    const scoped = await probeFocusVisible(page, `[data-u11y-dialog="${key}"]`).catch(() => []);
+    hits.push(...scoped);
+    if (hits.length >= 12) break;
+  }
+  await page.evaluate(CLOSE_DIALOGS_STEP).catch(() => {
+  });
+  return hits.slice(0, 12);
+}
+var DESTRUCTIVE_NAME_RE = "\\b(supprim|retir|effac|envoy|valid|confirm|pay|achet|command|delete|remove|eras|clear|send|submit|buy|order)";
+function liveRegionExpr(detail, allowClicks) {
+  const d = JSON.stringify(detail);
+  const clickLoop = allowClicks ? `
+  // click button[type=button] only (never a submit/link), skipping destructive names
+  const dangerous = new RegExp(${JSON.stringify(DESTRUCTIVE_NAME_RE)}, 'i');
+  const nameOf = (b) => {
+    let n = (b.getAttribute('aria-label') || '') + ' ' + (b.textContent || '') + ' ' + (b.getAttribute('title') || '');
+    // ALL aria-labelledby ids (attribute trimmed): a destructive verb may sit in ANY
+    // referenced id, and the value may carry stray leading/trailing whitespace.
+    for (const id of (b.getAttribute('aria-labelledby') || '').trim().split(/\\s+/)) {
+      if (!id) continue;
+      const t = document.getElementById(id);
+      if (t) n += ' ' + (t.textContent || '');
+    }
+    // Icon-only buttons: the name lives in img[alt] (an attribute \u2014 invisible to
+    // textContent) or an svg <title> (belt-and-braces; textContent usually includes it).
+    for (const im of Array.from(b.querySelectorAll('img[alt]'))) n += ' ' + (im.getAttribute('alt') || '');
+    for (const ti of Array.from(b.querySelectorAll('svg title'))) n += ' ' + (ti.textContent || '');
+    return n;
+  };
+  for (const b of Array.from(document.querySelectorAll('button[type="button"]'))) {
+    if (count >= 20 || hits.length >= 10) break;
+    if (b.disabled || !__vis(b)) continue;
+    if (dangerous.test(nameOf(b))) continue; // defense-in-depth: never click a destructive-named button
+    const before = location.href;
+    try { b.click(); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    count++;
+  }` : `
+  // click interactions disabled (authenticated scan without --interact-clicks)`;
+  return `(async () => { ${PRELUDE}
+  const isLive = (node) => {
+    let el = node && node.nodeType === 1 ? node : (node ? node.parentElement : null);
+    while (el && el !== document.documentElement) {
+      const live = (el.getAttribute && el.getAttribute('aria-live')) || '';
+      const role = (el.getAttribute && el.getAttribute('role')) || '';
+      if (live === 'polite' || live === 'assertive') return true;
+      if (role === 'status' || role === 'alert' || role === 'log') return true;
+      el = el.parentElement;
+    }
+    return false;
+  };
+  const hits = [];
+  const seen = new Set();
+  const records = [];
+  const obs = new MutationObserver((muts) => { for (const m of muts) records.push(m); });
+  obs.observe(document.body, { subtree: true, childList: true, characterData: true });
+  const settle = () => new Promise((r) => setTimeout(r, 40));
+  const drain = () => {
+    for (const m of records.splice(0)) {
+      const targets = m.type === 'characterData' ? [m.target] : Array.from(m.addedNodes);
+      for (const t of targets) {
+        if (!t || (t.textContent || '').trim().length === 0) continue;
+        if (isLive(t)) continue;
+        const host = t.nodeType === 1 ? t : t.parentElement;
+        if (!host || !__vis(host)) continue;
+        const key = __sel(host);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        hits.push({ selector: key, html: __html(host), detail: ${d} });
+      }
+    }
+  };
+  let count = 0;${clickLoop}
+  // toggle checkbox/radio, then restore
+  for (const t of Array.from(document.querySelectorAll('input[type="checkbox"], input[type="radio"]'))) {
+    if (count >= 40 || hits.length >= 10) break;
+    if (t.disabled || !__vis(t)) continue;
+    const before = location.href;
+    const prev = t.checked;
+    try { t.click(); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    try { if (t.checked !== prev) { t.checked = prev; t.dispatchEvent(new Event('change', { bubbles: true })); } } catch (_) {}
+    count++;
+  }
+  // fill text inputs, then restore
+  for (const inp of Array.from(document.querySelectorAll('input[type="text"], input[type="email"], input[type="search"], textarea'))) {
+    if (count >= 60 || hits.length >= 10) break;
+    if (inp.disabled || inp.readOnly || !__vis(inp)) continue;
+    const before = location.href;
+    const prev = inp.value == null ? '' : String(inp.value);
+    try { inp.value = 'test 123'; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+    await settle();
+    if (location.href !== before) { obs.disconnect(); return hits; }
+    drain();
+    try { inp.value = prev; inp.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+    count++;
+  }
+  obs.disconnect();
+  return hits.slice(0, 10);
+})()`;
+}
+var LIVE_REGION_DETAIL = {
+  fr: "Mise \xE0 jour de contenu d\xE9clench\xE9e par une interaction hors d'une r\xE9gion live (aria-live / role=status|alert|log) \u2014 probablement non restitu\xE9e aux technologies d'assistance (4.1.3).",
+  en: "Content update triggered by an interaction outside any live region (aria-live / role=status|alert|log) \u2014 likely not announced to assistive technology (4.1.3)."
+};
+function clicksAllowed(storageState, interactClicks) {
+  return interactClicks === true || !storageState;
+}
+async function probeLiveRegion(page, lang, allowClicks) {
+  const detail = LIVE_REGION_DETAIL[lang] ?? LIVE_REGION_DETAIL.en;
+  return await page.evaluate(liveRegionExpr(detail, allowClicks)).catch(() => []);
 }
 async function probeHover(page) {
   const triggers = await page.evaluate(HOVER_SETUP_PROBE);
@@ -31760,9 +33455,10 @@ async function probeHover(page) {
   return hits;
 }
 var AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
-async function runOnPage(browser, AxeBuilder, target, isFile, storageState) {
-  const context = await browser.newContext(storageState ? { storageState } : {});
+async function runOnPage(browser, AxeBuilder, target, isFile, opts) {
+  const context = await browser.newContext(opts.storageState ? { storageState: opts.storageState } : {});
   const page = await context.newPage();
+  const empty = [];
   try {
     const url = isFile ? "file://" + resolve4(target) : target;
     await page.goto(url, { waitUntil: "load", timeout: 45e3 });
@@ -31777,50 +33473,117 @@ async function runOnPage(browser, AxeBuilder, target, isFile, storageState) {
       tags: v.tags,
       nodes: v.nodes.slice(0, 10).map((n) => ({ target: n.target.map(String), html: (n.html || "").slice(0, 200) }))
     }));
-    const focusVisible = await probeFocusVisible(page).catch(() => []);
-    const hover = await probeHover(page).catch(() => []);
+    const focusVisible = await probeFocusVisible(page).catch(() => empty);
+    const hover = await probeHover(page).catch(() => empty);
+    const l = opts.lang;
+    if (opts.interact) await page.evaluate(FILL_INPUTS_STEP).catch(() => {
+    });
     const reflowZoom = await page.evaluate(REFLOW_ZOOM_PROBE).catch(() => []);
+    const inputOverflowZoom = opts.interact ? await page.evaluate(inputOverflowZoomExpr(INPUT_OVERFLOW_DETAIL.zoom[l], CELL_SUFFIX[l])).catch(() => []) : [];
     await page.setViewportSize({ width: 320, height: 800 }).catch(() => {
     });
     const reflow = await page.evaluate(REFLOW_PROBE).catch(() => ({ horizontalScroll: false }));
+    const inputOverflowReflow = opts.interact ? await page.evaluate(inputOverflowExpr(INPUT_OVERFLOW_DETAIL.reflow[l], CELL_SUFFIX[l])).catch(() => []) : [];
     await page.setViewportSize({ width: 1280, height: 900 }).catch(() => {
     });
     await page.addStyleTag({ content: TEXT_SPACING_CSS }).catch(() => {
     });
     const textSpacing = await page.evaluate(TEXT_SPACING_PROBE).catch(() => []);
-    return { url: page.url() || target, violations, reflow, focusVisible, hover, reflowZoom, textSpacing };
+    const inputOverflowSpacing = opts.interact ? await page.evaluate(inputOverflowExpr(INPUT_OVERFLOW_DETAIL.spacing[l], CELL_SUFFIX[l])).catch(() => []) : [];
+    if (opts.interact) await page.evaluate(RESTORE_INPUTS_STEP).catch(() => {
+    });
+    const dialogFocus = opts.interact ? await probeDialogs(page).catch(() => empty) : [];
+    const liveRegion = opts.interact ? await probeLiveRegion(page, l, opts.allowClicks).catch(() => empty) : [];
+    return {
+      url: page.url() || target,
+      violations,
+      reflow,
+      focusVisible: dialogFocus.length ? [...focusVisible, ...dialogFocus] : focusVisible,
+      hover,
+      reflowZoom,
+      textSpacing,
+      inputOverflowReflow,
+      inputOverflowZoom,
+      inputOverflowSpacing,
+      liveRegion
+    };
   } finally {
     await context.close();
   }
 }
 async function runScanLocal(opts) {
   const isUrl = /^https?:\/\//i.test(opts.target);
-  if (!isUrl && !existsSync7(opts.target)) {
+  if (!isUrl && !existsSync8(opts.target)) {
     throw new Error(`File not found: ${opts.target}. Pass an http(s):// URL or an existing HTML file.`);
   }
   const isFile = !isUrl && statSync3(opts.target).isFile();
+  const lang = opts.lang ?? "en";
+  const interact = opts.interact !== false;
   const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
   const browser = await launchChromium(chromium);
   try {
-    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, opts.storageState);
-    return toDynamicResult(out, opts.target, opts.lang ?? "en", LOCAL_ENGINE);
+    const out = await runOnPage(browser, AxeBuilder, opts.target, isFile, {
+      storageState: opts.storageState,
+      interact,
+      allowClicks: clicksAllowed(opts.storageState, opts.interactClicks),
+      lang
+    });
+    return { ...toDynamicResult(out, opts.target, lang, LOCAL_ENGINE), testedScs: localTestedScs(interact) };
   } finally {
     await browser.close();
   }
 }
 async function runScanManyLocal(urls, opts) {
+  const lang = opts.lang ?? "en";
+  const interact = opts.interact !== false;
   const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
   const browser = await launchChromium(chromium);
   const findings = [];
   try {
     for (const url of urls) {
-      const out = await runOnPage(browser, AxeBuilder, url, false, opts.storageState);
-      findings.push(...toDynamicResult(out, url, opts.lang ?? "en", LOCAL_ENGINE).findings);
+      const out = await runOnPage(browser, AxeBuilder, url, false, {
+        storageState: opts.storageState,
+        interact,
+        allowClicks: clicksAllowed(opts.storageState, opts.interactClicks),
+        lang
+      });
+      findings.push(...toDynamicResult(out, url, lang, LOCAL_ENGINE).findings);
     }
   } finally {
     await browser.close();
   }
-  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${urls.length} page(s)`, date: today(), findings };
+  return { tool: "ultra11y", engine: LOCAL_ENGINE, target: `${urls.length} page(s)`, date: today(), findings, testedScs: localTestedScs(interact) };
+}
+async function runSampleScanLocal(pages, opts) {
+  const lang = opts.lang ?? "en";
+  const interact = opts.interact !== false;
+  const { chromium, AxeBuilder } = resolveLocalDeps(opts.cwd);
+  const browser = await launchChromium(chromium);
+  const findings = [];
+  try {
+    for (const page of pages) {
+      const storageState = page.storageState ?? opts.storageState;
+      const isFile = !/^https?:\/\//i.test(page.url);
+      const out = await runOnPage(browser, AxeBuilder, page.url, isFile, {
+        storageState,
+        interact,
+        allowClicks: clicksAllowed(storageState, opts.interactClicks),
+        lang
+      });
+      findings.push(...tagSampleFindings(toDynamicResult(out, page.url, lang, LOCAL_ENGINE).findings, page));
+    }
+  } finally {
+    await browser.close();
+  }
+  return {
+    tool: "ultra11y",
+    engine: LOCAL_ENGINE,
+    target: `${pages.length} page(s) (\xE9chantillon)`,
+    date: today(),
+    findings,
+    sample: sampleScope({ pages }),
+    testedScs: localTestedScs(interact)
+  };
 }
 async function runCrawlScanLocal(opts) {
   const urls = await discoverUrls(opts);
@@ -32335,11 +34098,11 @@ function captureCoverageSummary(cov, lang) {
 }
 
 // src/config.ts
-import { existsSync as existsSync9, statSync as statSync4 } from "fs";
+import { existsSync as existsSync10, statSync as statSync4 } from "fs";
 import { join as join12, isAbsolute } from "path";
 
 // src/pack.ts
-import { existsSync as existsSync8 } from "fs";
+import { existsSync as existsSync9 } from "fs";
 function exampleParses(ex) {
   for (const code2 of [ex.bad, ex.good]) {
     if (!code2) continue;
@@ -32410,7 +34173,7 @@ function checkGuidance(ds, pack) {
 function runPackCheck(packPath, guidancePath) {
   const errors = [];
   const warnings = [];
-  if (!existsSync8(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
+  if (!existsSync9(packPath)) return { ok: false, errors: [`pack file not found: ${packPath}`], warnings };
   let raw;
   try {
     raw = JSON.parse(readText(packPath));
@@ -32422,14 +34185,19 @@ function runPackCheck(packPath, guidancePath) {
   if (v.ok && v.pack) {
     const known = new Set(ruleIds());
     const isNamespaced = (r) => /^(axe:|dyn-|agent:)/.test(r);
+    const ownRuleIds = new Set((v.pack.rules ?? []).map((r) => `pack:${v.pack.key}:${r.id}`));
+    const resolvable = (r) => isNamespaced(r) || known.has(r) || r.startsWith(`pack:${v.pack.key}:`) || ownRuleIds.has(r);
     for (const c of v.pack.criteria) {
       for (const r of c.appliesTo?.ruleIds ?? []) {
-        if (!isNamespaced(r) && !known.has(r)) warnings.push(`criteria "${c.id}": appliesTo ruleId "${r}" is not a known engine rule (renamed/future?)`);
+        if (!resolvable(r)) warnings.push(`criteria "${c.id}": appliesTo ruleId "${r}" is not a known engine rule (renamed/future?)`);
       }
+    }
+    for (const key of Object.keys(v.pack.overrides ?? {})) {
+      if (!resolvable(key)) warnings.push(`overrides: ruleId "${key}" is not a known engine rule or a rule of this pack (renamed/future?)`);
     }
   }
   if (v.ok && v.pack && guidancePath) {
-    if (!existsSync8(guidancePath)) {
+    if (!existsSync9(guidancePath)) {
       errors.push(`guidance file not found: ${guidancePath}`);
     } else {
       let gRaw;
@@ -32484,7 +34252,7 @@ function packScaffold() {
 var CONFIG_FILE = ".ultra11yrc.json";
 function loadConfig(cwd) {
   const p = join12(cwd, CONFIG_FILE);
-  if (!existsSync9(p)) return null;
+  if (!existsSync10(p)) return null;
   let parsed;
   try {
     parsed = JSON.parse(readText(p));
@@ -32497,16 +34265,16 @@ function loadConfig(cwd) {
   return parsed;
 }
 function packPaths(path) {
-  if (!existsSync9(path)) return null;
+  if (!existsSync10(path)) return null;
   if (statSync4(path).isDirectory()) {
     const pack = join12(path, "pack.json");
-    if (!existsSync9(pack)) return null;
+    if (!existsSync10(pack)) return null;
     const glossary = join12(path, "glossary.json");
     const guidance = join12(path, "guidance.json");
     return {
       pack,
-      glossary: existsSync9(glossary) ? glossary : void 0,
-      guidance: existsSync9(guidance) ? guidance : void 0
+      glossary: existsSync10(glossary) ? glossary : void 0,
+      guidance: existsSync10(guidance) ? guidance : void 0
     };
   }
   return { pack: path };
@@ -32556,7 +34324,7 @@ ${formatIssues(v.issues).join("\n")}`);
   return result;
 }
 function loadGuidanceFile(path, result, onWarn) {
-  if (!existsSync9(path)) {
+  if (!existsSync10(path)) {
     onWarn(`ultra11y: guidance ${path} not found \u2014 skipping.`);
     return;
   }
@@ -32594,7 +34362,7 @@ ${g.errors.map((e) => `  \u2717 ${e}`).join("\n")}`);
 }
 
 // src/orchestrate.ts
-import { existsSync as existsSync10, mkdirSync as mkdirSync6, readFileSync as readFileSync6, rmSync as rmSync2, writeFileSync as writeFileSync8 } from "fs";
+import { existsSync as existsSync11, mkdirSync as mkdirSync6, readFileSync as readFileSync6, rmSync as rmSync2, writeFileSync as writeFileSync8 } from "fs";
 import { join as join14, resolve as resolve5 } from "path";
 
 // src/orchestrate-templates.ts
@@ -32803,7 +34571,7 @@ function listPhases(runDir, engineAbs) {
   const adjPath = join14(run, "ADJUDICATE.todo.json");
   let adjIds = [];
   let adjReady = false;
-  if (existsSync10(adjPath)) {
+  if (existsSync11(adjPath)) {
     try {
       const f = JSON.parse(readFileSync6(adjPath, "utf8"));
       if (f && f.kind === "adjudication" && Array.isArray(f.items)) {
@@ -32816,7 +34584,7 @@ function listPhases(runDir, engineAbs) {
   const verPath = join14(run, "VERIFY.todo.json");
   let verIds = [];
   let verReady = false;
-  if (existsSync10(verPath)) {
+  if (existsSync11(verPath)) {
     try {
       const items = JSON.parse(readFileSync6(verPath, "utf8"));
       if (Array.isArray(items)) {
@@ -32847,7 +34615,7 @@ function listPhases(runDir, engineAbs) {
 }
 function orchestrateRun(runDir, engineAbs, opts = {}) {
   const run = resolve5(runDir);
-  if (!existsSync10(run)) {
+  if (!existsSync11(run)) {
     return { exitCode: 2, written: [], notices: [], errors: [`run dir not found: ${run}`], phases: [] };
   }
   const phases = listPhases(run, engineAbs);
@@ -32889,7 +34657,7 @@ function orchestrateRun(runDir, engineAbs, opts = {}) {
   for (const ph of phases) {
     if (emitted.has(ph.name)) continue;
     const stale = join14(orchDir, `${ph.name}.workflow.mjs`);
-    if (existsSync10(stale)) {
+    if (existsSync11(stale)) {
       rmSync2(stale, { force: true });
       notices.push(`phase "${ph.name}": stale workflow removed \u2014 its worklist ${ph.ready ? "is now empty" : "no longer exists"}.`);
     }
@@ -32927,7 +34695,7 @@ Usage:
   ultra11y audit    [--changed | --since <ref> | --staged] [--max-files <n>] [--dedup exact|normalized|off] [--baseline <file>] [--fail-on blocking|major|minor]
   ultra11y audit    [--captures <dir>] [--no-captures] [--require-captures]   (rendered-DOM captures: audit real HTML, gate blind-spot components)
   ultra11y report   --in <audit.json> [--out <dir>] [--standard <pack>] [--lang auto|en|fr]
-  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
+  ultra11y prd      --in <audit.json> [--out <dir>] [--split criterion] [--format audit|doc|remediation] [--no-technical] [--standard <pack>] [--gh-issues | --gh-single] [--lang auto|en|fr]
   ultra11y render   [<dir>] [--scaffold | --setup | --coverage | --storybook] [--captures <dir>] [--out <file>] [--json] [--lang auto|en|fr]
   ultra11y criteria [<sc>] [--list] [--standard <pack> [--theme <N>]] [--generate] [--json] [--lang auto|en|fr]
   ultra11y check    --report <md> [--standard <pack>] [--in <audit.json>] [--semantic [--verdicts <file>]] [--quiet] [--json]
@@ -32938,9 +34706,11 @@ Usage:
   ultra11y fix      <globs\u2026 | -> [--write] [--iterate] [--changed | --since <ref> | --staged] [--safe] [--include <glob>] [--exclude <glob>] [--ext <list>] [--only <ids>] [--jsx] [--json] [--lang auto|en|fr]
   ultra11y init     [--hook] [--ci] [--baseline] [--fail-on blocking|major|minor]
   ultra11y pack     check <pack.json> [--guidance <g.json>] [--json]  |  pack scaffold
-  ultra11y scan     <url|file\u2026> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--out <dir>] [--json]
+  ultra11y scan     <url|file\u2026> [--runtime auto|local|docker] [--cwd <dir>] [--storage-state <file>] [--no-interact] [--interact-clicks] [--merge <audit.json>] [--out <dir>] [--json]
+  ultra11y scan     --sample [--runtime \u2026] [--cwd <dir>] [--storage-state <file>] [--merge <audit.json>] [--json]   (scan the .ultra11yrc.json page sample)
   ultra11y scan     --sitemap <url> | --crawl <url> [--depth <n>] [--max <n>] [--runtime \u2026] [--cwd <dir>] [--merge <audit.json>] [--json]
   ultra11y scan     --clean        (remove the dynamic-tier Docker image + temp contexts)
+  ultra11y sample   check [--standard <pack>] [--json]   (lint the .ultra11yrc.json page sample vs the standard's required page kinds)
 
 Commands:
   audit      Run the static engine over the inputs (files/globs, or '-' for stdin)
@@ -33018,9 +34788,27 @@ Commands:
              no Docker) additionally probes focus visibility (2.4.7), 200% zoom
              (1.4.4), text spacing (1.4.12), content on hover (1.4.13) and target
              size (2.5.8), and accepts --storage-state for authenticated pages.
-             --merge folds the findings into a static AuditResult (manual \u2192 C/NC).
+             By default the local runtime is STATEFUL: it types long values into
+             inputs and flags any that clip at 320px/200%/text-spacing (1.4.10/1.4.4/
+             1.4.12 \u2014 esp. inputs inside table cells), opens closed dialogs to re-check
+             focus, and drives SAFE interactions (fill / toggle / click type=button \u2014
+             never a link, submit or navigation; destructive-named buttons are never
+             clicked) to spot content updated outside a live region (4.1.3). On an
+             AUTHENTICATED scan (--storage-state) the button clicks are skipped too,
+             unless --interact-clicks opts back in. --no-interact disables all of that
+             (pristine-page probes only). --merge folds the findings into a static
+             AuditResult (manual \u2192 C/NC).
              --sitemap/--crawl scan many pages (every sitemap URL, or same-origin
              links BFS-crawled from a start URL) and aggregate the findings.
+             --sample scans the NORMATIVE page sample declared in .ultra11yrc.json
+             (representative pages + transverse elements); each page's own
+             storage-state overrides --storage-state, and the report groups the
+             findings \xAB Constats par page \xBB.
+  sample     Normative page-sample (\xE9chantillon) helper. 'sample check' lints the
+             .ultra11yrc.json sample block against the active standard's required
+             page kinds (RGAA: accueil, contact, mentions l\xE9gales, d\xE9claration
+             d'accessibilit\xE9, plan du site, aide, authentification, pages
+             repr\xE9sentatives + \xE9l\xE9ments transverses) \u2014 advisory, never a gate.
 
 Options:
   --out <dir>        output dir (report/prd/scan default: audits); for audit, persist
@@ -33054,6 +34842,8 @@ Options:
                      'doc' emits a product-requirements document (epics, user stories,
                      Given/When/Then); 'remediation' emits the legacy dev fix backlog
   --split <mode>     prd: split the backlog \u2014 currently only 'criterion' (one file per criterion)
+  --no-technical     prd (audit format): omit the technical ticket sections (Partie
+                     technique + Contexte de reproduction) for a pure-auditor block
   --gh-issues        prd: also create one GitHub issue per criterion via the gh CLI (opt-in)
   --gh-single        prd: file the whole audit as ONE consolidated GitHub issue (opt-in; wins over --gh-issues)
   --scaffold         render: write an SSR-snapshot harness (default: ultra11y-render.tsx)
@@ -33100,6 +34890,23 @@ Options:
                      (and the browser) from here (e.g. --cwd packages/app)
   --storage-state <file>  scan: --runtime local \u2014 Playwright storageState JSON for
                      authenticated pages (e.g. test-results/.auth/user.json)
+  --no-interact      scan: --runtime local \u2014 disable the STATEFUL probes (fill inputs,
+                     open dialogs, live-region). Default is ON; the interactions are
+                     strictly non-navigating (fill text inputs, toggle checkbox/radio,
+                     click button[type=button] \u2014 never a link/submit/navigation, and
+                     never a button whose accessible name matches a destructive verb:
+                     supprimer, retirer, effacer, envoyer, valider, confirmer, payer,
+                     delete, remove, send, submit, confirm, pay, \u2026) and restore page
+                     state, asserting location.href is unchanged after each action
+  --interact-clicks  scan: --runtime local \u2014 allow the live-region probe's
+                     button[type=button] clicks on an AUTHENTICATED scan
+                     (--storage-state). Skipped by default there: a click can trigger
+                     a server mutation (delete/send) invisible to the location.href
+                     assertion. Unauthenticated scans keep clicks on regardless; the
+                     destructive-name skip above applies in every case
+  --sample           scan: scan the NORMATIVE page sample from .ultra11yrc.json (its
+                     sample.pages), per-page storage-state overriding --storage-state,
+                     aggregating one result with per-page provenance for the report
   --clean            scan: remove the dynamic-tier image + temp contexts, then exit
   --semantic         verify: fold the support-check into one pass
                      check: engage the semantic gate \u2014 requires an adjudicated verdicts
@@ -33116,7 +34923,7 @@ Options:
   -v, --version      print version
 
 Data: WCAG 2.2 \xA9 W3C (W3C Document License). RGAA 4.1.2 pack \xA9 DINUM, Licence Ouverte / Etalab 2.0 (see NOTICE).`;
-var COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "fix", "init", "pack", "orchestrate"];
+var COMMANDS = ["audit", "report", "prd", "render", "criteria", "check", "verify", "scan", "sample", "fix", "init", "pack", "orchestrate"];
 function isCommand(s) {
   return !!s && COMMANDS.includes(s);
 }
@@ -33184,12 +34991,16 @@ var BOOLEAN_FLAGS = /* @__PURE__ */ new Set([
   "generate",
   "semantic",
   "manual",
+  "no-technical",
   "gh-issues",
   "gh-single",
   "override",
   "local",
   "docker",
+  "no-interact",
+  "interact-clicks",
   "clean",
+  "sample",
   "eco",
   "help",
   "version"
@@ -33287,7 +35098,7 @@ async function cmdAudit(p) {
   const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
   const capturesDir = capturesFlag ?? ".ultra11y/captures";
   const scopedToDiff = p.flags.changed === true || p.flags.staged === true || since !== void 0;
-  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync11(capturesDir));
+  const capturesWanted = p.flags["no-captures"] !== true && !inputs.includes("-") && (capturesFlag !== void 0 || existsSync12(capturesDir));
   const useCaptures = capturesWanted && !scopedToDiff && !inputs.includes(capturesDir);
   const auditInputs = useCaptures ? [...inputs, capturesDir] : inputs;
   if (useCaptures)
@@ -33334,7 +35145,7 @@ async function cmdAudit(p) {
   const baselineFlag = p.flags.baseline;
   if (typeof baselineFlag === "string" && baselineFlag) {
     let baseline = null;
-    if (existsSync11(baselineFlag)) {
+    if (existsSync12(baselineFlag)) {
       try {
         const parsed = JSON.parse(readText(baselineFlag));
         if (isCurrentAudit(parsed)) baseline = parsed;
@@ -33447,11 +35258,21 @@ async function cmdReport(p) {
     return 2;
   }
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
-  const path = writeReport(result, { out, lang: resolveLang(p.flags, { audit: result, standard }), standard });
+  const lang = resolveLang(p.flags, { audit: result, standard });
+  const path = writeReport(result, { out, lang, standard });
+  const untested = isCore(standard) ? [] : untestedNeedsRendering(result);
+  const partial = untested.length > 0;
+  if (partial && !p.flags.json) console.error(`\u{1F6A8} ${partialAuditBanner(lang, untested)}`);
   if (p.flags.json)
     console.log(
       JSON.stringify(
-        { path, conformancePct: result.conformancePct, date: result.date, standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag" },
+        {
+          path,
+          conformancePct: result.conformancePct,
+          date: result.date,
+          standard: typeof p.flags.standard === "string" ? p.flags.standard : "wcag",
+          ...partial ? { partialAudit: true, untestedCriteria: untested } : {}
+        },
         null,
         2
       )
@@ -33484,7 +35305,8 @@ async function cmdPrd(p) {
   const lang = resolveLang(p.flags, { audit: result, standard });
   const split = p.flags.split === "criterion" ? "criterion" : void 0;
   const format = p.flags.format === "doc" ? "doc" : p.flags.format === "remediation" ? "remediation" : "audit";
-  const paths = writePrd(result, { out, lang, split, format, standard });
+  const technical = p.flags["no-technical"] !== true;
+  const paths = writePrd(result, { out, lang, split, format, standard, technical });
   const json = p.flags.json === true;
   if (!json) for (const path of paths) console.log(path);
   const ghMode = p.flags["gh-single"] === true ? "single" : p.flags["gh-issues"] === true ? "per-criterion" : null;
@@ -33543,19 +35365,19 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     }
     let setupDeps = {};
     const setupPkg = join15(root, "package.json");
-    if (existsSync11(setupPkg)) {
+    if (existsSync12(setupPkg)) {
       try {
         const pkg = JSON.parse(readText(setupPkg));
         setupDeps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
       } catch {
       }
     }
-    const tr = detectTestRunner(setupDeps, (f) => existsSync11(join15(root, f)));
+    const tr = detectTestRunner(setupDeps, (f) => existsSync12(join15(root, f)));
     console.log(captureSetupPlan(tr, rel, lang));
     const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
     const gaPath = join15(root, ".gitattributes");
     try {
-      const existing = existsSync11(gaPath) ? readFileSync7(gaPath, "utf8") : "";
+      const existing = existsSync12(gaPath) ? readFileSync7(gaPath, "utf8") : "";
       if (!existing.includes(".ultra11y/captures/")) {
         appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
         console.log(lang === "fr" ? `.gitattributes : ajout\xE9 \xAB ${gaLine} \xBB` : `.gitattributes: added "${gaLine}"`);
@@ -33564,7 +35386,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     }
     try {
       const giPath = join15(root, ".gitignore");
-      if (existsSync11(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync7(giPath, "utf8")))
+      if (existsSync12(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync7(giPath, "utf8")))
         console.error(
           lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
         );
@@ -33574,8 +35396,8 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
   }
   if (p.flags.storybook === true || typeof p.flags.storybook === "string") {
     const sbDir = p.positionals[0] ?? "storybook-static";
-    const indexPath = existsSync11(join15(sbDir, "index.json")) ? join15(sbDir, "index.json") : join15(sbDir, "stories.json");
-    if (!existsSync11(indexPath)) {
+    const indexPath = existsSync12(join15(sbDir, "index.json")) ? join15(sbDir, "index.json") : join15(sbDir, "stories.json");
+    if (!existsSync12(indexPath)) {
       console.error(
         lang === "fr" ? `ultra11y render : aucun index Storybook (index.json/stories.json) dans ${sbDir}.` : `ultra11y render: no Storybook index (index.json/stories.json) in ${sbDir}.`
       );
@@ -33585,7 +35407,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out}), then: node scripts/ultra11y.mj
     const provById = new Map(stories.map((s) => [s.id, storyProvenance(s)]));
     const capturesFlag = typeof p.flags.captures === "string" && p.flags.captures ? p.flags.captures : void 0;
     const htmlDir = capturesFlag ?? sbDir;
-    const htmlFiles = existsSync11(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
+    const htmlFiles = existsSync12(htmlDir) ? discover([htmlDir]).files.filter((f) => /\.html?$/i.test(f)) : [];
     const outDir = ".ultra11y/captures";
     let attributed = 0;
     let skipped = 0;
@@ -33634,7 +35456,7 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
     const graphExt = [...GRAPH_ONLY_EXT, ...asList(p.flags.ext) ?? []];
     const sourceFiles = discover([root], { include: asList(p.flags.include), exclude: asList(p.flags.exclude), ext: graphExt }).files;
     const graph = buildGraphStreaming(sourceFiles);
-    const capFiles = existsSync11(capturesDir) ? discover([capturesDir]).files : [];
+    const capFiles = existsSync12(capturesDir) ? discover([capturesDir]).files : [];
     const entries = capFiles.map((f) => ({ file: toPosix(f), provenance: parseCaptureProvenance(readText(f)) }));
     const cov = computeCaptureCoverage(graph, entries);
     if (p.flags.json) console.log(JSON.stringify(cov, null, 2));
@@ -33643,14 +35465,14 @@ ${raw}${raw.endsWith("\n") ? "" : "\n"}`);
   }
   let deps = {};
   const pkgPath = join15(root, "package.json");
-  if (existsSync11(pkgPath)) {
+  if (existsSync12(pkgPath)) {
     try {
       const pkg = JSON.parse(readText(pkgPath));
       deps = { ...pkg.dependencies ?? {}, ...pkg.devDependencies ?? {} };
     } catch {
     }
   }
-  const detection = detectFrameworks(deps, (f) => existsSync11(join15(root, f)));
+  const detection = detectFrameworks(deps, (f) => existsSync12(join15(root, f)));
   if (p.flags.json) console.log(JSON.stringify(detection, null, 2));
   else console.log(renderPlan(detection, lang));
   return 0;
@@ -33944,14 +35766,49 @@ async function cmdScan(p) {
     );
     return 2;
   }
+  const interact = p.flags["no-interact"] !== true;
+  const interactClicks = p.flags["interact-clicks"] === true;
   const sitemap = typeof p.flags.sitemap === "string" ? p.flags.sitemap : void 0;
   const crawl = typeof p.flags.crawl === "string" ? p.flags.crawl : void 0;
+  const useSample = p.flags.sample === true;
+  let sampleConfig;
+  if (useSample) {
+    let cfg;
+    try {
+      cfg = loadConfig(process.cwd());
+    } catch (e) {
+      console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
+      return 2;
+    }
+    if (!cfg?.sample) {
+      console.error(
+        lang === "fr" ? "ultra11y scan : --sample exige un bloc `sample` dans .ultra11yrc.json (pages de l'\xE9chantillon). Voir `ultra11y sample check`." : "ultra11y scan: --sample requires a `sample` block in .ultra11yrc.json (the sample pages). See `ultra11y sample check`."
+      );
+      return 2;
+    }
+    const v = validateSample(cfg.sample);
+    for (const w of v.warnings) console.error(`\u26A0 ${w.path ? `${w.path}: ` : ""}${w.message}`);
+    if (!v.ok || !v.sample) {
+      console.error(lang === "fr" ? "ultra11y scan : bloc `sample` invalide :" : "ultra11y scan: invalid `sample` block:");
+      for (const i of v.issues) console.error(`  \u2717 ${i.path ? `${i.path}: ` : ""}${i.message}`);
+      return 2;
+    }
+    sampleConfig = v.sample;
+    if (!useLocal && sampleConfig.pages.some((pg) => pg.storageState)) {
+      console.error(
+        lang === "fr" ? "ultra11y scan : l'\xE9chantillon comporte des pages authentifi\xE9es (storageState), non prises en charge par le runtime Docker. Utilisez --runtime local --cwd <projet>." : "ultra11y scan: the sample has authenticated pages (storageState), unsupported by the Docker runtime. Use --runtime local --cwd <project>."
+      );
+      return 2;
+    }
+  }
   let dynamic;
   try {
-    if (sitemap || crawl) {
+    if (useSample && sampleConfig) {
+      dynamic = useLocal ? await runSampleScanLocal(sampleConfig.pages, { cwd, storageState, lang, interact, interactClicks }) : runSampleScan(sampleConfig.pages);
+    } else if (sitemap || crawl) {
       const depth = typeof p.flags.depth === "string" ? Number(p.flags.depth) : void 0;
       const max = typeof p.flags.max === "string" ? Number(p.flags.max) : void 0;
-      dynamic = useLocal ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang }) : await runCrawlScan({ sitemap, crawl, depth, max });
+      dynamic = useLocal ? await runCrawlScanLocal({ sitemap, crawl, depth, max, cwd, storageState, lang, interact, interactClicks }) : await runCrawlScan({ sitemap, crawl, depth, max });
     } else {
       const targets = p.positionals.filter((a) => a !== "-");
       if (targets.length === 0) {
@@ -33959,7 +35816,7 @@ async function cmdScan(p) {
         return 2;
       }
       if (useLocal) {
-        dynamic = targets.length === 1 ? await runScanLocal({ target: targets[0], cwd, storageState, lang }) : await runScanManyLocal(targets, { cwd, storageState, lang });
+        dynamic = targets.length === 1 ? await runScanLocal({ target: targets[0], cwd, storageState, lang, interact, interactClicks }) : await runScanManyLocal(targets, { cwd, storageState, lang, interact, interactClicks });
       } else {
         dynamic = targets.length === 1 ? runScan({ target: targets[0] }) : runScanMany(targets);
       }
@@ -33967,6 +35824,21 @@ async function cmdScan(p) {
   } catch (e) {
     console.error(`ultra11y scan: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
+  }
+  if (useSample && sampleConfig) {
+    const lintKey = typeof p.flags.standard === "string" && p.flags.standard ? p.flags.standard : "rgaa";
+    try {
+      const pack = getPack(resolveStandard(lintKey));
+      const methodology = pack?.sampleMethodology;
+      if (methodology) {
+        const { missing } = lintSample(sampleConfig, methodology);
+        if (missing.length)
+          console.error(
+            (lang === "fr" ? `\u26A0\uFE0F \xC9chantillon incomplet \u2014 types de page requis absents (${pack.name}) : ` : `\u26A0\uFE0F Incomplete sample \u2014 required page kinds missing (${pack.name}): `) + missing.map((k) => kindLabel(k, pack.defaultLocale)).join(", ")
+          );
+      }
+    } catch {
+    }
   }
   const out = typeof p.flags.out === "string" ? p.flags.out : "audits";
   const mergeIn = p.flags.merge;
@@ -34007,6 +35879,83 @@ async function cmdScan(p) {
   }
   return 0;
 }
+function cmdSample(p) {
+  const action = p.positionals[0];
+  const key = typeof p.flags.standard === "string" && p.flags.standard ? p.flags.standard : "rgaa";
+  let standard;
+  try {
+    standard = resolveStandard(key);
+  } catch (e) {
+    console.error(`ultra11y sample: ${e instanceof Error ? e.message : String(e)}`);
+    return 2;
+  }
+  const lang = resolveLang(p.flags, { standard });
+  if (action !== "check") {
+    console.error("ultra11y sample: expected `sample check [--standard <pack>]`.");
+    return 2;
+  }
+  let cfg;
+  try {
+    cfg = loadConfig(process.cwd());
+  } catch (e) {
+    console.error(`ultra11y sample: ${e instanceof Error ? e.message : String(e)}`);
+    return 2;
+  }
+  if (!cfg?.sample) {
+    console.error(
+      lang === "fr" ? "ultra11y sample : aucun bloc `sample` dans .ultra11yrc.json \u2014 ajoutez `sample.pages` (\xE9chantillon de pages repr\xE9sentatives)." : "ultra11y sample: no `sample` block in .ultra11yrc.json \u2014 add `sample.pages` (the representative page sample)."
+    );
+    return 2;
+  }
+  const v = validateSample(cfg.sample);
+  if (!p.flags.json) for (const w of v.warnings) console.error(`\u26A0 ${w.path ? `${w.path}: ` : ""}${w.message}`);
+  if (!v.ok || !v.sample) {
+    if (p.flags.json) console.log(JSON.stringify({ ok: false, issues: v.issues, warnings: v.warnings }, null, 2));
+    else {
+      console.error(lang === "fr" ? "\u2717 Bloc `sample` invalide :" : "\u2717 Invalid `sample` block:");
+      for (const i of v.issues) console.error(`  \u2717 ${i.path ? `${i.path}: ` : ""}${i.message}`);
+    }
+    return 2;
+  }
+  const pack = isCore(standard) ? null : getPack(standard);
+  const methodology = pack?.sampleMethodology;
+  if (!methodology) {
+    if (p.flags.json)
+      console.log(
+        JSON.stringify({ ok: true, pages: v.sample.pages.length, missing: [], warnings: v.warnings, note: "no sample methodology for this standard" }, null, 2)
+      );
+    else
+      console.log(
+        lang === "fr" ? `\u2713 \xC9chantillon valide (${v.sample.pages.length} page(s)). Le r\xE9f\xE9rentiel actif (${standardLabelSafe(standard)}) ne d\xE9finit pas de m\xE9thodologie d'\xE9chantillon \u2014 rien \xE0 v\xE9rifier.` : `\u2713 Sample valid (${v.sample.pages.length} page(s)). The active standard (${standardLabelSafe(standard)}) defines no sample methodology \u2014 nothing to check.`
+      );
+    return 0;
+  }
+  const { missing } = lintSample(v.sample, methodology);
+  const loc = pack?.defaultLocale ?? "fr";
+  if (p.flags.json) {
+    console.log(
+      JSON.stringify(
+        { ok: true, pages: v.sample.pages.length, missing: missing.map((k) => ({ id: k.id, label: kindLabel(k, loc) })), warnings: v.warnings },
+        null,
+        2
+      )
+    );
+    return 0;
+  }
+  if (missing.length === 0) {
+    console.log(
+      lang === "fr" ? `\u2713 \xC9chantillon complet (${v.sample.pages.length} page(s)) \u2014 tous les types de page requis par ${pack.name} sont couverts.` : `\u2713 Sample complete (${v.sample.pages.length} page(s)) \u2014 every page kind ${pack.name} requires is covered.`
+    );
+  } else {
+    console.log(
+      (lang === "fr" ? `\u26A0\uFE0F \xC9chantillon incomplet (${v.sample.pages.length} page(s)) \u2014 types de page requis absents (${pack.name}) :` : `\u26A0\uFE0F Incomplete sample (${v.sample.pages.length} page(s)) \u2014 required page kinds missing (${pack.name}):`) + ` ${missing.map((k) => kindLabel(k, loc)).join(", ")}`
+    );
+  }
+  return 0;
+}
+function standardLabelSafe(standard) {
+  return isCore(standard) ? "WCAG 2.2 AA" : getPack(standard)?.name ?? standard;
+}
 function cmdPack(p) {
   const action = p.positionals[0];
   const lang = resolveLang(p.flags, {});
@@ -34045,7 +35994,7 @@ function cmdOrchestrate(p) {
   }
   const engineAbs = realpathSync(fileURLToPath2(import.meta.url));
   if (p.flags.list === true) {
-    if (!existsSync11(runFlag)) {
+    if (!existsSync12(runFlag)) {
       console.error(`ultra11y orchestrate: run dir not found: ${runFlag}.`);
       return 2;
     }
@@ -34138,6 +36087,8 @@ async function main(argv) {
       return cmdVerify(p);
     case "scan":
       return cmdScan(p);
+    case "sample":
+      return cmdSample(p);
     case "fix":
       return cmdFix(p);
     case "init":

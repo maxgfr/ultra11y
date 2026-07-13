@@ -75,6 +75,78 @@ export interface SampleMethodology {
   requiredKinds: SampleRequiredKind[];
 }
 
+// ---- Declarative pack RULES — a bounded, validatable matcher DSL (NO arbitrary code).
+// A pack ships its OWN detection for genuinely pack-only semantics WITHOUT forking the
+// engine: a rule matches source elements structurally and emits a namespaced finding
+// (`pack:<packKey>:<id>`) that projects onto the pack criterion it reports under. The
+// vocabulary is deliberately CAPPED at what the built-in RGAA pack needs today (tag +
+// attribute predicates + a visible-text predicate + bounded descendant conditions);
+// anything more expressive belongs in a core WCAG-keyed engine rule instead (see
+// skills/ultra11y/references/packs.md). A runtime pack loaded via `--pack` stays FULLY
+// validatable — every regex is ReDoS-guarded, nesting is depth-bounded, JS plugins are
+// rejected by construction (there is nowhere to put code).
+
+// The operators an attribute predicate may use. `equals`/`matches` require `value`;
+// `present`/`absent` ignore it. `matches` compiles the (ReDoS-guarded) value as a
+// case-insensitive regex against the attribute value.
+export type MatchOp = "present" | "absent" | "equals" | "matches";
+
+export interface MatchAttr {
+  name: string; // attribute name (case-insensitive), e.g. "href"
+  op: MatchOp;
+  value?: string; // required for equals/matches; a regex string for matches
+}
+
+// A predicate over an element's VISIBLE TEXT (whitespace-collapsed descendant text).
+// `matches` fires when the text matches the (ReDoS-guarded, case-insensitive) regex;
+// `lacks` fires when it does NOT — the negation the download-link rule needs to flag a
+// link whose visible text omits the file format/weight.
+export interface MatchText {
+  op: "matches" | "lacks";
+  value: string; // a regex string
+}
+
+// One structural condition node. All present sub-conditions must hold (AND). `has`
+// requires that EACH listed node matches SOME descendant; `lacks` requires that NONE of
+// its listed nodes matches ANY descendant. Nesting of has/lacks is depth-bounded by the
+// validator (MAX_MATCH_DEPTH).
+export interface MatchNode {
+  tag?: string; // intrinsic tag to match (case-insensitive), e.g. "a"
+  attrs?: MatchAttr[];
+  text?: MatchText;
+  has?: MatchNode[];
+  lacks?: MatchNode[];
+}
+
+// The top-level match of a rule: a MatchNode plus an optional applicability scope —
+// `page` restricts the rule to a full document (has an <html> element), `fragment`
+// (default) lets it fire on any parsed source.
+export interface PackRuleMatch extends MatchNode {
+  scope?: "page" | "fragment";
+}
+
+export interface PackRule {
+  id: string; // slug (lower-kebab); the emitted finding's ruleId is `pack:<packKey>:<id>`
+  criterion: string; // the pack criterion id this rule reports under (must exist)
+  wcag: string[]; // WCAG SC(s) the finding keys on for the core projection (must exist)
+  severity: "bloquant" | "majeur" | "mineur";
+  advisory?: boolean; // non-normative recommendation — never flips a criterion to NC
+  match: PackRuleMatch;
+  message: LocaleString; // { en, fr } — both required by the validator
+  remediation: LocaleString; // { en, fr } — both required by the validator
+}
+
+// A per-pack normativity/severity OVERRIDE, keyed by a finding's ruleId (a core engine
+// rule id, or a `pack:<key>:<id>` declarative rule). Applied in `derivePackResults`
+// WITHIN THIS PACK'S PROJECTION ONLY — the core WCAG result is untouched. This is the
+// precise "WCAG can differ from RGAA" mechanism: a pack can re-normativize a
+// core-advisory finding (advisory→normative, or the reverse) and re-grade its severity
+// inside its own view.
+export interface PackOverride {
+  advisory?: boolean;
+  severity?: "bloquant" | "majeur" | "mineur";
+}
+
 export interface StandardPack {
   key: string; // unique slug, e.g. "rgaa" (may not be the reserved core key "wcag")
   name: string; // short display name, e.g. "RGAA"
@@ -92,6 +164,14 @@ export interface StandardPack {
   idPattern: string; // regex (string) the pack's criterion ids match
   vocabulary?: PackVocabulary; // localized auditor-display terms (optional; defaults apply)
   sampleMethodology?: SampleMethodology; // normative required page kinds (optional; advisory lint)
+  // Declarative pack-only detection (optional). Each rule runs AFTER the core engine
+  // rules in the audit pipeline (src/audit.ts) and emits a `pack:<key>:<id>` finding that
+  // projects onto its criterion via the same appliesTo/ruleMatches machinery as engine
+  // findings. Pack findings NEVER contribute to the core WCAG verdict.
+  rules?: PackRule[];
+  // Per-pack normativity/severity overrides keyed by finding ruleId, applied only within
+  // this pack's projection (derivePackResults) — the core result is never mutated.
+  overrides?: Record<string, PackOverride>;
   themes: PackTheme[];
   criteria: PackCriterion[];
 }

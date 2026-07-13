@@ -13,6 +13,8 @@ import { computeCaptureCoverage, enrichCaptureOrigins, readCaptureDir, capturesF
 import { isFullDocument } from "./rules/rule.js";
 import { runRules } from "./rules/registry.js";
 import { runCrossRules } from "./rules/cross-registry.js";
+import { listPacks } from "./standards/registry.js";
+import { runPackRules } from "./standards/pack-rules.js";
 import { buildGraphStreaming } from "./graph/build.js";
 import type { DepGraph } from "./graph/graph.js";
 import { discover } from "./discover.js";
@@ -76,6 +78,7 @@ interface Accum {
   byCriterion: Map<string, Finding[]>;
   applicable: Map<string, boolean>; // static criteria only
   allFindings: Finding[];
+  packFindings: Finding[]; // declarative pack-rule findings (namespaced pack:<key>:<id>)
   fileCount: number;
   opaqueLibs: Set<string>; // component-library specifiers rendered but not source-analysable
   opaqueFiles: number; // count of source files that render such components
@@ -95,6 +98,7 @@ function newAccum(): Accum {
     byCriterion: new Map(),
     applicable: new Map(),
     allFindings: [],
+    packFindings: [],
     fileCount: 0,
     opaqueLibs: new Set(),
     opaqueFiles: 0,
@@ -132,6 +136,13 @@ export function foldDoc(acc: Accum, doc: Doc, graph?: DepGraph): void {
     const arr = acc.byCriterion.get(f.criteriaId) ?? [];
     arr.push(f);
     acc.byCriterion.set(f.criteriaId, arr);
+  }
+  // Declarative pack rules run AFTER the core rules over the same Doc. Their findings are
+  // collected SEPARATELY (never into byCriterion/allFindings) so the core WCAG verdict is
+  // untouched — they surface only when a pack projection is derived. A pack without rules
+  // is an instant no-op.
+  for (const pack of listPacks()) {
+    if (pack.rules?.length) acc.packFindings.push(...runPackRules(doc, pack));
   }
   for (const [id, pred] of STATIC_PREDS) {
     if (!acc.applicable.get(id) && pred(doc)) acc.applicable.set(id, true);
@@ -236,6 +247,7 @@ function finalize(acc: Accum, inputs: string[], extra: FinalizeExtra = {}): Audi
     guidelines,
     criteria,
     findings: acc.allFindings,
+    ...(acc.packFindings.length ? { packFindings: acc.packFindings } : {}),
     residualRisks,
     conformancePct,
   };

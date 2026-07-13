@@ -15,6 +15,33 @@ const RESERVED_CORE_KEY = "wcag";
 // (see src/standards/types.ts `LocaleString`).
 const LOCALE_SHAPE = /^[a-z]{2,3}(-[a-zA-Z]{2,4})?$/;
 const SC_SHAPE = /^\d+\.\d+\.\d+$/; // a WCAG success-criterion id, e.g. "1.4.3"
+const RULE_ID_SHAPE = /^[a-z0-9]+(-[a-z0-9]+)*$/; // a declarative pack-rule slug, e.g. "download-link-format"
+const SEVERITIES = new Set(["bloquant", "majeur", "mineur"]);
+// Depth cap on a declarative rule's has/lacks nesting — the top-level `match` is depth 1;
+// each nested has/lacks node adds one. Mirrored by the interpreter (src/standards/pack-rules.ts).
+const MAX_MATCH_DEPTH = 3;
+const MATCH_OPS = new Set(["present", "absent", "equals", "matches"]);
+const TEXT_OPS = new Set(["matches", "lacks"]);
+
+// Classic catastrophic-backtracking (ReDoS) shape: a group whose body is a SINGLE
+// quantified atom, itself quantified — (a+)+ / (a*)* / (\d+)+ / (.*)+ . The inner and
+// outer quantifiers then match overlapping input. A group with a required prefix (e.g.
+// (\.\d+)*, the normal "E205.4" criterion grammar) is NOT flagged — each outer iteration
+// is anchored by the literal, so there is no exponential blowup. Shared by `idPattern` and
+// every declarative pack-rule regex (attrs `matches`, `text`).
+const REDOS_SHAPE = /\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/;
+
+/** Validate a regex STRING for a pack: reject the ReDoS shape and non-compiling patterns.
+ *  Returns a human message (to append to a field-specific prefix) or null when safe. */
+function regexIssue(pattern: string): string | null {
+  if (REDOS_SHAPE.test(pattern)) return "has a nested quantifier (e.g. (a+)+) — a catastrophic-backtracking (ReDoS) shape; simplify it";
+  try {
+    new RegExp(pattern);
+  } catch (e) {
+    return `is not a valid regex: ${(e as Error).message}`;
+  }
+  return null;
+}
 
 /** Classify a WCAG SC id for pack/guidance validation, against the REAL WCAG 2.x
  *  universe (src/wcag.ts `knownScStatus`) — never a single hardcoded tolerated id, so a
@@ -92,19 +119,9 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
 
   let idRe: RegExp | null = null;
   if (typeof p.idPattern === "string") {
-    // Classic catastrophic-backtracking (ReDoS) shape: a group whose body is a SINGLE
-    // quantified atom, itself quantified — (a+)+ / (a*)* / (\d+)+ / (.*)+ . The inner and
-    // outer quantifiers then match overlapping input. A group with a required prefix
-    // (e.g. (\.\d+)*, the normal "E205.4" criterion grammar) is NOT flagged — each outer
-    // iteration is anchored by the literal, so there is no exponential blowup.
-    if (/\((?:\\.|\[[^\]]*\]|[^()\\])[*+]\)[*+]/.test(p.idPattern)) {
-      err("idPattern", "idPattern has a nested quantifier (e.g. (a+)+) — a catastrophic-backtracking (ReDoS) shape; simplify it");
-    }
-    try {
-      idRe = new RegExp(p.idPattern);
-    } catch (e) {
-      err("idPattern", `idPattern is not a valid regex: ${(e as Error).message}`);
-    }
+    const bad = regexIssue(p.idPattern);
+    if (bad) err("idPattern", `idPattern ${bad}`);
+    else idRe = new RegExp(p.idPattern);
   }
 
   const themes = Array.isArray(p.themes) ? (p.themes as Record<string, unknown>[]) : null;
@@ -260,7 +277,176 @@ export function validatePack(raw: unknown, opts: ValidateOpts = {}): PackValidat
     }
   }
 
+  // ---- Declarative pack RULES (src/standards/types.ts PackRule). Optional; when present,
+  // each rule is bounded, self-contained data (NO code): a slug id, a criterion that must
+  // exist in THIS pack, WCAG SC(s) in the core universe, a matcher whose regexes are
+  // ReDoS-guarded and whose has/lacks nesting is depth-capped, and en+fr message/remediation.
+  if (p.rules !== undefined) {
+    if (!Array.isArray(p.rules)) {
+      err("rules", "rules must be an array");
+    } else {
+      const ruleIds = new Set<string>();
+      (p.rules as unknown[]).forEach((raw, i) => {
+        const at = `rules[${i}]`;
+        if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+          err(at, "each rule must be an object");
+          return;
+        }
+        const r = raw as Record<string, unknown>;
+        const rid = r.id;
+        if (typeof rid !== "string" || !RULE_ID_SHAPE.test(rid)) {
+          err(`${at}.id`, 'rule id must be a lower-kebab slug (e.g. "download-link-format")');
+        } else {
+          if (ruleIds.has(rid)) err(`${at}.id`, `duplicate rule id "${rid}"`);
+          ruleIds.add(rid);
+        }
+        if (typeof r.criterion !== "string" || r.criterion === "") {
+          err(`${at}.criterion`, "rule criterion must be a non-empty string");
+        } else if (!ids.has(r.criterion)) {
+          err(`${at}.criterion`, `rule reports under criterion "${r.criterion}" which does not exist in this pack`);
+        }
+        if (typeof r.severity !== "string" || !SEVERITIES.has(r.severity)) {
+          err(`${at}.severity`, "rule severity must be one of bloquant|majeur|mineur");
+        }
+        if (r.advisory !== undefined && typeof r.advisory !== "boolean") err(`${at}.advisory`, "rule advisory must be a boolean");
+        const wcag = Array.isArray(r.wcag) ? (r.wcag as unknown[]) : null;
+        if (!wcag || wcag.length === 0) {
+          err(`${at}.wcag`, "rule must map to at least one WCAG SC");
+        } else {
+          wcag.forEach((sc, j) => {
+            const where = `${at}.wcag[${j}]`;
+            if (typeof sc !== "string") {
+              err(where, `malformed SC id "${String(sc)}" (expected N.N.N)`);
+              return;
+            }
+            switch (classifySc(sc)) {
+              case "malformed":
+                err(where, `malformed SC id "${sc}" (expected N.N.N)`);
+                break;
+              case "unknown":
+                err(where, `SC "${sc}" is not a recognized WCAG success criterion — fabricated?`);
+                break;
+              case "out-of-core":
+                warn(where, `SC "${sc}" is a real WCAG AAA success criterion, outside the WCAG 2.2 AA core (out of engine scope)`);
+                break;
+              case "removed":
+                warn(where, `SC "${sc}" is a real but removed WCAG success criterion (obsolete)`);
+                break;
+            }
+          });
+          // The declared SC must be one the reporting criterion maps to, else the finding
+          // can never project onto it (inert) — advisory, mirrors the guidance check.
+          if (typeof r.criterion === "string") {
+            const crit = criteria?.find((c) => c.id === r.criterion) as Record<string, unknown> | undefined;
+            const critWcag = Array.isArray(crit?.wcag) ? (crit!.wcag as unknown[]) : [];
+            if (critWcag.length && !wcag.some((sc) => critWcag.includes(sc)))
+              warn(`${at}.wcag`, `none of the rule's SC(s) are in criterion ${String(r.criterion)}'s WCAG mapping — the finding will not project`);
+          }
+        }
+        validateMatch(r.match, `${at}.match`, 1, err, true);
+        validateLocaleText(r.message, `${at}.message`, err);
+        validateLocaleText(r.remediation, `${at}.remediation`, err);
+      });
+    }
+  }
+
+  // ---- Per-pack normativity/severity OVERRIDES (src/standards/types.ts PackOverride).
+  // Optional map keyed by a finding ruleId; each value flips advisory and/or re-grades
+  // severity within the pack projection only. Shape-checked here; ruleId existence is an
+  // advisory `pack check` concern (a pack may target a future/renamed rule).
+  if (p.overrides !== undefined) {
+    if (typeof p.overrides !== "object" || p.overrides === null || Array.isArray(p.overrides)) {
+      err("overrides", "overrides must be an object keyed by ruleId");
+    } else {
+      for (const [ruleId, raw] of Object.entries(p.overrides as Record<string, unknown>)) {
+        const at = `overrides["${ruleId}"]`;
+        if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+          err(at, "each override must be an object { advisory?, severity? }");
+          continue;
+        }
+        const o = raw as Record<string, unknown>;
+        if (o.advisory !== undefined && typeof o.advisory !== "boolean") err(`${at}.advisory`, "override advisory must be a boolean");
+        if (o.severity !== undefined && (typeof o.severity !== "string" || !SEVERITIES.has(o.severity)))
+          err(`${at}.severity`, "override severity must be one of bloquant|majeur|mineur");
+        if (o.advisory === undefined && o.severity === undefined) warn(at, "override has neither advisory nor severity — no effect");
+      }
+    }
+  }
+
   return done();
+}
+
+type Emit = (path: string, message: string) => void;
+
+/** Recursively validate a declarative rule's match node: bounded depth, known ops,
+ *  ReDoS-safe regexes. `top` marks the outermost node (which may carry `scope`). */
+function validateMatch(node: unknown, path: string, depth: number, err: Emit, top: boolean): void {
+  if (top && node === undefined) {
+    err(path, "rule must carry a match");
+    return;
+  }
+  if (typeof node !== "object" || node === null || Array.isArray(node)) {
+    err(path, "match must be an object");
+    return;
+  }
+  if (depth > MAX_MATCH_DEPTH) {
+    err(path, `match nesting exceeds the maximum depth of ${MAX_MATCH_DEPTH}`);
+    return;
+  }
+  const n = node as Record<string, unknown>;
+  if (n.tag !== undefined && (typeof n.tag !== "string" || n.tag === "")) err(`${path}.tag`, "match tag must be a non-empty string");
+  if (top && n.scope !== undefined && n.scope !== "page" && n.scope !== "fragment") err(`${path}.scope`, 'match scope must be "page" or "fragment"');
+  if (n.attrs !== undefined) {
+    if (!Array.isArray(n.attrs)) err(`${path}.attrs`, "match attrs must be an array");
+    else
+      (n.attrs as unknown[]).forEach((raw, i) => {
+        const a = raw as Record<string, unknown> | null;
+        const at = `${path}.attrs[${i}]`;
+        if (!a || typeof a !== "object" || Array.isArray(a)) {
+          err(at, "each attr condition must be an object { name, op, value? }");
+          return;
+        }
+        if (typeof a.name !== "string" || a.name === "") err(`${at}.name`, "attr name must be a non-empty string");
+        if (typeof a.op !== "string" || !MATCH_OPS.has(a.op)) err(`${at}.op`, "attr op must be one of present|absent|equals|matches");
+        if ((a.op === "equals" || a.op === "matches") && typeof a.value !== "string") err(`${at}.value`, `attr op "${String(a.op)}" requires a string value`);
+        if (a.op === "matches" && typeof a.value === "string") {
+          const bad = regexIssue(a.value);
+          if (bad) err(`${at}.value`, `attr matches regex ${bad}`);
+        }
+      });
+  }
+  if (n.text !== undefined) {
+    const t = n.text as Record<string, unknown> | null;
+    if (!t || typeof t !== "object" || Array.isArray(t)) {
+      err(`${path}.text`, "match text must be an object { op, value }");
+    } else {
+      if (typeof t.op !== "string" || !TEXT_OPS.has(t.op)) err(`${path}.text.op`, "text op must be one of matches|lacks");
+      if (typeof t.value !== "string" || t.value === "") err(`${path}.text.value`, "text value must be a non-empty regex string");
+      else {
+        const bad = regexIssue(t.value);
+        if (bad) err(`${path}.text.value`, `text regex ${bad}`);
+      }
+    }
+  }
+  for (const key of ["has", "lacks"] as const) {
+    const v = n[key];
+    if (v === undefined) continue;
+    if (!Array.isArray(v)) err(`${path}.${key}`, `match ${key} must be an array of match nodes`);
+    else (v as unknown[]).forEach((child, i) => validateMatch(child, `${path}.${key}[${i}]`, depth + 1, err, false));
+  }
+}
+
+/** A rule's message/remediation must carry BOTH en and fr (findings render in the UI
+ *  frame's Lang, which is fr|en) — stricter than a pack's own free-form LocaleString. */
+function validateLocaleText(v: unknown, path: string, err: Emit): void {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) {
+    err(path, "must be a localized object carrying both en and fr");
+    return;
+  }
+  const t = v as Record<string, unknown>;
+  for (const lang of ["en", "fr"] as const) {
+    if (typeof t[lang] !== "string" || t[lang] === "") err(`${path}.${lang}`, `missing ${lang} text`);
+  }
 }
 
 function normalize(p: Record<string, unknown>): StandardPack {

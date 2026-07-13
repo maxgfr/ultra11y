@@ -180,3 +180,75 @@ describe("derivePackResults (WCAG → pack projection)", () => {
     expect(na?.outOfScope).toBeUndefined();
   });
 });
+
+describe("derivePackResults — normativity/severity overrides (pack projection only)", () => {
+  // A synthetic pack shipping ONE declarative rule (advisory) routed onto criterion "1.1"
+  // via appliesTo, plus an override that re-normativizes + re-grades it. The override must
+  // change the PACK projection without touching the core AuditResult.
+  function packWith(overrides?: Record<string, unknown>) {
+    return {
+      key: overrides ? "ovr" : "noovr",
+      name: "Ovr",
+      org: "O",
+      country: "US",
+      baseVersion: "1",
+      wcagVersion: "2.2",
+      locales: ["en"],
+      defaultLocale: "en",
+      license: "x",
+      source: "x",
+      attribution: "x",
+      idPattern: "^\\d+\\.\\d+$",
+      rules: [
+        {
+          id: "demo",
+          criterion: "1.1",
+          wcag: ["1.1.1"],
+          severity: "mineur",
+          advisory: true,
+          match: { tag: "a" },
+          message: { en: "m", fr: "m" },
+          remediation: { en: "x", fr: "x" },
+        },
+      ],
+      ...(overrides ? { overrides } : {}),
+      themes: [{ number: 1, name: { en: "T" }, count: 1 }],
+      criteria: [
+        { id: "1.1", theme: 1, title: { en: "A" }, titlePlain: { en: "A" }, wcag: ["1.1.1"], appliesTo: { ruleIds: ["pack:ovr:demo", "pack:noovr:demo"] } },
+      ],
+    };
+  }
+
+  // A WCAG-keyed audit whose ONLY pack signal is an ADVISORY pack-rule finding riding in
+  // packFindings; the core criterion 1.1.1 is a clean C with no findings.
+  function auditWithPackFinding(ruleId: string): AuditResult {
+    return {
+      ...synthetic(),
+      criteria: [{ id: "1.1.1", guideline: "1.1", status: "C", findings: [] }],
+      findings: [],
+      packFindings: [{ ...finding("1.1.1", ruleId), advisory: true, severity: "mineur" }],
+    };
+  }
+
+  it("without an override the pack-rule finding stays advisory → the criterion is NOT NC", () => {
+    registerRuntimePack(packWith(undefined));
+    const rows = derivePackResults(auditWithPackFinding("pack:noovr:demo"), "noovr");
+    const c = rows.find((r) => r.id === "1.1")!;
+    expect(c.status).not.toBe("NC");
+    expect(c.findings.some((f) => f.ruleId === "pack:noovr:demo")).toBe(true);
+  });
+
+  it("an override flipping advisory→normative makes the criterion NC in the pack projection but leaves the core result untouched", () => {
+    registerRuntimePack(packWith({ "pack:ovr:demo": { advisory: false, severity: "majeur" } }));
+    const audit = auditWithPackFinding("pack:ovr:demo");
+    const rows = derivePackResults(audit, "ovr");
+    const c = rows.find((r) => r.id === "1.1")!;
+    expect(c.status).toBe("NC"); // re-normativized within the projection
+    expect(c.findings.find((f) => f.ruleId === "pack:ovr:demo")?.severity).toBe("majeur"); // re-graded
+    // Core result is UNTOUCHED: the SC stays C, and the original packFindings entry keeps
+    // its advisory flag (derive worked on a copy, never mutated the source).
+    expect(audit.criteria.find((cr) => cr.id === "1.1.1")?.status).toBe("C");
+    expect(audit.packFindings?.[0]?.advisory).toBe(true);
+    expect(audit.packFindings?.[0]?.severity).toBe("mineur");
+  });
+});

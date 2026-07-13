@@ -2,9 +2,10 @@
 // presentation-only WCAG view (former src/standard.ts). For each pack criterion, gather
 // the results of the WCAG SCs it maps to and fold them with the same NC-dominates rule.
 // Presentation-only: the canonical, gated verdict lives on the WCAG core.
-import type { AuditResult, CriterionResult, Status, Finding } from "../types.js";
+import type { AuditResult, CriterionResult, Status, Finding, Severity } from "../types.js";
 import { loadPack } from "./registry.js";
 import { knownScStatus } from "../wcag.js";
+import type { PackOverride } from "./types.js";
 
 export interface PackCriterionResult {
   id: string;
@@ -45,9 +46,27 @@ function ruleMatches(ruleId: string, patterns: string[]): boolean {
   return false;
 }
 
+/** Apply a pack's normativity/severity overrides to a finding WITHIN the pack projection.
+ *  Returns a COPY when an override applies (the core finding is never mutated), or the
+ *  original reference when there is nothing to change. */
+function overrideFinding(f: Finding, overrides: Record<string, PackOverride> | undefined): Finding {
+  const o = overrides?.[f.ruleId];
+  if (!o) return f;
+  const patched: Finding = { ...f };
+  if (o.advisory !== undefined) patched.advisory = o.advisory;
+  if (o.severity) patched.severity = o.severity as Severity;
+  return patched;
+}
+
 export function derivePackResults(audit: AuditResult, packKey: string): PackCriterionResult[] {
   const pack = loadPack(packKey);
   const byScId = new Map(audit.criteria.map((c) => [c.id, c]));
+  // Declarative pack-rule findings belonging to THIS pack (namespaced pack:<key>:). They
+  // ride in the audit's dedicated `packFindings` list (never the core criteria), and are
+  // routed onto a criterion here via the same appliesTo/ruleMatches machinery as engine
+  // findings, keyed by the SC the rule declared.
+  const myPackFindings = (audit.packFindings ?? []).filter((f) => f.ruleId.startsWith(`pack:${packKey}:`));
+  const overrides = pack.overrides;
   return pack.criteria.map((pc) => {
     // A criterion whose WCAG mapping is ENTIRELY outside the engine's core (e.g. RGAA 8.1
     // → only the removed 4.1.1, or a hypothetical pack criterion citing only an AAA SC)
@@ -60,7 +79,11 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
       return { id: pc.id, theme: pc.theme, status: "manual" as Status, findings: [], scs: pc.wcag, outOfScope: true };
     }
     const scResults = pc.wcag.map((sc) => byScId.get(sc)).filter((x): x is CriterionResult => !!x);
-    const allFindings = scResults.flatMap((r) => r.findings);
+    // Declarative pack findings whose declared SC this criterion maps to — merged with the
+    // core SC findings, then run through the pack's overrides (advisory/severity flips that
+    // apply ONLY in this projection; the core copies are never mutated).
+    const packFs = myPackFindings.filter((f) => pc.wcag.includes(f.criteriaId));
+    const allFindings = [...scResults.flatMap((r) => r.findings), ...packFs].map((f) => overrideFinding(f, overrides));
 
     // No applicability data (third-party pack) → legacy fan-out: every mapped SC's
     // findings attach (advisory ones project too, so a pack view can render the
@@ -80,20 +103,18 @@ export function derivePackResults(audit: AuditResult, packKey: string): PackCrit
     if (normativeFindings.length) {
       return { id: pc.id, theme: pc.theme, status: "NC" as Status, findings, scs: pc.wcag };
     }
-    // Only advisory findings attach (no normative failure) → not NC. Fall through to the
-    // ordinary aggregate over the mapped SCs, but keep the advisory findings on the result
-    // so the pack view can surface them as recommendations.
-    if (findings.length) {
-      const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
-      return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
-    }
-    // A mapped SC failed but on out-of-scope elements (no applicable finding) → the NC is
-    // NOT ours: derive as manual (assess separately), never a foreign NC, never a silent C.
+    // No NORMATIVE finding attaches. A mapped SC may still be NC, but on out-of-scope
+    // elements (a sibling criterion's failure) — that NC is NOT ours: derive as manual
+    // (assess separately), never a foreign NC. Any advisory findings that DO belong here
+    // still attach for display (a recommendation, never a non-conformity). This ordering
+    // matters: an attached advisory recommendation must not let a scoped-out sibling NC
+    // silently flip us to a foreign verdict.
     if (scResults.some((r) => r.status === "NC")) {
-      return { id: pc.id, theme: pc.theme, status: "manual" as Status, findings: [], scs: pc.wcag, scopedOut: true };
+      return { id: pc.id, theme: pc.theme, status: "manual" as Status, findings, scs: pc.wcag, scopedOut: true };
     }
-    // Otherwise the ordinary non-NC aggregate (C / manual / NA) over the mapped SCs.
+    // Otherwise the ordinary non-NC aggregate (C / manual / NA) over the mapped SCs, with
+    // any advisory findings kept on the result so the pack view surfaces them.
     const status: Status = scResults.length ? aggregate(scResults.map((r) => r.status)) : "NA";
-    return { id: pc.id, theme: pc.theme, status, findings: [], scs: pc.wcag };
+    return { id: pc.id, theme: pc.theme, status, findings, scs: pc.wcag };
   });
 }

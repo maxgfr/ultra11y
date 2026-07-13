@@ -88,8 +88,9 @@ describe("AXE_ADVISORY_EXCEPTIONS — cross-channel normativity consistency", ()
     expect(isAxeAdvisory("landmark-one-main", ["cat.semantics", "best-practice"])).toBe(false);
     expect(isAxeAdvisory("empty-heading", ["cat.name-role-value", "best-practice"])).toBe(false);
     // Exact-id twins pinned for drift-proofing: axe tags these with real wcag<digits> tags
-    // TODAY, but the docker runner installs axe-core from a caret range, so a future
-    // re-tag must not silently demote them — the pin, not the tags, decides.
+    // TODAY. axe-core is now pinned EXACTLY (4.12.1 in docker/package.json + scan.ts PKG),
+    // but a future version BUMP of that pin could still re-tag them — so a re-tag must not
+    // silently demote them: the pin, not the tags, decides.
     expect(isAxeAdvisory("duplicate-id", ["cat.parsing", "best-practice"])).toBe(false);
     expect(isAxeAdvisory("nested-interactive", ["cat.keyboard", "best-practice"])).toBe(false);
     expect(isAxeAdvisory("form-field-multiple-labels", ["cat.forms", "best-practice"])).toBe(false);
@@ -103,9 +104,10 @@ describe("AXE_ADVISORY_EXCEPTIONS — cross-channel normativity consistency", ()
   // COMPLETENESS direction: the tests above guard pinned → twin (every pin is backed by a
   // registered normative twin); this guards the reverse for EXACT-id matches — an AXE_WCAG
   // key that IS a registered normative static rule id must be pinned (same defect, must
-  // stay normative cross-channel regardless of axe's current tagging — the docker runner's
-  // caret-ranged axe-core means tag sets drift per user build with no repo change). This
-  // makes the guard two-directional for exact-id matches only; near-twins with DIFFERENT
+  // stay normative cross-channel regardless of axe's current tagging — axe-core is pinned
+  // EXACTLY (docker/package.json + scan.ts PKG), yet a future version bump of that pin could
+  // re-tag with no rule change here). This makes the guard two-directional for exact-id
+  // matches only; near-twins with DIFFERENT
   // ids (heading-order vs heading-order-skip…) remain hand-curated and are not derivable.
   it("completeness: every AXE_WCAG key exactly matching a registered normative static rule id is pinned", () => {
     for (const axeRuleId of Object.keys(AXE_WCAG)) {

@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.14.0](https://github.com/maxgfr/ultra11y/compare/v2.13.0...v2.14.0) (2026-07-13)
+
+
+### Bug Fixes
+
+* **pack:** drop inert suppressor-only cross-rule appliesTo entries + guard ([8ed6d62](https://github.com/maxgfr/ultra11y/commit/8ed6d62a72c7a149d4fd660a0d7c8f94eddbc7e0))
+* **report:** pack-report header rate uses the projection basis ([1eabde4](https://github.com/maxgfr/ultra11y/commit/1eabde45a6a5f04e8abe8f797f7ac8beafc069a1))
+* **report:** per-page section shows RGAA criteria in pack reports ([e36bd59](https://github.com/maxgfr/ultra11y/commit/e36bd59899e2e107c52536699810ca1b626a4c40))
+
+
+### Features
+
+* **pack:** RGAA 7.4 secondary mapping for live regions (disabled by default) ([5b6a401](https://github.com/maxgfr/ultra11y/commit/5b6a4010881be868c1a740f9a17fae0284deef4c))
+* **packs:** configurable secondary crosswalk mappings ([36e3e1d](https://github.com/maxgfr/ultra11y/commit/36e3e1d451e1ac1d4a1fd7fa623e30e119bed0cd))
+
 # [2.13.0](https://github.com/maxgfr/ultra11y/compare/v2.12.2...v2.13.0) (2026-07-13)
 
 

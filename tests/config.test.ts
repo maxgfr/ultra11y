@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadConfig, loadRuntimeStandards } from "../src/config.js";
 import { validateSample } from "../src/sample.js";
-import { hasStandard } from "../src/standards/index.js";
+import { hasStandard, loadPack } from "../src/standards/index.js";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "u11y-config-"));
 // Each test uses a UNIQUE pack key — the registry is process-global and persists.
@@ -144,6 +144,33 @@ describe("loadRuntimeStandards", () => {
       writeFileSync(join(d, "rgaa.json"), JSON.stringify(packObj("rgaa")));
       expect(loadRuntimeStandards(d, ["rgaa.json"], () => {}, false).errors.length).toBeGreaterThan(0);
       expect(loadRuntimeStandards(d, ["rgaa.json"], () => {}, true).errors).toEqual([]);
+    } finally {
+      rmSync(d, { recursive: true, force: true });
+    }
+  });
+
+  it("activates a built-in pack's secondary crosswalk mapping from .ultra11yrc.json (Task 13)", () => {
+    const d = tmp();
+    const mapping = loadPack("rgaa").secondaryMappings?.find((m) => m.ruleId === "dyn-live-region" && m.criterion === "7.4");
+    const wasEnabled = mapping?.enabled;
+    try {
+      writeFileSync(join(d, ".ultra11yrc.json"), JSON.stringify({ secondaryMappings: [{ standard: "rgaa", ruleId: "dyn-live-region", criterion: "7.4" }] }));
+      const r = loadRuntimeStandards(d, [], () => {});
+      expect(r.errors).toEqual([]);
+      // The built-in RGAA mapping (shipped disabled) is now flipped on.
+      expect(loadPack("rgaa").secondaryMappings?.some((m) => m.ruleId === "dyn-live-region" && m.criterion === "7.4" && m.enabled === true)).toBe(true);
+    } finally {
+      if (mapping) mapping.enabled = wasEnabled; // restore the shipped default
+      rmSync(d, { recursive: true, force: true });
+    }
+  });
+
+  it("hard-errors on a secondaryMappings entry naming an unknown standard (never a silent skip)", () => {
+    const d = tmp();
+    try {
+      writeFileSync(join(d, ".ultra11yrc.json"), JSON.stringify({ secondaryMappings: [{ standard: "does-not-exist", ruleId: "r", criterion: "1.1" }] }));
+      const r = loadRuntimeStandards(d, [], () => {});
+      expect(r.errors.some((e) => /unknown standard/.test(e))).toBe(true);
     } finally {
       rmSync(d, { recursive: true, force: true });
     }

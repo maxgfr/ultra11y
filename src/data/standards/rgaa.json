@@ -102,6 +102,17 @@
       }
     ]
   },
+  "secondaryMappings": [
+    {
+      "ruleId": "dyn-live-region",
+      "criterion": "7.4",
+      "note": {
+        "fr": "Relève aussi de 7.4 (changement de contexte) selon le classement Ara ; projection WCAG-fidèle = 7.5.",
+        "en": "Also classified under 7.4 (change of context) per Ara; the WCAG-faithful projection is 7.5."
+      },
+      "enabled": false
+    }
+  ],
   "rules": [
     {
       "id": "download-link-format",

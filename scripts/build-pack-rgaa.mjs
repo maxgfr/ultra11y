@@ -141,9 +141,10 @@ const RULE_TO_CRITERIA = {
   "cross-prop-drilled-name-lost": ["7.1"],
   "clickable-noninteractive": ["7.3"], "live-region-conflict": ["7.5"], "status-message-not-assertive": ["7.5"],
   // Dynamic tier (scan --local): the live-region probe projects onto WCAG 4.1.3 → RGAA 7.5
-  // (status messages). NOTE: Ara filed the source finding under RGAA 7.4 (change of context,
-  // WCAG 3.2.1/3.2.2); the WCAG-4.1.3 projection is 7.5, not 7.4. Owner decision pending —
-  // flip this to ["7.4"] here (one line) if the audit should align with Ara's filing.
+  // (status messages) — the WCAG-faithful home. Ara ALSO classifies the source finding under
+  // RGAA 7.4 (change of context, WCAG 3.2.1/3.2.2); that deviation from the 4.1.3 crosswalk
+  // ships as an opt-in `secondaryMappings` entry below (dyn-live-region → 7.4, DISABLED by
+  // default), never hardcoded here, so the out-of-box projection stays WCAG-faithful (7.5).
   "dyn-live-region": ["7.5"],
   "disabled-context-content": ["7.1", "10.8"],
   "axe:aria-allowed-attr": ["7.1"], "axe:aria-allowed-role": ["7.1"], "axe:aria-roles": ["7.1"],
@@ -338,6 +339,25 @@ async function main() {
         },
       ],
     },
+    // Opt-in SECONDARY crosswalk mapping (Task 13): the live-region probe keys on WCAG 4.1.3,
+    // whose WCAG-faithful RGAA home is 7.5 (status messages). Ara additionally classifies the
+    // same finding under 7.4 (change of context). That is a DELIBERATE deviation from the SC
+    // crosswalk, so it ships DISABLED — the default projection stays WCAG-faithful (7.5 only).
+    // Enable per-project via `.ultra11yrc.json`:
+    //   { "secondaryMappings": [{ "standard": "rgaa", "ruleId": "dyn-live-region", "criterion": "7.4" }] }
+    // (see src/standards/types.ts SecondaryMapping + src/config.ts). EXACT-ruleId match means
+    // the other 4.1.3 rules (status-message-not-assertive, live-region-conflict) never cross over.
+    secondaryMappings: [
+      {
+        ruleId: "dyn-live-region",
+        criterion: "7.4",
+        note: {
+          fr: "Relève aussi de 7.4 (changement de contexte) selon le classement Ara ; projection WCAG-fidèle = 7.5.",
+          en: "Also classified under 7.4 (change of context) per Ara; the WCAG-faithful projection is 7.5.",
+        },
+        enabled: false,
+      },
+    ],
     rules,
     themes,
     criteria,

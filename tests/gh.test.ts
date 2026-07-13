@@ -89,6 +89,14 @@ describe("gh helpers", () => {
     expect(body).toContain("`src/IconButton.tsx:2`");
   });
 
+  it("issueBody inherits the full ticket template (Priorité + Partie technique + Complexité)", () => {
+    const body = issueBody(unit("4.1.2", "Name, Role, Value"), "fr", "wcag");
+    expect(body).toContain("**Priorité** : 🔴 Bloquant");
+    expect(body).toContain("Partie technique");
+    expect(body).toContain("**Critères d'acceptation**");
+    expect(body).toContain("**Complexité** :");
+  });
+
   it("issueBody renders the origin-attribution line for a capture-originated finding", () => {
     const u = unit("4.1.2", "X");
     u.findings[0]!.origin = { capture: "captures/icon-button.html", sourceFile: "src/IconButton.tsx", component: "IconButton" };

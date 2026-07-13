@@ -6,7 +6,9 @@ import { runAudit } from "../src/audit.js";
 import { renderReport, renderPackReport } from "../src/report.js";
 import { buildWorklist, applyVerdicts, writeWorklist, formatWorklist, type VerifyItem } from "../src/verify.js";
 import { registerRuntimePack, loadPack, derivePackResults } from "../src/standards/index.js";
-import type { AuditResult } from "../src/types.js";
+import { renderAuditorUnit } from "../src/auditor.js";
+import type { AuditResult, Finding } from "../src/types.js";
+import type { PrdUnit } from "../src/prd.js";
 
 const FIX = new URL("./fixtures/", import.meta.url).pathname;
 const bad = runAudit({ inputs: [`${FIX}non-conforming/bad.html`] });
@@ -139,6 +141,85 @@ describe("buildWorklist", () => {
   });
 });
 
+// Task 2: `renderAuditorUnit` now natively emits the full owner-validated ticket
+// structure (Priorité, Partie technique, Contexte de reproduction). The verify worklist
+// parser keys ONLY on the section-1 criterion line + the section-2 occurrence checklist,
+// which stay before any newly-introduced heading. These twins prove the new sections are
+// worklist-INERT — the round-trip stays byte-for-byte identical to the pre-change shape.
+describe("parser-twin: the full ticket template is worklist-inert (Task 2)", () => {
+  const NO_CAP = Number.POSITIVE_INFINITY;
+  const finding = (file: string, line: number, sel: string, msg: string, advisory = false): Finding => ({
+    ruleId: "r",
+    criteriaId: "1.3.1",
+    file,
+    line,
+    col: 1,
+    selectorHint: sel,
+    severity: "bloquant",
+    message: msg,
+    remediation: "Corrigez l'élément cité",
+    snippet: "<x>",
+    ...(advisory ? { advisory: true } : {}),
+  });
+  const ncUnit = (findings: Finding[]): PrdUnit => ({
+    criteriaId: "1.3.1",
+    title: "Info and Relationships",
+    label: "1.3.1 — Info and Relationships",
+    refs: [],
+    severity: "bloquant",
+    findings,
+  });
+  const keys = (md: string) => buildWorklist(md, "wcag", NO_CAP).map((i) => `${i.criteriaId}|${i.file}|${i.line}|${i.selector}|${i.claim}`);
+
+  it("the NEW full template yields the SAME worklist as the pre-change occurrence-only template", () => {
+    const u = ncUnit([finding("src/a.tsx", 3, "img", "image sans alt"), finding("src/b.tsx", 7, "svg", "svg sans titre")]);
+    // Pre-change shape: criterion line + occurrence checklist only (no Priorité, no
+    // Partie technique / Contexte de reproduction). Hand-built to the exact grammar verify parses.
+    const legacy = [
+      "### 🔴 1.3.1 — Info and Relationships",
+      "",
+      "**Success criterion** : 1.3.1 — Info and Relationships",
+      "",
+      "- [ ] `src/a.tsx:3` (`img`) — image sans alt",
+      "- [ ] `src/b.tsx:7` (`svg`) — svg sans titre",
+      "",
+    ].join("\n");
+    const full = renderAuditorUnit(u, "wcag", "en", { heading: "###" }).join("\n");
+    // The full template really does carry the new sections…
+    expect(full).toContain("Technical details");
+    expect(full).toContain("Priority");
+    // …yet the worklist is identical to the minimal one.
+    expect(keys(full)).toEqual(keys(legacy));
+    expect(keys(full)).toHaveLength(2);
+  });
+
+  it("`--no-technical` and the default full render produce the SAME worklist", () => {
+    const u = ncUnit([finding("src/a.tsx", 3, "img", "image sans alt")]);
+    const withTech = renderAuditorUnit(u, "wcag", "en", { heading: "###" }).join("\n");
+    const noTech = renderAuditorUnit(u, "wcag", "en", { heading: "###", technical: false }).join("\n");
+    expect(noTech).not.toContain("Technical details");
+    expect(keys(withTech)).toEqual(keys(noTech));
+  });
+
+  // Carried-over Task-1 review item: a MIXED unit (normative NC findings + advisory findings)
+  // must exclude the advisory occurrences from the parseable checklist — they ride in a
+  // distinct, NON-parseable « Related recommendations » sub-list instead.
+  it("a mixed NC unit yields a worklist with ONLY the normative occurrences", () => {
+    const u = ncUnit([
+      finding("src/a.tsx", 3, "img", "image sans alt"), // normative
+      finding("src/b.tsx", 7, "h1", "second h1 non normatif", true), // advisory
+    ]);
+    const md = renderAuditorUnit(u, "wcag", "en", { heading: "###" }).join("\n");
+    const items = buildWorklist(md, "wcag", NO_CAP);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.file).toBe("src/a.tsx");
+    expect(items.some((i) => i.file === "src/b.tsx")).toBe(false);
+    // The advisory occurrence is still shown, just outside the parseable checklist.
+    expect(md).toContain("src/b.tsx:7");
+    expect(md).toContain("Related recommendations");
+  });
+});
+
 // THE critical anti-hallucination guard for Phase 4: report.ts §2 now renders one
 // auditor block PER CRITERION (not one flat bullet per finding), so `buildWorklist`
 // must walk the criterion↔occurrence structure correctly. If this guard didn't exist
@@ -146,27 +227,31 @@ describe("buildWorklist", () => {
 // number of claims (or none at all) without any test ever noticing.
 describe("round-trip guard: buildWorklist(renderReport(...)) recovers EXACTLY the fixture's NC findings", () => {
   const NO_CAP = Number.MAX_SAFE_INTEGER;
+  // The worklist recovers only the NORMATIVE occurrences: advisory findings riding along
+  // in a mixed unit (bad.html's 1.3.1 carries an advisory h1-missing) are excluded from the
+  // parseable checklist per the Task-1 review item, so the count is the normative subset.
+  const normativeCount = bad.findings.filter((f) => !f.advisory).length;
 
-  it("core WCAG, fr: item count == total NC findings", () => {
+  it("core WCAG, fr: item count == the normative NC finding count", () => {
     const items = buildWorklist(renderReport(bad, "fr"), "wcag", NO_CAP);
-    expect(items.length).toBe(bad.findings.length);
+    expect(items.length).toBe(normativeCount);
     expect(items.length).toBeGreaterThan(0);
   });
 
-  it("core WCAG, en: item count == total NC findings", () => {
+  it("core WCAG, en: item count == the normative NC finding count", () => {
     const items = buildWorklist(renderReport(bad, "en"), "wcag", NO_CAP);
-    expect(items.length).toBe(bad.findings.length);
+    expect(items.length).toBe(normativeCount);
   });
 
-  it("RGAA pack, fr: item count == the pack-projected NC finding count (a WCAG finding may fan out to several RGAA criteria)", () => {
-    const expectedCount = derivePackResults(bad, "rgaa").reduce((n, p) => n + p.findings.length, 0);
+  it("RGAA pack, fr: item count == the pack-projected NORMATIVE finding count (a WCAG finding may fan out to several RGAA criteria)", () => {
+    const expectedCount = derivePackResults(bad, "rgaa").reduce((n, p) => n + p.findings.filter((f) => !f.advisory).length, 0);
     const items = buildWorklist(renderPackReport(bad, loadPack("rgaa"), "fr"), "rgaa", NO_CAP);
     expect(items.length).toBe(expectedCount);
-    expect(items.length).toBeGreaterThan(bad.findings.length); // confirms the fan-out actually happened
+    expect(items.length).toBeGreaterThan(normativeCount); // confirms the fan-out actually happened
   });
 
-  it("RGAA pack, en: item count == the pack-projected NC finding count", () => {
-    const expectedCount = derivePackResults(bad, "rgaa").reduce((n, p) => n + p.findings.length, 0);
+  it("RGAA pack, en: item count == the pack-projected NORMATIVE finding count", () => {
+    const expectedCount = derivePackResults(bad, "rgaa").reduce((n, p) => n + p.findings.filter((f) => !f.advisory).length, 0);
     const items = buildWorklist(renderPackReport(bad, loadPack("rgaa"), "en"), "rgaa", NO_CAP);
     expect(items.length).toBe(expectedCount);
   });

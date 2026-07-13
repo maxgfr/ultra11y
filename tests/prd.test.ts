@@ -154,6 +154,16 @@ describe("renderPerCriterion + writePrd", () => {
     expect(readFileSync(paths[0]!, "utf8")).toContain("Plan de correction");
   });
 
+  it("the default audit backlog carries the technical ticket sections; --no-technical suppresses them", () => {
+    const withTech = readFileSync(writePrd(AUDIT, { out: tmp(), lang: "fr", standard: "wcag", technical: true })[0]!, "utf8");
+    expect(withTech).toContain("Partie technique");
+    expect(withTech).toContain("**Complexité** :");
+    const noTech = readFileSync(writePrd(AUDIT, { out: tmp(), lang: "fr", standard: "wcag", technical: false })[0]!, "utf8");
+    expect(noTech).not.toContain("Partie technique");
+    expect(noTech).toContain("**Priorité** :"); // section 1 (Priorité) stays either way
+    expect(noTech).toContain("Constat"); // the auditor NC block stays
+  });
+
   it("writes one file per SC with --split criterion", () => {
     const out = tmp();
     const paths = writePrd(AUDIT, { out, lang: "fr", split: "criterion", standard: "wcag" });

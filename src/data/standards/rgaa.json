@@ -1595,8 +1595,6 @@
           "axe:aria-valid-attr-value",
           "axe:nested-interactive",
           "axe:presentation-role-conflict",
-          "cross-aria-forwarding",
-          "cross-aria-ref-cross-file",
           "cross-prop-drilled-name-lost",
           "disabled-context-content",
           "invalid-aria-role",
@@ -1781,7 +1779,7 @@
       "techniques": ["H57"],
       "wcag": ["3.1.1"],
       "appliesTo": {
-        "ruleIds": ["axe:html-has-lang", "axe:html-xml-lang-mismatch", "cross-page-lang", "html-lang-missing"]
+        "ruleIds": ["axe:html-has-lang", "axe:html-xml-lang-mismatch", "html-lang-missing"]
       }
     },
     {
@@ -1963,16 +1961,7 @@
       ],
       "wcag": ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
       "appliesTo": {
-        "ruleIds": [
-          "axe:empty-heading",
-          "axe:heading-order",
-          "axe:page-has-heading-one",
-          "cross-name-ref-cross-file",
-          "empty-heading",
-          "h1-missing",
-          "h1-multiple",
-          "heading-order-skip"
-        ]
+        "ruleIds": ["axe:empty-heading", "axe:heading-order", "axe:page-has-heading-one", "empty-heading", "h1-missing", "h1-multiple", "heading-order-skip"]
       }
     },
     {
@@ -3035,7 +3024,7 @@
       ],
       "wcag": ["2.4.1", "2.4.3", "3.2.3"],
       "appliesTo": {
-        "ruleIds": ["axe:bypass", "axe:skip-link", "cross-skip-link-target", "skip-link-target-missing"]
+        "ruleIds": ["axe:bypass", "axe:skip-link", "skip-link-target-missing"]
       }
     },
     {

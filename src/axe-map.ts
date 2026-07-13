@@ -150,10 +150,48 @@ export function scForAxeRule(ruleId: string): string {
 
 // Curated overrides of the tag-based advisory decision, keyed by axe rule id. Forces a
 // rule to (non-)advisory regardless of its tags — a deliberate escape hatch for the rare
-// case where axe's tagging disagrees with the normativity we want. Starts EMPTY: the
-// tag-based `axeAdvisory` is correct for every rule we ship today. `true` ⇒ always
+// case where axe's tagging disagrees with the normativity we want. `true` ⇒ always
 // advisory, `false` ⇒ always normative.
-export const AXE_ADVISORY_EXCEPTIONS: Record<string, boolean> = {};
+//
+// CROSS-CHANNEL NORMATIVITY CONSISTENCY: the tag-based `axeAdvisory` heuristic treats
+// any axe rule with no `wcag<digits>` tag as best-practice-only (advisory). But this
+// engine ALSO has a static counterpart for several of these rules (src/rules/*.ts) that
+// we ship as NORMATIVE — the same defect must not be a definite NC when found statically
+// (`audit`) yet a mere recommendation when found dynamically (`scan`/axe). Every key
+// below is pinned `false` (always normative) because its static twin is registered and
+// normative; the twin ids are documented inline and cross-checked by
+// tests/axe-map.test.ts against the live registry so this table can never silently drift
+// from src/rules/*.ts.
+//   - heading-order        → static twin heading-order-skip        (src/rules/headings.ts)
+//   - tabindex              → static twin positive-tabindex          (src/rules/navigation.ts)
+//   - skip-link             → static twin skip-link-target-missing   (src/rules/navigation.ts)
+//   - label-title-only      → static twin control-name-title-only    (src/rules/links.ts)
+//   - landmark-one-main     → static twins missing-main-landmark /
+//                             multiple-main-landmark                 (src/rules/navigation.ts)
+// Deliberately NOT pinned (stay advisory, tag-based decision applies): empty-table-header,
+// page-has-heading-one (consistent with h1-missing/h1-multiple now being advisory — see
+// src/rules/headings.ts), region, accesskeys, image-redundant-alt — none of these has a
+// normative static twin in this engine.
+export const AXE_ADVISORY_EXCEPTIONS: Record<string, boolean> = {
+  "heading-order": false,
+  tabindex: false,
+  "skip-link": false,
+  "label-title-only": false,
+  "landmark-one-main": false,
+};
+
+// Data companion to AXE_ADVISORY_EXCEPTIONS: which static rule id(s) (src/rules/*.ts,
+// registered in src/rules/registry.ts) evidence the "same defect" as each pinned axe
+// rule above. Kept as data (not just prose) so tests/axe-map.test.ts can DERIVE the
+// consistency check — assert every twin is actually registered and normative — instead
+// of hand-duplicating (and risking drift from) this table.
+export const AXE_STATIC_TWIN: Record<string, string[]> = {
+  "heading-order": ["heading-order-skip"],
+  tabindex: ["positive-tabindex"],
+  "skip-link": ["skip-link-target-missing"],
+  "label-title-only": ["control-name-title-only"],
+  "landmark-one-main": ["missing-main-landmark", "multiple-main-landmark"],
+};
 
 /** A best-practice-only axe violation carries tags but NO `wcag<digits>` SC tag (only
  *  umbrellas like `wcag2aa`/`best-practice`/`cat.*`) — it evidences no testable WCAG

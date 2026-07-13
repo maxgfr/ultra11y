@@ -238,6 +238,72 @@ describe("applyAdjudication — fail-closed validation", () => {
   });
 });
 
+// normativeRefResolves' pack branch (src/adjudicate.ts): for a non-core standard the ref
+// must resolve either as a pack CRITERION id (`hasId`) or as a pack TEST id
+// ("<criterionId>.<testKey>", split at the last dot — see the function's own doc comment).
+// The WCAG-core branch (hasSC) is covered above; this exercises the RGAA pack branch,
+// which had no coverage at all.
+describe("applyAdjudication — pack normativeRef resolution (RGAA)", () => {
+  const rgaaFile = (items: AdjudicationItem[]): AdjudicationFile => ({
+    tool: "ultra11y",
+    kind: "adjudication",
+    schemaVersion: 2,
+    standard: "rgaa",
+    auditDate: "2026-07-08",
+    items,
+  });
+  const decideAllRgaa = (over: Partial<AdjudicationItem>, only?: string) =>
+    buildAdjudicationWorklist(auditPage()).map((i) =>
+      only && i.criteriaId !== only
+        ? { ...i, verdict: "manual" as const, reason: "undecidable" }
+        : { ...i, verdict: "manual" as const, reason: "undecidable", ...over },
+    );
+
+  it('accepts a pack CRITERION id as normativeRef (RGAA "1.1")', () => {
+    const items = decideAllRgaa(
+      { verdict: "NC", findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is vague', snippet: 'alt="chart"', normativeRef: "1.1" }] },
+      "1.1.1",
+    );
+    const r = applyAdjudication(auditPage(), rgaaFile(items));
+    expect(r.ok).toBe(true);
+  });
+
+  it('accepts a pack TEST id as normativeRef (RGAA "1.1.1", i.e. criterion 1.1 / test 1)', () => {
+    const items = decideAllRgaa(
+      {
+        verdict: "NC",
+        findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is vague', snippet: 'alt="chart"', normativeRef: "1.1.1" }],
+      },
+      "1.1.1",
+    );
+    const r = applyAdjudication(auditPage(), rgaaFile(items));
+    expect(r.ok).toBe(true);
+  });
+
+  it('rejects a normativeRef whose criterion id does not exist in the RGAA pack ("9.9.9")', () => {
+    const items = decideAllRgaa(
+      { verdict: "NC", findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is vague', snippet: 'alt="chart"', normativeRef: "9.9.9" }] },
+      "1.1.1",
+    );
+    const r = applyAdjudication(auditPage(), rgaaFile(items));
+    expect(r.ok).toBe(false);
+    expect(r.issues.join("\n")).toMatch(/9\.9\.9|does not resolve/);
+  });
+
+  it('rejects a normativeRef with a real criterion but an unknown test key ("1.1.99")', () => {
+    const items = decideAllRgaa(
+      {
+        verdict: "NC",
+        findings: [{ file: PAGE, line: 9, selector: "img", message: 'alt="chart" is vague', snippet: 'alt="chart"', normativeRef: "1.1.99" }],
+      },
+      "1.1.1",
+    );
+    const r = applyAdjudication(auditPage(), rgaaFile(items));
+    expect(r.ok).toBe(false);
+    expect(r.issues.join("\n")).toMatch(/1\.1\.99|does not resolve/);
+  });
+});
+
 describe("applyAdjudication — recommendations fold as advisory (status-neutral)", () => {
   it("folds a recommendation into audit.findings as an advisory finding without flipping the criterion", () => {
     const audit = auditPage();

@@ -14,12 +14,16 @@ import { formatIssues } from "./standards/validate.js";
 import { checkGuidance } from "./pack.js";
 import { registerRuntimeGuidance, hasGuidance } from "./guidance/index.js";
 import type { GuidanceDataset } from "./guidance/types.js";
-import type { Glossary } from "./types.js";
+import type { Glossary, SampleConfig } from "./types.js";
 
 export interface Ultra11yConfig {
   packs?: string[];
   guidance?: string[];
   standard?: string;
+  // Normative page sample (échantillon) — standard-agnostic mechanics. Validated by
+  // `validateSample` (src/sample.ts) when a `scan --sample` / `sample check` reads it; NOT
+  // validated at pack-load time (an audit with no sample block is the common case).
+  sample?: SampleConfig;
 }
 
 export interface LoadResult {

@@ -263,6 +263,40 @@ async function main() {
       notApplicable: { fr: "Non applicable (NA)" },
       auditorHeading: { fr: "Critère d’accessibilité" },
     },
+    // Normative page-sample methodology (RGAA): the REQUIRED page KINDS a real audit must
+    // cover — its representative sample. Standard-agnostic sample MECHANICS live in the core
+    // (src/sample.ts + Ultra11yConfig.sample); this carries only RGAA's own required-kinds
+    // list. Drives the advisory `sample check` / `scan --sample` lint (fuzzy match on a
+    // page's name/notes/url), never a hard gate. Keywords are accent-insensitive, fr + en.
+    sampleMethodology: {
+      requiredKinds: [
+        { id: "accueil", label: { fr: "Page d’accueil" }, keywords: ["accueil", "home", "index", "racine", "homepage"] },
+        { id: "contact", label: { fr: "Contact" }, keywords: ["contact", "nous contacter", "nous ecrire", "coordonnees"] },
+        { id: "mentions-legales", label: { fr: "Mentions légales" }, keywords: ["mentions legales", "mentions", "legal notice", "legal"] },
+        {
+          id: "declaration-accessibilite",
+          label: { fr: "Déclaration d’accessibilité" },
+          keywords: ["declaration d accessibilite", "declaration accessibilite", "accessibilite", "accessibility statement", "accessibility"],
+        },
+        { id: "plan-du-site", label: { fr: "Plan du site" }, keywords: ["plan du site", "plan", "sitemap", "site map"] },
+        { id: "aide", label: { fr: "Aide" }, keywords: ["aide", "help", "faq", "assistance", "support"] },
+        {
+          id: "authentification",
+          label: { fr: "Authentification" },
+          keywords: ["authentification", "connexion", "identification", "login", "log in", "sign in", "se connecter", "auth"],
+        },
+        {
+          id: "pages-representatives",
+          label: { fr: "Pages représentatives" },
+          keywords: ["representative", "representatif", "representatives", "gabarit", "template", "modele", "formulaire", "recherche", "resultats"],
+        },
+        {
+          id: "elements-transverses",
+          label: { fr: "Éléments transverses" },
+          keywords: ["transverse", "transversaux", "en-tete", "entete", "header", "navigation", "menu", "pied de page", "footer"],
+        },
+      ],
+    },
     themes,
     criteria,
   };

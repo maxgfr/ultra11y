@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadConfig, loadRuntimeStandards } from "../src/config.js";
+import { validateSample } from "../src/sample.js";
 import { hasStandard } from "../src/standards/index.js";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "u11y-config-"));
@@ -36,6 +37,54 @@ describe("loadConfig", () => {
     } finally {
       rmSync(d, { recursive: true, force: true });
     }
+  });
+});
+
+describe("validateSample (normative page sample — Task 5)", () => {
+  const validPage = { id: "accueil", name: "Page d'accueil", url: "https://example.fr/" };
+
+  it("accepts a well-formed sample and keeps the storageState PATH in the normalized config", () => {
+    const r = validateSample({
+      pages: [
+        validPage,
+        {
+          id: "compte",
+          name: "Mon compte",
+          url: "https://example.fr/compte",
+          auth: true,
+          storageState: "test-results/.auth/user.json",
+          notes: "Se connecter d'abord.",
+        },
+      ],
+      transverse: ["En-tête", "Navigation", "Pied de page"],
+    });
+    expect(r.ok).toBe(true);
+    expect(r.issues).toEqual([]);
+    expect(r.sample?.pages).toHaveLength(2);
+    // storageState is a PATH, preserved in the config (its CONTENT is never read anywhere).
+    expect(r.sample?.pages[1]?.storageState).toBe("test-results/.auth/user.json");
+    expect(r.sample?.transverse).toEqual(["En-tête", "Navigation", "Pied de page"]);
+  });
+
+  it("hard-errors on a malformed URL", () => {
+    const r = validateSample({ pages: [{ id: "x", name: "X", url: "not a url" }] });
+    expect(r.ok).toBe(false);
+    expect(r.sample).toBeUndefined();
+    expect(r.issues.some((i) => i.path === "sample.pages[0].url")).toBe(true);
+  });
+
+  it("hard-errors on a missing name", () => {
+    const r = validateSample({ pages: [{ id: "x", url: "https://example.fr/" }] });
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.path === "sample.pages[0].name")).toBe(true);
+  });
+
+  it("hard-errors on an empty pages array, a duplicate id, and a non-object sample", () => {
+    expect(validateSample({ pages: [] }).ok).toBe(false);
+    expect(validateSample("nope").ok).toBe(false);
+    const dup = validateSample({ pages: [validPage, { ...validPage }] });
+    expect(dup.ok).toBe(false);
+    expect(dup.issues.some((i) => /duplicate/.test(i.message))).toBe(true);
   });
 });
 

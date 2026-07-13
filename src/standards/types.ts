@@ -59,6 +59,22 @@ export interface PackVocabulary {
   normativeNote?: LocaleString; // overrides the composed "Lecture auditeur — …" blockquote
 }
 
+// The NORMATIVE page-sample methodology for a standard — the REQUIRED page KINDS a real
+// audit of it must cover. Standard-agnostic sample MECHANICS live in the core
+// (src/types.ts SampleConfig + src/sample.ts); this pack field carries only the standard's
+// own required-kinds LIST (RGAA: accueil, contact, mentions légales, déclaration
+// d'accessibilité, plan du site, aide, authentification, pages représentatives + éléments
+// transverses). Advisory: `ultra11y sample check` / `scan --sample` report which kinds the
+// configured sample lacks (fuzzy match on a page's name/notes/url) — never a hard gate.
+export interface SampleRequiredKind {
+  id: string; // slug, e.g. "mentions-legales"
+  label: LocaleString; // display label, e.g. { fr: "Mentions légales" }
+  keywords: string[]; // fuzzy-match terms (accent-insensitive) against a page's name/notes/url
+}
+export interface SampleMethodology {
+  requiredKinds: SampleRequiredKind[];
+}
+
 export interface StandardPack {
   key: string; // unique slug, e.g. "rgaa" (may not be the reserved core key "wcag")
   name: string; // short display name, e.g. "RGAA"
@@ -75,6 +91,7 @@ export interface StandardPack {
   attribution: string;
   idPattern: string; // regex (string) the pack's criterion ids match
   vocabulary?: PackVocabulary; // localized auditor-display terms (optional; defaults apply)
+  sampleMethodology?: SampleMethodology; // normative required page kinds (optional; advisory lint)
   themes: PackTheme[];
   criteria: PackCriterion[];
 }

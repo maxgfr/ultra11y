@@ -6,6 +6,7 @@
 // EVERY probe source via `new Function` (compiled, never called — nothing executes, no
 // DOM needed): a typo fails CI here. probeSources() bakes representative arguments into
 // the builders and must list every new probe/step added to the runtime.
+import { createRequire } from "node:module";
 import { describe, it, expect } from "vitest";
 import { probeSources, clicksAllowed } from "../src/scan-local.js";
 
@@ -73,5 +74,73 @@ describe("live-region click policy (authenticated-scan safety)", () => {
       expect(src, `${name} must not query links for interaction`).not.toMatch(/querySelectorAll\(\s*['"]a[\s['"]/);
       expect(src, `${name} must not click submit buttons`).not.toMatch(/type=["']?submit/);
     }
+  });
+});
+
+// ---- destructive-name skip: run the SHIPPED nameOf/dangerous against a real DOM ----
+// Same pattern as capture-escape-sync.test.ts: extract the guard straight out of the
+// generated probe string (never a hand copy that could drift), compile it, and confront
+// it with the reviewer-demonstrated bypass cases on a jsdom document. `skipped(btn)`
+// mirrors the probe's own gate: `dangerous.test(nameOf(b))`.
+// The engine's tsconfig ships no DOM lib (see src/scan-local.ts header), so jsdom's
+// document/elements are typed structurally here — just the members nameOf touches.
+interface DomEl {
+  textContent: string | null;
+  getAttribute(name: string): string | null;
+  querySelectorAll(sel: string): ArrayLike<DomEl>;
+}
+interface DomDoc {
+  getElementById(id: string): DomEl | null;
+}
+// jsdom ships no type declarations and the repo deliberately has no @types/jsdom — load
+// it untyped at runtime and cast to the structural surface above (the exact pattern
+// src/scan-local.ts uses for the untyped Playwright runtime deps).
+const { JSDOM } = createRequire(import.meta.url)("jsdom") as { JSDOM: new (html: string) => { window: { document: DomDoc } } };
+function extractClickGuard(doc: DomDoc): { nameOf: (b: DomEl) => string; dangerous: RegExp } {
+  const src = sources["liveRegionExpr(clicks)"]!;
+  const nm = /const nameOf = (\(b\) => \{[\s\S]*?\n {2}\});/.exec(src);
+  if (!nm) throw new Error("liveRegionExpr(clicks): could not find `const nameOf = (b) => {…};` — update this sync test alongside the probe");
+  const dm = /const dangerous = new RegExp\((".*?"), 'i'\);/.exec(src);
+  if (!dm) throw new Error("liveRegionExpr(clicks): could not find `const dangerous = new RegExp(…);` — update this sync test alongside the probe");
+  const nameOf = new Function("document", `return ${nm[1]};`)(doc) as (b: DomEl) => string;
+  const dangerous = new RegExp(JSON.parse(dm[1]!) as string, "i");
+  return { nameOf, dangerous };
+}
+
+describe("destructive-name skip — the shipped guard closes the demonstrated accessible-name bypasses", () => {
+  const dom = new JSDOM(`<!doctype html><html><body>
+    <span id="row3">Ligne 3</span><span id="act3">Supprimer</span>
+    <button type="button" id="multiId" aria-labelledby="row3 act3">x</button>
+    <span id="del1">Supprimer la ligne</span>
+    <button type="button" id="leadingWs" aria-labelledby="  del1  ">x</button>
+    <button type="button" id="iconImg"><img src="trash.png" alt="Supprimer"></button>
+    <button type="button" id="iconSvg"><svg><title>Delete</title></svg></button>
+    <button type="button" id="safeIcon"><img src="loupe.png" alt="Rechercher"></button>
+    <button type="button" id="safeText">Mettre à jour</button>
+  </body></html>`);
+  const doc = dom.window.document;
+  const { nameOf, dangerous } = extractClickGuard(doc);
+  const skipped = (id: string) => dangerous.test(nameOf(doc.getElementById(id)!));
+
+  it("bypass (a1) multi-id aria-labelledby — the destructive verb in the SECOND id is seen → skipped", () => {
+    expect(nameOf(doc.getElementById("multiId")!)).toContain("Supprimer");
+    expect(skipped("multiId")).toBe(true);
+  });
+
+  it("bypass (a2) leading/trailing-whitespace aria-labelledby — still resolved → skipped", () => {
+    expect(skipped("leadingWs")).toBe(true);
+  });
+
+  it("bypass (b) icon-only button named via img[alt] — the alt is part of the name → skipped", () => {
+    expect(skipped("iconImg")).toBe(true);
+  });
+
+  it("icon-only button named via svg <title> → skipped", () => {
+    expect(skipped("iconSvg")).toBe(true);
+  });
+
+  it("control: safe buttons (img[alt]='Rechercher', text 'Mettre à jour') are NOT skipped", () => {
+    expect(skipped("safeIcon")).toBe(false);
+    expect(skipped("safeText")).toBe(false);
   });
 });

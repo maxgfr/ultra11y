@@ -488,8 +488,17 @@ function liveRegionExpr(detail: string, allowClicks: boolean): string {
   const dangerous = new RegExp(${JSON.stringify(DESTRUCTIVE_NAME_RE)}, 'i');
   const nameOf = (b) => {
     let n = (b.getAttribute('aria-label') || '') + ' ' + (b.textContent || '') + ' ' + (b.getAttribute('title') || '');
-    const lb = (b.getAttribute('aria-labelledby') || '').split(/\\s+/)[0];
-    if (lb) { const t = document.getElementById(lb); if (t) n += ' ' + (t.textContent || ''); }
+    // ALL aria-labelledby ids (attribute trimmed): a destructive verb may sit in ANY
+    // referenced id, and the value may carry stray leading/trailing whitespace.
+    for (const id of (b.getAttribute('aria-labelledby') || '').trim().split(/\\s+/)) {
+      if (!id) continue;
+      const t = document.getElementById(id);
+      if (t) n += ' ' + (t.textContent || '');
+    }
+    // Icon-only buttons: the name lives in img[alt] (an attribute — invisible to
+    // textContent) or an svg <title> (belt-and-braces; textContent usually includes it).
+    for (const im of Array.from(b.querySelectorAll('img[alt]'))) n += ' ' + (im.getAttribute('alt') || '');
+    for (const ti of Array.from(b.querySelectorAll('svg title'))) n += ' ' + (ti.textContent || '');
     return n;
   };
   for (const b of Array.from(document.querySelectorAll('button[type="button"]'))) {

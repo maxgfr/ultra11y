@@ -1344,7 +1344,7 @@
       ],
       "wcag": ["1.3.1"],
       "appliesTo": {
-        "ruleIds": ["axe:scope-attr-valid", "axe:td-headers-attr", "data-table-no-headers", "sortable-header-no-aria-sort"]
+        "ruleIds": ["axe:scope-attr-valid", "axe:td-headers-attr", "data-table-no-headers", "sortable-header-no-aria-sort", "table-empty-data-cell"]
       }
     },
     {
@@ -1500,6 +1500,7 @@
           "cross-aria-forwarding",
           "cross-aria-ref-cross-file",
           "cross-prop-drilled-name-lost",
+          "disabled-context-content",
           "invalid-aria-role",
           "nested-interactive",
           "redundant-aria"
@@ -1903,7 +1904,7 @@
       "particularCases": ["Lorsque le doctype déclaré dans la page n’est pas le doctype HTML5, ce critère est non applicable."],
       "wcag": ["1.3.1"],
       "appliesTo": {
-        "ruleIds": ["missing-main-landmark", "multiple-main-landmark"]
+        "ruleIds": ["missing-main-landmark", "multiple-main-landmark", "nav-landmark-missing"]
       }
     },
     {
@@ -2003,7 +2004,7 @@
       "techniques": ["G140", "F3", "F87"],
       "wcag": ["1.1.1", "1.3.1"],
       "appliesTo": {
-        "ruleIds": []
+        "ruleIds": ["css-generated-content-informative"]
       }
     },
     {
@@ -2155,7 +2156,7 @@
       ],
       "wcag": ["1.3.2", "4.1.2"],
       "appliesTo": {
-        "ruleIds": []
+        "ruleIds": ["disabled-context-content"]
       }
     },
     {
@@ -2503,7 +2504,7 @@
       "techniques": ["H71", "ARIA17"],
       "wcag": ["1.3.1", "3.3.2"],
       "appliesTo": {
-        "ruleIds": []
+        "ruleIds": ["date-fields-ungrouped", "radio-checkbox-group-ungrouped"]
       }
     },
     {
@@ -2905,7 +2906,7 @@
       "techniques": ["H69", "G115", "ARIA4", "ARIA11"],
       "wcag": ["1.3.1", "2.4.1", "4.1.2"],
       "appliesTo": {
-        "ruleIds": ["axe:landmark-one-main", "missing-main-landmark", "multiple-main-landmark"]
+        "ruleIds": ["axe:landmark-one-main", "missing-main-landmark", "multiple-main-landmark", "nav-landmark-missing", "nav-landmark-unnamed"]
       }
     },
     {

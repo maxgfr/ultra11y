@@ -1,6 +1,6 @@
 // Theme 11 — Forms: every field has a programmatic label + group/structure checks.
 import type { Doc, El } from "../parse/html.js";
-import { attr, hasAttr, hasDynamicSpread, descendants, visibleText } from "../parse/html.js";
+import { attr, hasAttr, hasDynamicSpread, descendants, ancestors, visibleText, textContent } from "../parse/html.js";
 import { isIntrinsic } from "../parse/jsx-bridge.js";
 import { controlLabel, isFormField, mayInjectContent } from "../name.js";
 
@@ -307,6 +307,157 @@ const fieldPurposeIncomplete: Rule = {
   },
 };
 
+// ---- Grouping / read-only-context checks (RGAA 11.5 / 7.1 / 10.8) ----------------
+
+// A group of controls shares a grouping ancestor when a <fieldset>, role="radiogroup"
+// or role="group" wraps them — the relationship AT relies on to announce "1 of N".
+const GROUPING_ROLES = new Set(["radiogroup", "group"]);
+function inGroupingContext(el: El): boolean {
+  return ancestors(el).some((a) => a.tag === "fieldset" || GROUPING_ROLES.has((attr(a, "role") ?? "").trim().toLowerCase()));
+}
+
+// A read-only recap wrapped in <fieldset disabled> or an [inert] container still holds
+// controls the user perceives, but AT may skip them or announce them as unavailable
+// (RGAA 7.1 + 10.8, WCAG 4.1.2). Suppressed when the disable is a TRANSIENT submission
+// guard — aria-busy on the container/an ancestor, or a submit/reset control in the group
+// (the whole form is momentarily locked while it posts), not a permanent read-only recap.
+function isSubmitControl(el: El): boolean {
+  if (el.tag === "button") return (attr(el, "type") ?? "submit").trim().toLowerCase() !== "button"; // bare <button> defaults to submit
+  if (el.tag === "input") return ["submit", "reset"].includes((attr(el, "type") ?? "").trim().toLowerCase());
+  return false;
+}
+function ariaBusyInScope(el: El): boolean {
+  if ((attr(el, "aria-busy") ?? "").trim().toLowerCase() === "true") return true;
+  return ancestors(el).some((a) => (attr(a, "aria-busy") ?? "").trim().toLowerCase() === "true");
+}
+
+const disabledContextContent: Rule = {
+  id: "disabled-context-content",
+  criteria: ["4.1.2"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const out: RuleFinding[] = [];
+    for (const el of doc.elements) {
+      const isDisabledFieldset = el.tag === "fieldset" && hasAttr(el, "disabled");
+      const isInert = hasAttr(el, "inert");
+      if (!isDisabledFieldset && !isInert) continue;
+      const desc = descendants(el);
+      if (!desc.some(isFormField)) continue; // no wrapped controls — nothing removed from the a11y tree
+      if (hasDynamicSpread(el)) continue; // a spread may inject aria-disabled semantics we can't see
+      if (ariaBusyInScope(el)) continue; // transient submission state, not a read-only recap
+      if (desc.some(isSubmitControl)) continue; // a submit/reset in the group ⇒ form locked while posting
+      if (isInert) out.push({ criteriaId: "4.1.2", el, msgId: "disabled-context-content.inert" });
+      else out.push({ criteriaId: "4.1.2", el, msgId: "disabled-context-content.fieldset" });
+    }
+    return out;
+  },
+};
+
+// ≥2 radios (or a same-name checkbox cluster) sharing a `name` but NOT inside a
+// <fieldset>/role="radiogroup"/role="group" — the group relationship is lost (RGAA 11.5,
+// WCAG 1.3.1/3.3.2). Complements `fieldset-legend-missing` (which fires only once a
+// fieldset already exists). Fires once per group, anchored on its first control.
+const radioCheckboxGroupUngrouped: Rule = {
+  id: "radio-checkbox-group-ungrouped",
+  criteria: ["1.3.1", "3.3.2"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const groups = new Map<string, El[]>();
+    for (const el of doc.elements) {
+      if (el.tag !== "input") continue;
+      const type = (attr(el, "type") ?? "").trim().toLowerCase();
+      if (type !== "radio" && type !== "checkbox") continue;
+      const name = (attr(el, "name") ?? "").trim();
+      if (!name || name.includes("{")) continue; // no name, or a dynamic {expr} — not a provable group
+      const key = `${type}::${name}`;
+      const list = groups.get(key);
+      if (list) list.push(el);
+      else groups.set(key, [el]);
+    }
+    const out: RuleFinding[] = [];
+    for (const [key, members] of groups) {
+      if (members.length < 2) continue; // a lone control is not a group
+      if (members.some(hasDynamicSpread)) continue; // a spread may inject role/group context
+      if (members.some(inGroupingContext)) continue; // already grouped
+      const type = key.slice(0, key.indexOf("::"));
+      out.push({
+        criteriaId: "1.3.1",
+        el: members[0]!,
+        msgId: "radio-checkbox-group-ungrouped",
+        params: { type, name: key.slice(key.indexOf("::") + 2), count: members.length },
+      });
+    }
+    return out;
+  },
+};
+
+// ≥2 sibling date fields ungrouped (RGAA 11.5, WCAG 3.3.2): native type=date/month, or a
+// NARROW fr/en date lexicon on the field's name/id/label. Fires once per parent cluster —
+// the same-immediate-parent requirement keeps it to tight day/month/year or début/fin
+// clusters and off unrelated dates spread across separate rows.
+const DATE_TOKENS = new Set(["jour", "mois", "annee", "année", "debut", "début", "fin", "day", "month", "year"]);
+const NON_DATE_INPUT_TYPES = new Set([
+  "hidden",
+  "submit",
+  "reset",
+  "button",
+  "checkbox",
+  "radio",
+  "file",
+  "password",
+  "range",
+  "color",
+  "email",
+  "tel",
+  "url",
+  "search",
+]);
+
+function tokenize(s: string): string[] {
+  return s
+    .toLowerCase()
+    .split(/[-_\s.]+|(?<=[a-z0-9])(?=[A-Z])/)
+    .filter(Boolean);
+}
+function fieldText(el: El, doc: Doc): string {
+  const id = attr(el, "id");
+  const forLabel = id ? doc.elements.find((e) => e.tag === "label" && attr(e, "for") === id) : undefined;
+  const wrapping = ancestors(el).find((a) => a.tag === "label");
+  const labelText = forLabel ? textContent(forLabel) : wrapping ? textContent(wrapping) : "";
+  return `${attr(el, "name") ?? ""} ${attr(el, "id") ?? ""} ${labelText}`;
+}
+function isDateField(el: El, doc: Doc): boolean {
+  if (el.tag !== "input") return false;
+  const type = (attr(el, "type") ?? "text").trim().toLowerCase();
+  if (type === "date" || type === "month") return true;
+  if (type.includes("{") || NON_DATE_INPUT_TYPES.has(type)) return false;
+  return tokenize(fieldText(el, doc)).some((t) => DATE_TOKENS.has(t));
+}
+
+const dateFieldsUngrouped: Rule = {
+  id: "date-fields-ungrouped",
+  criteria: ["3.3.2"],
+  severity: "majeur",
+  run(doc: Doc): RuleFinding[] {
+    const byParent = new Map<El, El[]>();
+    for (const el of doc.elements) {
+      if (!isDateField(el, doc)) continue;
+      if (hasDynamicSpread(el) || inGroupingContext(el)) continue; // already grouped, or spread-injected context
+      const p = el.parent;
+      if (!p) continue;
+      const list = byParent.get(p);
+      if (list) list.push(el);
+      else byParent.set(p, [el]);
+    }
+    const out: RuleFinding[] = [];
+    for (const fields of byParent.values()) {
+      if (fields.length < 2) continue;
+      out.push({ criteriaId: "3.3.2", el: fields[0]!, msgId: "date-fields-ungrouped", params: { count: fields.length } });
+    }
+    return out;
+  },
+};
+
 export const formsRules: Rule[] = [
   controlLabelMissing,
   placeholderAsLabel,
@@ -317,4 +468,7 @@ export const formsRules: Rule[] = [
   ariaInvalidNoDescription,
   errorNotAssociated,
   fieldPurposeIncomplete,
+  disabledContextContent,
+  radioCheckboxGroupUngrouped,
+  dateFieldsUngrouped,
 ];

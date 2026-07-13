@@ -33,3 +33,31 @@ describe("false-positive discipline — the richer ARIA-widget stress page raise
     expect(audit.findings, `unexpected findings: ${audit.findings.map((f) => `${f.ruleId}@${f.line}`).join(", ")}`).toEqual([]);
   });
 });
+
+// Task 3 gap-detectors must stay conservative: a single unnamed <nav>, DSFR date fields
+// inside fieldset+legend, radios in a named role="radiogroup", and a form disabled during
+// submission (aria-busy + submit control) are all LEGITIMATE — they must raise ZERO NC.
+describe("false-positive discipline — the audit-gap detectors never fire on legitimate patterns", () => {
+  const audit = runAudit({ inputs: [`${FIX}fp/audit-gap-precision.html`] });
+  const GAP_RULES = new Set([
+    "nav-landmark-missing",
+    "nav-landmark-unnamed",
+    "disabled-context-content",
+    "radio-checkbox-group-ungrouped",
+    "date-fields-ungrouped",
+    "table-empty-data-cell",
+    "css-generated-content-informative",
+  ]);
+
+  it("emits no finding at all", () => {
+    expect(audit.findings, `unexpected findings: ${audit.findings.map((f) => `${f.ruleId}@${f.line}`).join(", ")}`).toEqual([]);
+  });
+
+  it("none of the new gap-detectors fired", () => {
+    expect(audit.findings.filter((f) => GAP_RULES.has(f.ruleId)).map((f) => f.ruleId)).toEqual([]);
+  });
+
+  it("marks no criterion NC", () => {
+    expect(audit.criteria.filter((c) => c.status === "NC").map((c) => c.id)).toEqual([]);
+  });
+});

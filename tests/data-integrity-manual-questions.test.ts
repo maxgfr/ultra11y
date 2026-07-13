@@ -37,10 +37,17 @@ describe("manual-questions.json integrity", () => {
     }
   });
 
-  it("covers the judgment criteria the Ara audit surfaced (8.9/9.3/5.5 under 1.3.1, 6.1 under 2.4.4, SPA 12.8 under 2.4.3, 7.5 under 4.1.3)", () => {
-    for (const sc of ["1.3.1", "2.4.3", "2.4.4", "4.1.3"]) {
+  it("covers the judgment criteria the Ara audit surfaced (8.9/9.3 under 1.3.1, SPA 12.8 under 2.4.3, 6.1 under 2.4.4, 5.5 concision under 2.4.6, 7.5 under 4.1.3)", () => {
+    for (const sc of ["1.3.1", "2.4.3", "2.4.4", "2.4.6", "4.1.3"]) {
       expect(bank[sc], `question bank covers ${sc}`).toBeDefined();
     }
+    // The 5.5 caption-CONCISION question specifically (the auditor's case: a clear but
+    // verbose caption should become a short intro, details via aria-labelledby) lives
+    // under 2.4.6 — the headings-and-labels judgment SC whose harvester surfaces captions.
+    const concision = (bank["2.4.6"] ?? []).find((q) => /concision/i.test(q.fr) && /concision/i.test(q.en));
+    expect(concision, "2.4.6 carries the RGAA 5.5 caption-concision question").toBeDefined();
+    expect(concision!.fr).toContain("5.5");
+    expect(concision!.en).toContain("aria-labelledby");
   });
 
   it("keys questions only onto residual (non-static) SCs, so every one actually renders in an adjudication worklist", () => {

@@ -33,6 +33,12 @@
       "en": "Link name (RGAA 6.1): verify each link's accessible name is explicit out of context. Naming a downloadable document's format (\"(PDF)\") is a RECOMMENDATION, not a non-conformity."
     }
   ],
+  "2.4.6": [
+    {
+      "fr": "Concision des titres de tableaux (RGAA 5.5) : vérifiez que chaque <caption> est un intitulé COURT et pertinent ; un titre clair mais verbeux doit devenir une brève introduction, les détails étant déportés dans un texte associé via aria-labelledby/aria-describedby.",
+      "en": "Table-title concision (RGAA 5.5): verify each <caption> is a SHORT, relevant title; a clear but verbose title should become a brief intro, with the details moved into text associated via aria-labelledby/aria-describedby."
+    }
+  ],
   "4.1.3": [
     {
       "fr": "Focus OU région live (RGAA 12.8/7.5) : après une action asynchrone, vérifiez que SOIT le focus est déplacé vers le nouveau contenu, SOIT une région live l'annonce — pas les deux, pas aucun.",

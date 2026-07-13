@@ -48,13 +48,36 @@ describe("validatePack", () => {
   });
 
   it("rejects an idPattern with a nested quantifier (ReDoS shape)", () => {
-    for (const bad of ["^(a+)+$", "^(a*)*$", "^(\\d+)+$", "(.*)+"]) {
+    // Classic single-quantified-atom groups, an alternation-under-quantifier (overlapping
+    // branches), and a nested-quantifier-over-group — all catastrophic-backtracking shapes.
+    for (const bad of ["^(a+)+$", "^(a*)*$", "^(\\d+)+$", "(.*)+", "(a|a)*$", "(ab+)+$"]) {
       const r = validatePack({ ...base(), idPattern: bad });
       expect(r.ok, bad).toBe(false);
       expect(errs(r).some((e) => e.message.toLowerCase().includes("redos") || e.message.toLowerCase().includes("nested quantifier"))).toBe(true);
     }
-    // a normal criterion-id grammar is still accepted
+    // a normal criterion-id grammar (star-height 2, but each iteration anchored by the
+    // escaped literal `\.`) is still accepted
     expect(validatePack({ ...base(), idPattern: "^E?\\d+(\\.\\d+)*$" }).ok).toBe(true);
+  });
+
+  it("still accepts the non-quantified download-extension alternations in a pack-rule regex", () => {
+    // The RGAA download-link rule uses (pdf|docx?|…) alternations whose group is NOT
+    // quantified — the ReDoS alternation guard must not over-reject them.
+    const okRule = {
+      id: "download-link-format",
+      criterion: "1.1",
+      wcag: ["1.1.1"],
+      severity: "mineur",
+      advisory: true,
+      match: {
+        tag: "a",
+        attrs: [{ name: "href", op: "matches", value: "\\.(pdf|docx?|pptx?|xlsx?|odt|ods|odp|rtf|csv|zip)(\\?|#|$)" }],
+        text: { op: "lacks", value: "(pdf|docx?|\\d+\\s*(ko|mo|go|kb|mb|gb|octets?|bytes?))" },
+      },
+      message: { en: "m", fr: "m" },
+      remediation: { en: "x", fr: "x" },
+    };
+    expect(validatePack({ ...base(), rules: [okRule] }).ok).toBe(true);
   });
 
   it("rejects a fabricated SC but only warns on the removed 4.1.1", () => {

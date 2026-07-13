@@ -163,6 +163,89 @@ describe("classifySc", () => {
   });
 });
 
+describe("validatePack — declarative rules", () => {
+  const okRule = () => ({
+    id: "download-link-format",
+    criterion: "1.1",
+    wcag: ["1.1.1"],
+    severity: "mineur",
+    advisory: true,
+    match: { tag: "a", attrs: [{ name: "href", op: "matches", value: "\\.pdf$" }], text: { op: "lacks", value: "pdf" } },
+    message: { en: "m", fr: "m" },
+    remediation: { en: "x", fr: "x" },
+  });
+  const withRule = (over: Record<string, unknown>) => ({ ...base(), rules: [{ ...okRule(), ...over }] });
+
+  it("accepts a well-formed rule", () => {
+    expect(validatePack({ ...base(), rules: [okRule()] }).ok).toBe(true);
+  });
+
+  it("errors when the reporting criterion does not exist in the pack", () => {
+    const r = validatePack(withRule({ criterion: "9.9" }));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /does not exist/.test(e.message))).toBe(true);
+  });
+
+  it("errors on a fabricated SC, warns on out-of-core/removed", () => {
+    expect(validatePack(withRule({ wcag: ["9.9.9"] })).ok).toBe(false);
+    const aaa = validatePack(withRule({ wcag: ["1.4.6"] })); // real AAA — accepted with a warning
+    expect(aaa.ok).toBe(true);
+    expect(warns(aaa).some((w) => w.message.includes("1.4.6"))).toBe(true);
+  });
+
+  it("errors on a ReDoS-shaped or non-compiling regex in attrs.matches and in text", () => {
+    expect(validatePack(withRule({ match: { tag: "a", attrs: [{ name: "href", op: "matches", value: "(a+)+" }] } })).ok).toBe(false);
+    expect(validatePack(withRule({ match: { tag: "a", text: { op: "matches", value: "(.*)*" } } })).ok).toBe(false);
+    expect(validatePack(withRule({ match: { tag: "a", attrs: [{ name: "href", op: "matches", value: "[" }] } })).ok).toBe(false);
+  });
+
+  it("errors when a message/remediation language is missing (needs both en and fr)", () => {
+    expect(validatePack(withRule({ message: { en: "m" } })).ok).toBe(false);
+    expect(validatePack(withRule({ remediation: { fr: "x" } })).ok).toBe(false);
+  });
+
+  it("errors when has/lacks nesting exceeds the max depth (3)", () => {
+    const tooDeep = { tag: "a", has: [{ tag: "b", has: [{ tag: "c", has: [{ tag: "d" }] }] }] };
+    const r = validatePack(withRule({ match: tooDeep }));
+    expect(r.ok).toBe(false);
+    expect(errs(r).some((e) => /depth/.test(e.message))).toBe(true);
+    // exactly the bound (3 levels) is accepted
+    const okDepth = { tag: "a", has: [{ tag: "b", has: [{ tag: "c" }] }] };
+    expect(validatePack(withRule({ match: okDepth })).ok).toBe(true);
+  });
+
+  it("errors on a bad severity, a bad attr op, and a missing value for equals/matches", () => {
+    expect(validatePack(withRule({ severity: "critical" })).ok).toBe(false);
+    expect(validatePack(withRule({ match: { tag: "a", attrs: [{ name: "href", op: "startsWith", value: "x" }] } })).ok).toBe(false);
+    expect(validatePack(withRule({ match: { tag: "a", attrs: [{ name: "href", op: "equals" }] } })).ok).toBe(false);
+  });
+
+  it("errors on a non-slug or duplicate rule id", () => {
+    expect(validatePack(withRule({ id: "Bad_Id" })).ok).toBe(false);
+    const dup = { ...base(), rules: [okRule(), okRule()] };
+    expect(errs(validatePack(dup)).some((e) => /duplicate/.test(e.message))).toBe(true);
+  });
+});
+
+describe("validatePack — normativity/severity overrides", () => {
+  const withOverrides = (overrides: unknown) => ({ ...base(), overrides });
+  it("accepts a well-formed override", () => {
+    expect(validatePack(withOverrides({ "img-alt-missing": { advisory: true, severity: "mineur" } })).ok).toBe(true);
+  });
+  it("errors on a bad severity or a non-boolean advisory", () => {
+    expect(validatePack(withOverrides({ "img-alt-missing": { severity: "critical" } })).ok).toBe(false);
+    expect(validatePack(withOverrides({ "img-alt-missing": { advisory: "yes" } })).ok).toBe(false);
+  });
+  it("errors when overrides is not an object", () => {
+    expect(validatePack(withOverrides([])).ok).toBe(false);
+  });
+  it("warns on an empty override (no effect)", () => {
+    const r = validatePack(withOverrides({ "img-alt-missing": {} }));
+    expect(r.ok).toBe(true);
+    expect(warns(r).some((w) => /no effect/.test(w.message))).toBe(true);
+  });
+});
+
 describe("validatePack — appliesTo (per-criterion applicability)", () => {
   const withApplies = (appliesTo: unknown) => {
     const b = base();

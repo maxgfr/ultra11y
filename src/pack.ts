@@ -117,10 +117,19 @@ export function runPackCheck(packPath: string, guidancePath: string | undefined)
   if (v.ok && v.pack) {
     const known = new Set(engineRuleIds());
     const isNamespaced = (r: string) => /^(axe:|dyn-|agent:)/.test(r);
+    // A pack's OWN declarative rules are legitimate ruleIds (`pack:<key>:<id>`).
+    const ownRuleIds = new Set((v.pack.rules ?? []).map((r) => `pack:${v.pack!.key}:${r.id}`));
+    const resolvable = (r: string) => isNamespaced(r) || known.has(r) || r.startsWith(`pack:${v.pack!.key}:`) || ownRuleIds.has(r);
     for (const c of v.pack.criteria) {
       for (const r of c.appliesTo?.ruleIds ?? []) {
-        if (!isNamespaced(r) && !known.has(r)) warnings.push(`criteria "${c.id}": appliesTo ruleId "${r}" is not a known engine rule (renamed/future?)`);
+        if (!resolvable(r)) warnings.push(`criteria "${c.id}": appliesTo ruleId "${r}" is not a known engine rule (renamed/future?)`);
       }
+    }
+    // Overrides target a finding ruleId — a core engine rule, an axe:/dyn-/agent: id, or
+    // one of this pack's own declarative rules. An unresolvable key is advisory (a pack may
+    // target a future rule), never a hard error.
+    for (const key of Object.keys(v.pack.overrides ?? {})) {
+      if (!resolvable(key)) warnings.push(`overrides: ruleId "${key}" is not a known engine rule or a rule of this pack (renamed/future?)`);
     }
   }
   if (v.ok && v.pack && guidancePath) {

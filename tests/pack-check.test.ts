@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runPackCheck, packScaffold } from "../src/pack.js";
 
 let dir: string;
@@ -93,5 +94,54 @@ describe("runPackCheck — appliesTo ruleId sanity", () => {
     const r = runPackCheck(p, undefined);
     expect(r.ok).toBe(true); // advisory only — a pack may target a future/renamed rule
     expect(r.warnings.some((w) => w.includes("totally-made-up-rule"))).toBe(true);
+  });
+});
+
+describe("runPackCheck — declarative rules + overrides", () => {
+  const okRule = () => ({
+    id: "demo",
+    criterion: "1.1",
+    wcag: ["1.1.1"],
+    severity: "mineur",
+    advisory: true,
+    match: { tag: "a", attrs: [{ name: "href", op: "matches", value: "\\.pdf$" }] },
+    message: { en: "m", fr: "m" },
+    remediation: { en: "x", fr: "x" },
+  });
+  const packWithRule = (over: Record<string, unknown>, extra: Record<string, unknown> = {}) => {
+    const scaffold = JSON.parse(packScaffold()) as Record<string, unknown>;
+    scaffold.rules = [{ ...okRule(), ...over }];
+    Object.assign(scaffold, extra);
+    return write("rule.json", scaffold);
+  };
+
+  it("accepts a pack with a well-formed rule", () => {
+    expect(runPackCheck(packWithRule({}), undefined).ok).toBe(true);
+  });
+  it("rejects a rule reporting under a non-existent criterion", () => {
+    expect(runPackCheck(packWithRule({ criterion: "9.9" }), undefined).ok).toBe(false);
+  });
+  it("rejects a fabricated SC in a rule", () => {
+    expect(runPackCheck(packWithRule({ wcag: ["9.9.9"] }), undefined).ok).toBe(false);
+  });
+  it("rejects a ReDoS-shaped regex in a rule matcher", () => {
+    expect(runPackCheck(packWithRule({ match: { tag: "a", text: { op: "matches", value: "(a+)+" } } }), undefined).ok).toBe(false);
+  });
+  it("rejects a rule missing a message language", () => {
+    expect(runPackCheck(packWithRule({ message: { en: "only-en" } }), undefined).ok).toBe(false);
+  });
+  it("warns (not errors) on an override targeting an unknown ruleId, accepts one targeting the pack's own rule", () => {
+    const r = runPackCheck(packWithRule({}, { overrides: { "pack:mypack:demo": { advisory: false }, "made-up": { severity: "majeur" } } }), undefined);
+    expect(r.ok).toBe(true);
+    expect(r.warnings.some((w) => w.includes("made-up"))).toBe(true);
+    expect(r.warnings.some((w) => w.includes("pack:mypack:demo"))).toBe(false);
+  });
+});
+
+describe("the built-in RGAA pack passes pack check with its declarative rule", () => {
+  it("validates clean (the download-link rule + its appliesTo wiring)", () => {
+    const rgaaPath = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "data", "standards", "rgaa.json");
+    const r = runPackCheck(rgaaPath, undefined);
+    expect(r.ok, r.errors.join("\n")).toBe(true);
   });
 });

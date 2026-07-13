@@ -257,6 +257,13 @@ export interface AuditResult {
   guidelines: GuidelineTally[];
   criteria: CriterionResult[];
   findings: Finding[];
+  // Findings raised by DECLARATIVE PACK RULES (src/standards/pack-rules.ts), namespaced
+  // `pack:<key>:<id>`. Kept SEPARATE from the core `findings`/`criteria` so the WCAG core
+  // verdict is never touched by pack-only detection: they surface only when a pack
+  // projection is derived (`derivePackResults` routes them through the SAME
+  // appliesTo/ruleMatches machinery as engine findings). Optional/additive (no
+  // SCHEMA_VERSION bump) — absent/empty ⇒ no pack ran a rule.
+  packFindings?: Finding[];
   residualRisks: ResidualRisk[];
   // Automatic static-check pass rate over the machine-DECIDABLE SCs only (the small
   // static set + any judgment SC that fired a definite NC). NOT a full conformance

@@ -85,6 +85,74 @@ blocks + reference link), leaving any unresolved `criterionId` as `null` for you
 complete; it never finalizes — `pack check` is always the gate. See the script header for
 usage.
 
+## Pack-only detection: declarative `rules` + normativity `overrides`
+
+A pack can go beyond re-keying WCAG findings: it can ship its **own** detection and
+**re-normativize** a finding within its own projection — *without forking the engine*. Both
+mechanisms are pure data (no JavaScript plugins — a `--pack`-loaded pack stays fully
+validatable), and both are enforced by the same `validatePack` / `pack check` gate.
+
+### `rules` — a bounded declarative matcher
+
+Each rule matches source elements and emits a namespaced `pack:<key>:<id>` finding that
+projects onto the pack criterion it reports under (via the same `appliesTo`/`ruleMatches`
+machinery as engine findings). Rules run **after** the core engine rules and **never**
+affect the WCAG core verdict — they surface only in the pack's own report.
+
+```json
+{
+  "rules": [{
+    "id": "download-link-format",
+    "criterion": "6.1",
+    "wcag": ["2.4.4"],
+    "severity": "mineur",
+    "advisory": true,
+    "match": {
+      "tag": "a",
+      "attrs": [{ "name": "href", "op": "matches", "value": "\\.(pdf|docx?|zip)(\\?|#|$)" }],
+      "text": { "op": "lacks", "value": "(pdf|docx?|zip|\\d+\\s*(ko|mo|go))" }
+    },
+    "message": { "en": "…", "fr": "…" },
+    "remediation": { "en": "…", "fr": "…" }
+  }]
+}
+```
+
+The shipped RGAA pack uses exactly this rule (built by `scripts/build-pack-rgaa.mjs`, never
+hand-edited): an **advisory** flag on download links whose visible text omits the file
+format/weight — the DSFR auditor recommendation under criterion 6.1. Advisory ⇒ it renders
+as a recommendation and **never** makes 6.1 non-conformant.
+
+**The matcher vocabulary is deliberately CAPPED** at what RGAA needs today:
+
+| Field | Meaning |
+|---|---|
+| `tag` | intrinsic tag (case-insensitive) |
+| `attrs[]` | `{ name, op, value? }` — `op` ∈ `present` \| `absent` \| `equals` \| `matches` (regex, ReDoS-guarded, case-insensitive) |
+| `text` | `{ op, value }` — `op` ∈ `matches` \| `lacks` over the element's visible text (regex, case-insensitive) |
+| `has[]` / `lacks[]` | descendant conditions (each a match node); **nesting ≤ 3 levels** |
+| `scope` | `page` (full document only) \| `fragment` (default) |
+
+Anything more expressive — sibling/positional combinators, arbitrary CSS selectors,
+cross-file resolution — is **out of scope on purpose**: it belongs in a core WCAG-keyed
+engine rule instead, where every standard benefits. `pack check` rejects a rule whose
+criterion doesn't exist, whose SC isn't a real WCAG criterion, whose regex is unsafe/won't
+compile, whose has/lacks nest too deep, or whose `message`/`remediation` is missing `en`
+or `fr`.
+
+### `overrides` — re-normativize within a projection
+
+```json
+{ "overrides": { "pack:rgaa:some-rule": { "advisory": false, "severity": "majeur" } } }
+```
+
+`overrides` is a map keyed by a finding's `ruleId` (a core engine rule, or a pack rule).
+Applied **only** in `derivePackResults`, it flips a finding's normativity
+(advisory↔normative) and/or re-grades its severity **inside that pack's projection** — the
+core WCAG result is never mutated. This is the precise *"WCAG can differ from RGAA"*
+mechanism: a standard can treat as normative something WCAG leaves advisory (or vice
+versa) without changing the canonical engine verdict.
+
 ## Gate-compatibility note (id grammar)
 
 `check` and `verify` recognize a pack's criterion ids in a rendered report by building

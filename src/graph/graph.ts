@@ -2,7 +2,7 @@
 // plus the queries the cross-file rules need. Built once (pass 1) over the full
 // discovered scope; consumed (read-only) during the audit pass.
 import type { FileGraphNode, ComponentDef } from "./imports.js";
-import { resolveSpecifier } from "./resolve.js";
+import { makeSpecResolver, type SpecResolver } from "./engine-resolve.js";
 import type { AliasMap } from "./tsconfig.js";
 import { toPosix } from "../glob.js";
 
@@ -10,10 +10,12 @@ export interface DepGraph {
   nodes: Map<string, FileGraphNode>; // posix file -> node
   known: ReadonlySet<string>; // all discovered files (posix), for specifier resolution
   allIds: ReadonlySet<string>; // every literal id defined anywhere (global skip-link lookup)
-  aliases: AliasMap; // tsconfig-paths aliases for "@/…" specifier resolution
+  // Engine-backed specifier resolution (relative / ESM ".js" / tsconfig-alias
+  // imports) bounded to `known`, with the original resolver as fallback.
+  resolveSpec: SpecResolver;
 }
 
-export function buildGraph(nodes: FileGraphNode[], aliases: AliasMap = []): DepGraph {
+export function buildGraph(nodes: FileGraphNode[], aliases: AliasMap = [], tsconfigStartDir?: string): DepGraph {
   const map = new Map<string, FileGraphNode>();
   const known = new Set<string>();
   const allIds = new Set<string>();
@@ -23,7 +25,7 @@ export function buildGraph(nodes: FileGraphNode[], aliases: AliasMap = []): DepG
     known.add(n.file);
     for (const id of n.definesIds) allIds.add(id);
   }
-  return { nodes: map, known, allIds, aliases };
+  return { nodes: map, known, allIds, resolveSpec: makeSpecResolver(known, aliases, tsconfigStartDir) };
 }
 
 /** Resolve a component used as `<localName/>` in `file` to its definition, following the
@@ -45,7 +47,7 @@ export function resolveUsage(graph: DepGraph, file: string, localName: string, s
     const member = localName.slice(dot + 1);
     const nsImp = node.imports.find((i) => i.imported === "*" && i.local === ns);
     if (!nsImp) return undefined;
-    const target = resolveSpecifier(posix, nsImp.source, graph.known, graph.aliases);
+    const target = graph.resolveSpec(posix, nsImp.source);
     if (!target) return undefined;
     // The namespace target may be a BARREL: `<UI.Button/>` where UI is `import * as UI from
     // "./components"` and components re-exports Button. If it isn't a direct component there,
@@ -55,7 +57,7 @@ export function resolveUsage(graph: DepGraph, file: string, localName: string, s
   const imp = node.imports.find((i) => i.local === localName);
   if (imp) {
     if (imp.imported === "*") return undefined; // bare namespace binding used without a member
-    const target = resolveSpecifier(posix, imp.source, graph.known, graph.aliases);
+    const target = graph.resolveSpec(posix, imp.source);
     if (!target) return undefined;
     const direct = graph.nodes.get(target)?.components.get(imp.imported);
     if (direct) return direct;
@@ -67,7 +69,7 @@ export function resolveUsage(graph: DepGraph, file: string, localName: string, s
   if (local) return local; // locally-defined component
   // `export * from "./x"` wildcard barrel: the name may be defined in any starred source.
   for (const src of node.starReexports) {
-    const target = resolveSpecifier(posix, src, graph.known, graph.aliases);
+    const target = graph.resolveSpec(posix, src);
     if (!target) continue;
     const hit = resolveUsage(graph, target, localName, seen);
     if (hit) return hit;
@@ -92,7 +94,7 @@ export function htmlLangProvidedFor(graph: DepGraph, file: string): boolean {
     if (!node) continue;
     if (cur !== start && node.providesHtmlLang) return true;
     for (const imp of node.imports) {
-      const target = resolveSpecifier(cur, imp.source, graph.known, graph.aliases);
+      const target = graph.resolveSpec(cur, imp.source);
       if (target && !seen.has(target)) {
         seen.add(target);
         queue.push(target);

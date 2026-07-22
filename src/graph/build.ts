@@ -77,8 +77,10 @@ export function buildGraphStreaming(files: string[]): DepGraph {
     }
     nodes.push(extractGraphNode(ast, doc, file, { sfc }));
   }
-  // tsconfig-paths aliases, found by walking up from the first file's dir (cwd-relative
-  // bases to match the discovered file paths). Empty when there is no tsconfig.
-  const aliases = readTsAliases(files[0] ? dirname(files[0]) : process.cwd());
-  return buildGraph(nodes, aliases);
+  // tsconfig-paths anchoring, walking up from the first file's dir as before. The
+  // engine resolver reads the tsconfig chain itself (via `startDir`); the parsed
+  // cwd-relative alias map only feeds the fallback resolver. Empty when there is
+  // no tsconfig.
+  const startDir = files[0] ? dirname(files[0]) : process.cwd();
+  return buildGraph(nodes, readTsAliases(startDir), startDir);
 }

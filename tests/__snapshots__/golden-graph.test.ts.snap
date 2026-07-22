@@ -9,12 +9,6 @@ exports[`golden: audit --graph on tests/fixtures/golden-graph > audit --graph fi
     "ruleId": "cross-prop-drilled-name-lost",
   },
   {
-    "file": "src/App.tsx",
-    "line": 13,
-    "related": "src/generated/Ignored.tsx:5",
-    "ruleId": "cross-prop-drilled-name-lost",
-  },
-  {
     "file": "src/Widget.vue",
     "line": 2,
     "ruleId": "icon-only-control-unnamed",
@@ -22,11 +16,6 @@ exports[`golden: audit --graph on tests/fixtures/golden-graph > audit --graph fi
   {
     "file": "src/components/SaveButton.tsx",
     "line": 6,
-    "ruleId": "icon-only-control-unnamed",
-  },
-  {
-    "file": "src/generated/Ignored.tsx",
-    "line": 5,
     "ruleId": "icon-only-control-unnamed",
   },
 ]
@@ -258,53 +247,13 @@ exports[`golden: audit --graph on tests/fixtures/golden-graph > component-graph 
     "providesHtmlLang": false,
     "starReexports": [],
   },
-  {
-    "components": [
-      [
-        "Ignored",
-        {
-          "acceptsName": false,
-          "col": 5,
-          "controlHasName": false,
-          "file": "src/generated/Ignored.tsx",
-          "forwardsAria": false,
-          "hasControl": true,
-          "line": 5,
-          "name": "Ignored",
-          "rendersIconOnlyControl": true,
-          "spreadsProps": false,
-        },
-      ],
-      [
-        "default",
-        {
-          "acceptsName": false,
-          "col": 5,
-          "controlHasName": false,
-          "file": "src/generated/Ignored.tsx",
-          "forwardsAria": false,
-          "hasControl": true,
-          "line": 5,
-          "name": "Ignored",
-          "rendersIconOnlyControl": true,
-          "spreadsProps": false,
-        },
-      ],
-    ],
-    "definesIds": [],
-    "file": "src/generated/Ignored.tsx",
-    "imports": [],
-    "opaqueComponents": [],
-    "providesHtmlLang": false,
-    "starReexports": [],
-  },
 ]
 `;
 
 exports[`golden: audit --graph on tests/fixtures/golden-graph > cross-file usage resolution (alias, barrel, gitignored tree, extensionless .vue) 1`] = `
 {
   "App#Card (barrel re-export)": "src/components/Card.tsx#Card",
-  "App#Gen (.gitignored tree)": "src/generated/Ignored.tsx#Ignored",
+  "App#Gen (.gitignored tree)": null,
   "App#SaveButton (tsconfig @/* alias)": "src/components/SaveButton.tsx#SaveButton",
   "WidgetHost#Widget (extensionless .vue)": "src/Widget.vue#Widget",
 }
@@ -318,6 +267,5 @@ exports[`golden: audit --graph on tests/fixtures/golden-graph > discovered graph
   "src/components/SaveButton.tsx",
   "src/Widget.vue",
   "src/WidgetHost.tsx",
-  "src/generated/Ignored.tsx",
 ]
 `;

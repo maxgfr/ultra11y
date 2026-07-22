@@ -1,8 +1,12 @@
 // Zero-dependency input expansion for `audit`: turn file paths, directories and
 // globs into a concrete file list, then apply --include/--exclude predicates.
-import { type Dirent, existsSync, readdirSync, statSync } from "node:fs";
+// The generic machinery (directory walking, glob → RegExp) is the vendored
+// codeindex engine's; everything ultra11y-specific (markup extension allowlist,
+// test-artifact policy, audit-output skips, input-scope matching) stays here.
+import { existsSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
-import { escapeRegExp, ext } from "./util.js";
+import { ext } from "./util.js";
+import { compileGlobs as engineCompileGlobs, walk as engineWalk } from "./vendor/codeindex-engine.mjs";
 
 // HTML + JSX/TSX + the HTML-shaped single-file component formats (Vue/Svelte/Astro
 // templates parse cleanly through the HTML path). Server templates (.twig/.erb/.hbs/
@@ -31,10 +35,17 @@ function extSet(extra: string[] | undefined): Set<string> {
   }
   return set;
 }
-// `.ultra11y` (captures + generated setup) is never auto-walked: captures are ingested
-// only via the explicit `.ultra11y/captures` input the CLI appends (so `--no-captures`
-// genuinely opts out) or a direct `--captures <dir>` / coverage scan of that dir.
-const SKIP_DIR = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", "out", "audits", ".ultra11y"]);
+// Directories the engine's walk does not know about but ultra11y must never
+// auto-walk: `audits/` holds generated reports, and `.ultra11y/` (captures +
+// generated setup) is ingested only via the explicit `.ultra11y/captures` input
+// the CLI appends (so `--no-captures` genuinely opts out) or a direct
+// `--captures <dir>` / coverage scan of that dir. Like the old SKIP_DIR, these
+// prune DESCENDANTS of a walked root — naming such a dir directly as the walk
+// root still descends into it. The rest of the old SKIP_DIR (node_modules,
+// .git, dist, build, coverage, .next, out) is covered by the engine's own
+// ignore universe (a superset), and the engine walk additionally honours
+// .gitignore files under the walked root.
+const SKIP_DIR = new Set(["audits", ".ultra11y"]);
 
 // Test / spec / story / mock markup is bad-by-design (intentionally non-conformant
 // fixtures, never shipped UI). Excluded by default to keep the audit focused on real
@@ -48,40 +59,19 @@ export function isTestArtifact(rel: string): boolean {
   return rel.split("/").some((seg) => TEST_DIR.has(seg));
 }
 
-// `**` crosses `/`, `*` runs within a segment, `?` is one non-`/` char.
-function globToRegExp(glob: string): RegExp {
-  let re = "";
-  for (let i = 0; i < glob.length; i++) {
-    const c = glob[i]!;
-    if (c === "*") {
-      if (glob[i + 1] === "*") {
-        i++;
-        if (glob[i + 1] === "/") {
-          i++;
-          re += "(?:.*/)?";
-        } else {
-          re += ".*";
-        }
-      } else {
-        re += "[^/]*";
-      }
-    } else if (c === "?") {
-      re += "[^/]";
-    } else {
-      re += escapeRegExp(c);
-    }
-  }
-  return new RegExp(`^${re}$`);
-}
-
+// Glob matching is the engine's (same dialect as before: `**` crosses `/`,
+// `**/` makes the segment optional, `*` runs within a segment, `?` is one
+// non-`/` char). ultra11y's flag semantics on top: each --include/--exclude
+// value may carry a comma-separated LIST of globs, split and trimmed here.
 export function compileGlobs(globs: string[] | undefined): ((rel: string) => boolean) | null {
   if (!globs || globs.length === 0) return null;
-  const res = globs
+  const list = globs
     .flatMap((g) => g.split(","))
     .map((g) => g.trim())
-    .filter(Boolean)
-    .map(globToRegExp);
-  return (rel: string) => res.some((r) => r.test(rel));
+    .filter(Boolean);
+  // A non-empty flag that splits to nothing (e.g. ",") historically compiled to
+  // a match-nothing predicate — keep that, never silently widen to "no filter".
+  return engineCompileGlobs(list) ?? (() => false);
 }
 
 export const toPosix = (p: string): string => p.split(sep).join("/");
@@ -119,20 +109,17 @@ export function inScopeMatcher(inputs: string[]): ((file: string) => boolean) | 
   };
 }
 
+// Walk a directory with the engine (gitignore honoured, dependency/build/VCS
+// dirs, lockfiles, binaries and >1 MiB files skipped), returning full paths the
+// way the old recursive walker did (the input dir joined back onto each hit).
+// No maxFiles cap here: the audit's own --max-files budget applies downstream,
+// and a silent walk truncation must never masquerade as a clean "0 findings".
 function walk(dir: string, acc: string[]): void {
-  let entries: Dirent[];
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const e of entries) {
-    if (e.isDirectory()) {
-      if (SKIP_DIR.has(e.name)) continue;
-      walk(join(dir, e.name), acc);
-    } else if (e.isFile()) {
-      acc.push(join(dir, e.name));
-    }
+  for (const f of engineWalk(dir, { maxFiles: Number.MAX_SAFE_INTEGER }).files) {
+    // Engine rel paths are posix; prune ultra11y's own output dirs at any depth
+    // below the walked root (the root itself may be named directly, as before).
+    if (f.rel.split("/").some((seg) => SKIP_DIR.has(seg))) continue;
+    acc.push(join(dir, f.rel));
   }
 }
 
@@ -162,12 +149,14 @@ export function expandInputs(inputs: string[], opts: ExpandOpts = {}): string[] 
   for (const input of inputs) {
     if (input === "-") continue; // stdin handled by the caller
     if (hasGlob(input)) {
-      const re = globToRegExp(input);
+      // A positional glob input is ONE glob (no comma-splitting — that is an
+      // --include/--exclude flag affordance), compiled by the engine.
+      const match = engineCompileGlobs([input])!;
       const acc: string[] = [];
       walk(staticBase(input), acc);
       // Honour the markup allowlist for globs too — a broad `src/**` must not pull
       // in .js/.css/.json and parse them as HTML (engine scope is markup only).
-      for (const f of acc) if (re.test(toPosix(f)) && exts.has(ext(f))) files.add(f);
+      for (const f of acc) if (match(toPosix(f)) && exts.has(ext(f))) files.add(f);
     } else if (existsSync(input)) {
       if (statSync(input).isDirectory()) {
         const acc: string[] = [];

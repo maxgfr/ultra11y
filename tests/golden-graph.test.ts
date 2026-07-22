@@ -10,6 +10,13 @@
 // these snapshots must be adjudicated per codeindex docs/MIGRATION.md (better
 // ignore rules / strictly-richer resolution = accept + document in the commit
 // body; anything else = investigate).
+//
+// ADJUDICATED at adoption (engine v2.0.1): the ONLY diff vs the pre-engine
+// goldens is src/generated/Ignored.tsx (a .gitignored tree) dropping out of
+// discovery, the graph and the findings — the engine walk honours .gitignore
+// (MIGRATION.md "better ignore rules": accept + document). Alias, barrel,
+// extensionless-.vue resolution and the comma-split exclude globs are
+// byte-identical.
 import { describe, expect, it } from "vitest";
 import { runAudit } from "../src/audit.js";
 import { discover } from "../src/discover.js";

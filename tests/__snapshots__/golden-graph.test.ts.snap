@@ -1,0 +1,323 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden: audit --graph on tests/fixtures/golden-graph > audit --graph findings (the CLI's machine artifact, cross rules included) 1`] = `
+[
+  {
+    "file": "src/App.tsx",
+    "line": 11,
+    "related": "src/components/SaveButton.tsx:6",
+    "ruleId": "cross-prop-drilled-name-lost",
+  },
+  {
+    "file": "src/App.tsx",
+    "line": 13,
+    "related": "src/generated/Ignored.tsx:5",
+    "ruleId": "cross-prop-drilled-name-lost",
+  },
+  {
+    "file": "src/Widget.vue",
+    "line": 2,
+    "ruleId": "icon-only-control-unnamed",
+  },
+  {
+    "file": "src/components/SaveButton.tsx",
+    "line": 6,
+    "ruleId": "icon-only-control-unnamed",
+  },
+  {
+    "file": "src/generated/Ignored.tsx",
+    "line": 5,
+    "ruleId": "icon-only-control-unnamed",
+  },
+]
+`;
+
+exports[`golden: audit --graph on tests/fixtures/golden-graph > component-graph nodes (imports, components, star re-exports, ids) 1`] = `
+[
+  {
+    "components": [
+      [
+        "App",
+        {
+          "acceptsName": false,
+          "col": 16,
+          "controlHasName": false,
+          "file": "src/App.tsx",
+          "forwardsAria": false,
+          "hasControl": false,
+          "line": 8,
+          "name": "App",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+      [
+        "default",
+        {
+          "acceptsName": false,
+          "col": 16,
+          "controlHasName": false,
+          "file": "src/App.tsx",
+          "forwardsAria": false,
+          "hasControl": false,
+          "line": 8,
+          "name": "App",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+    ],
+    "definesIds": [
+      "main",
+    ],
+    "file": "src/App.tsx",
+    "imports": [
+      {
+        "imported": "default",
+        "local": "SaveButton",
+        "source": "@/components/SaveButton",
+      },
+      {
+        "imported": "Card",
+        "local": "Card",
+        "source": "./components",
+      },
+      {
+        "imported": "default",
+        "local": "Gen",
+        "source": "./generated/Ignored",
+      },
+    ],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+  {
+    "components": [
+      [
+        "Widget",
+        {
+          "acceptsName": false,
+          "col": 1,
+          "controlHasName": false,
+          "file": "src/Widget.vue",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 1,
+          "name": "Widget",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+      [
+        "default",
+        {
+          "acceptsName": false,
+          "col": 1,
+          "controlHasName": false,
+          "file": "src/Widget.vue",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 1,
+          "name": "Widget",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+    ],
+    "definesIds": [],
+    "file": "src/Widget.vue",
+    "imports": [],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+  {
+    "components": [
+      [
+        "WidgetHost",
+        {
+          "acceptsName": false,
+          "col": 16,
+          "controlHasName": false,
+          "file": "src/WidgetHost.tsx",
+          "forwardsAria": false,
+          "hasControl": false,
+          "line": 5,
+          "name": "WidgetHost",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+      [
+        "default",
+        {
+          "acceptsName": false,
+          "col": 16,
+          "controlHasName": false,
+          "file": "src/WidgetHost.tsx",
+          "forwardsAria": false,
+          "hasControl": false,
+          "line": 5,
+          "name": "WidgetHost",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+    ],
+    "definesIds": [],
+    "file": "src/WidgetHost.tsx",
+    "imports": [
+      {
+        "imported": "default",
+        "local": "Widget",
+        "source": "./Widget",
+      },
+    ],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+  {
+    "components": [
+      [
+        "Card",
+        {
+          "acceptsName": false,
+          "col": 10,
+          "controlHasName": true,
+          "file": "src/components/Card.tsx",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 3,
+          "name": "Card",
+          "rendersIconOnlyControl": false,
+          "spreadsProps": false,
+        },
+      ],
+    ],
+    "definesIds": [],
+    "file": "src/components/Card.tsx",
+    "imports": [],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+  {
+    "components": [
+      [
+        "SaveButton",
+        {
+          "acceptsName": false,
+          "col": 5,
+          "controlHasName": false,
+          "file": "src/components/SaveButton.tsx",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 6,
+          "name": "SaveButton",
+          "rendersIconOnlyControl": true,
+          "spreadsProps": false,
+        },
+      ],
+      [
+        "default",
+        {
+          "acceptsName": false,
+          "col": 5,
+          "controlHasName": false,
+          "file": "src/components/SaveButton.tsx",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 6,
+          "name": "SaveButton",
+          "rendersIconOnlyControl": true,
+          "spreadsProps": false,
+        },
+      ],
+    ],
+    "definesIds": [],
+    "file": "src/components/SaveButton.tsx",
+    "imports": [],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+  {
+    "components": [],
+    "definesIds": [],
+    "file": "src/components/index.ts",
+    "imports": [
+      {
+        "imported": "Card",
+        "local": "Card",
+        "source": "./Card",
+      },
+    ],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+  {
+    "components": [
+      [
+        "Ignored",
+        {
+          "acceptsName": false,
+          "col": 5,
+          "controlHasName": false,
+          "file": "src/generated/Ignored.tsx",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 5,
+          "name": "Ignored",
+          "rendersIconOnlyControl": true,
+          "spreadsProps": false,
+        },
+      ],
+      [
+        "default",
+        {
+          "acceptsName": false,
+          "col": 5,
+          "controlHasName": false,
+          "file": "src/generated/Ignored.tsx",
+          "forwardsAria": false,
+          "hasControl": true,
+          "line": 5,
+          "name": "Ignored",
+          "rendersIconOnlyControl": true,
+          "spreadsProps": false,
+        },
+      ],
+    ],
+    "definesIds": [],
+    "file": "src/generated/Ignored.tsx",
+    "imports": [],
+    "opaqueComponents": [],
+    "providesHtmlLang": false,
+    "starReexports": [],
+  },
+]
+`;
+
+exports[`golden: audit --graph on tests/fixtures/golden-graph > cross-file usage resolution (alias, barrel, gitignored tree, extensionless .vue) 1`] = `
+{
+  "App#Card (barrel re-export)": "src/components/Card.tsx#Card",
+  "App#Gen (.gitignored tree)": "src/generated/Ignored.tsx#Ignored",
+  "App#SaveButton (tsconfig @/* alias)": "src/components/SaveButton.tsx#SaveButton",
+  "WidgetHost#Widget (extensionless .vue)": "src/Widget.vue#Widget",
+}
+`;
+
+exports[`golden: audit --graph on tests/fixtures/golden-graph > discovered graph file list (include/exclude scoped) 1`] = `
+[
+  "src/App.tsx",
+  "src/components/index.ts",
+  "src/components/Card.tsx",
+  "src/components/SaveButton.tsx",
+  "src/Widget.vue",
+  "src/WidgetHost.tsx",
+  "src/generated/Ignored.tsx",
+]
+`;

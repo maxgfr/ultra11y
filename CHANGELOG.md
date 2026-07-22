@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.15.0](https://github.com/maxgfr/ultra11y/compare/v2.14.0...v2.15.0) (2026-07-22)
+
+
+### Features
+
+* **scan:** adopt the vendored codeindex engine for walking and import resolution ([caf39e0](https://github.com/maxgfr/ultra11y/commit/caf39e0c54ab46b45fbe42ed8dd256ed379f7ea6))
+
 # [2.14.0](https://github.com/maxgfr/ultra11y/compare/v2.13.0...v2.14.0) (2026-07-13)
 
 

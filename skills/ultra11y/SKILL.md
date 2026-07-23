@@ -3,7 +3,7 @@ name: ultra11y
 description: "Use to AUDIT existing HTML/CSS/JSX against WCAG 2.2 AA accessibility and produce a dated auditor-conformance report, OR to AUTHOR/REVIEW accessible markup (native-HTML-first, ARIA last). An install-free engine (`node scripts/ultra11y.mjs`, no keys) runs 60 static checks across WCAG criteria — alt/lang/title, unlabeled fields, empty links/buttons, tables, heading skips, invalid ARIA, positive tabindex — deciding what it can; the AI agent adjudicates the judgment criteria (alt relevance, link purpose) itself via `verify --manual`, gated, and the needs-rendering ones (contrast, focus, zoom) go to the scan tier — never silently conforming. WCAG 2.2 AA is the worldwide core; RGAA and other standards are pluggable packs (`--standard rgaa`, `--pack`). JSX/TSX parse to a real AST (`audit --graph`); `report`/`prd`/`--gh-issues` share one auditor block per criterion; check/verify reject hallucinated non-conformities. Triggers: 'audit WCAG/a11y', 'make accessible', 'fix a11y', 'audit RGAA'."
 license: MIT
 metadata:
-  version: 2.15.0
+  version: 2.16.0
 ---
 
 # ultra11y — audit WCAG 2.2 AA and write accessible markup

@@ -9,7 +9,13 @@ import type { AliasMap } from "./tsconfig.js";
 
 // Try the specifier verbatim, then with each source extension, then as a
 // directory index. Order matches typical TS/bundler resolution.
-const EXT_ORDER = [".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte", ".astro", ".html", ".htm"];
+//
+// No .vue/.svelte/.astro/.html/.htm here: the vendored codeindex engine's own
+// candidate probe (JS_EXT_PROBES) covers SFC/HTML extensions since v2.10.0 —
+// verified via engine-resolve.ts's makeSpecResolver, which always tries the
+// engine first (see tests/golden-graph.test.ts and tests/graph-sfc.test.ts).
+// This file is the fallback for whatever the engine still doesn't cover.
+const EXT_ORDER = [".tsx", ".jsx", ".ts", ".js"];
 
 function candidates(base: string): string[] {
   const out = [base];

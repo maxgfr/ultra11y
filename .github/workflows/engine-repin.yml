@@ -119,7 +119,7 @@ jobs:
           SUMMARY=$(sed -E 's/\x1b\[[0-9;]*m//g' /tmp/test-output.log | grep -E "Test Files|Tests" | tail -2 || true)
           git add -A
           git commit \
-            -m "chore(engine): re-pin codeindex ${LATEST}" \
+            -m "feat(engine): re-pin codeindex ${LATEST}" \
             -m "automated re-pin, all gates green, goldens byte-identical" \
             -m "${SUMMARY:-no test summary captured}"
           git push origin HEAD:main

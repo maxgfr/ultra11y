@@ -1,0 +1,155 @@
+name: Engine re-pin
+
+# Daily check for a new maxgfr/codeindex release. If the vendored engine is
+# already current, the job is a green no-op. Otherwise it re-pins, rebuilds
+# the bundle, and runs the same gates as ci.yml:
+#   - all green -> commit + push straight to main (no PR for the happy path),
+#     then explicitly trigger release.yml and ci.yml (a GITHUB_TOKEN push does
+#     NOT itself trigger other workflows).
+#   - any gate red -> push the synced-but-failing state to a repin/<tag>
+#     branch and open an adjudication PR. Never regenerate goldens here — a
+#     snapshot diff is exactly the signal this job exists to surface.
+on:
+  schedule:
+    - cron: "45 6 * * *" # daily; minute offset staggered per repo to spread load
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+concurrency: engine-repin
+
+jobs:
+  repin:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Detect current pin vs latest codeindex release
+        id: detect
+        run: |
+          PINNED=$(node -p "require('./src/vendor/engine.meta.json').tag")
+          # NOT releases/latest: the codeindex repo also carries the
+          # embed-model-v1 asset release, which /latest can resolve to.
+          LATEST=$(gh api repos/maxgfr/codeindex/releases --jq '[.[] | select(.tag_name | test("^v[0-9]")) | .tag_name] | first')
+          echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          if [ "$PINNED" = "$LATEST" ]; then
+            echo "up to date ($PINNED)"
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pinned=$PINNED latest=$LATEST -> re-pin needed"
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure git identity
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Re-pin the vendored engine
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: |
+          node scripts/sync-engine.mjs --ref "${{ steps.detect.outputs.latest }}"
+          node scripts/sync-engine.mjs --check
+
+      - name: Rebuild the bundle and stage build outputs
+        # check:build's own `tsup && copy-bundle && git diff --exit-code` diffs the
+        # working tree against the INDEX, not HEAD. Rebuild + stage here first so
+        # that when check:build rebuilds again below it reproduces byte-identical
+        # output against what's already staged, instead of flagging the re-pin
+        # itself as "bundle out of date".
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: |
+          pnpm run build
+          git add src/vendor/engine.meta.json src/vendor/codeindex-engine.mjs src/vendor/codeindex-engine.d.mts scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs skills/review-a11y/scripts/ultra11y.mjs
+
+      - name: Typecheck
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: pnpm run typecheck
+
+      - name: Lint
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: pnpm run lint
+
+      - name: Build is reproducible (committed bundles up to date)
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: pnpm run check:build # tsup && copy-bundle && git diff --exit-code over both bundles, then verify:bundle + sync-engine --check
+
+      - name: Test (with coverage)
+        if: steps.detect.outputs.up_to_date == 'false'
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm run test:coverage | tee /tmp/test-output.log
+          # NEVER pass -u/--update here: a golden/snapshot diff is a failing
+          # gate on purpose (human adjudication path below), not something
+          # this job is allowed to paper over by regenerating goldens.
+
+      - name: Smoke-run the committed bundle (offline, fixture)
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: pnpm run demo # audit -> report -> check -> criteria
+
+      - name: Assert a report was produced
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: ls /tmp/ultra11y-demo/wcag-*.md
+
+      - name: Commit and push the re-pin to main
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: |
+          LATEST="${{ steps.detect.outputs.latest }}"
+          SUMMARY=$(sed -E 's/\x1b\[[0-9;]*m//g' /tmp/test-output.log | grep -E "Test Files|Tests" | tail -2 || true)
+          git add -A
+          git commit \
+            -m "chore(engine): re-pin codeindex ${LATEST}" \
+            -m "automated re-pin, all gates green, goldens byte-identical" \
+            -m "${SUMMARY:-no test summary captured}"
+          git push origin HEAD:main
+
+      - name: Trigger release.yml and ci.yml on main
+        # A push authenticated with GITHUB_TOKEN does not itself trigger other
+        # workflows (a documented GitHub Actions guard against push loops) —
+        # both must be started explicitly.
+        if: steps.detect.outputs.up_to_date == 'false'
+        run: |
+          gh workflow run release.yml --ref main
+          gh workflow run ci.yml --ref main
+
+      - name: On gate failure — push adjudication branch and open PR
+        if: failure() && steps.detect.outputs.up_to_date == 'false'
+        run: |
+          LATEST="${{ steps.detect.outputs.latest }}"
+          BRANCH="repin/${LATEST}"
+          git add -A
+          git commit -m "chore(engine): re-pin codeindex ${LATEST} [gates failed, needs adjudication]" || true
+          git push origin "HEAD:${BRANCH}" --force
+          EXISTING=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')
+          if [ -z "$EXISTING" ]; then
+            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            PR_BODY=$(printf 'One or more gates failed while re-pinning the vendored codeindex engine to `%s`.\n\nRun: %s\n\nThe sync was committed to this branch even though gates failed — that state is the adjudication material.\n\nDoctrine:\n- Classify every golden/snapshot diff before ever regenerating it. A mismatch is not automatically a stale golden.\n- If a diff traces to a real bug in the vendored engine, file an issue against maxgfr/codeindex rather than working around it here.\n' "$LATEST" "$RUN_URL")
+            gh pr create \
+              --title "engine re-pin ${LATEST}: gates failed — manual adjudication needed" \
+              --base main \
+              --head "$BRANCH" \
+              --body "$PR_BODY"
+          else
+            echo "PR #$EXISTING already open for $BRANCH — not duplicating"
+          fi

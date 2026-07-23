@@ -45,6 +45,7 @@ jobs:
       - name: Detect current pin vs latest codeindex release
         id: detect
         run: |
+          set -euo pipefail
           PINNED=$(node -p "require('./src/vendor/engine.meta.json').tag")
           # NOT releases/latest: the codeindex repo also carries the
           # embed-model-v1 asset release, which /latest can resolve to.
@@ -67,8 +68,10 @@ jobs:
 
       - name: Re-pin the vendored engine
         if: steps.detect.outputs.up_to_date == 'false'
+        env:
+          LATEST: ${{ steps.detect.outputs.latest }}
         run: |
-          node scripts/sync-engine.mjs --ref "${{ steps.detect.outputs.latest }}"
+          node scripts/sync-engine.mjs --ref "$LATEST"
           node scripts/sync-engine.mjs --check
 
       - name: Rebuild the bundle and stage build outputs
@@ -114,15 +117,19 @@ jobs:
 
       - name: Commit and push the re-pin to main
         if: steps.detect.outputs.up_to_date == 'false'
+        id: push
+        env:
+          LATEST: ${{ steps.detect.outputs.latest }}
         run: |
-          LATEST="${{ steps.detect.outputs.latest }}"
           SUMMARY=$(sed -E 's/\x1b\[[0-9;]*m//g' /tmp/test-output.log | grep -E "Test Files|Tests" | tail -2 || true)
-          git add -A
+          git add src/vendor/engine.meta.json src/vendor/codeindex-engine.mjs src/vendor/codeindex-engine.d.mts scripts/ultra11y.mjs skills/ultra11y/scripts/ultra11y.mjs skills/review-a11y/scripts/ultra11y.mjs
           git commit \
             -m "feat(engine): re-pin codeindex ${LATEST}" \
             -m "automated re-pin, all gates green, goldens byte-identical" \
             -m "${SUMMARY:-no test summary captured}"
+          git pull --rebase origin main
           git push origin HEAD:main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
 
       - name: Trigger release.yml and ci.yml on main
         # A push authenticated with GITHUB_TOKEN does not itself trigger other
@@ -134,9 +141,10 @@ jobs:
           gh workflow run ci.yml --ref main
 
       - name: On gate failure — push adjudication branch and open PR
-        if: failure() && steps.detect.outputs.up_to_date == 'false'
+        if: failure() && steps.push.outputs.pushed != 'true' && steps.detect.outputs.up_to_date == 'false' && steps.detect.outputs.latest != ''
+        env:
+          LATEST: ${{ steps.detect.outputs.latest }}
         run: |
-          LATEST="${{ steps.detect.outputs.latest }}"
           BRANCH="repin/${LATEST}"
           git add -A
           git commit -m "chore(engine): re-pin codeindex ${LATEST} [gates failed, needs adjudication]" || true

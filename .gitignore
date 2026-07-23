@@ -2,6 +2,7 @@ node_modules/
 *.tgz
 /tmp/
 audits/
+coverage/
 .DS_Store
 # Claude Code session dir — the harness locks .claude/workflows/ against external
 # reads/writes, so git must not descend into it. The canonical verification workflow

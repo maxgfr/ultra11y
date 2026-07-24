@@ -6,9 +6,9 @@ name: Engine re-pin
 #   - all green -> commit + push straight to main (no PR for the happy path),
 #     then explicitly trigger release.yml and ci.yml (a GITHUB_TOKEN push does
 #     NOT itself trigger other workflows).
-#   - any gate red -> push the synced-but-failing state to a repin/<tag>
-#     branch and open an adjudication PR. Never regenerate goldens here — a
-#     snapshot diff is exactly the signal this job exists to surface.
+#   - any gate red -> nothing is pushed and no PR is opened; the run just
+#     fails and the next daily cron retries. A red run is the signal to
+#     investigate locally.
 on:
   schedule:
     - cron: "45 6 * * *" # daily; minute offset staggered per repo to spread load
@@ -17,7 +17,6 @@ on:
 permissions:
   contents: write
   actions: write
-  pull-requests: write
 
 concurrency: engine-repin
 
@@ -139,26 +138,3 @@ jobs:
         run: |
           gh workflow run release.yml --ref main
           gh workflow run ci.yml --ref main
-
-      - name: On gate failure — push adjudication branch and open PR
-        if: failure() && steps.push.outputs.pushed != 'true' && steps.detect.outputs.up_to_date == 'false' && steps.detect.outputs.latest != ''
-        env:
-          LATEST: ${{ steps.detect.outputs.latest }}
-        run: |
-          git rebase --abort 2>/dev/null || true
-          BRANCH="repin/${LATEST}"
-          git add -A
-          git commit -m "chore(engine): re-pin codeindex ${LATEST} [gates failed, needs adjudication]" || true
-          git push origin "HEAD:${BRANCH}" --force
-          EXISTING=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')
-          if [ -z "$EXISTING" ]; then
-            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            PR_BODY=$(printf 'One or more gates failed while re-pinning the vendored codeindex engine to `%s`.\n\nRun: %s\n\nThe sync was committed to this branch even though gates failed — that state is the adjudication material.\n\nDoctrine:\n- Classify every golden/snapshot diff before ever regenerating it. A mismatch is not automatically a stale golden.\n- If a diff traces to a real bug in the vendored engine, file an issue against maxgfr/codeindex rather than working around it here.\n' "$LATEST" "$RUN_URL")
-            gh pr create \
-              --title "engine re-pin ${LATEST}: gates failed — manual adjudication needed" \
-              --base main \
-              --head "$BRANCH" \
-              --body "$PR_BODY"
-          else
-            echo "PR #$EXISTING already open for $BRANCH — not duplicating"
-          fi

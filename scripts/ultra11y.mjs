@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // src/cli.ts
-import { realpathSync as realpathSync2, writeFileSync as writeFileSync13, mkdirSync as mkdirSync10, existsSync as existsSync16, readFileSync as readFileSync12, appendFileSync } from "fs";
+import { realpathSync as realpathSync2, writeFileSync as writeFileSync13, mkdirSync as mkdirSync10, existsSync as existsSync16, readFileSync as readFileSync13, appendFileSync } from "fs";
 import { join as join29, relative as relative3, sep as sep4, dirname as dirname9 } from "path";
 import { fileURLToPath as fileURLToPath3, pathToFileURL } from "url";
 
@@ -18815,7 +18815,7 @@ import { join as join11 } from "path";
 import { createHash as createHash3 } from "crypto";
 import { existsSync as existsSync3, readFileSync as readFileSync5 } from "fs";
 import { join as join13 } from "path";
-import { statSync as statSync4 } from "fs";
+import { readFileSync as readFileSync6, statSync as statSync4 } from "fs";
 import { join as join14 } from "path";
 import { createInterface } from "readline";
 import { basename as basename2 } from "path";
@@ -18824,7 +18824,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { dirname as dirname2, resolve, sep as sep2 } from "path";
 import { gunzipSync } from "zlib";
 import { join as join12 } from "path";
-import { existsSync as existsSync4, mkdirSync as mkdirSync3, mkdtempSync, readFileSync as readFileSync6, renameSync, rmSync as rmSync2, writeFileSync as writeFileSync4 } from "fs";
+import { existsSync as existsSync4, mkdirSync as mkdirSync3, mkdtempSync, readFileSync as readFileSync7, renameSync, rmSync as rmSync2, writeFileSync as writeFileSync4 } from "fs";
 import { dirname as dirname4, join as join15, resolve as resolve2 } from "path";
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -18841,7 +18841,7 @@ var EXTRACTOR_VERSION;
 var init_types = __esm({
   "src/types.ts"() {
     "use strict";
-    ENGINE_VERSION = "2.14.0";
+    ENGINE_VERSION = "2.15.0";
     SCHEMA_VERSION2 = 4;
     EXTRACTOR_VERSION = 10;
   }
@@ -29170,6 +29170,57 @@ function toCacheMap(scan2) {
   for (const f of scan2.files) m.set(f.rel, { hash: f.hash, record: f, size: f.size, mtimeMs: scan2.mtimes.get(f.rel) });
   return m;
 }
+function readPersistedIndex(repo) {
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync6(join14(repo, ".codeindex", "cache.json"), "utf8"));
+  } catch {
+    return void 0;
+  }
+  if (!parsed || parsed.schemaVersion !== SCHEMA_VERSION2 || parsed.extractorVersion !== EXTRACTOR_VERSION || !parsed.files) {
+    return void 0;
+  }
+  const cacheMap = new Map(Object.entries(parsed.files));
+  const meta2 = {
+    engineVersion: parsed.engineVersion,
+    commit: parsed.commit,
+    graphSha1: parsed.graphSha1,
+    symbolsSha1: parsed.symbolsSha1
+  };
+  return { cacheMap, meta: meta2 };
+}
+function preloadArtifacts(repo, scan2, meta2) {
+  if (!scan2.contentUnchanged || meta2.engineVersion !== ENGINE_VERSION || meta2.commit !== scan2.commit || meta2.graphSha1 === void 0 || meta2.symbolsSha1 === void 0) {
+    return void 0;
+  }
+  const dir = join14(repo, ".codeindex");
+  let graphBytes;
+  let symbolsBytes;
+  try {
+    graphBytes = readFileSync6(join14(dir, "graph.json"));
+    symbolsBytes = readFileSync6(join14(dir, "symbols.json"));
+  } catch {
+    return void 0;
+  }
+  if (sha1(graphBytes) !== meta2.graphSha1 || sha1(symbolsBytes) !== meta2.symbolsSha1) {
+    return void 0;
+  }
+  try {
+    const graph = JSON.parse(graphBytes.toString("utf8"));
+    const symbols = JSON.parse(symbolsBytes.toString("utf8"));
+    if (graph.schemaVersion !== SCHEMA_VERSION2 || symbols.schemaVersion !== SCHEMA_VERSION2) return void 0;
+    return { scan: scan2, graph, symbols };
+  } catch {
+    return void 0;
+  }
+}
+function preloadSession(repo, opts) {
+  const persisted = readPersistedIndex(repo);
+  if (!persisted) return void 0;
+  const scan2 = scanRepo(repo, { ...opts, cache: persisted.cacheMap });
+  const arts = preloadArtifacts(repo, scan2, persisted.meta);
+  return { scan: scan2, cacheMap: toCacheMap(scan2), arts };
+}
 function getScan(repo, opts = {}) {
   const key = sessionKey(repo, opts);
   if (sessionCache && sessionCache.key === key) {
@@ -29181,6 +29232,11 @@ function getScan(repo, opts = {}) {
     }
     sessionCache = { key, scan: fresh, cacheMap: toCacheMap(fresh) };
     return fresh;
+  }
+  const preloaded = preloadSession(repo, opts);
+  if (preloaded) {
+    sessionCache = { key, scan: preloaded.scan, cacheMap: preloaded.cacheMap, arts: preloaded.arts };
+    return preloaded.scan;
   }
   const scan2 = scanRepo(repo, opts);
   sessionCache = { key, scan: scan2, cacheMap: toCacheMap(scan2) };
@@ -30446,7 +30502,7 @@ async function runCli(argv) {
     let cache;
     let meta2 = {};
     try {
-      const parsed = JSON.parse(readFileSync6(cachePath, "utf8"));
+      const parsed = JSON.parse(readFileSync7(cachePath, "utf8"));
       if (parsed.schemaVersion === SCHEMA_VERSION2 && parsed.extractorVersion === EXTRACTOR_VERSION) {
         cache = new Map(Object.entries(parsed.files));
         meta2 = {
@@ -30467,7 +30523,7 @@ async function runCli(argv) {
     const embedPath = join15(outDir, "embeddings.bin");
     const artifactSha = (path) => {
       try {
-        return sha1(readFileSync6(path));
+        return sha1(readFileSync7(path));
       } catch {
         return void 0;
       }
@@ -30717,7 +30773,7 @@ async function runCli(argv) {
       if (existsSync4(runtime) && expected && existsSync4(markerPath)) {
         let marker = "";
         try {
-          marker = readFileSync6(markerPath, "utf8").trim();
+          marker = readFileSync7(markerPath, "utf8").trim();
         } catch {
         }
         if (marker === expected) {
@@ -30770,7 +30826,7 @@ async function runCli(argv) {
     }
   } else if (cmd === "rules") {
     if (!flags2.config) throw new Error("rules needs --config <codeindex.rules.json>");
-    const rules = parseRules(JSON.parse(readFileSync6(flags2.config, "utf8")));
+    const rules = parseRules(JSON.parse(readFileSync7(flags2.config, "utf8")));
     const { graph } = buildIndexArtifacts(flags2.repo, scanOptions(flags2, precomputedWalk));
     const violations = checkRules(graph, rules);
     const errors = violations.filter((v) => v.severity === "error").length;
@@ -34112,11 +34168,11 @@ function resolveSpecifier(fromFile, spec, known, aliases) {
 }
 
 // src/graph/tsconfig.ts
-import { existsSync as existsSync6, readFileSync as readFileSync7 } from "fs";
+import { existsSync as existsSync6, readFileSync as readFileSync8 } from "fs";
 import { dirname as dirname6, join as join17, resolve as resolve3, relative } from "path";
 function readJsonish(path) {
   try {
-    const raw = readFileSync7(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1").replace(/,(\s*[}\]])/g, "$1");
+    const raw = readFileSync8(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1").replace(/,(\s*[}\]])/g, "$1");
     return JSON.parse(raw);
   } catch {
     return null;
@@ -43583,7 +43639,7 @@ function renderCriteriaReference() {
 }
 
 // src/check.ts
-import { existsSync as existsSync9, readFileSync as readFileSync9 } from "fs";
+import { existsSync as existsSync9, readFileSync as readFileSync10 } from "fs";
 import { dirname as dirname8, join as join22 } from "path";
 
 // src/verify.ts
@@ -43771,7 +43827,7 @@ function writeWorklist(items, outDir, semantic, standard = "wcag", lang = "en") 
 }
 
 // src/grounding.ts
-import { existsSync as existsSync8, readFileSync as readFileSync8 } from "fs";
+import { existsSync as existsSync8, readFileSync as readFileSync9 } from "fs";
 import { resolve as resolve4 } from "path";
 var WINDOW = 10;
 var norm2 = (s) => s.replace(/\s+/g, " ").trim();
@@ -43793,7 +43849,7 @@ function groundFinding(g, opts = {}) {
   if (!existsSync8(path)) return { ok: false, moved: false, issue: `cited file not found: ${g.file}` };
   let text;
   try {
-    text = readFileSync8(path, "utf8");
+    text = readFileSync9(path, "utf8");
   } catch {
     return { ok: false, moved: false, issue: `cited file unreadable: ${g.file}` };
   }
@@ -43944,7 +44000,7 @@ function checkSemantic(md, opts) {
   if (!existsSync9(artifact)) return { ok: false, issues: [s.semanticMissing(artifact)], ...empty };
   let items;
   try {
-    const parsed = JSON.parse(readFileSync9(artifact, "utf8"));
+    const parsed = JSON.parse(readFileSync10(artifact, "utf8"));
     if (!Array.isArray(parsed)) throw new Error("not an array");
     items = parsed;
   } catch {
@@ -44397,7 +44453,7 @@ function writeAdjudication(items, outDir, opts) {
 
 // src/scan.ts
 import { execFileSync as execFileSync3 } from "child_process";
-import { mkdtempSync as mkdtempSync2, writeFileSync as writeFileSync9, existsSync as existsSync11, statSync as statSync6, readdirSync as readdirSync4, rmSync as rmSync3, readFileSync as readFileSync10 } from "fs";
+import { mkdtempSync as mkdtempSync2, writeFileSync as writeFileSync9, existsSync as existsSync11, statSync as statSync6, readdirSync as readdirSync4, rmSync as rmSync3, readFileSync as readFileSync11 } from "fs";
 import { tmpdir } from "os";
 import { join as join24, resolve as resolve5 } from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
@@ -45007,7 +45063,7 @@ function resolveHostAnchor(file, snippet2) {
   if (!s || !existsSync11(file)) return null;
   let source;
   try {
-    source = readFileSync10(file, "utf8");
+    source = readFileSync11(file, "utf8");
   } catch {
     return null;
   }
@@ -46519,7 +46575,7 @@ ${g.errors.map((e) => `  \u2717 ${e}`).join("\n")}`);
 }
 
 // src/orchestrate.ts
-import { existsSync as existsSync15, mkdirSync as mkdirSync9, readFileSync as readFileSync11, rmSync as rmSync4, writeFileSync as writeFileSync12 } from "fs";
+import { existsSync as existsSync15, mkdirSync as mkdirSync9, readFileSync as readFileSync12, rmSync as rmSync4, writeFileSync as writeFileSync12 } from "fs";
 import { join as join28, resolve as resolve7 } from "path";
 
 // src/orchestrate-templates.ts
@@ -46730,7 +46786,7 @@ function listPhases(runDir, engineAbs) {
   let adjReady = false;
   if (existsSync15(adjPath)) {
     try {
-      const f = JSON.parse(readFileSync11(adjPath, "utf8"));
+      const f = JSON.parse(readFileSync12(adjPath, "utf8"));
       if (f && f.kind === "adjudication" && Array.isArray(f.items)) {
         adjReady = true;
         adjIds = f.items.map((i2) => i2.criteriaId);
@@ -46743,7 +46799,7 @@ function listPhases(runDir, engineAbs) {
   let verReady = false;
   if (existsSync15(verPath)) {
     try {
-      const items = JSON.parse(readFileSync11(verPath, "utf8"));
+      const items = JSON.parse(readFileSync12(verPath, "utf8"));
       if (Array.isArray(items)) {
         verReady = true;
         verIds = items.map((i2) => String(i2.n));
@@ -47534,7 +47590,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out2}), then: node scripts/ultra11y.m
     const gaLine = ".ultra11y/captures/*.html text eol=lf linguist-generated=true";
     const gaPath = join29(root, ".gitattributes");
     try {
-      const existing = existsSync16(gaPath) ? readFileSync12(gaPath, "utf8") : "";
+      const existing = existsSync16(gaPath) ? readFileSync13(gaPath, "utf8") : "";
       if (!existing.includes(".ultra11y/captures/")) {
         appendFileSync(gaPath, (existing && !existing.endsWith("\n") ? "\n" : "") + gaLine + "\n");
         console.log(lang === "fr" ? `.gitattributes : ajout\xE9 \xAB ${gaLine} \xBB` : `.gitattributes: added "${gaLine}"`);
@@ -47543,7 +47599,7 @@ Fill in COMPONENTS, run it (e.g. npx tsx ${out2}), then: node scripts/ultra11y.m
     }
     try {
       const giPath = join29(root, ".gitignore");
-      if (existsSync16(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync12(giPath, "utf8")))
+      if (existsSync16(giPath) && /^\s*\/?\.ultra11y(\/\**)?\/?\s*$/m.test(readFileSync13(giPath, "utf8")))
         console.error(
           lang === "fr" ? "\u26A0\uFE0F .ultra11y semble ignor\xE9 par .gitignore \u2014 les captures doivent \xEAtre committ\xE9es pour le gate (ajoutez \xAB !.ultra11y/captures/ \xBB)." : '\u26A0\uFE0F .ultra11y appears gitignored \u2014 captures must be committed for the gate (add "!.ultra11y/captures/").'
         );

@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here, generated automatically from the Conventional Commits by semantic-release.
 
+# [2.17.0](https://github.com/maxgfr/ultra11y/compare/v2.16.1...v2.17.0) (2026-07-24)
+
+
+### Features
+
+* **engine:** re-pin codeindex v2.13.0 ([b9eacae](https://github.com/maxgfr/ultra11y/commit/b9eacae404cc1b54f0649c4ebb202cd34f87553d))
+
 ## [2.16.1](https://github.com/maxgfr/ultra11y/compare/v2.16.0...v2.16.1) (2026-07-23)
 
 

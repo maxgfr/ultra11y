@@ -145,6 +145,7 @@ jobs:
         env:
           LATEST: ${{ steps.detect.outputs.latest }}
         run: |
+          git rebase --abort 2>/dev/null || true
           BRANCH="repin/${LATEST}"
           git add -A
           git commit -m "chore(engine): re-pin codeindex ${LATEST} [gates failed, needs adjudication]" || true
